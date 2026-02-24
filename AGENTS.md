@@ -35,6 +35,19 @@ moonrockz/krueger
 └── mise-tasks/          # File-based mise tasks
 ```
 
+## Library Dependencies
+
+From a library perspective, krueger uses:
+
+| Package | Purpose |
+|---------|---------|
+| `moonbitlang/core` | Core standard library (builtin, etc.) |
+| `moonbitlang/x` | Standard library extensions |
+| `moonbitlang/async` | Async execution primitives |
+| [bobzhang/lexer](https://mooncakes.io/docs/bobzhang/lexer) | Lexer library (scanner/tokenization) |
+
+These are declared in `moon.mod.json` and in each package’s `moon.pkg` as needed.
+
 ## Project Structure
 
 - MoonBit packages are organized per directory; each has a `moon.pkg` (or `moon.pkg.json`) listing dependencies.

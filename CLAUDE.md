@@ -21,3 +21,7 @@ mise run test:unit   # MoonBit unit tests
 ## Mise Tasks
 
 Tasks are **file-based scripts** in `mise-tasks/`. Never add inline `[tasks]` to `.mise.toml`.
+
+## Additional Agentic Instructions:
+
+Please see: [AGENTS.md](AGENTS.md) for additional agentic instructions.

@@ -1,0 +1,3 @@
+# Beads Configuration File
+# Issue prefix for this repository (used by bd init)
+issue-prefix: "krueger"
