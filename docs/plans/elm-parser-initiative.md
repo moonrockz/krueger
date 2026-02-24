@@ -16,11 +16,10 @@ Design and work breakdown for the moonrockz/krueger parser, tokenizer, AST, CST,
 
 ## Design phase
 
-Before implementation, complete [krueger-q56.1] (Design phase: design doc, BDD scenarios (Gherkin), test strategy):
+Before implementation, complete [krueger-q56.1] (Design phase: design doc, test strategy):
 
 1. **Design doc**: This document; architecture, visitor model, WASM, CLI.
-2. **BDD acceptance tests**: Gherkin `.feature` files for tokenizer, parser, AST/CST, visitors, CLI, WASM component.
-3. **Test strategy**: Whitebox (`_wbtest.mbt`), blackbox (`_test.mbt`), e2e for CLI and WASM component; TDD for all stories.
+2. **Test strategy**: Define how and where tests are added. Test artifacts **grow with each story** — we do not create all BDD scenarios, whitebox, blackbox, or e2e tests up front. Each implementation issue adds the tests that belong to its scope (see [Test strategy](#test-strategy-tdd) below).
 
 ## Architecture
 
@@ -91,8 +90,10 @@ flowchart LR
 
 ## Test strategy (TDD)
 
-- **Whitebox** (`*_wbtest.mbt`): Internal modules (scanner, parser, AST, visitor internals).
-- **Blackbox** (`*_test.mbt`): Public API.
-- **BDD**: Gherkin `.feature` files under `tests/` or `docs/` defining acceptance scenarios.
-- **E2E**: CLI subcommands; WASM component from host (e.g. JS/Python).
-- All implementation follows Red–Green–Refactor; tests written before code.
+Tests are added **incrementally per story**, not up front. Each implementation issue (tokenizer, parser, AST, etc.) delivers the test artifacts for its own scope.
+
+- **Whitebox** (`*_wbtest.mbt`): Added when implementing the module (scanner, parser, AST, visitor internals). One or more `_wbtest.mbt` files per package as needed.
+- **Blackbox** (`*_test.mbt`): Added when implementing the public API. Each package adds its `*_test.mbt` for the surface it exposes.
+- **BDD** (Gherkin `.feature` files): Added or extended when implementing the corresponding capability. For example, the tokenizer story adds/extends scenarios for tokenization; the CLI story adds scenarios for `tokenize`/`lex` subcommands. Place under `tests/features/` (or similar) and grow with each story.
+- **E2E**: CLI and WASM component stories add end-to-end tests (CLI exit code/stdout; host calling WASM component). Not created in the design phase.
+- **TDD**: All implementation follows Red–Green–Refactor; tests for that story are written before code for that story.
