@@ -187,7 +187,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let exposing = []
   let imports = []
   let declarations = []
-  let cst_decls = []
+  let cst_decls : Array[@cst.DeclarationCst] = []
   let diagnostics = []
 
   if stream.length() > 0 && stream[0].kind == @scanner.TokenKind::module_kw() {
@@ -366,11 +366,6 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
             meta,
           }),
         )
-        cst_decls.push(CstDecl::{
-          kind: "type-alias",
-          span: start_token.span,
-          tokens: raw_tokens,
-        })
       } else {
         let cases = []
         for token in raw_tokens {
@@ -389,11 +384,6 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
             meta,
           }),
         )
-        cst_decls.push(CstDecl::{
-          kind: "union-type",
-          span: start_token.span,
-          tokens: raw_tokens,
-        })
       }
       continue
     }
@@ -446,11 +436,6 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         meta,
       }),
     )
-    cst_decls.push(CstDecl::{
-      kind: "function",
-      span: name_token.span,
-      tokens: [],
-    })
   }
 
   ParseResult::{
@@ -461,8 +446,10 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       declarations,
       span: module_span(stream),
     }),
-    cst: Some(ModuleCst::{
+    cst: Some(@cst.ModuleCst::{
       tokens: stream,
+      header: None,
+      imports: [],
       declarations: cst_decls,
       span: module_span(stream),
     }),
