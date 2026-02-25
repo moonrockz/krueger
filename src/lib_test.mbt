@@ -99,13 +99,27 @@ test "root package parse_tokens wraps parser parse_tokens" {
 
 ///|
 test "root package exposes cst contracts" {
-  let header = ModuleHeaderCst::{ tokens: [], span: None }
+  let node_span = Span::{
+    start: Position::{ offset: 0, line: 1, column: 1 },
+    end: Position::{ offset: 1, line: 1, column: 2 },
+  }
+  let header = ModuleHeaderCst::{
+    module_name: Some("Main"),
+    exposing: ["add"],
+    tokens: [],
+    span: node_span,
+  }
   let cst = ModuleCst::{
     tokens: [],
     header: Some(header),
     imports: [],
     declarations: [
-      DeclarationCst::Function(FunctionCst::{ tokens: [], span: None }),
+      DeclarationCst::Function(FunctionCst::{
+        name: "add",
+        args: ["x"],
+        tokens: [],
+        span: node_span,
+      }),
     ],
     span: None,
   }
