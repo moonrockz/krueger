@@ -82,6 +82,16 @@ fn has_diag_code(result : ParseResult, code : String) -> Bool {
 }
 
 ///|
+fn assert_node_span_matches_tokens(
+  node_span : @scanner.Span,
+  tokens : Array[@scanner.Token],
+) -> Unit raise {
+  assert_true(tokens.length() > 0)
+  assert_eq(node_span.start, tokens[0].span.start)
+  assert_eq(node_span.end, tokens[tokens.length() - 1].span.end)
+}
+
+///|
 test "parse tokens captures module header information" {
   let source = @scanner.SourceText::{
     module_name: Some("Main"),
@@ -102,6 +112,42 @@ test "parse tokens captures module header information" {
       assert_eq(ast.exposing.map(exposed_name_text), ["add"])
     }
     None => fail("expected ast")
+  }
+}
+
+///|
+test "parse tokens captures cst header and imports" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\nimport Html exposing (text)\nadd x = x + 1",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  match result.cst {
+    Some(cst) => {
+      match cst.header {
+        Some(header) => {
+          assert_eq(header.module_name, Some("Main"))
+          assert_eq(header.exposing, ["add"])
+          assert_eq(header.tokens[0].kind, @scanner.TokenKind::module_kw())
+          assert_node_span_matches_tokens(header.span, header.tokens)
+        }
+        None => fail("expected module header cst")
+      }
+      assert_eq(cst.imports.length(), 1)
+      assert_eq(cst.imports[0].module_name, "Html")
+      assert_eq(cst.imports[0].exposing, Some(["text"]))
+      assert_eq(cst.imports[0].tokens[0].kind, @scanner.TokenKind::import_kw())
+      assert_node_span_matches_tokens(
+        cst.imports[0].span,
+        cst.imports[0].tokens,
+      )
+    }
+    None => fail("expected cst")
   }
 }
 
@@ -131,6 +177,53 @@ test "parse tokens captures function declaration" {
         None => fail("expected function declaration add")
       }
     None => fail("expected ast")
+  }
+}
+
+///|
+test "parse tokens emits typed cst declarations with token span fidelity" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  match result.cst {
+    Some(cst) => {
+      assert_eq(cst.declarations.length(), 3)
+      match cst.declarations[0] {
+        @cst.DeclarationCst::TypeAlias(alias_decl) => {
+          assert_eq(alias_decl.name, "User")
+          assert_eq(alias_decl.type_params, ["a"])
+          assert_node_span_matches_tokens(alias_decl.span, alias_decl.tokens)
+        }
+        _ => fail("expected type alias cst declaration")
+      }
+      match cst.declarations[1] {
+        @cst.DeclarationCst::UnionType(union_decl) => {
+          assert_eq(union_decl.name, "Color")
+          assert_eq(union_decl.type_params, [])
+          assert_node_span_matches_tokens(union_decl.span, union_decl.tokens)
+        }
+        _ => fail("expected union type cst declaration")
+      }
+      match cst.declarations[2] {
+        @cst.DeclarationCst::Function(function_decl) => {
+          assert_eq(function_decl.name, "add")
+          assert_eq(function_decl.args, ["x"])
+          assert_node_span_matches_tokens(
+            function_decl.span,
+            function_decl.tokens,
+          )
+        }
+        _ => fail("expected function cst declaration")
+      }
+    }
+    None => fail("expected cst")
   }
 }
 

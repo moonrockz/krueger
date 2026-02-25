@@ -54,3 +54,23 @@ test "parse result supports typed declarations through ast wrappers" {
     _ => fail("expected function declaration")
   }
 }
+
+///|
+test "parse result cst uses dedicated cst package module type" {
+  let module_cst = @cst.ModuleCst::{
+    tokens: [],
+    header: None,
+    imports: [],
+    declarations: [],
+    span: None,
+  }
+  let result = ParseResult::{
+    ast: None,
+    cst: Some(module_cst),
+    diagnostics: [],
+  }
+  match result.cst {
+    Some(cst) => assert_eq(cst.declarations.length(), 0)
+    None => fail("expected cst")
+  }
+}

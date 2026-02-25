@@ -96,3 +96,32 @@ test "root package parse_tokens wraps parser parse_tokens" {
     None => fail("expected ast")
   }
 }
+
+///|
+test "root package exposes cst contracts" {
+  let node_span = Span::{
+    start: Position::{ offset: 0, line: 1, column: 1 },
+    end: Position::{ offset: 1, line: 1, column: 2 },
+  }
+  let header = ModuleHeaderCst::{
+    module_name: Some("Main"),
+    exposing: ["add"],
+    tokens: [],
+    span: node_span,
+  }
+  let cst = ModuleCst::{
+    tokens: [],
+    header: Some(header),
+    imports: [],
+    declarations: [
+      DeclarationCst::Function(FunctionCst::{
+        name: "add",
+        args: ["x"],
+        tokens: [],
+        span: node_span,
+      }),
+    ],
+    span: None,
+  }
+  assert_eq(cst.declarations.length(), 1)
+}
