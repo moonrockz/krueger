@@ -2,4 +2,4 @@
 #MISE description="Run e2e tests"
 set -euo pipefail
 
-moon test tests/e2e --target js
+moon test src/e2e --target js
