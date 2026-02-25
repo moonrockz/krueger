@@ -19,8 +19,14 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
     None
   }
   ParseResult::{
-    ast: Some(ModuleAst::{ module_name, }),
-    cst: Some(ModuleCst::{ module_name, }),
+    ast: Some(ModuleAst::{
+      module_name,
+      exposing: [],
+      imports: [],
+      declarations: [],
+      span: None,
+    }),
+    cst: Some(ModuleCst::{ tokens: tokens.tokens, declarations: [], span: None }),
     diagnostics: [],
   }
 }
