@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run e2e tests"
+set -euo pipefail
+
+moon test tests/e2e --target js

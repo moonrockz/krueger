@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run MoonSpec BDD tests"
+set -euo pipefail
+
+moon test tests/bdd --target js
