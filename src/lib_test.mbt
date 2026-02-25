@@ -36,6 +36,12 @@ test "root package exposes parser entrypoints" {
 }
 
 ///|
+test "root package exposes ast domain wrappers" {
+  let identifier = Identifier::Identifier("Main")
+  assert_eq(identifier.0, "Main")
+}
+
+///|
 test "root package parse_module uses default scanner and captures declarations" {
   let source = SourceText::{
     module_name: Some("Main"),
@@ -44,11 +50,14 @@ test "root package parse_module uses default scanner and captures declarations" 
   let result = parse_module(source)
   match result.ast {
     Some(ast) => {
-      assert_eq(ast.module_name, Some("Main"))
+      match ast.module_name {
+        Some(module_name) => assert_eq(module_name.0.0, "Main")
+        None => fail("expected module name")
+      }
       assert_true(
         ast.declarations.any(fn(decl) {
           match decl {
-            Declaration::FunctionDecl(fn_decl) => fn_decl.name == "add"
+            Declaration::FunctionDecl(fn_decl) => fn_decl.name.0.0 == "add"
             _ => false
           }
         }),
@@ -74,7 +83,12 @@ test "root package parse_tokens wraps parser parse_tokens" {
       assert_true(
         ast.declarations.any(fn(decl) {
           match decl {
-            Declaration::FunctionDecl(fn_decl) => fn_decl.name == "add"
+            Declaration::FunctionDecl(fn_decl) =>
+              match fn_decl.body {
+                @ast.Expr::Unparsed(unparsed) =>
+                  fn_decl.name.0.0 == "add" && unparsed.tokens.length() > 0
+                _ => false
+              }
             _ => false
           }
         }),

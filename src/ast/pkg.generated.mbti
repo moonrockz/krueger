@@ -1,0 +1,168 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/ast"
+
+import {
+  "moonrockz/krueger/scanner",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct ConstructorName(Identifier)
+#deprecated
+pub fn ConstructorName::inner(Self) -> Identifier
+pub impl Eq for ConstructorName
+pub impl Show for ConstructorName
+
+pub(all) struct DeclMeta {
+  doc_comment : DocComment?
+  span : @scanner.Span
+}
+pub impl Eq for DeclMeta
+pub impl Show for DeclMeta
+
+pub(all) enum Declaration {
+  FunctionDecl(FunctionDeclaration)
+  TypeAliasDecl(TypeAliasDeclaration)
+  UnionTypeDecl(UnionTypeDeclaration)
+}
+pub impl Eq for Declaration
+pub impl Show for Declaration
+
+pub(all) struct DocComment {
+  text : String
+  span : @scanner.Span
+}
+pub impl Eq for DocComment
+pub impl Show for DocComment
+
+pub(all) enum ExposedName {
+  Value(ValueName)
+}
+pub impl Eq for ExposedName
+pub impl Show for ExposedName
+
+pub(all) enum Expr {
+  Var(ValueName)
+  IntLiteral(Int)
+  BinaryOp(Expr, OperatorName, Expr)
+  Unparsed(UnparsedExpr)
+}
+pub impl Eq for Expr
+pub impl Show for Expr
+
+pub(all) struct FunctionDeclaration {
+  name : ValueName
+  args : Array[ValueName]
+  body : Expr
+  meta : DeclMeta
+}
+pub impl Eq for FunctionDeclaration
+pub impl Show for FunctionDeclaration
+
+pub(all) struct Identifier(String)
+#deprecated
+pub fn Identifier::inner(Self) -> String
+pub impl Eq for Identifier
+pub impl Show for Identifier
+
+pub(all) struct ImportDecl {
+  module_name : ModuleName
+  exposing : Array[ExposedName]?
+  span : @scanner.Span
+}
+pub impl Eq for ImportDecl
+pub impl Show for ImportDecl
+
+pub(all) struct ModuleAst {
+  module_name : ModuleName?
+  exposing : Array[ExposedName]
+  imports : Array[ImportDecl]
+  declarations : Array[Declaration]
+  span : @scanner.Span?
+}
+pub impl Eq for ModuleAst
+pub impl Show for ModuleAst
+
+pub(all) struct ModuleName(Identifier)
+#deprecated
+pub fn ModuleName::inner(Self) -> Identifier
+pub impl Eq for ModuleName
+pub impl Show for ModuleName
+
+pub(all) struct OperatorName(String)
+#deprecated
+pub fn OperatorName::inner(Self) -> String
+pub impl Eq for OperatorName
+pub impl Show for OperatorName
+
+pub(all) struct TypeAliasDeclaration {
+  name : TypeName
+  type_params : Array[TypeVarName]
+  body : TypeExpr
+  meta : DeclMeta
+}
+pub impl Eq for TypeAliasDeclaration
+pub impl Show for TypeAliasDeclaration
+
+pub(all) enum TypeExpr {
+  TypeRef(TypeName)
+  TypeVar(TypeVarName)
+  TypeApp(TypeName, Array[TypeExpr])
+  Unparsed(UnparsedTypeExpr)
+}
+pub impl Eq for TypeExpr
+pub impl Show for TypeExpr
+
+pub(all) struct TypeName(Identifier)
+#deprecated
+pub fn TypeName::inner(Self) -> Identifier
+pub impl Eq for TypeName
+pub impl Show for TypeName
+
+pub(all) struct TypeVarName(Identifier)
+#deprecated
+pub fn TypeVarName::inner(Self) -> Identifier
+pub impl Eq for TypeVarName
+pub impl Show for TypeVarName
+
+pub(all) struct UnionTypeCase {
+  name : ConstructorName
+  args : Array[TypeExpr]
+}
+pub impl Eq for UnionTypeCase
+pub impl Show for UnionTypeCase
+
+pub(all) struct UnionTypeDeclaration {
+  name : TypeName
+  type_params : Array[TypeVarName]
+  cases : Array[UnionTypeCase]
+  meta : DeclMeta
+}
+pub impl Eq for UnionTypeDeclaration
+pub impl Show for UnionTypeDeclaration
+
+pub(all) struct UnparsedExpr {
+  tokens : Array[@scanner.Token]
+}
+pub impl Eq for UnparsedExpr
+pub impl Show for UnparsedExpr
+
+pub(all) struct UnparsedTypeExpr {
+  tokens : Array[@scanner.Token]
+}
+pub impl Eq for UnparsedTypeExpr
+pub impl Show for UnparsedTypeExpr
+
+pub(all) struct ValueName(Identifier)
+#deprecated
+pub fn ValueName::inner(Self) -> Identifier
+pub impl Eq for ValueName
+pub impl Show for ValueName
+
+// Type aliases
+
+// Traits
+

@@ -9,11 +9,33 @@ fn unwrap_ok(
 }
 
 ///|
-fn find_function_decl(ast : ModuleAst, name : String) -> FunctionDeclaration? {
+fn value_name_text(name : @ast.ValueName) -> String {
+  name.0.0
+}
+
+///|
+fn type_name_text(name : @ast.TypeName) -> String {
+  name.0.0
+}
+
+///|
+fn exposed_name_text(name : @ast.ExposedName) -> String {
+  match name {
+    @ast.ExposedName::Value(value) => value_name_text(value)
+  }
+}
+
+///|
+fn find_function_decl(
+  ast : @ast.ModuleAst,
+  name : String,
+) -> @ast.FunctionDeclaration? {
   for decl in ast.declarations {
     match decl {
-      Declaration::FunctionDecl(fn_decl) if fn_decl.name == name =>
-        return Some(fn_decl)
+      @ast.Declaration::FunctionDecl(fn_decl) =>
+        if value_name_text(fn_decl.name) == name {
+          return Some(fn_decl)
+        }
       _ => ()
     }
   }
@@ -22,13 +44,15 @@ fn find_function_decl(ast : ModuleAst, name : String) -> FunctionDeclaration? {
 
 ///|
 fn find_type_alias_decl(
-  ast : ModuleAst,
+  ast : @ast.ModuleAst,
   name : String,
-) -> TypeAliasDeclaration? {
+) -> @ast.TypeAliasDeclaration? {
   for decl in ast.declarations {
     match decl {
-      Declaration::TypeAliasDecl(alias_decl) if alias_decl.name == name =>
-        return Some(alias_decl)
+      @ast.Declaration::TypeAliasDecl(alias_decl) =>
+        if type_name_text(alias_decl.name) == name {
+          return Some(alias_decl)
+        }
       _ => ()
     }
   }
@@ -36,11 +60,16 @@ fn find_type_alias_decl(
 }
 
 ///|
-fn find_union_decl(ast : ModuleAst, name : String) -> UnionTypeDeclaration? {
+fn find_union_decl(
+  ast : @ast.ModuleAst,
+  name : String,
+) -> @ast.UnionTypeDeclaration? {
   for decl in ast.declarations {
     match decl {
-      Declaration::UnionTypeDecl(union_decl) if union_decl.name == name =>
-        return Some(union_decl)
+      @ast.Declaration::UnionTypeDecl(union_decl) =>
+        if type_name_text(union_decl.name) == name {
+          return Some(union_decl)
+        }
       _ => ()
     }
   }
@@ -66,8 +95,11 @@ test "parse tokens captures module header information" {
   let result = parse_tokens(tokens)
   match result.ast {
     Some(ast) => {
-      assert_eq(ast.module_name, Some("Main"))
-      assert_eq(ast.exposing, ["add"])
+      assert_eq(
+        ast.module_name,
+        Some(@ast.ModuleName::ModuleName(@ast.Identifier::Identifier("Main"))),
+      )
+      assert_eq(ast.exposing.map(exposed_name_text), ["add"])
     }
     None => fail("expected ast")
   }
@@ -88,7 +120,14 @@ test "parse tokens captures function declaration" {
   match result.ast {
     Some(ast) =>
       match find_function_decl(ast, "add") {
-        Some(fn_decl) => assert_eq(fn_decl.args, ["x"])
+        Some(fn_decl) => {
+          assert_eq(fn_decl.args.map(value_name_text), ["x"])
+          match fn_decl.body {
+            @ast.Expr::Unparsed(unparsed) =>
+              assert_true(unparsed.tokens.length() > 0)
+            _ => fail("expected unparsed function body")
+          }
+        }
         None => fail("expected function declaration add")
       }
     None => fail("expected ast")
@@ -136,8 +175,11 @@ test "parse tokens captures imports and type declarations" {
   match result.ast {
     Some(ast) => {
       assert_eq(ast.imports.length(), 1)
-      assert_eq(ast.imports[0].module_name, "Html")
-      assert_eq(ast.imports[0].exposing, Some(["text"]))
+      assert_eq(ast.imports[0].module_name.0.0, "Html")
+      match ast.imports[0].exposing {
+        Some(names) => assert_eq(names.map(exposed_name_text), ["text"])
+        None => fail("expected import exposing list")
+      }
       assert_true(find_type_alias_decl(ast, "User") != None)
       assert_true(find_union_decl(ast, "Color") != None)
     }

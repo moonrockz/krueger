@@ -2,6 +2,7 @@
 package "moonrockz/krueger"
 
 import {
+  "moonrockz/krueger/ast",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/scanner",
 }
@@ -24,21 +25,35 @@ pub using @scanner {type Comment}
 
 pub using @scanner {type CommentKind}
 
-pub using @parser {type DeclMeta}
+pub using @ast {type ConstructorName}
 
-pub using @parser {type Declaration}
+pub using @ast {type DeclMeta}
+
+pub using @ast {type Declaration}
 
 pub using @scanner {type Diagnostic}
 
-pub using @parser {type DocComment}
+pub using @ast {type DocComment}
 
-pub using @parser {type FunctionDeclaration}
+pub using @ast {type ExposedName}
+
+pub using @ast {type Expr}
+
+pub using @ast {type FunctionDeclaration}
+
+pub using @ast {type Identifier}
+
+pub using @ast {type ImportDecl}
 
 pub using @scanner {type KeywordKind}
 
-pub using @parser {type ModuleAst}
+pub using @ast {type ModuleAst}
 
 pub using @parser {type ModuleCst}
+
+pub using @ast {type ModuleName}
+
+pub using @ast {type OperatorName}
 
 pub using @parser {type ParseResult}
 
@@ -59,6 +74,24 @@ pub using @scanner {type TokenKind}
 pub using @scanner {type TokenStream}
 
 pub using @scanner {type Trivia}
+
+pub using @ast {type TypeAliasDeclaration}
+
+pub using @ast {type TypeExpr}
+
+pub using @ast {type TypeName}
+
+pub using @ast {type TypeVarName}
+
+pub using @ast {type UnionTypeCase}
+
+pub using @ast {type UnionTypeDeclaration}
+
+pub using @ast {type UnparsedExpr}
+
+pub using @ast {type UnparsedTypeExpr}
+
+pub using @ast {type ValueName}
 
 pub using @scanner {trait Scanner}
 

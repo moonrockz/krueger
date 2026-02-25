@@ -1,4 +1,5 @@
 import {
   "moonbitlang/core/builtin",
+  "moonrockz/krueger/ast",
   "moonrockz/krueger/scanner",
 }

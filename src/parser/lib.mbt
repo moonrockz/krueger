@@ -48,6 +48,41 @@ fn module_span(tokens : Array[@scanner.Token]) -> @scanner.Span? {
 }
 
 ///|
+fn to_identifier(value : String) -> @ast.Identifier {
+  @ast.Identifier::Identifier(value)
+}
+
+///|
+fn to_module_name(value : String) -> @ast.ModuleName {
+  @ast.ModuleName::ModuleName(to_identifier(value))
+}
+
+///|
+fn to_value_name(value : String) -> @ast.ValueName {
+  @ast.ValueName::ValueName(to_identifier(value))
+}
+
+///|
+fn to_type_name(value : String) -> @ast.TypeName {
+  @ast.TypeName::TypeName(to_identifier(value))
+}
+
+///|
+fn to_type_var_name(value : String) -> @ast.TypeVarName {
+  @ast.TypeVarName::TypeVarName(to_identifier(value))
+}
+
+///|
+fn to_constructor_name(value : String) -> @ast.ConstructorName {
+  @ast.ConstructorName::ConstructorName(to_identifier(value))
+}
+
+///|
+fn to_exposed_name(value : String) -> @ast.ExposedName {
+  @ast.ExposedName::Value(to_value_name(value))
+}
+
+///|
 fn looks_like_function_decl_start(
   tokens : Array[@scanner.Token],
   index : Int,
@@ -148,7 +183,7 @@ pub fn[S : @scanner.Scanner] parse_module(
 pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let stream = tokens.tokens
   let mut cursor = 0
-  let mut module_name : String? = None
+  let mut module_name : @ast.ModuleName? = None
   let exposing = []
   let imports = []
   let declarations = []
@@ -162,7 +197,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
 
     if cursor < stream.length() {
       if stream[cursor].kind == @scanner.TokenKind::Identifier {
-        module_name = Some(stream[cursor].lexeme)
+        module_name = Some(to_module_name(stream[cursor].lexeme))
         cursor = cursor + 1
       } else {
         module_header_valid = false
@@ -186,7 +221,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
             break
           }
           if stream[cursor].kind == @scanner.TokenKind::Identifier {
-            exposing.push(stream[cursor].lexeme)
+            exposing.push(to_exposed_name(stream[cursor].lexeme))
           }
           cursor = cursor + 1
         }
@@ -223,7 +258,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         name
       }
 
-      let mut import_exposing : Array[String]? = None
+      let mut import_exposing : Array[@ast.ExposedName]? = None
       if !malformed &&
         cursor < stream.length() &&
         stream[cursor].kind == @scanner.TokenKind::exposing_kw() {
@@ -240,7 +275,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
               break
             }
             if stream[cursor].kind == @scanner.TokenKind::Identifier {
-              names.push(stream[cursor].lexeme)
+              names.push(to_exposed_name(stream[cursor].lexeme))
             }
             cursor = cursor + 1
           }
@@ -259,7 +294,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         cursor = recover_to_top_level(stream, cursor)
       } else {
         imports.push(ImportDecl::{
-          module_name: import_name,
+          module_name: to_module_name(import_name),
           exposing: import_exposing,
           span: start_token.span,
         })
@@ -293,7 +328,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       while !malformed &&
             cursor < stream.length() &&
             stream[cursor].kind == @scanner.TokenKind::Identifier {
-        type_params.push(stream[cursor].lexeme)
+        type_params.push(to_type_var_name(stream[cursor].lexeme))
         cursor = cursor + 1
       }
       if !malformed &&
@@ -323,9 +358,11 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       if is_alias {
         declarations.push(
           Declaration::TypeAliasDecl(TypeAliasDeclaration::{
-            name: type_name,
+            name: to_type_name(type_name),
             type_params,
-            alias_tokens: raw_tokens,
+            body: @ast.TypeExpr::Unparsed(@ast.UnparsedTypeExpr::{
+              tokens: raw_tokens,
+            }),
             meta,
           }),
         )
@@ -338,15 +375,17 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         let cases = []
         for token in raw_tokens {
           if token.kind == @scanner.TokenKind::Identifier {
-            cases.push(UnionTypeCase::{ name: token.lexeme, args: [] })
+            cases.push(UnionTypeCase::{
+              name: to_constructor_name(token.lexeme),
+              args: [],
+            })
           }
         }
         declarations.push(
           Declaration::UnionTypeDecl(UnionTypeDeclaration::{
-            name: type_name,
+            name: to_type_name(type_name),
             type_params,
             cases,
-            raw_tokens,
             meta,
           }),
         )
@@ -376,7 +415,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
     let args = []
     while cursor < stream.length() &&
           stream[cursor].kind == @scanner.TokenKind::Identifier {
-      args.push(stream[cursor].lexeme)
+      args.push(to_value_name(stream[cursor].lexeme))
       cursor = cursor + 1
     }
 
@@ -401,9 +440,9 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
     }
     declarations.push(
       Declaration::FunctionDecl(FunctionDeclaration::{
-        name,
+        name: to_value_name(name),
         args,
-        body_tokens,
+        body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{ tokens: body_tokens }),
         meta,
       }),
     )
