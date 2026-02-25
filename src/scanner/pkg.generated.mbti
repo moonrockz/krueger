@@ -37,6 +37,7 @@ pub struct DefaultScanner {
 }
 pub fn DefaultScanner::new() -> Self
 pub fn DefaultScanner::tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
+pub impl Scanner for DefaultScanner
 
 pub(all) struct Diagnostic {
   code : String
