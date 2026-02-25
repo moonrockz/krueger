@@ -65,6 +65,31 @@ fn looks_like_function_decl_start(
 }
 
 ///|
+fn has_newline_trivia(trivia : Array[@scanner.Trivia]) -> Bool {
+  trivia.any(fn(item) {
+    match item {
+      @scanner.Trivia::Newline(_, _) => true
+      _ => false
+    }
+  })
+}
+
+///|
+fn is_top_level_start(tokens : Array[@scanner.Token], index : Int) -> Bool {
+  if index >= tokens.length() {
+    return false
+  }
+  let kind = tokens[index].kind
+  if kind == @scanner.TokenKind::module_kw() ||
+    kind == @scanner.TokenKind::import_kw() ||
+    kind == @scanner.TokenKind::type_kw() {
+    return true
+  }
+  looks_like_function_decl_start(tokens, index) &&
+  has_newline_trivia(tokens[index].trivia_before)
+}
+
+///|
 pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,
@@ -82,6 +107,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let mut cursor = 0
   let mut module_name : String? = None
   let exposing = []
+  let imports = []
   let declarations = []
   let cst_decls = []
 
@@ -114,6 +140,125 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   }
 
   while cursor < stream.length() {
+    if stream[cursor].kind == @scanner.TokenKind::import_kw() {
+      let start_token = stream[cursor]
+      cursor = cursor + 1
+      if cursor >= stream.length() ||
+        stream[cursor].kind != @scanner.TokenKind::Identifier {
+        continue
+      }
+      let import_name = stream[cursor].lexeme
+      cursor = cursor + 1
+
+      let mut import_exposing : Array[String]? = None
+      if cursor < stream.length() &&
+        stream[cursor].kind == @scanner.TokenKind::exposing_kw() {
+        cursor = cursor + 1
+        if cursor < stream.length() &&
+          stream[cursor].kind == @scanner.TokenKind::LParen {
+          cursor = cursor + 1
+          let names = []
+          while cursor < stream.length() &&
+                stream[cursor].kind != @scanner.TokenKind::RParen {
+            if stream[cursor].kind == @scanner.TokenKind::Identifier {
+              names.push(stream[cursor].lexeme)
+            }
+            cursor = cursor + 1
+          }
+          if cursor < stream.length() &&
+            stream[cursor].kind == @scanner.TokenKind::RParen {
+            cursor = cursor + 1
+          }
+          import_exposing = Some(names)
+        }
+      }
+
+      imports.push(ImportDecl::{
+        module_name: import_name,
+        exposing: import_exposing,
+        span: start_token.span,
+      })
+      continue
+    }
+
+    if stream[cursor].kind == @scanner.TokenKind::type_kw() {
+      let start_token = stream[cursor]
+      cursor = cursor + 1
+      let is_alias = cursor < stream.length() &&
+        stream[cursor].kind == @scanner.TokenKind::alias_kw()
+      if is_alias {
+        cursor = cursor + 1
+      }
+      if cursor >= stream.length() ||
+        stream[cursor].kind != @scanner.TokenKind::Identifier {
+        continue
+      }
+
+      let type_name = stream[cursor].lexeme
+      cursor = cursor + 1
+
+      let type_params = []
+      while cursor < stream.length() &&
+            stream[cursor].kind == @scanner.TokenKind::Identifier {
+        type_params.push(stream[cursor].lexeme)
+        cursor = cursor + 1
+      }
+      if cursor < stream.length() &&
+        stream[cursor].kind == @scanner.TokenKind::Equals {
+        cursor = cursor + 1
+      } else {
+        continue
+      }
+
+      let raw_tokens = []
+      while cursor < stream.length() && !is_top_level_start(stream, cursor) {
+        raw_tokens.push(stream[cursor])
+        cursor = cursor + 1
+      }
+
+      let meta = DeclMeta::{
+        doc_comment: extract_doc_comment(start_token.trivia_before),
+        span: start_token.span,
+      }
+      if is_alias {
+        declarations.push(
+          Declaration::TypeAliasDecl(TypeAliasDeclaration::{
+            name: type_name,
+            type_params,
+            alias_tokens: raw_tokens,
+            meta,
+          }),
+        )
+        cst_decls.push(CstDecl::{
+          kind: "type-alias",
+          span: start_token.span,
+          tokens: raw_tokens,
+        })
+      } else {
+        let cases = []
+        for token in raw_tokens {
+          if token.kind == @scanner.TokenKind::Identifier {
+            cases.push(UnionTypeCase::{ name: token.lexeme, args: [] })
+          }
+        }
+        declarations.push(
+          Declaration::UnionTypeDecl(UnionTypeDeclaration::{
+            name: type_name,
+            type_params,
+            cases,
+            raw_tokens,
+            meta,
+          }),
+        )
+        cst_decls.push(CstDecl::{
+          kind: "union-type",
+          span: start_token.span,
+          tokens: raw_tokens,
+        })
+      }
+      continue
+    }
+
     if stream[cursor].kind != @scanner.TokenKind::Identifier {
       cursor = cursor + 1
       continue
@@ -138,8 +283,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
     }
 
     let body_tokens = []
-    while cursor < stream.length() &&
-          !looks_like_function_decl_start(stream, cursor) {
+    while cursor < stream.length() && !is_top_level_start(stream, cursor) {
       body_tokens.push(stream[cursor])
       cursor = cursor + 1
     }
@@ -167,7 +311,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
     ast: Some(ModuleAst::{
       module_name,
       exposing,
-      imports: [],
+      imports,
       declarations,
       span: module_span(stream),
     }),
