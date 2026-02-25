@@ -98,7 +98,13 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 
 | Task                | Purpose                                        |
 |---------------------|------------------------------------------------|
+| `lint:check`        | Run lint/type checks (`moon check`)            |
+| `format:check`      | Run formatting checks (`moon fmt --check`)     |
+| `check`             | Run all checks (lint + format + tests)         |
 | `test:unit`         | Run MoonBit unit tests                         |
+| `test:bdd`          | Run MoonSpec BDD tests                         |
+| `test:e2e`          | Run end-to-end tests                           |
+| `test`              | Run all tests (unit + bdd + e2e)               |
 | `release:version`   | Compute next version from conventional commits |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |

@@ -8,7 +8,7 @@ Parser and parsing utilities for [Elm](https://elm-lang.org/) and [Elmish](https
 
 - MoonBit module and single-package layout
 - CI (lint + unit tests) and Release (validate → publish → GitHub Release) pipelines
-- Mise and file-based tasks (`test:unit`, `release:version`, `release:credentials`, `release:publish`)
+- Mise and file-based tasks (`lint:check`, `format:check`, `check`, `test:unit`, `test:bdd`, `test:e2e`, `test`, `release:version`, `release:credentials`, `release:publish`)
 - AGENTS.md / CLAUDE.md and conventional commits
 
 ## Installation

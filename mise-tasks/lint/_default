@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run all lint tasks"
+#MISE depends=["lint:check"]
+set -euo pipefail
+
+echo "Lint checks passed."
