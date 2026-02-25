@@ -142,7 +142,10 @@ test "parse tokens captures cst header and imports" {
       assert_eq(cst.imports[0].module_name, "Html")
       assert_eq(cst.imports[0].exposing, Some(["text"]))
       assert_eq(cst.imports[0].tokens[0].kind, @scanner.TokenKind::import_kw())
-      assert_node_span_matches_tokens(cst.imports[0].span, cst.imports[0].tokens)
+      assert_node_span_matches_tokens(
+        cst.imports[0].span,
+        cst.imports[0].tokens,
+      )
     }
     None => fail("expected cst")
   }
@@ -212,7 +215,10 @@ test "parse tokens emits typed cst declarations with token span fidelity" {
         @cst.DeclarationCst::Function(function_decl) => {
           assert_eq(function_decl.name, "add")
           assert_eq(function_decl.args, ["x"])
-          assert_node_span_matches_tokens(function_decl.span, function_decl.tokens)
+          assert_node_span_matches_tokens(
+            function_decl.span,
+            function_decl.tokens,
+          )
         }
         _ => fail("expected function cst declaration")
       }

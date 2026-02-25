@@ -64,7 +64,11 @@ test "parse result cst uses dedicated cst package module type" {
     declarations: [],
     span: None,
   }
-  let result = ParseResult::{ ast: None, cst: Some(module_cst), diagnostics: [] }
+  let result = ParseResult::{
+    ast: None,
+    cst: Some(module_cst),
+    diagnostics: [],
+  }
   match result.cst {
     Some(cst) => assert_eq(cst.declarations.length(), 0)
     None => fail("expected cst")
