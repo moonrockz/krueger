@@ -22,9 +22,9 @@ fn token(kind : @scanner.TokenKind, lexeme : String) -> @scanner.Token {
 ///|
 test "parse result ast uses ast package module type" {
   let ast = @ast.ModuleAst::{
-    module_name: Some(@ast.ModuleName::{
-      value: @ast.Identifier::{ value: "Main" },
-    }),
+    module_name: Some(
+      @ast.ModuleName::ModuleName(@ast.Identifier::Identifier("Main")),
+    ),
     exposing: [],
     imports: [],
     declarations: [],
@@ -40,8 +40,8 @@ test "parse result ast uses ast package module type" {
 ///|
 test "parse result supports typed declarations through ast wrappers" {
   let fn_decl = @ast.FunctionDeclaration::{
-    name: @ast.ValueName::{ value: @ast.Identifier::{ value: "add" } },
-    args: [@ast.ValueName::{ value: @ast.Identifier::{ value: "x" } }],
+    name: @ast.ValueName::ValueName(@ast.Identifier::Identifier("add")),
+    args: [@ast.ValueName::ValueName(@ast.Identifier::Identifier("x"))],
     body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{
       tokens: [token(@scanner.TokenKind::Identifier, "x")],
     }),
@@ -50,7 +50,7 @@ test "parse result supports typed declarations through ast wrappers" {
   let declaration = @ast.Declaration::FunctionDecl(fn_decl)
   match declaration {
     @ast.Declaration::FunctionDecl(function_decl) =>
-      assert_eq(function_decl.name.value.value, "add")
+      assert_eq(function_decl.name.0.0, "add")
     _ => fail("expected function declaration")
   }
 }

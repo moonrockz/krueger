@@ -10,9 +10,9 @@ import {
 // Errors
 
 // Types and methods
-pub(all) struct ConstructorName {
-  value : Identifier
-}
+pub(all) struct ConstructorName(Identifier)
+#deprecated
+pub fn ConstructorName::inner(Self) -> Identifier
 pub impl Eq for ConstructorName
 pub impl Show for ConstructorName
 
@@ -62,9 +62,9 @@ pub(all) struct FunctionDeclaration {
 pub impl Eq for FunctionDeclaration
 pub impl Show for FunctionDeclaration
 
-pub(all) struct Identifier {
-  value : String
-}
+pub(all) struct Identifier(String)
+#deprecated
+pub fn Identifier::inner(Self) -> String
 pub impl Eq for Identifier
 pub impl Show for Identifier
 
@@ -86,15 +86,15 @@ pub(all) struct ModuleAst {
 pub impl Eq for ModuleAst
 pub impl Show for ModuleAst
 
-pub(all) struct ModuleName {
-  value : Identifier
-}
+pub(all) struct ModuleName(Identifier)
+#deprecated
+pub fn ModuleName::inner(Self) -> Identifier
 pub impl Eq for ModuleName
 pub impl Show for ModuleName
 
-pub(all) struct OperatorName {
-  value : String
-}
+pub(all) struct OperatorName(String)
+#deprecated
+pub fn OperatorName::inner(Self) -> String
 pub impl Eq for OperatorName
 pub impl Show for OperatorName
 
@@ -116,15 +116,15 @@ pub(all) enum TypeExpr {
 pub impl Eq for TypeExpr
 pub impl Show for TypeExpr
 
-pub(all) struct TypeName {
-  value : Identifier
-}
+pub(all) struct TypeName(Identifier)
+#deprecated
+pub fn TypeName::inner(Self) -> Identifier
 pub impl Eq for TypeName
 pub impl Show for TypeName
 
-pub(all) struct TypeVarName {
-  value : Identifier
-}
+pub(all) struct TypeVarName(Identifier)
+#deprecated
+pub fn TypeVarName::inner(Self) -> Identifier
 pub impl Eq for TypeVarName
 pub impl Show for TypeVarName
 
@@ -156,9 +156,9 @@ pub(all) struct UnparsedTypeExpr {
 pub impl Eq for UnparsedTypeExpr
 pub impl Show for UnparsedTypeExpr
 
-pub(all) struct ValueName {
-  value : Identifier
-}
+pub(all) struct ValueName(Identifier)
+#deprecated
+pub fn ValueName::inner(Self) -> Identifier
 pub impl Eq for ValueName
 pub impl Show for ValueName
 

@@ -1,37 +1,23 @@
 ///|
-pub(all) struct Identifier {
-  value : String
-} derive(Eq, Show)
+pub(all) struct Identifier(String) derive(Eq, Show)
 
 ///|
-pub(all) struct ModuleName {
-  value : Identifier
-} derive(Eq, Show)
+pub(all) struct ModuleName(Identifier) derive(Eq, Show)
 
 ///|
-pub(all) struct ValueName {
-  value : Identifier
-} derive(Eq, Show)
+pub(all) struct ValueName(Identifier) derive(Eq, Show)
 
 ///|
-pub(all) struct TypeName {
-  value : Identifier
-} derive(Eq, Show)
+pub(all) struct TypeName(Identifier) derive(Eq, Show)
 
 ///|
-pub(all) struct TypeVarName {
-  value : Identifier
-} derive(Eq, Show)
+pub(all) struct TypeVarName(Identifier) derive(Eq, Show)
 
 ///|
-pub(all) struct ConstructorName {
-  value : Identifier
-} derive(Eq, Show)
+pub(all) struct ConstructorName(Identifier) derive(Eq, Show)
 
 ///|
-pub(all) struct OperatorName {
-  value : String
-} derive(Eq, Show)
+pub(all) struct OperatorName(String) derive(Eq, Show)
 
 ///|
 pub(all) enum ExposedName {

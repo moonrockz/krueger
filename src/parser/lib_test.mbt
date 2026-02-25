@@ -10,12 +10,12 @@ fn unwrap_ok(
 
 ///|
 fn value_name_text(name : @ast.ValueName) -> String {
-  name.value.value
+  name.0.0
 }
 
 ///|
 fn type_name_text(name : @ast.TypeName) -> String {
-  name.value.value
+  name.0.0
 }
 
 ///|
@@ -97,7 +97,7 @@ test "parse tokens captures module header information" {
     Some(ast) => {
       assert_eq(
         ast.module_name,
-        Some(@ast.ModuleName::{ value: @ast.Identifier::{ value: "Main" } }),
+        Some(@ast.ModuleName::ModuleName(@ast.Identifier::Identifier("Main"))),
       )
       assert_eq(ast.exposing.map(exposed_name_text), ["add"])
     }
@@ -175,7 +175,7 @@ test "parse tokens captures imports and type declarations" {
   match result.ast {
     Some(ast) => {
       assert_eq(ast.imports.length(), 1)
-      assert_eq(ast.imports[0].module_name.value.value, "Html")
+      assert_eq(ast.imports[0].module_name.0.0, "Html")
       match ast.imports[0].exposing {
         Some(names) => assert_eq(names.map(exposed_name_text), ["text"])
         None => fail("expected import exposing list")

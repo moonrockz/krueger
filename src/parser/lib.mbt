@@ -49,32 +49,32 @@ fn module_span(tokens : Array[@scanner.Token]) -> @scanner.Span? {
 
 ///|
 fn to_identifier(value : String) -> @ast.Identifier {
-  @ast.Identifier::{ value, }
+  @ast.Identifier::Identifier(value)
 }
 
 ///|
 fn to_module_name(value : String) -> @ast.ModuleName {
-  @ast.ModuleName::{ value: to_identifier(value) }
+  @ast.ModuleName::ModuleName(to_identifier(value))
 }
 
 ///|
 fn to_value_name(value : String) -> @ast.ValueName {
-  @ast.ValueName::{ value: to_identifier(value) }
+  @ast.ValueName::ValueName(to_identifier(value))
 }
 
 ///|
 fn to_type_name(value : String) -> @ast.TypeName {
-  @ast.TypeName::{ value: to_identifier(value) }
+  @ast.TypeName::TypeName(to_identifier(value))
 }
 
 ///|
 fn to_type_var_name(value : String) -> @ast.TypeVarName {
-  @ast.TypeVarName::{ value: to_identifier(value) }
+  @ast.TypeVarName::TypeVarName(to_identifier(value))
 }
 
 ///|
 fn to_constructor_name(value : String) -> @ast.ConstructorName {
-  @ast.ConstructorName::{ value: to_identifier(value) }
+  @ast.ConstructorName::ConstructorName(to_identifier(value))
 }
 
 ///|

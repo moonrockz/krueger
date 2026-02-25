@@ -12,32 +12,34 @@ fn span() -> @scanner.Span {
 
 ///|
 test "ast domain wrappers compose around identifiers" {
-  let identifier = Identifier::{ value: "Main" }
-  let module_name = ModuleName::{ value: identifier }
-  let value_name = ValueName::{ value: Identifier::{ value: "add" } }
-  let type_name = TypeName::{ value: Identifier::{ value: "User" } }
-  let type_var = TypeVarName::{ value: Identifier::{ value: "a" } }
-  let ctor_name = ConstructorName::{ value: Identifier::{ value: "Just" } }
-  let op_name = OperatorName::{ value: "+" }
+  let identifier = Identifier::Identifier("Main")
+  let module_name = ModuleName::ModuleName(identifier)
+  let value_name = ValueName::ValueName(Identifier::Identifier("add"))
+  let type_name = TypeName::TypeName(Identifier::Identifier("User"))
+  let type_var = TypeVarName::TypeVarName(Identifier::Identifier("a"))
+  let ctor_name = ConstructorName::ConstructorName(
+    Identifier::Identifier("Just"),
+  )
+  let op_name = OperatorName::OperatorName("+")
 
-  assert_eq(module_name.value.value, "Main")
-  assert_eq(value_name.value.value, "add")
-  assert_eq(type_name.value.value, "User")
-  assert_eq(type_var.value.value, "a")
-  assert_eq(ctor_name.value.value, "Just")
-  assert_eq(op_name.value, "+")
+  assert_eq(module_name.0.0, "Main")
+  assert_eq(value_name.0.0, "add")
+  assert_eq(type_name.0.0, "User")
+  assert_eq(type_var.0.0, "a")
+  assert_eq(ctor_name.0.0, "Just")
+  assert_eq(op_name.0, "+")
 }
 
 ///|
 test "ast supports hybrid expression and type expression nodes" {
   let expr = Expr::BinaryOp(
-    Expr::Var(ValueName::{ value: Identifier::{ value: "x" } }),
-    OperatorName::{ value: "+" },
+    Expr::Var(ValueName::ValueName(Identifier::Identifier("x"))),
+    OperatorName::OperatorName("+"),
     Expr::IntLiteral(1),
   )
   let type_expr = TypeExpr::TypeApp(
-    TypeName::{ value: Identifier::{ value: "List" } },
-    [TypeExpr::TypeVar(TypeVarName::{ value: Identifier::{ value: "a" } })],
+    TypeName::TypeName(Identifier::Identifier("List")),
+    [TypeExpr::TypeVar(TypeVarName::TypeVarName(Identifier::Identifier("a")))],
   )
   let fallback_expr = Expr::Unparsed(UnparsedExpr::{ tokens: [] })
   let fallback_type = TypeExpr::Unparsed(UnparsedTypeExpr::{ tokens: [] })
@@ -50,15 +52,15 @@ test "ast supports hybrid expression and type expression nodes" {
 test "module ast stores typed declarations and exposing names" {
   let meta = DeclMeta::{ doc_comment: None, span: span() }
   let fn_decl = Declaration::FunctionDecl(FunctionDeclaration::{
-    name: ValueName::{ value: Identifier::{ value: "add" } },
-    args: [ValueName::{ value: Identifier::{ value: "x" } }],
+    name: ValueName::ValueName(Identifier::Identifier("add")),
+    args: [ValueName::ValueName(Identifier::Identifier("x"))],
     body: Expr::Unparsed(UnparsedExpr::{ tokens: [] }),
     meta,
   })
   let module_ast = ModuleAst::{
-    module_name: Some(ModuleName::{ value: Identifier::{ value: "Main" } }),
+    module_name: Some(ModuleName::ModuleName(Identifier::Identifier("Main"))),
     exposing: [
-      ExposedName::Value(ValueName::{ value: Identifier::{ value: "add" } }),
+      ExposedName::Value(ValueName::ValueName(Identifier::Identifier("add"))),
     ],
     imports: [],
     declarations: [fn_decl],

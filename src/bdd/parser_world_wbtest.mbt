@@ -8,7 +8,7 @@ fn find_function_decl(
       for decl in ast.declarations {
         match decl {
           @krueger.Declaration::FunctionDecl(fn_decl) =>
-            if fn_decl.name.value.value == name {
+            if fn_decl.name.0.0 == name {
               return Some(fn_decl)
             }
           _ => ()
