@@ -99,6 +99,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | Task                | Purpose                                        |
 |---------------------|------------------------------------------------|
 | `hooks:install`     | Install project git hooks via lefthook         |
+| `info:generate`     | Run `moon info` to generate interfaces         |
 | `lint:check`        | Run lint/type checks (`moon check`)            |
 | `format:check`      | Run formatting checks (`moon fmt --check`)     |
 | `check`             | Run all checks (lint + format + tests)         |
