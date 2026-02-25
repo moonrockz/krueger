@@ -9,29 +9,48 @@ fn span() -> @scanner.Span {
 }
 
 ///|
-test "parse result can hold ast cst and diagnostics" {
-  let result = ParseResult::{ ast: None, cst: None, diagnostics: [] }
-  assert_eq(result.diagnostics.length(), 0)
+fn token(kind : @scanner.TokenKind, lexeme : String) -> @scanner.Token {
+  @scanner.Token::{
+    kind,
+    lexeme,
+    span: span(),
+    trivia_before: [],
+    trivia_after: [],
+  }
 }
 
 ///|
-test "declaration metadata can hold optional doc comment" {
-  let meta = DeclMeta::{
-    doc_comment: Some(DocComment::{ text: "Adds one", span: span() }),
-    span: span(),
+test "parse result ast uses ast package module type" {
+  let ast = @ast.ModuleAst::{
+    module_name: Some(@ast.ModuleName::{
+      value: @ast.Identifier::{ value: "Main" },
+    }),
+    exposing: [],
+    imports: [],
+    declarations: [],
+    span: Some(span()),
   }
-  let decl = Declaration::FunctionDecl(FunctionDeclaration::{
-    name: "add",
-    args: ["x"],
-    body_tokens: [],
-    meta,
-  })
-  match decl {
-    Declaration::FunctionDecl(fn_decl) =>
-      match fn_decl.meta.doc_comment {
-        Some(comment) => assert_eq(comment.text, "Adds one")
-        None => fail("expected doc comment")
-      }
+  let result = ParseResult::{ ast: Some(ast), cst: None, diagnostics: [] }
+  match result.ast {
+    Some(module_ast) => assert_eq(module_ast.module_name, ast.module_name)
+    None => fail("expected ast")
+  }
+}
+
+///|
+test "parse result supports typed declarations through ast wrappers" {
+  let fn_decl = @ast.FunctionDeclaration::{
+    name: @ast.ValueName::{ value: @ast.Identifier::{ value: "add" } },
+    args: [@ast.ValueName::{ value: @ast.Identifier::{ value: "x" } }],
+    body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{
+      tokens: [token(@scanner.TokenKind::Identifier, "x")],
+    }),
+    meta: @ast.DeclMeta::{ doc_comment: None, span: span() },
+  }
+  let declaration = @ast.Declaration::FunctionDecl(fn_decl)
+  match declaration {
+    @ast.Declaration::FunctionDecl(function_decl) =>
+      assert_eq(function_decl.name.value.value, "add")
     _ => fail("expected function declaration")
   }
 }
