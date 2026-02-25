@@ -1,3 +1,4 @@
+///|
 pub using @scanner {
   trait Scanner,
   type Severity,
@@ -24,6 +25,7 @@ pub fn version() -> String {
   "0.1.0"
 }
 
+///|
 pub fn tokenize(source : SourceText) -> Result[TokenStream, ScanErrorList] {
   @scanner.DefaultScanner::new().tokenize(source)
 }

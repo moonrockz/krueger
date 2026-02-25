@@ -1,0 +1,164 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/scanner"
+
+// Values
+pub fn invalid_sequence(Span) -> Diagnostic
+
+pub fn lex_raw(SourceText) -> Result[Array[RawToken], ScanErrorList]
+
+pub fn malformed_doc_comment(Span) -> Diagnostic
+
+pub fn normalize_tokens(Array[RawToken]) -> TokenStream
+
+pub fn raw_to_trivia(RawToken) -> Trivia?
+
+pub fn unterminated_block_comment(Span) -> Diagnostic
+
+// Errors
+
+// Types and methods
+pub(all) struct Comment {
+  kind : CommentKind
+  text : String
+  span : Span
+}
+pub impl Eq for Comment
+pub impl Show for Comment
+
+pub(all) enum CommentKind {
+  Line
+  Block
+  Doc
+}
+pub impl Eq for CommentKind
+pub impl Show for CommentKind
+
+pub struct DefaultScanner {
+}
+pub fn DefaultScanner::new() -> Self
+pub fn DefaultScanner::tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
+
+pub(all) struct Diagnostic {
+  code : String
+  severity : Severity
+  message : String
+  span : Span
+}
+pub impl Eq for Diagnostic
+pub impl Show for Diagnostic
+
+pub(all) struct Position {
+  offset : Int
+  line : Int
+  column : Int
+}
+pub impl Eq for Position
+pub impl Show for Position
+
+pub(all) struct RawToken {
+  kind : RawTokenKind
+  lexeme : String
+  span : Span
+}
+pub impl Eq for RawToken
+pub impl Show for RawToken
+
+pub(all) enum RawTokenKind {
+  Identifier
+  IntLiteral
+  Symbol
+  Whitespace
+  Newline
+  LineComment
+  BlockComment
+  DocComment
+}
+pub impl Eq for RawTokenKind
+pub impl Show for RawTokenKind
+
+pub(all) struct ScanErrorList {
+  diagnostics : Array[Diagnostic]
+}
+pub impl Eq for ScanErrorList
+pub impl Show for ScanErrorList
+
+pub(all) enum Severity {
+  Error
+  Warning
+  Info
+}
+pub impl Eq for Severity
+pub impl Show for Severity
+
+pub(all) struct SourceText {
+  module_name : String?
+  text : String
+}
+pub impl Eq for SourceText
+pub impl Show for SourceText
+
+pub(all) struct Span {
+  start : Position
+  end : Position
+}
+pub impl Eq for Span
+pub impl Show for Span
+
+pub(all) struct Token {
+  kind : TokenKind
+  lexeme : String
+  span : Span
+  trivia_before : Array[Trivia]
+  trivia_after : Array[Trivia]
+}
+pub impl Eq for Token
+pub impl Show for Token
+
+pub(all) enum TokenKind {
+  ModuleKw
+  ExposingKw
+  ImportKw
+  TypeKw
+  AliasKw
+  IfKw
+  ThenKw
+  ElseKw
+  LetKw
+  InKw
+  CaseKw
+  OfKw
+  Identifier
+  IntLiteral
+  LParen
+  RParen
+  Comma
+  Equals
+  Plus
+  DotDot
+  Arrow
+  Unknown
+}
+pub impl Eq for TokenKind
+pub impl Show for TokenKind
+
+pub(all) struct TokenStream {
+  tokens : Array[Token]
+}
+pub impl Eq for TokenStream
+pub impl Show for TokenStream
+
+pub(all) enum Trivia {
+  Whitespace(String, Span)
+  Newline(String, Span)
+  Comment(Comment)
+}
+pub impl Eq for Trivia
+pub impl Show for Trivia
+
+// Type aliases
+
+// Traits
+pub trait Scanner {
+  tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
+}
+

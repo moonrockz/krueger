@@ -1,14 +1,21 @@
+///|
 pub trait Scanner {
   tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
 }
 
+///|
 pub struct DefaultScanner {}
 
+///|
 pub fn DefaultScanner::new() -> DefaultScanner {
-  DefaultScanner::{}
+  DefaultScanner::{  }
 }
 
-pub fn DefaultScanner::tokenize(self : DefaultScanner, _source : SourceText) -> Result[TokenStream, ScanErrorList] {
+///|
+pub fn DefaultScanner::tokenize(
+  self : DefaultScanner,
+  _source : SourceText,
+) -> Result[TokenStream, ScanErrorList] {
   ignore(self)
   match lex_raw(_source) {
     Ok(raw_tokens) => Ok(normalize_tokens(raw_tokens))

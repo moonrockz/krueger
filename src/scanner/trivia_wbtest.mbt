@@ -1,3 +1,4 @@
+///|
 fn find_doc_comment(trivia : Array[Trivia]) -> Bool {
   trivia.any(fn(item) {
     match item {
@@ -7,6 +8,7 @@ fn find_doc_comment(trivia : Array[Trivia]) -> Bool {
   })
 }
 
+///|
 fn find_regular_comment(trivia : Array[Trivia]) -> Bool {
   trivia.any(fn(item) {
     match item {
@@ -17,8 +19,12 @@ fn find_regular_comment(trivia : Array[Trivia]) -> Bool {
   })
 }
 
+///|
 test "attaches doc comment to following token trivia_before" {
-  let source = SourceText::{ module_name: Some("Main"), text: "{-| Adds one -}\nadd x = x + 1" }
+  let source = SourceText::{
+    module_name: Some("Main"),
+    text: "{-| Adds one -}\nadd x = x + 1",
+  }
   let scanner = DefaultScanner::new()
   let stream = match scanner.tokenize(source) {
     Ok(stream) => stream
@@ -28,12 +34,12 @@ test "attaches doc comment to following token trivia_before" {
   assert_true(find_doc_comment(stream.tokens[0].trivia_before))
 }
 
+///|
 test "preserves regular comments in trivia_before" {
-  let source =
-    SourceText::{
-      module_name: Some("Main"),
-      text: "-- line\n{- block -}\nadd x = x + 1",
-    }
+  let source = SourceText::{
+    module_name: Some("Main"),
+    text: "-- line\n{- block -}\nadd x = x + 1",
+  }
   let scanner = DefaultScanner::new()
   let stream = match scanner.tokenize(source) {
     Ok(stream) => stream

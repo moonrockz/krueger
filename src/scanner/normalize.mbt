@@ -1,3 +1,4 @@
+///|
 fn keyword_kind(lexeme : String) -> TokenKind {
   match lexeme {
     "module" => TokenKind::ModuleKw
@@ -16,6 +17,7 @@ fn keyword_kind(lexeme : String) -> TokenKind {
   }
 }
 
+///|
 fn symbol_kind(lexeme : String) -> TokenKind {
   match lexeme {
     "(" => TokenKind::LParen
@@ -29,14 +31,17 @@ fn symbol_kind(lexeme : String) -> TokenKind {
   }
 }
 
+///|
 fn is_significant(kind : RawTokenKind) -> Bool {
   match kind {
-    RawTokenKind::Identifier | RawTokenKind::IntLiteral | RawTokenKind::Symbol =>
-      true
+    RawTokenKind::Identifier
+    | RawTokenKind::IntLiteral
+    | RawTokenKind::Symbol => true
     _ => false
   }
 }
 
+///|
 fn build_token(raw : RawToken, pending : Array[Trivia]) -> Token {
   let kind = match raw.kind {
     RawTokenKind::Identifier => keyword_kind(raw.lexeme)
@@ -53,6 +58,7 @@ fn build_token(raw : RawToken, pending : Array[Trivia]) -> Token {
   }
 }
 
+///|
 pub fn normalize_tokens(raw_tokens : Array[RawToken]) -> TokenStream {
   let tokens = []
   let mut pending_trivia = []
@@ -67,5 +73,5 @@ pub fn normalize_tokens(raw_tokens : Array[RawToken]) -> TokenStream {
       }
     }
   }
-  TokenStream::{ tokens }
+  TokenStream::{ tokens, }
 }

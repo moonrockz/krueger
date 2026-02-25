@@ -152,7 +152,8 @@ corpus up front.
 
 - **Whitebox** (`*_wbtest.mbt`): module-internal behavior.
 - **Blackbox** (`*_test.mbt`): public API behavior.
-- **BDD** (`tests/features/*.feature`): executable behavior specs.
+- **BDD** (`tests/features/*.feature` + MoonSpec runner in `src/bdd/`):
+  executable behavior specs.
 - **E2E**: CLI and wasm/component host integration tests.
 - **TDD**: red-green-refactor for each story.
 
