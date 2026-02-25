@@ -10,5 +10,8 @@ pub fn DefaultScanner::new() -> DefaultScanner {
 
 pub fn DefaultScanner::tokenize(self : DefaultScanner, _source : SourceText) -> Result[TokenStream, ScanErrorList] {
   ignore(self)
-  Ok(TokenStream::{ tokens: [] })
+  match lex_raw(_source) {
+    Ok(raw_tokens) => Ok(normalize_tokens(raw_tokens))
+    Err(errs) => Err(errs)
+  }
 }

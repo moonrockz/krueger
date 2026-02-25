@@ -46,8 +46,28 @@ pub(all) enum Trivia {
 } derive(Eq, Show)
 
 pub(all) enum TokenKind {
+  ModuleKw
+  ExposingKw
+  ImportKw
+  TypeKw
+  AliasKw
+  IfKw
+  ThenKw
+  ElseKw
+  LetKw
+  InKw
+  CaseKw
+  OfKw
   Identifier
   IntLiteral
+  LParen
+  RParen
+  Comma
+  Equals
+  Plus
+  DotDot
+  Arrow
+  Unknown
 } derive(Eq, Show)
 
 pub(all) struct Token {
