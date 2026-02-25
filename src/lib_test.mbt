@@ -57,3 +57,28 @@ test "root package parse_module uses default scanner and captures declarations" 
     None => fail("expected ast")
   }
 }
+
+///|
+test "root package parse_tokens wraps parser parse_tokens" {
+  let source = SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\nadd x = x + 1",
+  }
+  let stream = match tokenize(source) {
+    Ok(stream) => stream
+    Err(_) => fail("expected tokenize success")
+  }
+  let result = parse_tokens(stream)
+  match result.ast {
+    Some(ast) =>
+      assert_true(
+        ast.declarations.any(fn(decl) {
+          match decl {
+            Declaration::FunctionDecl(fn_decl) => fn_decl.name == "add"
+            _ => false
+          }
+        }),
+      )
+    None => fail("expected ast")
+  }
+}

@@ -234,3 +234,63 @@ test "parse tokens reports diagnostic for malformed function declaration" {
     None => fail("expected ast")
   }
 }
+
+///|
+test "parse module returns scanner diagnostics when tokenization fails" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "{-| missing close",
+  }
+  let result = parse_module(source, @scanner.DefaultScanner::new())
+  assert_eq(result.ast, None)
+  assert_eq(result.cst, None)
+  assert_true(has_diag_code(result, "KR-SCAN-002"))
+}
+
+///|
+test "parse tokens reports diagnostic when module exposing list is malformed" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing add\nadd x = x",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  assert_true(has_diag_code(result, "KR-PARSE-001"))
+}
+
+///|
+test "parse tokens reports diagnostic when import exposing list is malformed" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\nimport Html exposing text\nadd x = x",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  assert_true(has_diag_code(result, "KR-PARSE-002"))
+  match result.ast {
+    Some(ast) => assert_true(find_function_decl(ast, "add") != None)
+    None => fail("expected ast")
+  }
+}
+
+///|
+test "parse tokens handles empty stream with empty ast and cst spans" {
+  let result = parse_tokens(@scanner.TokenStream::{ tokens: [] })
+  match result.ast {
+    Some(ast) => assert_eq(ast.span, None)
+    None => fail("expected ast")
+  }
+  match result.cst {
+    Some(cst) => assert_eq(cst.span, None)
+    None => fail("expected cst")
+  }
+  assert_eq(result.diagnostics.length(), 0)
+}
