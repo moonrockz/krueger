@@ -1,4 +1,7 @@
 ///|
+pub using @ast {type Identifier}
+
+///|
 pub using @scanner {
   trait Scanner,
   type Severity,

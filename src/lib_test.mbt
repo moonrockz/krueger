@@ -36,6 +36,12 @@ test "root package exposes parser entrypoints" {
 }
 
 ///|
+test "root package exposes ast domain wrappers" {
+  let identifier = Identifier::{ value: "Main" }
+  assert_eq(identifier.value, "Main")
+}
+
+///|
 test "root package parse_module uses default scanner and captures declarations" {
   let source = SourceText::{
     module_name: Some("Main"),
