@@ -34,3 +34,26 @@ test "root package exposes parser entrypoints" {
   let _ = parse_tokens
   assert_true(true)
 }
+
+///|
+test "root package parse_module uses default scanner and captures declarations" {
+  let source = SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\nadd x = x + 1",
+  }
+  let result = parse_module(source)
+  match result.ast {
+    Some(ast) => {
+      assert_eq(ast.module_name, Some("Main"))
+      assert_true(
+        ast.declarations.any(fn(decl) {
+          match decl {
+            Declaration::FunctionDecl(fn_decl) => fn_decl.name == "add"
+            _ => false
+          }
+        }),
+      )
+    }
+    None => fail("expected ast")
+  }
+}
