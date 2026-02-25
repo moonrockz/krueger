@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run default coverage checks"
+#MISE depends=["coverage:ci-warn"]
+set -euo pipefail
+
+echo "Coverage checks completed."
