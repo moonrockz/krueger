@@ -2,3 +2,4 @@
 #MISE description="Run MoonBit unit tests"
 set -euo pipefail
 moon test src --target js
+moon test src/scanner --target js

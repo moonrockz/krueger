@@ -2,6 +2,11 @@ pub(all) enum RawTokenKind {
   Identifier
   IntLiteral
   Symbol
+  Whitespace
+  Newline
+  LineComment
+  BlockComment
+  DocComment
 } derive(Eq, Show)
 
 pub(all) struct RawToken {
@@ -13,6 +18,18 @@ pub(all) struct RawToken {
 fn position(lexer : @lexer.Lexer) -> Position {
   let loc = lexer.get_loc()
   Position::{ offset: lexer.get_position(), line: loc.line, column: loc.column }
+}
+
+fn push_token(
+  tokens : Array[RawToken],
+  kind : RawTokenKind,
+  lexeme : String,
+  start : Position,
+  end_ : Position,
+) -> Unit {
+  tokens.push(
+    RawToken::{ kind, lexeme, span: Span::{ start, end: end_ } },
+  )
 }
 
 fn is_identifier_start(ch : Char) -> Bool {
@@ -41,77 +58,131 @@ fn consume_int_literal(lexer : @lexer.Lexer) -> String {
   lexeme
 }
 
-fn push_token(
-  tokens : Array[RawToken],
-  kind : RawTokenKind,
-  lexeme : String,
-  start : Position,
-  end_ : Position,
-) -> Unit {
-  tokens.push(
-    RawToken::{ kind, lexeme, span: Span::{ start, end: end_ } },
-  )
+fn consume_horizontal_whitespace(lexer : @lexer.Lexer) -> String {
+  let mut lexeme = ""
+  while lexer.peek() is Some(ch) && (ch == ' ' || ch == '\t') {
+    lexeme = lexeme + Char::to_string(ch)
+    lexer.advance()
+  }
+  lexeme
 }
 
-fn consume_newline(lexer : @lexer.Lexer) -> Unit {
+fn consume_newline(lexer : @lexer.Lexer) -> String {
   match lexer.view() {
     ['\r', '\n', ..] => {
       lexer.advance()
       lexer.advance()
       lexer.new_line()
+      "\r\n"
     }
     ['\n', ..] => {
       lexer.advance()
       lexer.new_line()
+      "\n"
     }
-    _ => ()
+    _ => ""
   }
+}
+
+fn consume_line_comment(lexer : @lexer.Lexer) -> String {
+  let mut lexeme = "--"
+  lexer.advance()
+  lexer.advance()
+  while lexer.peek() is Some(ch) && ch != '\n' && ch != '\r' {
+    lexeme = lexeme + Char::to_string(ch)
+    lexer.advance()
+  }
+  lexeme
+}
+
+fn consume_block_comment(lexer : @lexer.Lexer, is_doc : Bool) -> String {
+  let mut lexeme = if is_doc { "{-|" } else { "{-" }
+  lexer.advance()
+  lexer.advance()
+  if is_doc {
+    lexer.advance()
+  }
+  let mut closed = false
+  while !closed {
+    match lexer.view() {
+      ['-', '}', ..] => {
+        lexeme = lexeme + "-}"
+        lexer.advance()
+        lexer.advance()
+        closed = true
+      }
+      ['\r', '\n', ..] => {
+        lexeme = lexeme + "\r\n"
+        lexer.advance()
+        lexer.advance()
+        lexer.new_line()
+      }
+      ['\n', ..] => {
+        lexeme = lexeme + "\n"
+        lexer.advance()
+        lexer.new_line()
+      }
+      [ch, ..] => {
+        lexeme = lexeme + Char::to_string(ch)
+        lexer.advance()
+      }
+      _ => {
+        closed = true
+      }
+    }
+  }
+  lexeme
 }
 
 pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
   let lexer = @lexer.Lexer::new(source.text)
   let tokens = []
   while lexer.peek() is Some(_) {
-    lexer.skip_whitespace()
-    match lexer.peek() {
-      None => ()
-      Some('\n') | Some('\r') => consume_newline(lexer)
-      Some(ch) if is_identifier_start(ch) => {
-        let start = position(lexer)
+    let start = position(lexer)
+    match lexer.view() {
+      [' ' | '\t', ..] => {
+        let lexeme = consume_horizontal_whitespace(lexer)
+        push_token(tokens, RawTokenKind::Whitespace, lexeme, start, position(lexer))
+      }
+      ['\r', '\n', ..] | ['\n', ..] => {
+        let lexeme = consume_newline(lexer)
+        push_token(tokens, RawTokenKind::Newline, lexeme, start, position(lexer))
+      }
+      ['-', '-', ..] => {
+        let lexeme = consume_line_comment(lexer)
+        push_token(tokens, RawTokenKind::LineComment, lexeme, start, position(lexer))
+      }
+      ['{', '-', '|', ..] => {
+        let lexeme = consume_block_comment(lexer, true)
+        push_token(tokens, RawTokenKind::DocComment, lexeme, start, position(lexer))
+      }
+      ['{', '-', ..] => {
+        let lexeme = consume_block_comment(lexer, false)
+        push_token(tokens, RawTokenKind::BlockComment, lexeme, start, position(lexer))
+      }
+      [ch, ..] if is_identifier_start(ch) => {
         let lexeme = consume_identifier(lexer)
         push_token(tokens, RawTokenKind::Identifier, lexeme, start, position(lexer))
       }
-      Some(ch) if ch.is_ascii_digit() => {
-        let start = position(lexer)
+      [ch, ..] if ch.is_ascii_digit() => {
         let lexeme = consume_int_literal(lexer)
         push_token(tokens, RawTokenKind::IntLiteral, lexeme, start, position(lexer))
       }
-      Some(_) => {
-        let start = position(lexer)
-        let lexeme = match lexer.view() {
-          ['.', '.', ..] => {
-            lexer.advance()
-            lexer.advance()
-            ".."
-          }
-          ['-', '>', ..] => {
-            lexer.advance()
-            lexer.advance()
-            "->"
-          }
-          [ch, ..] => {
-            lexer.advance()
-            Char::to_string(ch)
-          }
-          _ => {
-            lexer.advance()
-            ""
-          }
-        }
-        if lexeme != "" {
-          push_token(tokens, RawTokenKind::Symbol, lexeme, start, position(lexer))
-        }
+      ['.', '.', ..] => {
+        lexer.advance()
+        lexer.advance()
+        push_token(tokens, RawTokenKind::Symbol, "..", start, position(lexer))
       }
+      ['-', '>', ..] => {
+        lexer.advance()
+        lexer.advance()
+        push_token(tokens, RawTokenKind::Symbol, "->", start, position(lexer))
+      }
+      [ch, ..] => {
+        lexer.advance()
+        push_token(tokens, RawTokenKind::Symbol, Char::to_string(ch), start, position(lexer))
+      }
+      _ => ()
     }
   }
   Ok(tokens)
