@@ -7,6 +7,7 @@ pub using @scanner {
   type SourceText,
   type Diagnostic,
   type CommentKind,
+  type KeywordKind,
   type Comment,
   type Trivia,
   type TokenKind,

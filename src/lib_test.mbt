@@ -14,10 +14,14 @@ test "root package exposes scanner tokenize entrypoint" {
   match result {
     Ok(stream) => {
       assert_true(
-        stream.tokens.any(fn(token) { token.kind == TokenKind::ModuleKw }),
+        stream.tokens.any(fn(token) {
+          token.kind == TokenKind::Keyword(KeywordKind::Module)
+        }),
       )
       assert_true(
-        stream.tokens.any(fn(token) { token.kind == TokenKind::ExposingKw }),
+        stream.tokens.any(fn(token) {
+          token.kind == TokenKind::Keyword(KeywordKind::Exposing)
+        }),
       )
       assert_true(
         stream.tokens.any(fn(token) { token.kind == TokenKind::DotDot }),

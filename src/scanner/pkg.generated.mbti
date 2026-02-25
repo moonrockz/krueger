@@ -47,6 +47,23 @@ pub(all) struct Diagnostic {
 pub impl Eq for Diagnostic
 pub impl Show for Diagnostic
 
+pub(all) enum KeywordKind {
+  Module
+  Exposing
+  Import
+  Type
+  Alias
+  If
+  Then
+  Else
+  Let
+  In
+  Case
+  Of
+}
+pub impl Eq for KeywordKind
+pub impl Show for KeywordKind
+
 pub(all) struct Position {
   offset : Int
   line : Int
@@ -115,18 +132,7 @@ pub impl Eq for Token
 pub impl Show for Token
 
 pub(all) enum TokenKind {
-  ModuleKw
-  ExposingKw
-  ImportKw
-  TypeKw
-  AliasKw
-  IfKw
-  ThenKw
-  ElseKw
-  LetKw
-  InKw
-  CaseKw
-  OfKw
+  Keyword(KeywordKind)
   Identifier
   IntLiteral
   LParen

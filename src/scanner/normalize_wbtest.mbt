@@ -22,8 +22,8 @@ test "normalizes module declaration tokens" {
     Some(stream) => stream
     None => fail("expected tokenization success")
   }
-  assert_true(contains_kind(stream, TokenKind::ModuleKw))
-  assert_true(contains_kind(stream, TokenKind::ExposingKw))
+  assert_true(contains_kind(stream, TokenKind::Keyword(KeywordKind::Module)))
+  assert_true(contains_kind(stream, TokenKind::Keyword(KeywordKind::Exposing)))
   assert_true(contains_kind(stream, TokenKind::Identifier))
   assert_true(contains_kind(stream, TokenKind::LParen))
   assert_true(contains_kind(stream, TokenKind::RParen))

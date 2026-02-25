@@ -21,6 +21,8 @@ pub using @scanner {type CommentKind}
 
 pub using @scanner {type Diagnostic}
 
+pub using @scanner {type KeywordKind}
+
 pub using @scanner {type Position}
 
 pub using @scanner {type ScanErrorList}

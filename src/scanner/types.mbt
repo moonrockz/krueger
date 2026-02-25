@@ -54,19 +54,24 @@ pub(all) enum Trivia {
 } derive(Eq, Show)
 
 ///|
+pub(all) enum KeywordKind {
+  Module
+  Exposing
+  Import
+  Type
+  Alias
+  If
+  Then
+  Else
+  Let
+  In
+  Case
+  Of
+} derive(Eq, Show)
+
+///|
 pub(all) enum TokenKind {
-  ModuleKw
-  ExposingKw
-  ImportKw
-  TypeKw
-  AliasKw
-  IfKw
-  ThenKw
-  ElseKw
-  LetKw
-  InKw
-  CaseKw
-  OfKw
+  Keyword(KeywordKind)
   Identifier
   IntLiteral
   LParen

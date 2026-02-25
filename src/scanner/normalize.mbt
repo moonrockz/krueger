@@ -1,19 +1,19 @@
 ///|
-fn keyword_kind(lexeme : String) -> TokenKind {
+fn keyword_kind(lexeme : String) -> KeywordKind? {
   match lexeme {
-    "module" => TokenKind::ModuleKw
-    "exposing" => TokenKind::ExposingKw
-    "import" => TokenKind::ImportKw
-    "type" => TokenKind::TypeKw
-    "alias" => TokenKind::AliasKw
-    "if" => TokenKind::IfKw
-    "then" => TokenKind::ThenKw
-    "else" => TokenKind::ElseKw
-    "let" => TokenKind::LetKw
-    "in" => TokenKind::InKw
-    "case" => TokenKind::CaseKw
-    "of" => TokenKind::OfKw
-    _ => TokenKind::Identifier
+    "module" => Some(KeywordKind::Module)
+    "exposing" => Some(KeywordKind::Exposing)
+    "import" => Some(KeywordKind::Import)
+    "type" => Some(KeywordKind::Type)
+    "alias" => Some(KeywordKind::Alias)
+    "if" => Some(KeywordKind::If)
+    "then" => Some(KeywordKind::Then)
+    "else" => Some(KeywordKind::Else)
+    "let" => Some(KeywordKind::Let)
+    "in" => Some(KeywordKind::In)
+    "case" => Some(KeywordKind::Case)
+    "of" => Some(KeywordKind::Of)
+    _ => None
   }
 }
 
@@ -44,7 +44,11 @@ fn is_significant(kind : RawTokenKind) -> Bool {
 ///|
 fn build_token(raw : RawToken, pending : Array[Trivia]) -> Token {
   let kind = match raw.kind {
-    RawTokenKind::Identifier => keyword_kind(raw.lexeme)
+    RawTokenKind::Identifier =>
+      match keyword_kind(raw.lexeme) {
+        Some(keyword) => TokenKind::Keyword(keyword)
+        None => TokenKind::Identifier
+      }
     RawTokenKind::IntLiteral => TokenKind::IntLiteral
     RawTokenKind::Symbol => symbol_kind(raw.lexeme)
     _ => TokenKind::Unknown
