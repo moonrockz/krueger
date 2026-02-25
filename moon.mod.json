@@ -4,7 +4,7 @@
   "deps": {
     "moonbitlang/x": "0.4.40",
     "bobzhang/lexer": "0.1.2",
-    "moonrockz/moonspec": "0.3.0",
+    "moonrockz/moonspec": "0.3.2",
     "moonbitlang/async": "0.16.6"
   },
   "readme": "README.mbt.md",
