@@ -17,6 +17,9 @@ pub using @scanner {
 }
 
 ///|
+pub using @parser {type ParseResult, type ModuleAst, type ModuleCst}
+
+///|
 /// Krueger — Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir).
 ///
 /// This module will provide scanner, parser, AST, and visitor interfaces
@@ -29,4 +32,14 @@ pub fn version() -> String {
 ///|
 pub fn tokenize(source : SourceText) -> Result[TokenStream, ScanErrorList] {
   @scanner.DefaultScanner::new().tokenize(source)
+}
+
+///|
+pub fn parse_module(source : SourceText) -> ParseResult {
+  @parser.parse_module(source, @scanner.DefaultScanner::new())
+}
+
+///|
+pub fn parse_tokens(tokens : TokenStream) -> ParseResult {
+  @parser.parse_tokens(tokens)
 }

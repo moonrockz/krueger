@@ -22,3 +22,8 @@ pub fn DefaultScanner::tokenize(
     Err(errs) => Err(errs)
   }
 }
+
+///|
+pub impl Scanner for DefaultScanner with tokenize(self, source) {
+  DefaultScanner::tokenize(self, source)
+}

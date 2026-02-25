@@ -27,3 +27,10 @@ test "root package exposes scanner tokenize entrypoint" {
       fail("expected tokenize to succeed for default scanner placeholder")
   }
 }
+
+///|
+test "root package exposes parser entrypoints" {
+  let _ = parse_module
+  let _ = parse_tokens
+  assert_true(true)
+}
