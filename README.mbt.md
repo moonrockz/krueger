@@ -1,6 +1,6 @@
 # moonrockz/krueger
 
-Parser and parsing utilities for [Elm](https://elm-lang.org/) and [Elmish](https://elmish.github.io/) (and dialects such as [Morphir](https://github.com/finos/morphir)) in MoonBit.
+Parser and parsing utilities for [Elm](https://elm-lang.org/) and Elm-like dialects (such as [Morphir](https://github.com/finos/morphir)) in MoonBit.
 
 ## Status
 
@@ -21,7 +21,7 @@ moon add moonrockz/krueger
 
 Once the library is implemented, you can expect APIs along the lines of:
 
-- **Scanner**: tokenize Elm/Elmish source into a token stream.
+- **Scanner**: tokenize Elm/Elm-like source into a token stream.
 - **Parser**: parse tokens (or source) into an AST.
 - **AST**: algebraic types for modules, declarations, expressions, etc.
 - **Visitors**: flexible traversal (DOM, fold, SAX-style), similar to moonrockz/gherkin.

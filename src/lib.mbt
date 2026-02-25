@@ -17,7 +17,7 @@ pub using @scanner {
 }
 
 ///|
-/// Krueger — Parser and parsing utilities for Elm and Elmish (e.g. Morphir).
+/// Krueger — Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir).
 ///
 /// This module will provide scanner, parser, AST, and visitor interfaces
 /// with flexibility similar to moonrockz/gherkin. Project setup only;

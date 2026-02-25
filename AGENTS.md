@@ -8,12 +8,12 @@ You can browse and install extra skills here:
 ## Project Overview
 
 This module (`moonrockz/krueger`) is a **parser and parsing utilities** library for
-[Elm](https://elm-lang.org/) and [Elmish](https://elmish.github.io/) dialects (e.g.
+[Elm](https://elm-lang.org/) and Elm-like dialects (e.g.
 [Morphir](https://github.com/finos/morphir)). It will provide:
 
-- **Scanner** — tokenization of Elm/Elmish source
+- **Scanner** — tokenization of Elm/Elm-like source
 - **Parser** — grammar-driven parsing into an AST
-- **AST** — algebraic data types for Elm/Elmish syntax (with flexibility similar to moonrockz/gherkin)
+- **AST** — algebraic data types for Elm/Elm-like syntax (with flexibility similar to moonrockz/gherkin)
 - **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.)
 
 The design of scanner, parser, AST, and visitor APIs will be done in a follow-up phase;

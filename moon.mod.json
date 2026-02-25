@@ -12,12 +12,12 @@
   "license": "Apache-2.0",
   "keywords": [
     "elm",
-    "elmish",
+    "elm-like",
     "morphir",
     "parser",
     "scanner",
     "ast"
   ],
-  "description": "Parser and parsing utilities for Elm and Elmish (e.g. Morphir) in MoonBit",
+  "description": "Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir) in MoonBit",
   "source": "src"
 }
