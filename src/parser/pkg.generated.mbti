@@ -2,6 +2,7 @@
 package "moonrockz/krueger/parser"
 
 import {
+  "moonrockz/krueger/ast",
   "moonrockz/krueger/scanner",
 }
 
@@ -21,55 +22,6 @@ pub(all) struct CstDecl {
 pub impl Eq for CstDecl
 pub impl Show for CstDecl
 
-pub(all) struct DeclMeta {
-  doc_comment : DocComment?
-  span : @scanner.Span
-}
-pub impl Eq for DeclMeta
-pub impl Show for DeclMeta
-
-pub(all) enum Declaration {
-  FunctionDecl(FunctionDeclaration)
-  TypeAliasDecl(TypeAliasDeclaration)
-  UnionTypeDecl(UnionTypeDeclaration)
-}
-pub impl Eq for Declaration
-pub impl Show for Declaration
-
-pub(all) struct DocComment {
-  text : String
-  span : @scanner.Span
-}
-pub impl Eq for DocComment
-pub impl Show for DocComment
-
-pub(all) struct FunctionDeclaration {
-  name : String
-  args : Array[String]
-  body_tokens : Array[@scanner.Token]
-  meta : DeclMeta
-}
-pub impl Eq for FunctionDeclaration
-pub impl Show for FunctionDeclaration
-
-pub(all) struct ImportDecl {
-  module_name : String
-  exposing : Array[String]?
-  span : @scanner.Span
-}
-pub impl Eq for ImportDecl
-pub impl Show for ImportDecl
-
-pub(all) struct ModuleAst {
-  module_name : String?
-  exposing : Array[String]
-  imports : Array[ImportDecl]
-  declarations : Array[Declaration]
-  span : @scanner.Span?
-}
-pub impl Eq for ModuleAst
-pub impl Show for ModuleAst
-
 pub(all) struct ModuleCst {
   tokens : Array[@scanner.Token]
   declarations : Array[CstDecl]
@@ -79,40 +31,31 @@ pub impl Eq for ModuleCst
 pub impl Show for ModuleCst
 
 pub(all) struct ParseResult {
-  ast : ModuleAst?
+  ast : @ast.ModuleAst?
   cst : ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
 }
 pub impl Eq for ParseResult
 pub impl Show for ParseResult
 
-pub(all) struct TypeAliasDeclaration {
-  name : String
-  type_params : Array[String]
-  alias_tokens : Array[@scanner.Token]
-  meta : DeclMeta
-}
-pub impl Eq for TypeAliasDeclaration
-pub impl Show for TypeAliasDeclaration
-
-pub(all) struct UnionTypeCase {
-  name : String
-  args : Array[String]
-}
-pub impl Eq for UnionTypeCase
-pub impl Show for UnionTypeCase
-
-pub(all) struct UnionTypeDeclaration {
-  name : String
-  type_params : Array[String]
-  cases : Array[UnionTypeCase]
-  raw_tokens : Array[@scanner.Token]
-  meta : DeclMeta
-}
-pub impl Eq for UnionTypeDeclaration
-pub impl Show for UnionTypeDeclaration
-
 // Type aliases
+pub using @ast {type DeclMeta}
+
+pub using @ast {type Declaration}
+
+pub using @ast {type DocComment}
+
+pub using @ast {type FunctionDeclaration}
+
+pub using @ast {type ImportDecl}
+
+pub using @ast {type ModuleAst}
+
+pub using @ast {type TypeAliasDeclaration}
+
+pub using @ast {type UnionTypeCase}
+
+pub using @ast {type UnionTypeDeclaration}
 
 // Traits
 

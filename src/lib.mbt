@@ -1,5 +1,27 @@
 ///|
-pub using @ast {type Identifier}
+pub using @ast {
+  type Identifier,
+  type ModuleName,
+  type ValueName,
+  type TypeName,
+  type TypeVarName,
+  type ConstructorName,
+  type OperatorName,
+  type ExposedName,
+  type DocComment,
+  type DeclMeta,
+  type UnparsedExpr,
+  type Expr,
+  type UnparsedTypeExpr,
+  type TypeExpr,
+  type FunctionDeclaration,
+  type TypeAliasDeclaration,
+  type UnionTypeCase,
+  type UnionTypeDeclaration,
+  type Declaration,
+  type ImportDecl,
+  type ModuleAst,
+}
 
 ///|
 pub using @scanner {
@@ -20,15 +42,7 @@ pub using @scanner {
 }
 
 ///|
-pub using @parser {
-  type ParseResult,
-  type ModuleAst,
-  type ModuleCst,
-  type Declaration,
-  type FunctionDeclaration,
-  type DeclMeta,
-  type DocComment,
-}
+pub using @parser {type ParseResult, type ModuleCst}
 
 ///|
 /// Krueger — Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir).
