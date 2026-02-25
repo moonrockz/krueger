@@ -95,7 +95,7 @@ fn consume_line_comment(lexer : @lexer.Lexer) -> String {
   lexeme
 }
 
-fn consume_block_comment(lexer : @lexer.Lexer, is_doc : Bool) -> String {
+fn consume_block_comment(lexer : @lexer.Lexer, is_doc : Bool) -> (String, Bool) {
   let mut lexeme = if is_doc { "{-|" } else { "{-" }
   lexer.advance()
   lexer.advance()
@@ -103,13 +103,15 @@ fn consume_block_comment(lexer : @lexer.Lexer, is_doc : Bool) -> String {
     lexer.advance()
   }
   let mut closed = false
-  while !closed {
+  let mut done = false
+  while !done {
     match lexer.view() {
       ['-', '}', ..] => {
         lexeme = lexeme + "-}"
         lexer.advance()
         lexer.advance()
         closed = true
+        done = true
       }
       ['\r', '\n', ..] => {
         lexeme = lexeme + "\r\n"
@@ -127,16 +129,46 @@ fn consume_block_comment(lexer : @lexer.Lexer, is_doc : Bool) -> String {
         lexer.advance()
       }
       _ => {
-        closed = true
+        done = true
       }
     }
   }
-  lexeme
+  (lexeme, closed)
+}
+
+fn symbol_lexeme_or_invalid(lexer : @lexer.Lexer) -> (String, Bool) {
+  match lexer.view() {
+    ['.', '.', ..] => {
+      lexer.advance()
+      lexer.advance()
+      ("..", true)
+    }
+    ['-', '>', ..] => {
+      lexer.advance()
+      lexer.advance()
+      ("->", true)
+    }
+    ['(' | ')' | ',' | '=' | '+', ..] => {
+      match lexer.peek() {
+        Some(ch) => {
+          lexer.advance()
+          (Char::to_string(ch), true)
+        }
+        None => ("", false)
+      }
+    }
+    [ch, ..] => {
+      lexer.advance()
+      (Char::to_string(ch), false)
+    }
+    _ => ("", false)
+  }
 }
 
 pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
   let lexer = @lexer.Lexer::new(source.text)
   let tokens = []
+  let diagnostics = []
   while lexer.peek() is Some(_) {
     let start = position(lexer)
     match lexer.view() {
@@ -153,12 +185,26 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
         push_token(tokens, RawTokenKind::LineComment, lexeme, start, position(lexer))
       }
       ['{', '-', '|', ..] => {
-        let lexeme = consume_block_comment(lexer, true)
+        let (lexeme, closed) = consume_block_comment(lexer, true)
         push_token(tokens, RawTokenKind::DocComment, lexeme, start, position(lexer))
+        if !closed {
+          diagnostics.push(
+            malformed_doc_comment(
+              Span::{ start, end: position(lexer) },
+            ),
+          )
+        }
       }
       ['{', '-', ..] => {
-        let lexeme = consume_block_comment(lexer, false)
+        let (lexeme, closed) = consume_block_comment(lexer, false)
         push_token(tokens, RawTokenKind::BlockComment, lexeme, start, position(lexer))
+        if !closed {
+          diagnostics.push(
+            unterminated_block_comment(
+              Span::{ start, end: position(lexer) },
+            ),
+          )
+        }
       }
       [ch, ..] if is_identifier_start(ch) => {
         let lexeme = consume_identifier(lexer)
@@ -168,22 +214,24 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
         let lexeme = consume_int_literal(lexer)
         push_token(tokens, RawTokenKind::IntLiteral, lexeme, start, position(lexer))
       }
-      ['.', '.', ..] => {
-        lexer.advance()
-        lexer.advance()
-        push_token(tokens, RawTokenKind::Symbol, "..", start, position(lexer))
-      }
-      ['-', '>', ..] => {
-        lexer.advance()
-        lexer.advance()
-        push_token(tokens, RawTokenKind::Symbol, "->", start, position(lexer))
-      }
-      [ch, ..] => {
-        lexer.advance()
-        push_token(tokens, RawTokenKind::Symbol, Char::to_string(ch), start, position(lexer))
+      [_, ..] => {
+        let (lexeme, valid) = symbol_lexeme_or_invalid(lexer)
+        if valid {
+          push_token(tokens, RawTokenKind::Symbol, lexeme, start, position(lexer))
+        } else {
+          diagnostics.push(
+            invalid_sequence(
+              Span::{ start, end: position(lexer) },
+            ),
+          )
+        }
       }
       _ => ()
     }
   }
-  Ok(tokens)
+  if diagnostics.length() > 0 {
+    Err(ScanErrorList::{ diagnostics })
+  } else {
+    Ok(tokens)
+  }
 }

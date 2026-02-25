@@ -68,8 +68,7 @@ impl @moonspec.World for TokenizerWorld with configure(self, setup) {
     match self.result {
       Some(Err(errs)) => {
         assert_true(errs.diagnostics.length() > 0)
-        let first = errs.diagnostics[0]
-        assert_true(first.span.start.offset <= first.span.end.offset)
+        assert_true(errs.diagnostics.any(fn(diag) { diag.code == "KR-SCAN-001" }))
       }
       _ => fail("expected tokenization failure")
     }
@@ -82,5 +81,23 @@ async test "tokenizer feature: comments and doc comments scenario" {
       @moonspec.FeatureSource::File("tests/features/tokenizer.feature"),
     ])
   options.scenario_name("Tokenize module with comments and doc comment")
+  @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
+}
+
+async test "tokenizer feature: malformed comment diagnostics scenario" {
+  let options =
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("tests/features/tokenizer.feature"),
+    ])
+  options.scenario_name("Report malformed block comment")
+  @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
+}
+
+async test "tokenizer feature: invalid character diagnostics scenario" {
+  let options =
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("tests/features/tokenizer.feature"),
+    ])
+  options.scenario_name("Report invalid character sequence")
   @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
 }
