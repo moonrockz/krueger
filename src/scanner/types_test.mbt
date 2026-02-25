@@ -42,3 +42,13 @@ test "comment trivia preserves doc kind" {
     _ => fail("expected comment trivia")
   }
 }
+
+///|
+test "token kind keyword helpers create keyword token kinds" {
+  assert_eq(
+    TokenKind::keyword(KeywordKind::Module),
+    TokenKind::Keyword(KeywordKind::Module),
+  )
+  assert_eq(TokenKind::module_kw(), TokenKind::Keyword(KeywordKind::Module))
+  assert_eq(TokenKind::exposing_kw(), TokenKind::Keyword(KeywordKind::Exposing))
+}

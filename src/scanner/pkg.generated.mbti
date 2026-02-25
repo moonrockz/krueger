@@ -144,6 +144,19 @@ pub(all) enum TokenKind {
   Arrow
   Unknown
 }
+pub fn TokenKind::alias_kw() -> Self
+pub fn TokenKind::case_kw() -> Self
+pub fn TokenKind::else_kw() -> Self
+pub fn TokenKind::exposing_kw() -> Self
+pub fn TokenKind::if_kw() -> Self
+pub fn TokenKind::import_kw() -> Self
+pub fn TokenKind::in_kw() -> Self
+pub fn TokenKind::keyword(KeywordKind) -> Self
+pub fn TokenKind::let_kw() -> Self
+pub fn TokenKind::module_kw() -> Self
+pub fn TokenKind::of_kw() -> Self
+pub fn TokenKind::then_kw() -> Self
+pub fn TokenKind::type_kw() -> Self
 pub impl Eq for TokenKind
 pub impl Show for TokenKind
 

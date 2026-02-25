@@ -45,8 +45,7 @@ impl @moonspec.World for TokenizerWorld with configure(self, setup) {
         Some(Ok(stream)) => {
           assert_true(
             stream.tokens.any(fn(token) {
-              token.kind ==
-              @krueger.TokenKind::Keyword(@krueger.KeywordKind::Module)
+              token.kind == @krueger.TokenKind::module_kw()
             }),
           )
           assert_true(stream.tokens.any(fn(token) { token.lexeme == "add" }))

@@ -85,6 +85,71 @@ pub(all) enum TokenKind {
 } derive(Eq, Show)
 
 ///|
+pub fn TokenKind::keyword(kind : KeywordKind) -> TokenKind {
+  TokenKind::Keyword(kind)
+}
+
+///|
+pub fn TokenKind::module_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Module)
+}
+
+///|
+pub fn TokenKind::exposing_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Exposing)
+}
+
+///|
+pub fn TokenKind::import_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Import)
+}
+
+///|
+pub fn TokenKind::type_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Type)
+}
+
+///|
+pub fn TokenKind::alias_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Alias)
+}
+
+///|
+pub fn TokenKind::if_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::If)
+}
+
+///|
+pub fn TokenKind::then_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Then)
+}
+
+///|
+pub fn TokenKind::else_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Else)
+}
+
+///|
+pub fn TokenKind::let_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Let)
+}
+
+///|
+pub fn TokenKind::in_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::In)
+}
+
+///|
+pub fn TokenKind::case_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Case)
+}
+
+///|
+pub fn TokenKind::of_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Of)
+}
+
+///|
 pub(all) struct Token {
   kind : TokenKind
   lexeme : String
