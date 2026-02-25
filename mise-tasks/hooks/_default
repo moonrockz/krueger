@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Install project git hooks"
+#MISE depends=["hooks:install"]
+set -euo pipefail
+
+echo "Hooks installed."

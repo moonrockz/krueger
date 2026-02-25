@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run coverage gate (fails if coverage is below threshold)"
+set -euo pipefail
+
+scripts/coverage_ci.sh gate 80

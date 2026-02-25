@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run all info tasks"
+#MISE depends=["info:generate"]
+set -euo pipefail
+
+echo "Info generation complete."

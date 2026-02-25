@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+#MISE description="Install project git hooks via lefthook"
+set -euo pipefail
+
+# Use the real git common hooks dir (works for normal repos and worktrees)
+# so we don't overwrite tracked .beads/hooks shims.
+hooks_path="$(git rev-parse --git-common-dir)/hooks"
+mkdir -p "$hooks_path"
+git config --local core.hooksPath "$hooks_path"
+lefthook install -f
+echo "Lefthook git hooks installed in $hooks_path."

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Run all format tasks"
+#MISE depends=["format:check"]
+set -euo pipefail
+
+echo "Format checks passed."

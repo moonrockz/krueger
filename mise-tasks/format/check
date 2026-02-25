@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run format checks"
+set -euo pipefail
+
+moon fmt --check

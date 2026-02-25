@@ -1,0 +1,30 @@
+pre-commit:
+  commands:
+    bd-pre-commit:
+      run: bd hook pre-commit
+    format-check:
+      run: mise run format:check
+    lint-check:
+      run: mise run lint:check
+
+pre-push:
+  commands:
+    bd-pre-push:
+      run: bd hooks run pre-push
+    all-checks:
+      run: mise run check
+
+post-merge:
+  commands:
+    bd-post-merge:
+      run: bd hook post-merge
+
+post-checkout:
+  commands:
+    bd-post-checkout:
+      run: bd hook post-checkout {1} {2} {3}
+
+prepare-commit-msg:
+  commands:
+    bd-prepare-commit-msg:
+      run: bd hooks run prepare-commit-msg {1} {2} {3}

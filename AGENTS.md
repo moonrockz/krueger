@@ -8,12 +8,12 @@ You can browse and install extra skills here:
 ## Project Overview
 
 This module (`moonrockz/krueger`) is a **parser and parsing utilities** library for
-[Elm](https://elm-lang.org/) and [Elmish](https://elmish.github.io/) dialects (e.g.
+[Elm](https://elm-lang.org/) and Elm-like dialects (e.g.
 [Morphir](https://github.com/finos/morphir)). It will provide:
 
-- **Scanner** — tokenization of Elm/Elmish source
+- **Scanner** — tokenization of Elm/Elm-like source
 - **Parser** — grammar-driven parsing into an AST
-- **AST** — algebraic data types for Elm/Elmish syntax (with flexibility similar to moonrockz/gherkin)
+- **AST** — algebraic data types for Elm/Elm-like syntax (with flexibility similar to moonrockz/gherkin)
 - **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.)
 
 The design of scanner, parser, AST, and visitor APIs will be done in a follow-up phase;
@@ -98,7 +98,15 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 
 | Task                | Purpose                                        |
 |---------------------|------------------------------------------------|
+| `hooks:install`     | Install project git hooks via lefthook         |
+| `info:generate`     | Run `moon info` to generate interfaces         |
+| `lint:check`        | Run lint/type checks (`moon check`)            |
+| `format:check`      | Run formatting checks (`moon fmt --check`)     |
+| `check`             | Run all checks (lint + format + tests)         |
 | `test:unit`         | Run MoonBit unit tests                         |
+| `test:bdd`          | Run MoonSpec BDD tests                         |
+| `test:e2e`          | Run end-to-end tests                           |
+| `test`              | Run all tests (unit + bdd + e2e)               |
 | `release:version`   | Compute next version from conventional commits |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |

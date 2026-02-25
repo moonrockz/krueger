@@ -1,0 +1,66 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger"
+
+import {
+  "moonrockz/krueger/parser",
+  "moonrockz/krueger/scanner",
+}
+
+// Values
+pub fn parse_module(@scanner.SourceText) -> @parser.ParseResult
+
+pub fn parse_tokens(@scanner.TokenStream) -> @parser.ParseResult
+
+pub fn tokenize(@scanner.SourceText) -> Result[@scanner.TokenStream, @scanner.ScanErrorList]
+
+pub fn version() -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @scanner {type Comment}
+
+pub using @scanner {type CommentKind}
+
+pub using @parser {type DeclMeta}
+
+pub using @parser {type Declaration}
+
+pub using @scanner {type Diagnostic}
+
+pub using @parser {type DocComment}
+
+pub using @parser {type FunctionDeclaration}
+
+pub using @scanner {type KeywordKind}
+
+pub using @parser {type ModuleAst}
+
+pub using @parser {type ModuleCst}
+
+pub using @parser {type ParseResult}
+
+pub using @scanner {type Position}
+
+pub using @scanner {type ScanErrorList}
+
+pub using @scanner {type Severity}
+
+pub using @scanner {type SourceText}
+
+pub using @scanner {type Span}
+
+pub using @scanner {type Token}
+
+pub using @scanner {type TokenKind}
+
+pub using @scanner {type TokenStream}
+
+pub using @scanner {type Trivia}
+
+pub using @scanner {trait Scanner}
+
+// Traits
+

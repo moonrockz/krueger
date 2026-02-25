@@ -1,4 +1,4 @@
-# Elm/Elmish Parser Initiative
+# Elm/Elm-like Parser Initiative
 
 Design and work breakdown for the `moonrockz/krueger` parser, tokenizer, AST,
 CST, visitors, WASM, and CLI.
@@ -7,7 +7,7 @@ CST, visitors, WASM, and CLI.
 
 ## Scope
 
-- **Tokenizer/lexer** [krueger-q56.2]: Produce token stream for Elm/Elmish
+- **Tokenizer/lexer** [krueger-q56.2]: Produce token stream for Elm/Elm-like
   source via a pluggable scanner abstraction. First adapter uses
   `bobzhang/lexer`.
 - **Parser** [krueger-q56.3]: Grammar-driven parsing from tokens to AST/CST.
@@ -152,7 +152,8 @@ corpus up front.
 
 - **Whitebox** (`*_wbtest.mbt`): module-internal behavior.
 - **Blackbox** (`*_test.mbt`): public API behavior.
-- **BDD** (`tests/features/*.feature`): executable behavior specs.
+- **BDD** (`tests/features/*.feature` + MoonSpec runner in `src/bdd/`):
+  executable behavior specs.
 - **E2E**: CLI and wasm/component host integration tests.
 - **TDD**: red-green-refactor for each story.
 

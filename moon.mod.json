@@ -2,12 +2,22 @@
   "name": "moonrockz/krueger",
   "version": "0.1.0",
   "deps": {
-    "moonbitlang/x": "0.4.40"
+    "moonbitlang/x": "0.4.40",
+    "bobzhang/lexer": "0.1.2",
+    "moonrockz/moonspec": "0.4.0",
+    "moonbitlang/async": "0.16.6"
   },
   "readme": "README.mbt.md",
   "repository": "https://github.com/moonrockz/krueger",
   "license": "Apache-2.0",
-  "keywords": ["elm", "elmish", "morphir", "parser", "scanner", "ast"],
-  "description": "Parser and parsing utilities for Elm and Elmish (e.g. Morphir) in MoonBit",
+  "keywords": [
+    "elm",
+    "elm-like",
+    "morphir",
+    "parser",
+    "scanner",
+    "ast"
+  ],
+  "description": "Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir) in MoonBit",
   "source": "src"
 }

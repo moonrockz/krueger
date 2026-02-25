@@ -28,3 +28,11 @@ Feature: Elm tokenizer baseline
     When I tokenize the source
     Then tokenization fails with at least one diagnostic
     And a diagnostic indicates malformed block comment with a source span
+
+  Scenario: Report invalid character sequence
+    Given Elm source:
+      """elm
+      module Main exposing (@)
+      """
+    When I tokenize the source
+    Then tokenization fails with at least one diagnostic
