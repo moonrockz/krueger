@@ -90,6 +90,49 @@ fn is_top_level_start(tokens : Array[@scanner.Token], index : Int) -> Bool {
 }
 
 ///|
+fn parser_error(
+  code : String,
+  message : String,
+  span : @scanner.Span,
+) -> @scanner.Diagnostic {
+  @scanner.Diagnostic::{
+    code,
+    severity: @scanner.Severity::Error,
+    message,
+    span,
+  }
+}
+
+///|
+fn malformed_module_header(span : @scanner.Span) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-001", "Malformed module header", span)
+}
+
+///|
+fn malformed_import(span : @scanner.Span) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-002", "Malformed import declaration", span)
+}
+
+///|
+fn malformed_type_declaration(span : @scanner.Span) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-003", "Malformed type declaration", span)
+}
+
+///|
+fn malformed_function_declaration(span : @scanner.Span) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-004", "Malformed function declaration", span)
+}
+
+///|
+fn recover_to_top_level(tokens : Array[@scanner.Token], index : Int) -> Int {
+  let mut cursor = index
+  while cursor < tokens.length() && !is_top_level_start(tokens, cursor) {
+    cursor = cursor + 1
+  }
+  cursor
+}
+
+///|
 pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,
@@ -110,79 +153,123 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let imports = []
   let declarations = []
   let cst_decls = []
+  let diagnostics = []
 
   if stream.length() > 0 && stream[0].kind == @scanner.TokenKind::module_kw() {
+    let module_token = stream[0]
     cursor = 1
-    if cursor < stream.length() &&
-      stream[cursor].kind == @scanner.TokenKind::Identifier {
-      module_name = Some(stream[cursor].lexeme)
-      cursor = cursor + 1
+    let mut module_header_valid = true
+
+    if cursor < stream.length() {
+      if stream[cursor].kind == @scanner.TokenKind::Identifier {
+        module_name = Some(stream[cursor].lexeme)
+        cursor = cursor + 1
+      } else {
+        module_header_valid = false
+      }
+    } else {
+      module_header_valid = false
     }
-    if cursor < stream.length() &&
+
+    if module_header_valid &&
+      cursor < stream.length() &&
       stream[cursor].kind == @scanner.TokenKind::exposing_kw() {
       cursor = cursor + 1
       if cursor < stream.length() &&
         stream[cursor].kind == @scanner.TokenKind::LParen {
         cursor = cursor + 1
-        while cursor < stream.length() &&
-              stream[cursor].kind != @scanner.TokenKind::RParen {
+        let mut found_rparen = false
+        while cursor < stream.length() {
+          if stream[cursor].kind == @scanner.TokenKind::RParen {
+            found_rparen = true
+            cursor = cursor + 1
+            break
+          }
           if stream[cursor].kind == @scanner.TokenKind::Identifier {
             exposing.push(stream[cursor].lexeme)
           }
           cursor = cursor + 1
         }
-        if cursor < stream.length() &&
-          stream[cursor].kind == @scanner.TokenKind::RParen {
-          cursor = cursor + 1
+        if !found_rparen {
+          module_header_valid = false
         }
+      } else {
+        module_header_valid = false
       }
+    } else {
+      module_header_valid = false
+    }
+
+    if !module_header_valid {
+      diagnostics.push(malformed_module_header(module_token.span))
+      cursor = recover_to_top_level(stream, cursor)
     }
   }
 
   while cursor < stream.length() {
     if stream[cursor].kind == @scanner.TokenKind::import_kw() {
       let start_token = stream[cursor]
+      let mut malformed = false
       cursor = cursor + 1
       if cursor >= stream.length() ||
         stream[cursor].kind != @scanner.TokenKind::Identifier {
-        continue
+        malformed = true
       }
-      let import_name = stream[cursor].lexeme
-      cursor = cursor + 1
+      let import_name = if malformed {
+        ""
+      } else {
+        let name = stream[cursor].lexeme
+        cursor = cursor + 1
+        name
+      }
 
       let mut import_exposing : Array[String]? = None
-      if cursor < stream.length() &&
+      if !malformed &&
+        cursor < stream.length() &&
         stream[cursor].kind == @scanner.TokenKind::exposing_kw() {
         cursor = cursor + 1
         if cursor < stream.length() &&
           stream[cursor].kind == @scanner.TokenKind::LParen {
           cursor = cursor + 1
           let names = []
-          while cursor < stream.length() &&
-                stream[cursor].kind != @scanner.TokenKind::RParen {
+          let mut found_rparen = false
+          while cursor < stream.length() {
+            if stream[cursor].kind == @scanner.TokenKind::RParen {
+              found_rparen = true
+              cursor = cursor + 1
+              break
+            }
             if stream[cursor].kind == @scanner.TokenKind::Identifier {
               names.push(stream[cursor].lexeme)
             }
             cursor = cursor + 1
           }
-          if cursor < stream.length() &&
-            stream[cursor].kind == @scanner.TokenKind::RParen {
-            cursor = cursor + 1
+          if !found_rparen {
+            malformed = true
+          } else {
+            import_exposing = Some(names)
           }
-          import_exposing = Some(names)
+        } else {
+          malformed = true
         }
       }
 
-      imports.push(ImportDecl::{
-        module_name: import_name,
-        exposing: import_exposing,
-        span: start_token.span,
-      })
+      if malformed {
+        diagnostics.push(malformed_import(start_token.span))
+        cursor = recover_to_top_level(stream, cursor)
+      } else {
+        imports.push(ImportDecl::{
+          module_name: import_name,
+          exposing: import_exposing,
+          span: start_token.span,
+        })
+      }
       continue
     }
 
     if stream[cursor].kind == @scanner.TokenKind::type_kw() {
       let start_token = stream[cursor]
+      let mut malformed = false
       cursor = cursor + 1
       let is_alias = cursor < stream.length() &&
         stream[cursor].kind == @scanner.TokenKind::alias_kw()
@@ -191,22 +278,35 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       }
       if cursor >= stream.length() ||
         stream[cursor].kind != @scanner.TokenKind::Identifier {
-        continue
+        malformed = true
       }
 
-      let type_name = stream[cursor].lexeme
-      cursor = cursor + 1
+      let type_name = if malformed {
+        ""
+      } else {
+        let name = stream[cursor].lexeme
+        cursor = cursor + 1
+        name
+      }
 
       let type_params = []
-      while cursor < stream.length() &&
+      while !malformed &&
+            cursor < stream.length() &&
             stream[cursor].kind == @scanner.TokenKind::Identifier {
         type_params.push(stream[cursor].lexeme)
         cursor = cursor + 1
       }
-      if cursor < stream.length() &&
+      if !malformed &&
+        cursor < stream.length() &&
         stream[cursor].kind == @scanner.TokenKind::Equals {
         cursor = cursor + 1
       } else {
+        malformed = true
+      }
+
+      if malformed {
+        diagnostics.push(malformed_type_declaration(start_token.span))
+        cursor = recover_to_top_level(stream, cursor)
         continue
       }
 
@@ -264,6 +364,11 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       continue
     }
 
+    if cursor > 0 && !has_newline_trivia(stream[cursor].trivia_before) {
+      cursor = cursor + 1
+      continue
+    }
+
     let name_token = stream[cursor]
     let name = name_token.lexeme
     cursor = cursor + 1
@@ -279,6 +384,8 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       stream[cursor].kind == @scanner.TokenKind::Equals {
       cursor = cursor + 1
     } else {
+      diagnostics.push(malformed_function_declaration(name_token.span))
+      cursor = recover_to_top_level(stream, cursor)
       continue
     }
 
@@ -320,6 +427,6 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       declarations: cst_decls,
       span: module_span(stream),
     }),
-    diagnostics: [],
+    diagnostics,
   }
 }

@@ -48,6 +48,11 @@ fn find_union_decl(ast : ModuleAst, name : String) -> UnionTypeDeclaration? {
 }
 
 ///|
+fn has_diag_code(result : ParseResult, code : String) -> Bool {
+  result.diagnostics.any(fn(diag) { diag.code == code })
+}
+
+///|
 test "parse tokens captures module header information" {
   let source = @scanner.SourceText::{
     module_name: Some("Main"),
@@ -158,6 +163,74 @@ test "parse tokens supports mixed top-level declaration ordering" {
       assert_true(find_type_alias_decl(ast, "User") != None)
       assert_true(find_union_decl(ast, "Color") != None)
     }
+    None => fail("expected ast")
+  }
+}
+
+///|
+test "parse tokens reports diagnostic for malformed module header" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main (add)\nadd x = x + 1",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  assert_true(has_diag_code(result, "KR-PARSE-001"))
+}
+
+///|
+test "parse tokens recovers from malformed import and parses later function" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\nimport )\nadd x = x + 1",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  assert_true(has_diag_code(result, "KR-PARSE-002"))
+  match result.ast {
+    Some(ast) => assert_true(find_function_decl(ast, "add") != None)
+    None => fail("expected ast")
+  }
+}
+
+///|
+test "parse tokens reports diagnostic for malformed type declaration" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\ntype alias = String\nadd x = x + 1",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  assert_true(has_diag_code(result, "KR-PARSE-003"))
+}
+
+///|
+test "parse tokens reports diagnostic for malformed function declaration" {
+  let source = @scanner.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (add)\nadd x x + 1\nok y = y",
+  }
+  let scanner = @scanner.DefaultScanner::new()
+  let tokens = match unwrap_ok(scanner.tokenize(source)) {
+    Some(tokens) => tokens
+    None => fail("expected tokenization success")
+  }
+  let result = parse_tokens(tokens)
+  assert_true(has_diag_code(result, "KR-PARSE-004"))
+  match result.ast {
+    Some(ast) => assert_true(find_function_decl(ast, "ok") != None)
     None => fail("expected ast")
   }
 }
