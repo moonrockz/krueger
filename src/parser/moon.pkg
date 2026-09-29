@@ -4,3 +4,7 @@ import {
   "moonrockz/krueger/cst",
   "moonrockz/krueger/scanner",
 }
+
+import {
+  "moonrockz/expect",
+} for "test"

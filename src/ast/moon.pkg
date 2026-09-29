@@ -1,4 +1,4 @@
 import {
-  "moonbitlang/core/builtin",
-  "moonrockz/krueger/scanner",
-}
+  "moonbitlang/core/json",
+  "moonrockz/expect",
+} for "test"

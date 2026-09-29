@@ -17,28 +17,11 @@ pub fn parse_tokens(@scanner.TokenStream) -> ParseResult
 
 // Types and methods
 pub(all) struct ParseResult {
-  ast : @ast.ModuleAst?
+  ast : @ast.File?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
 } derive(Eq, @debug.Debug)
 
 // Type aliases
-pub using @ast {type DeclMeta}
-
-pub using @ast {type Declaration}
-
-pub using @ast {type DocComment}
-
-pub using @ast {type FunctionDeclaration}
-
-pub using @ast {type ImportDecl}
-
-pub using @ast {type ModuleAst}
-
-pub using @ast {type TypeAliasDeclaration}
-
-pub using @ast {type UnionTypeCase}
-
-pub using @ast {type UnionTypeDeclaration}
 
 // Traits

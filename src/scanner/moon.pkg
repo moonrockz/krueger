@@ -2,3 +2,7 @@ import {
   "moonbitlang/core/builtin",
   "bobzhang/lexer",
 }
+
+import {
+  "moonrockz/expect",
+} for "wbtest"

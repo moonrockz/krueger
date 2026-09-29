@@ -1,84 +1,36 @@
 ///|
-fn unwrap_ok(
-  result : Result[@scanner.TokenStream, @scanner.ScanErrorList],
-) -> @scanner.TokenStream? {
-  match result {
-    Ok(stream) => Some(stream)
-    Err(_) => None
+fn parse(text : String) -> @parser.ParseResult raise {
+  let source = @scanner.SourceText::{ module_name: Some("Main"), text, }
+  match @scanner.DefaultScanner::new().tokenize(source) {
+    Ok(tokens) => @parser.parse_tokens(tokens)
+    Err(_) => fail("expected tokenization success")
   }
 }
 
 ///|
-fn value_name_text(name : @ast.ValueName) -> String {
-  name.0.0
+fn codes(result : @parser.ParseResult) -> Array[String] {
+  result.diagnostics.map(d => d.code)
 }
 
 ///|
-fn type_name_text(name : @ast.TypeName) -> String {
-  name.0.0
+fn ast(result : @parser.ParseResult) -> @ast.File raise {
+  guard result.ast is Some(file) else { fail("expected an AST") }
+  file
 }
 
 ///|
-fn exposed_name_text(name : @ast.ExposedName) -> String {
-  match name {
-    @ast.ExposedName::Value(value) => value_name_text(value)
-  }
+fn range(r1 : Int, c1 : Int, r2 : Int, c2 : Int) -> @ast.Range {
+  { start: { row: r1, column: c1, }, end: { row: r2, column: c2, }, }
 }
 
 ///|
-fn find_function_decl(
-  ast : @ast.ModuleAst,
-  name : String,
-) -> @ast.FunctionDeclaration? {
-  for decl in ast.declarations {
-    match decl {
-      @ast.Declaration::FunctionDecl(fn_decl) =>
-        if value_name_text(fn_decl.name) == name {
-          return Some(fn_decl)
-        }
-      _ => ()
+fn custom_type(file : @ast.File, name : String) -> @ast.Type? {
+  for decl in file.declarations {
+    if decl.value is CustomTypeDeclaration(t) && t.name.value == name {
+      return Some(t)
     }
   }
   None
-}
-
-///|
-fn find_type_alias_decl(
-  ast : @ast.ModuleAst,
-  name : String,
-) -> @ast.TypeAliasDeclaration? {
-  for decl in ast.declarations {
-    match decl {
-      @ast.Declaration::TypeAliasDecl(alias_decl) =>
-        if type_name_text(alias_decl.name) == name {
-          return Some(alias_decl)
-        }
-      _ => ()
-    }
-  }
-  None
-}
-
-///|
-fn find_union_decl(
-  ast : @ast.ModuleAst,
-  name : String,
-) -> @ast.UnionTypeDeclaration? {
-  for decl in ast.declarations {
-    match decl {
-      @ast.Declaration::UnionTypeDecl(union_decl) =>
-        if type_name_text(union_decl.name) == name {
-          return Some(union_decl)
-        }
-      _ => ()
-    }
-  }
-  None
-}
-
-///|
-fn has_diag_code(result : @parser.ParseResult, code : String) -> Bool {
-  result.diagnostics.any(fn(diag) { diag.code == code })
 }
 
 ///|
@@ -86,288 +38,224 @@ fn assert_node_span_matches_tokens(
   node_span : @scanner.Span,
   tokens : Array[@scanner.Token],
 ) -> Unit raise {
-  assert_true(tokens.length() > 0)
-  assert_eq(node_span.start, tokens[0].span.start)
-  assert_eq(node_span.end, tokens[tokens.length() - 1].span.end)
+  @expect.expect(tokens.length() > 0).to_be_true()
+  @expect.expect(node_span.start).to_equal(tokens[0].span.start)
+  @expect.expect(node_span.end).to_equal(tokens[tokens.length() - 1].span.end)
 }
 
 ///|
-test "parse tokens captures module header information" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nadd x = x + 1",
+test "module header becomes a normal module with its exposing list" {
+  let file = ast(parse("module Main exposing (Msg(..), view, Id)"))
+  @expect.expect(file.module_definition.range).to_equal(range(1, 1, 1, 41))
+  guard file.module_definition.value is NormalModule(data) else {
+    fail("expected a normal module")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
+  @expect.expect(data.module_name.value).to_equal(["Main"])
+  @expect.expect(data.exposing_list.range).to_equal(range(1, 13, 1, 41))
+  guard data.exposing_list.value is Explicit(items) else {
+    fail("expected an explicit exposing list")
   }
-  let result = @parser.parse_tokens(tokens)
-  match result.ast {
-    Some(ast) => {
-      assert_eq(
-        ast.module_name,
-        Some(@ast.ModuleName::ModuleName(@ast.Identifier::Identifier("Main"))),
-      )
-      assert_eq(ast.exposing.map(exposed_name_text), ["add"])
-    }
-    None => fail("expected ast")
-  }
+  @expect.expect(items.map(i => i.value)).to_equal([
+    TypeExpose({ name: "Msg", open: Some(range(1, 26, 1, 30)), }),
+    FunctionExpose("view"),
+    TypeOrAliasExpose("Id"),
+  ])
 }
 
 ///|
-test "parse tokens captures cst header and imports" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nimport Html exposing (text)\nadd x = x + 1",
+test "exposing everything records the range of the dots" {
+  let file = ast(parse("module Main exposing (..)"))
+  guard file.module_definition.value is NormalModule(data) else {
+    fail("expected a normal module")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  match result.cst {
-    Some(cst) => {
-      match cst.header {
-        Some(header) => {
-          assert_eq(header.module_name, Some("Main"))
-          assert_eq(header.exposing, ["add"])
-          assert_eq(header.tokens[0].kind, @scanner.TokenKind::module_kw())
-          assert_node_span_matches_tokens(header.span, header.tokens)
-        }
-        None => fail("expected module header cst")
-      }
-      assert_eq(cst.imports.length(), 1)
-      assert_eq(cst.imports[0].module_name, "Html")
-      assert_eq(cst.imports[0].exposing, Some(["text"]))
-      assert_eq(cst.imports[0].tokens[0].kind, @scanner.TokenKind::import_kw())
-      assert_node_span_matches_tokens(
-        cst.imports[0].span,
-        cst.imports[0].tokens,
-      )
-    }
-    None => fail("expected cst")
-  }
+  @expect.expect(data.exposing_list.value).to_equal(All(range(1, 23, 1, 25)))
 }
 
 ///|
-test "parse tokens captures function declaration" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nadd x = x + 1",
-  }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  match result.ast {
-    Some(ast) =>
-      match find_function_decl(ast, "add") {
-        Some(fn_decl) => {
-          assert_eq(fn_decl.args.map(value_name_text), ["x"])
-          match fn_decl.body {
-            @ast.Expr::Unparsed(unparsed) =>
-              assert_true(unparsed.tokens.length() > 0)
-            _ => fail("expected unparsed function body")
-          }
-        }
-        None => fail("expected function declaration add")
-      }
-    None => fail("expected ast")
-  }
+test "cst keeps the header and imports with token span fidelity" {
+  let result = parse(
+    "module Main exposing (add)\nimport Html exposing (text)\nadd x = x + 1",
+  )
+  guard result.cst is Some(cst) else { fail("expected a CST") }
+  guard cst.header is Some(header) else { fail("expected a CST header") }
+  @expect.expect(header.module_name).to_equal(Some("Main"))
+  @expect.expect(header.exposing).to_equal(["add"])
+  @expect.expect(header.tokens[0].kind).to_equal(
+    @scanner.TokenKind::module_kw(),
+  )
+  assert_node_span_matches_tokens(header.span, header.tokens)
+  @expect.expect(cst.imports.length()).to_equal(1)
+  @expect.expect(cst.imports[0].module_name).to_equal("Html")
+  @expect.expect(cst.imports[0].exposing).to_equal(Some(["text"]))
+  assert_node_span_matches_tokens(cst.imports[0].span, cst.imports[0].tokens)
 }
 
 ///|
-test "parse tokens emits typed cst declarations with token span fidelity" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
+test "imports keep their alias and exposing list" {
+  let file = ast(
+    parse(
+      "module Main exposing (main)\nimport Browser as B exposing (sandbox, Program(..))",
+    ),
+  )
+  @expect.expect(file.imports.length()).to_equal(1)
+  let import_ = file.imports[0]
+  @expect.expect(import_.range).to_equal(range(2, 1, 2, 52))
+  @expect.expect(import_.value.module_name.value).to_equal(["Browser"])
+  @expect.expect(import_.value.module_alias.map(a => a.value)).to_equal(
+    Some(["B"]),
+  )
+  guard import_.value.exposing_list is Some({ value: Explicit(items), .. }) else {
+    fail("expected an explicit exposing list")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  match result.cst {
-    Some(cst) => {
-      assert_eq(cst.declarations.length(), 3)
-      match cst.declarations[0] {
-        @cst.DeclarationCst::TypeAlias(alias_decl) => {
-          assert_eq(alias_decl.name, "User")
-          assert_eq(alias_decl.type_params, ["a"])
-          assert_node_span_matches_tokens(alias_decl.span, alias_decl.tokens)
-        }
-        _ => fail("expected type alias cst declaration")
-      }
-      match cst.declarations[1] {
-        @cst.DeclarationCst::UnionType(union_decl) => {
-          assert_eq(union_decl.name, "Color")
-          assert_eq(union_decl.type_params, [])
-          assert_node_span_matches_tokens(union_decl.span, union_decl.tokens)
-        }
-        _ => fail("expected union type cst declaration")
-      }
-      match cst.declarations[2] {
-        @cst.DeclarationCst::Function(function_decl) => {
-          assert_eq(function_decl.name, "add")
-          assert_eq(function_decl.args, ["x"])
-          assert_node_span_matches_tokens(
-            function_decl.span,
-            function_decl.tokens,
-          )
-        }
-        _ => fail("expected function cst declaration")
-      }
-    }
-    None => fail("expected cst")
-  }
+  @expect.expect(items.map(i => i.value)).to_equal([
+    FunctionExpose("sandbox"),
+    TypeExpose({ name: "Program", open: Some(range(2, 47, 2, 51)), }),
+  ])
 }
 
 ///|
-test "parse tokens attaches doc comment to function declaration" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\n\n{-| Adds one to a value. -}\nadd x = x + 1",
+test "function declarations are reported as unsupported and kept in the cst" {
+  let result = parse("module Main exposing (add)\nadd x = x + 1")
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-005"])
+  @expect.expect(ast(result).declarations.length()).to_equal(0)
+  guard result.cst is Some(cst) else { fail("expected a CST") }
+  guard cst.declarations is [Function(f)] else {
+    fail("expected one function in the CST")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  match result.ast {
-    Some(ast) =>
-      match find_function_decl(ast, "add") {
-        Some(fn_decl) =>
-          match fn_decl.meta.doc_comment {
-            Some(doc) => assert_eq(doc.text, "Adds one to a value.")
-            None => fail("expected attached doc comment")
-          }
-        None => fail("expected function declaration add")
-      }
-    None => fail("expected ast")
-  }
+  @expect.expect(f.name).to_equal("add")
+  @expect.expect(f.args).to_equal(["x"])
+  assert_node_span_matches_tokens(f.span, f.tokens)
 }
 
 ///|
-test "parse tokens captures imports and type declarations" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nimport Html exposing (text)\ntype alias User = String\ntype Color = Red\nadd x = x + 1",
+test "cst keeps every declaration while the ast keeps supported ones" {
+  let result = parse(
+    "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
+  )
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-005", "KR-PARSE-005"])
+  guard result.cst is Some(cst) else { fail("expected a CST") }
+  guard cst.declarations
+    is [TypeAlias(type_alias), UnionType(union), Function(f)] else {
+    fail("expected alias, union and function in the CST")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  match result.ast {
-    Some(ast) => {
-      assert_eq(ast.imports.length(), 1)
-      assert_eq(ast.imports[0].module_name.0.0, "Html")
-      match ast.imports[0].exposing {
-        Some(names) => assert_eq(names.map(exposed_name_text), ["text"])
-        None => fail("expected import exposing list")
-      }
-      assert_true(find_type_alias_decl(ast, "User") != None)
-      assert_true(find_union_decl(ast, "Color") != None)
-    }
-    None => fail("expected ast")
-  }
+  @expect.expect(type_alias.name).to_equal("User")
+  @expect.expect(type_alias.type_params).to_equal(["a"])
+  assert_node_span_matches_tokens(type_alias.span, type_alias.tokens)
+  @expect.expect(union.name).to_equal("Color")
+  assert_node_span_matches_tokens(union.span, union.tokens)
+  @expect.expect(f.name).to_equal("add")
+  let file = ast(result)
+  @expect.expect(custom_type(file, "Color") is Some(_)).to_be_true()
 }
 
 ///|
-test "parse tokens supports mixed top-level declaration ordering" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nimport Html\ntype alias User = String\nadd x = x + 1\ntype Color = Red",
+test "custom type with one simple constructor becomes a custom type declaration" {
+  let file = ast(
+    parse("module Main exposing (Wrapper)\ntype Wrapper a = Wrapper a Int"),
+  )
+  guard custom_type(file, "Wrapper") is Some(t) else {
+    fail("expected custom type Wrapper")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  match result.ast {
-    Some(ast) => {
-      assert_true(find_function_decl(ast, "add") != None)
-      assert_true(find_type_alias_decl(ast, "User") != None)
-      assert_true(find_union_decl(ast, "Color") != None)
-    }
-    None => fail("expected ast")
-  }
+  @expect.expect(t.generics.map(g => g.value)).to_equal(["a"])
+  guard t.constructors is [c] else { fail("expected one constructor") }
+  @expect.expect(c.range).to_equal(range(2, 18, 2, 31))
+  @expect.expect(c.value.name.value).to_equal("Wrapper")
+  @expect.expect(c.value.arguments.map(a => a.value)).to_equal([
+    GenericType("a"),
+    Typed({ range: range(2, 28, 2, 31), value: ([], "Int"), }, []),
+  ])
 }
 
 ///|
-test "parse tokens reports diagnostic for malformed module header" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main (add)\nadd x = x + 1",
-  }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  assert_true(has_diag_code(result, "KR-PARSE-001"))
+test "custom type with arguments the parser cannot type is unsupported" {
+  let result = parse("module Main exposing (Box)\ntype Box = Box (Maybe Int)")
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-005"])
+  @expect.expect(ast(result).declarations.length()).to_equal(0)
 }
 
 ///|
-test "parse tokens recovers from malformed import and parses later function" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nimport )\nadd x = x + 1",
+test "doc comment attaches to the following type and starts its range" {
+  let file = ast(
+    parse(
+      "module Main exposing (Msg)\n\nimport Html\n\n{-| A message. -}\ntype Msg\n    = Inc",
+    ),
+  )
+  @expect.expect(file.declarations.length()).to_equal(1)
+  @expect.expect(file.declarations[0].range).to_equal(range(5, 1, 7, 10))
+  guard custom_type(file, "Msg") is Some(t) else {
+    fail("expected custom type Msg")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  assert_true(has_diag_code(result, "KR-PARSE-002"))
-  match result.ast {
-    Some(ast) => assert_true(find_function_decl(ast, "add") != None)
-    None => fail("expected ast")
-  }
+  @expect.expect(t.documentation).to_equal(
+    Some({ range: range(5, 1, 5, 18), value: "{-| A message. -}", }),
+  )
+  @expect.expect(file.comments.length()).to_equal(0)
 }
 
 ///|
-test "parse tokens reports diagnostic for malformed type declaration" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\ntype alias = String\nadd x = x + 1",
+test "first doc comment after the header documents the module" {
+  let file = ast(
+    parse(
+      "module Main exposing (Msg)\n\n{-| About Main. -}\ntype Msg\n    = Inc",
+    ),
+  )
+  guard custom_type(file, "Msg") is Some(t) else {
+    fail("expected custom type Msg")
   }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  assert_true(has_diag_code(result, "KR-PARSE-003"))
+  @expect.expect(t.documentation is None).to_be_true()
+  @expect.expect(file.declarations[0].range).to_equal(range(4, 1, 5, 10))
+  @expect.expect(file.comments).to_equal([
+    { range: range(3, 1, 3, 19), value: "{-| About Main. -}", },
+  ])
 }
 
 ///|
-test "parse tokens reports diagnostic for malformed function declaration" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nadd x x + 1\nok y = y",
-  }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  assert_true(has_diag_code(result, "KR-PARSE-004"))
-  match result.ast {
-    Some(ast) => assert_true(find_function_decl(ast, "ok") != None)
-    None => fail("expected ast")
-  }
+test "missing module header gives no ast" {
+  let result = parse("x = 1")
+  @expect.expect(codes(result)).to_contain_element("KR-PARSE-006")
+  @expect.expect(result.ast is None).to_be_true()
+}
+
+///|
+test "malformed module header gives no ast" {
+  let result = parse("module Main (add)\nadd x = x + 1")
+  @expect.expect(codes(result)).to_contain_element("KR-PARSE-001")
+  @expect.expect(result.ast is None).to_be_true()
+}
+
+///|
+test "malformed exposing list in the header is reported" {
+  let result = parse("module Main exposing add\nadd x = x")
+  @expect.expect(codes(result)).to_contain_element("KR-PARSE-001")
+}
+
+///|
+test "parser recovers from a malformed import" {
+  let result = parse("module Main exposing (add)\nimport )\ntype Color = Red")
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-002"])
+  @expect.expect(custom_type(ast(result), "Color") is Some(_)).to_be_true()
+}
+
+///|
+test "malformed import exposing list is reported" {
+  let result = parse(
+    "module Main exposing (add)\nimport Html exposing text\ntype Color = Red",
+  )
+  @expect.expect(codes(result)).to_contain_element("KR-PARSE-002")
+  @expect.expect(custom_type(ast(result), "Color") is Some(_)).to_be_true()
+}
+
+///|
+test "malformed type declaration is reported" {
+  let result = parse(
+    "module Main exposing (add)\ntype alias = String\nadd x = x + 1",
+  )
+  @expect.expect(codes(result)).to_contain_element("KR-PARSE-003")
+}
+
+///|
+test "malformed function declaration is reported" {
+  let result = parse("module Main exposing (add)\nadd x x + 1\nok y = y")
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-004", "KR-PARSE-005"])
 }
 
 ///|
@@ -377,55 +265,16 @@ test "parse module returns scanner diagnostics when tokenization fails" {
     text: "{-| missing close",
   }
   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
-  assert_eq(result.ast, None)
-  assert_eq(result.cst, None)
-  assert_true(has_diag_code(result, "KR-SCAN-002"))
+  @expect.expect(result.ast is None).to_be_true()
+  @expect.expect(result.cst is None).to_be_true()
+  @expect.expect(codes(result)).to_contain_element("KR-SCAN-002")
 }
 
 ///|
-test "parse tokens reports diagnostic when module exposing list is malformed" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing add\nadd x = x",
-  }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  assert_true(has_diag_code(result, "KR-PARSE-001"))
-}
-
-///|
-test "parse tokens reports diagnostic when import exposing list is malformed" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nimport Html exposing text\nadd x = x",
-  }
-  let scanner = @scanner.DefaultScanner::new()
-  let tokens = match unwrap_ok(scanner.tokenize(source)) {
-    Some(tokens) => tokens
-    None => fail("expected tokenization success")
-  }
-  let result = @parser.parse_tokens(tokens)
-  assert_true(has_diag_code(result, "KR-PARSE-002"))
-  match result.ast {
-    Some(ast) => assert_true(find_function_decl(ast, "add") != None)
-    None => fail("expected ast")
-  }
-}
-
-///|
-test "parse tokens handles empty stream with empty ast and cst spans" {
+test "empty stream has no ast and an empty cst span" {
   let result = @parser.parse_tokens(@scanner.TokenStream::{ tokens: [], })
-  match result.ast {
-    Some(ast) => assert_eq(ast.span, None)
-    None => fail("expected ast")
-  }
-  match result.cst {
-    Some(cst) => assert_eq(cst.span, None)
-    None => fail("expected cst")
-  }
-  assert_eq(result.diagnostics.length(), 0)
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-006"])
+  @expect.expect(result.ast is None).to_be_true()
+  guard result.cst is Some(cst) else { fail("expected a CST") }
+  @expect.expect(cst.span is None).to_be_true()
 }

@@ -77,5 +77,11 @@ pub fn normalize_tokens(raw_tokens : Array[RawToken]) -> TokenStream {
       }
     }
   }
+  // Trivia after the last token (for example comments at the end of the file)
+  // becomes that token's trailing trivia, so nothing is lost.
+  if tokens.length() > 0 && pending_trivia.length() > 0 {
+    let last = tokens.length() - 1
+    tokens[last] = { ..tokens[last], trivia_after: pending_trivia, }
+  }
   TokenStream::{ tokens, }
 }

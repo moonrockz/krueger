@@ -1,5 +1,9 @@
 import {
   "moonrockz/krueger",
+  "moonrockz/krueger/ast",
   "moonrockz/moonspec",
+  "moonrockz/expect",
   "moonbitlang/async",
+  "moonbitlang/x/fs",
+  "moonbitlang/core/json",
 } for "wbtest"

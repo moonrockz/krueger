@@ -22,55 +22,93 @@ pub fn version() -> String
 // Types and methods
 
 // Type aliases
+pub using @ast {type Case}
+
+pub using @ast {type CaseBlock}
+
+pub type Cases = Array[@ast.Case]
+
 pub using @scanner {type Comment}
 
 pub using @scanner {type CommentKind}
-
-pub using @ast {type ConstructorName}
-
-pub using @ast {type DeclMeta}
 
 pub using @ast {type Declaration}
 
 pub using @cst {type DeclarationCst}
 
+pub using @ast {type DecodeError}
+
+pub using @ast {type DefaultModuleData}
+
 pub using @scanner {type Diagnostic}
 
-pub using @ast {type DocComment}
+pub type Documentation = String
 
-pub using @ast {type ExposedName}
+pub using @ast {type EffectModuleData}
 
-pub using @ast {type Expr}
+pub using @ast {type ExposedType}
+
+pub using @ast {type Exposing}
+
+pub using @ast {type Expression}
+
+pub using @ast {type File}
+
+pub using @ast {type Function}
 
 pub using @cst {type FunctionCst}
 
-pub using @ast {type FunctionDeclaration}
+pub using @ast {type FunctionImplementation}
 
-pub using @ast {type Identifier}
+pub using @ast {type Import}
 
 pub using @cst {type ImportCst}
 
-pub using @ast {type ImportDecl}
+pub using @ast {type Infix}
+
+pub using @ast {type InfixDirection}
 
 pub using @scanner {type KeywordKind}
 
-pub using @ast {type ModuleAst}
+pub using @ast {type Lambda}
+
+pub using @ast {type LetBlock}
+
+pub using @ast {type LetDeclaration}
+
+pub using @ast {type Location}
+
+pub using @ast {type Module}
 
 pub using @cst {type ModuleCst}
 
 pub using @cst {type ModuleHeaderCst}
 
-pub using @ast {type ModuleName}
+pub type ModuleName = Array[String]
 
-pub using @ast {type OperatorName}
+pub using @ast {type Node}
 
 pub using @parser {type ParseResult}
 
+pub using @ast {type Pattern}
+
 pub using @scanner {type Position}
+
+pub using @ast {type QualifiedNameRef}
+
+pub using @ast {type Range}
+
+pub type RecordDefinition = Array[@ast.Node[@ast.RecordField]]
+
+pub using @ast {type RecordField}
+
+pub using @ast {type RecordSetter}
 
 pub using @scanner {type ScanErrorList}
 
 pub using @scanner {type Severity}
+
+pub using @ast {type Signature}
 
 pub using @scanner {type SourceText}
 
@@ -82,29 +120,21 @@ pub using @scanner {type TokenKind}
 
 pub using @scanner {type TokenStream}
 
+pub using @ast {type TopLevelExpose}
+
 pub using @scanner {type Trivia}
+
+pub using @ast {type Type}
+
+pub using @ast {type TypeAlias}
 
 pub using @cst {type TypeAliasCst}
 
-pub using @ast {type TypeAliasDeclaration}
-
-pub using @ast {type TypeExpr}
-
-pub using @ast {type TypeName}
-
-pub using @ast {type TypeVarName}
-
-pub using @ast {type UnionTypeCase}
+pub using @ast {type TypeAnnotation}
 
 pub using @cst {type UnionTypeCst}
 
-pub using @ast {type UnionTypeDeclaration}
-
-pub using @ast {type UnparsedExpr}
-
-pub using @ast {type UnparsedTypeExpr}
-
-pub using @ast {type ValueName}
+pub using @ast {type ValueConstructor}
 
 pub using @scanner {trait Scanner}
 

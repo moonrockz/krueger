@@ -1,41 +1,4 @@
 ///|
-fn normalize_doc_comment_text(raw : String) -> String {
-  let without_prefix = match raw.strip_prefix("{-|") {
-    Some(view) => view.to_owned()
-    None => raw
-  }
-  let without_suffix = match without_prefix.strip_suffix("-}") {
-    Some(view) => view.to_owned()
-    None => without_prefix
-  }
-  without_suffix.trim().to_owned()
-}
-
-///|
-fn extract_doc_comment(trivia : Array[@scanner.Trivia]) -> DocComment? {
-  let mut candidate : DocComment? = None
-  for item in trivia {
-    match item {
-      @scanner.Trivia::Comment(comment) =>
-        match comment.kind {
-          @scanner.CommentKind::Doc =>
-            candidate = Some(DocComment::{
-              text: normalize_doc_comment_text(comment.text),
-              span: comment.span,
-            })
-          @scanner.CommentKind::Line | @scanner.CommentKind::Block =>
-            match candidate {
-              Some(_) => return None
-              None => ()
-            }
-        }
-      _ => ()
-    }
-  }
-  candidate
-}
-
-///|
 fn module_span(tokens : Array[@scanner.Token]) -> @scanner.Span? {
   if tokens.length() == 0 {
     None
@@ -75,41 +38,6 @@ fn span_from_tokens_or(
       end: tokens[tokens.length() - 1].span.end,
     }
   }
-}
-
-///|
-fn to_identifier(value : String) -> @ast.Identifier {
-  @ast.Identifier::Identifier(value)
-}
-
-///|
-fn to_module_name(value : String) -> @ast.ModuleName {
-  @ast.ModuleName::ModuleName(to_identifier(value))
-}
-
-///|
-fn to_value_name(value : String) -> @ast.ValueName {
-  @ast.ValueName::ValueName(to_identifier(value))
-}
-
-///|
-fn to_type_name(value : String) -> @ast.TypeName {
-  @ast.TypeName::TypeName(to_identifier(value))
-}
-
-///|
-fn to_type_var_name(value : String) -> @ast.TypeVarName {
-  @ast.TypeVarName::TypeVarName(to_identifier(value))
-}
-
-///|
-fn to_constructor_name(value : String) -> @ast.ConstructorName {
-  @ast.ConstructorName::ConstructorName(to_identifier(value))
-}
-
-///|
-fn to_exposed_name(value : String) -> @ast.ExposedName {
-  @ast.ExposedName::Value(to_value_name(value))
 }
 
 ///|
@@ -189,6 +117,27 @@ fn malformed_function_declaration(span : @scanner.Span) -> @scanner.Diagnostic {
 }
 
 ///|
+fn unsupported_syntax(
+  construct : String,
+  span : @scanner.Span,
+) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-005", "Unsupported syntax: \{construct}", span)
+}
+
+///|
+fn unexpected_syntax(
+  what : String,
+  span : @scanner.Span,
+) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-007", "Unexpected syntax: \{what}", span)
+}
+
+///|
+fn missing_module_header(span : @scanner.Span) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-006", "Missing module header", span)
+}
+
+///|
 fn recover_to_top_level(tokens : Array[@scanner.Token], index : Int) -> Int {
   let mut cursor = index
   while cursor < tokens.length() && !is_top_level_start(tokens, cursor) {
@@ -210,258 +159,228 @@ pub fn[S : @scanner.Scanner] parse_module(
 }
 
 ///|
+/// Parse a token stream into an elm-syntax AST, a CST and diagnostics.
+///
+/// The AST contains only what the parser can produce exactly: the module
+/// header, imports, and custom types with one constructor whose arguments are
+/// simple names. Other declarations stay in the CST and are reported with
+/// `KR-PARSE-005`. A file without a valid module header has no AST.
 pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let stream = tokens.tokens
   let mut cursor = 0
-  let mut module_name : @ast.ModuleName? = None
-  let exposing = []
-  let imports = []
-  let declarations = []
+  let mut module_definition : @ast.Node[@ast.Module]? = None
+  let imports : Array[@ast.Node[@ast.Import]] = []
+  let declarations : Array[@ast.Node[@ast.Declaration]] = []
+  let mut module_doc : @scanner.Span? = None
+  let declaration_starts : Array[Int] = []
+  let mut skipped_from : Int? = None
   let mut cst_header : @cst.ModuleHeaderCst? = None
   let cst_imports = []
   let cst_decls : Array[@cst.DeclarationCst] = []
   let diagnostics = []
 
   if stream.length() > 0 && stream[0].kind == @scanner.TokenKind::module_kw() {
-    let header_start = cursor
     let module_token = stream[0]
-    cursor = 1
-    let mut module_header_valid = true
-    let mut cst_module_name : String? = None
-    let cst_exposing = []
-
-    if cursor < stream.length() {
-      if stream[cursor].kind == @scanner.TokenKind::Identifier {
-        let parsed_module_name = stream[cursor].lexeme
-        module_name = Some(to_module_name(parsed_module_name.to_string()))
-        cst_module_name = Some(parsed_module_name)
-        cursor = cursor + 1
-      } else {
-        module_header_valid = false
-      }
+    let parsed = if token_kind_at(stream, 1, @scanner.TokenKind::Identifier) &&
+      is_upper_name(stream[1]) &&
+      token_kind_at(stream, 2, @scanner.TokenKind::exposing_kw()) {
+      parse_exposing(stream, 2)
     } else {
-      module_header_valid = false
+      None
     }
-
-    if module_header_valid &&
-      cursor < stream.length() &&
-      stream[cursor].kind == @scanner.TokenKind::exposing_kw() {
-      cursor = cursor + 1
-      if cursor < stream.length() &&
-        stream[cursor].kind == @scanner.TokenKind::LParen {
-        cursor = cursor + 1
-        let mut found_rparen = false
-        while cursor < stream.length() {
-          if stream[cursor].kind == @scanner.TokenKind::RParen {
-            found_rparen = true
-            cursor = cursor + 1
-            break
-          }
-          if stream[cursor].kind == @scanner.TokenKind::Identifier {
-            let exposed_name = stream[cursor].lexeme
-            exposing.push(to_exposed_name(exposed_name.to_string()))
-            cst_exposing.push(exposed_name)
-          }
-          cursor = cursor + 1
+    match parsed {
+      Some(p) => {
+        let name_token = stream[1]
+        let header_tokens = token_slice(stream, 0, p.next)
+        module_definition = Some(
+          node(
+            range_between(
+              module_token.span,
+              header_tokens[header_tokens.length() - 1].span,
+            ),
+            @ast.Module::NormalModule({
+              module_name: node(range_of(name_token.span), [name_token.lexeme]),
+              exposing_list: p.exposing,
+            }),
+          ),
+        )
+        cst_header = Some(@cst.ModuleHeaderCst::{
+          module_name: Some(name_token.lexeme),
+          exposing: p.names,
+          span: span_from_tokens_or(header_tokens, module_token.span),
+          tokens: header_tokens,
+        })
+        cursor = p.next
+        if cursor < stream.length() {
+          module_doc = module_documentation(stream[cursor].trivia_before).map(c => {
+            c.span
+          })
         }
-        if !found_rparen {
-          module_header_valid = false
-        }
-      } else {
-        module_header_valid = false
       }
-    } else {
-      module_header_valid = false
+      None => {
+        diagnostics.push(malformed_module_header(module_token.span))
+        cursor = recover_to_top_level(stream, 1)
+      }
     }
-
-    if !module_header_valid {
-      diagnostics.push(malformed_module_header(module_token.span))
-      cursor = recover_to_top_level(stream, cursor)
+  } else {
+    let span = if stream.length() > 0 {
+      stream[0].span
     } else {
-      let header_tokens = token_slice(stream, header_start, cursor)
-      cst_header = Some(@cst.ModuleHeaderCst::{
-        module_name: cst_module_name,
-        exposing: cst_exposing,
-        span: span_from_tokens_or(header_tokens, module_token.span),
-        tokens: header_tokens,
-      })
+      {
+        start: { offset: 0, line: 1, column: 1, },
+        end: { offset: 0, line: 1, column: 1, },
+      }
     }
+    diagnostics.push(missing_module_header(span))
   }
 
   while cursor < stream.length() {
+    let starts_item = stream[cursor].kind == @scanner.TokenKind::import_kw() ||
+      stream[cursor].kind == @scanner.TokenKind::type_kw() ||
+      (
+        stream[cursor].kind == @scanner.TokenKind::Identifier &&
+        (cursor == 0 || has_newline_trivia(stream[cursor].trivia_before))
+      )
+    if starts_item {
+      if skipped_from is Some(first) {
+        diagnostics.push(
+          unexpected_syntax(
+            "token",
+            span_from_tokens_or(
+              token_slice(stream, first, cursor),
+              stream[first].span,
+            ),
+          ),
+        )
+        skipped_from = None
+      }
+    } else {
+      if skipped_from is None {
+        skipped_from = Some(cursor)
+      }
+      cursor = cursor + 1
+      continue
+    }
     if stream[cursor].kind == @scanner.TokenKind::import_kw() {
       let import_start = cursor
       let start_token = stream[cursor]
-      let mut malformed = false
-      cursor = cursor + 1
-      if cursor >= stream.length() ||
-        stream[cursor].kind != @scanner.TokenKind::Identifier {
-        malformed = true
-      }
-      let import_name = if malformed {
-        ""
-      } else {
-        let name = stream[cursor].lexeme
-        cursor = cursor + 1
-        name
-      }
-
-      let mut import_exposing : Array[@ast.ExposedName]? = None
-      let mut cst_import_exposing : Array[String]? = None
-      if !malformed &&
-        cursor < stream.length() &&
-        stream[cursor].kind == @scanner.TokenKind::exposing_kw() {
-        cursor = cursor + 1
+      let mut malformed = cursor + 1 >= stream.length() ||
+        !is_upper_name(stream[cursor + 1])
+      let mut module_alias : @ast.Node[@ast.ModuleName]? = None
+      let mut exposing_list : @ast.Node[@ast.Exposing]? = None
+      let mut cst_exposing : Array[String]? = None
+      let mut name_token = start_token
+      if !malformed {
+        name_token = stream[cursor + 1]
+        cursor = cursor + 2
         if cursor < stream.length() &&
-          stream[cursor].kind == @scanner.TokenKind::LParen {
-          cursor = cursor + 1
-          let names = []
-          let cst_names = []
-          let mut found_rparen = false
-          while cursor < stream.length() {
-            if stream[cursor].kind == @scanner.TokenKind::RParen {
-              found_rparen = true
-              cursor = cursor + 1
-              break
-            }
-            if stream[cursor].kind == @scanner.TokenKind::Identifier {
-              let exposed_name = stream[cursor].lexeme
-              names.push(to_exposed_name(exposed_name.to_string()))
-              cst_names.push(exposed_name)
-            }
-            cursor = cursor + 1
-          }
-          if !found_rparen {
-            malformed = true
+          stream[cursor].kind == @scanner.TokenKind::Identifier &&
+          stream[cursor].lexeme == "as" {
+          if cursor + 1 < stream.length() && is_upper_name(stream[cursor + 1]) {
+            let alias_token = stream[cursor + 1]
+            module_alias = Some(
+              node(range_of(alias_token.span), [alias_token.lexeme]),
+            )
+            cursor = cursor + 2
           } else {
-            import_exposing = Some(names)
-            cst_import_exposing = Some(cst_names)
+            malformed = true
           }
-        } else {
-          malformed = true
+        }
+        if !malformed &&
+          token_kind_at(stream, cursor, @scanner.TokenKind::exposing_kw()) {
+          match parse_exposing(stream, cursor) {
+            Some(p) => {
+              exposing_list = Some(p.exposing)
+              cst_exposing = Some(p.names)
+              cursor = p.next
+            }
+            None => malformed = true
+          }
         }
       }
-
       if malformed {
         diagnostics.push(malformed_import(start_token.span))
-        cursor = recover_to_top_level(stream, cursor)
-      } else {
-        imports.push(ImportDecl::{
-          module_name: to_module_name(import_name.to_string()),
-          exposing: import_exposing,
-          span: start_token.span,
-        })
-        let import_tokens = token_slice(stream, import_start, cursor)
-        cst_imports.push(@cst.ImportCst::{
-          module_name: import_name,
-          exposing: cst_import_exposing,
-          span: span_from_tokens_or(import_tokens, start_token.span),
-          tokens: import_tokens,
-        })
+        cursor = recover_to_top_level(stream, cursor + 1)
+        continue
       }
+      let import_tokens = token_slice(stream, import_start, cursor)
+      let last = import_tokens[import_tokens.length() - 1]
+      imports.push(
+        node(range_between(start_token.span, last.span), {
+          module_name: node(range_of(name_token.span), [name_token.lexeme]),
+          module_alias,
+          exposing_list,
+        }),
+      )
+      cst_imports.push(@cst.ImportCst::{
+        module_name: name_token.lexeme,
+        exposing: cst_exposing,
+        span: span_from_tokens_or(import_tokens, start_token.span),
+        tokens: import_tokens,
+      })
       continue
     }
 
     if stream[cursor].kind == @scanner.TokenKind::type_kw() {
       let type_decl_start = cursor
+      declaration_starts.push(type_decl_start)
       let start_token = stream[cursor]
-      let mut malformed = false
       cursor = cursor + 1
-      let is_alias = cursor < stream.length() &&
-        stream[cursor].kind == @scanner.TokenKind::alias_kw()
+      let is_alias = token_kind_at(
+        stream,
+        cursor,
+        @scanner.TokenKind::alias_kw(),
+      )
       if is_alias {
         cursor = cursor + 1
       }
-      if cursor >= stream.length() ||
-        stream[cursor].kind != @scanner.TokenKind::Identifier {
-        malformed = true
-      }
-
-      let type_name = if malformed {
-        ""
-      } else {
-        let name = stream[cursor].lexeme
-        cursor = cursor + 1
-        name
-      }
-
-      let type_params = []
-      let cst_type_params = []
-      while !malformed &&
-            cursor < stream.length() &&
-            stream[cursor].kind == @scanner.TokenKind::Identifier {
-        let type_param_name = stream[cursor].lexeme
-        type_params.push(to_type_var_name(type_param_name.to_string()))
-        cst_type_params.push(type_param_name)
-        cursor = cursor + 1
-      }
-      if !malformed &&
-        cursor < stream.length() &&
-        stream[cursor].kind == @scanner.TokenKind::Equals {
-        cursor = cursor + 1
-      } else {
-        malformed = true
-      }
-
-      if malformed {
+      if cursor >= stream.length() || !is_upper_name(stream[cursor]) {
         diagnostics.push(malformed_type_declaration(start_token.span))
         cursor = recover_to_top_level(stream, cursor)
         continue
       }
-
-      let raw_tokens = []
+      let name_token = stream[cursor]
+      cursor = cursor + 1
+      let params = []
+      while token_kind_at(stream, cursor, @scanner.TokenKind::Identifier) {
+        params.push(stream[cursor])
+        cursor = cursor + 1
+      }
+      if params.any(p => !is_lower_name(p)) ||
+        !token_kind_at(stream, cursor, @scanner.TokenKind::Equals) {
+        diagnostics.push(malformed_type_declaration(start_token.span))
+        cursor = recover_to_top_level(stream, cursor)
+        continue
+      }
+      cursor = cursor + 1
+      let body = []
       while cursor < stream.length() && !is_top_level_start(stream, cursor) {
-        raw_tokens.push(stream[cursor])
+        body.push(stream[cursor])
         cursor = cursor + 1
       }
       let decl_tokens = token_slice(stream, type_decl_start, cursor)
-
-      let meta = DeclMeta::{
-        doc_comment: extract_doc_comment(start_token.trivia_before),
-        span: start_token.span,
-      }
+      let decl_span = span_from_tokens_or(decl_tokens, start_token.span)
+      let param_names = params.map(p => p.lexeme)
       if is_alias {
-        declarations.push(
-          Declaration::TypeAliasDecl(TypeAliasDeclaration::{
-            name: to_type_name(type_name.to_string()),
-            type_params,
-            body: @ast.TypeExpr::Unparsed(@ast.UnparsedTypeExpr::{
-              tokens: raw_tokens,
-            }),
-            meta,
-          }),
-        )
+        diagnostics.push(unsupported_syntax("type alias", decl_span))
         cst_decls.push(
           @cst.DeclarationCst::TypeAlias(@cst.TypeAliasCst::{
-            name: type_name,
-            type_params: cst_type_params,
-            span: span_from_tokens_or(decl_tokens, start_token.span),
+            name: name_token.lexeme,
+            type_params: param_names,
+            span: decl_span,
             tokens: decl_tokens,
           }),
         )
       } else {
-        let cases = []
-        for token in raw_tokens {
-          if token.kind == @scanner.TokenKind::Identifier {
-            cases.push(UnionTypeCase::{
-              name: to_constructor_name(token.lexeme),
-              args: [],
-            })
-          }
+        match custom_type(start_token, name_token, params, body, module_doc) {
+          Some(decl) => declarations.push(decl)
+          None => diagnostics.push(unsupported_syntax("custom type", decl_span))
         }
-        declarations.push(
-          Declaration::UnionTypeDecl(UnionTypeDeclaration::{
-            name: to_type_name(type_name.to_string()),
-            type_params,
-            cases,
-            meta,
-          }),
-        )
         cst_decls.push(
           @cst.DeclarationCst::UnionType(@cst.UnionTypeCst::{
-            name: type_name,
-            type_params: cst_type_params,
-            span: span_from_tokens_or(decl_tokens, start_token.span),
+            name: name_token.lexeme,
+            type_params: param_names,
+            span: decl_span,
             tokens: decl_tokens,
           }),
         )
@@ -469,76 +388,62 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       continue
     }
 
-    if stream[cursor].kind != @scanner.TokenKind::Identifier {
-      cursor = cursor + 1
-      continue
-    }
-
-    if cursor > 0 && !has_newline_trivia(stream[cursor].trivia_before) {
-      cursor = cursor + 1
-      continue
-    }
-
     let function_decl_start = cursor
+    declaration_starts.push(function_decl_start)
     let name_token = stream[cursor]
-    let name = name_token.lexeme
     cursor = cursor + 1
-
-    let args = []
     let cst_args = []
-    while cursor < stream.length() &&
-          stream[cursor].kind == @scanner.TokenKind::Identifier {
-      let arg_name = stream[cursor].lexeme
-      args.push(to_value_name(arg_name.to_string()))
-      cst_args.push(arg_name)
+    while token_kind_at(stream, cursor, @scanner.TokenKind::Identifier) {
+      cst_args.push(stream[cursor].lexeme)
       cursor = cursor + 1
     }
-
-    if cursor < stream.length() &&
-      stream[cursor].kind == @scanner.TokenKind::Equals {
-      cursor = cursor + 1
-    } else {
+    if !token_kind_at(stream, cursor, @scanner.TokenKind::Equals) {
       diagnostics.push(malformed_function_declaration(name_token.span))
       cursor = recover_to_top_level(stream, cursor)
       continue
     }
-
-    let body_tokens = []
+    cursor = cursor + 1
     while cursor < stream.length() && !is_top_level_start(stream, cursor) {
-      body_tokens.push(stream[cursor])
       cursor = cursor + 1
     }
     let decl_tokens = token_slice(stream, function_decl_start, cursor)
-
-    let meta = DeclMeta::{
-      doc_comment: extract_doc_comment(name_token.trivia_before),
-      span: name_token.span,
-    }
-    declarations.push(
-      Declaration::FunctionDecl(FunctionDeclaration::{
-        name: to_value_name(name.to_string()),
-        args,
-        body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{ tokens: body_tokens, }),
-        meta,
-      }),
-    )
+    let decl_span = span_from_tokens_or(decl_tokens, name_token.span)
+    diagnostics.push(unsupported_syntax("function declaration", decl_span))
     cst_decls.push(
       @cst.DeclarationCst::Function(@cst.FunctionCst::{
-        name,
+        name: name_token.lexeme,
         args: cst_args,
-        span: span_from_tokens_or(decl_tokens, name_token.span),
+        span: decl_span,
         tokens: decl_tokens,
       }),
     )
   }
 
+  if skipped_from is Some(first) {
+    diagnostics.push(
+      unexpected_syntax(
+        "token",
+        span_from_tokens_or(
+          token_slice(stream, first, cursor),
+          stream[first].span,
+        ),
+      ),
+    )
+  }
+  let (comments, stray_docs) = collect_comments(
+    stream, declaration_starts, module_doc,
+  )
+  for span in stray_docs {
+    diagnostics.push(
+      unexpected_syntax("doc comment not attached to a declaration", span),
+    )
+  }
   ParseResult::{
-    ast: Some(ModuleAst::{
-      module_name,
-      exposing,
+    ast: module_definition.map(m => {
+      module_definition: m,
       imports,
       declarations,
-      span: module_span(stream),
+      comments,
     }),
     cst: Some(@cst.ModuleCst::{
       tokens: stream,

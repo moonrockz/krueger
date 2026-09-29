@@ -1,33 +1,121 @@
-Feature: Elm parser baseline
-  The parser should build AST/CST for Elm core subset source and attach
-  doc comments to declarations according to the design contract.
+Feature: Elm parser
+  The parser builds an elm-syntax AST for the syntax it supports, keeps every
+  declaration in the CST, and reports syntax it cannot yet produce exactly.
+
+  Scenario Outline: Parser output matches elm-syntax
+    Given the Elm fixture "<fixture>"
+    When I parse the source
+    Then parsing succeeds without diagnostics
+    And the AST JSON equals the elm-syntax output for "<fixture>"
+
+    Examples:
+      | fixture                  |
+      | header_all               |
+      | header_explicit          |
+      | imports                  |
+      | single_constructor       |
+      | documented_type          |
+      | module_documentation     |
+      | second_declaration_doc   |
+      | doc_across_comment       |
+      | module_doc_then_type_doc |
+      | comments                 |
+      | spaced_exposing_all      |
 
   Scenario: Attach doc comment to following declaration
     Given Elm source:
       """elm
-      module Main exposing (add)
+      module Main exposing (Msg)
 
-      {-| Adds one to a value. -}
-      add x = x + 1
+      import Html
+
+      {-| A message. -}
+      type Msg
+          = Inc
       """
     When I parse the source
     Then parsing succeeds without diagnostics
-    And the AST contains function declaration "add"
-    And declaration "add" has the attached doc comment "Adds one to a value."
+    And declaration "Msg" has documentation "{-| A message. -}"
 
-  Scenario: Do not attach doc comment when separated by regular comment
+  Scenario: First doc comment after the header documents the module
+    Given Elm source:
+      """elm
+      module Main exposing (Msg)
+
+      {-| Module documentation. -}
+      type Msg
+          = Inc
+      """
+    When I parse the source
+    Then parsing succeeds without diagnostics
+    And declaration "Msg" has no documentation
+    And the file comments are "{-| Module documentation. -}"
+
+  Scenario Outline: Reject syntax that elm-syntax rejects
+    Given Elm source:
+      """elm
+      <source>
+      """
+    When I parse the source
+    Then the diagnostics include "<code>"
+
+    Examples:
+      | source                       | code         |
+      | module A exposing (..) extra | KR-PARSE-007 |
+      | module a exposing (..)       | KR-PARSE-001 |
+
+  Scenario: Reject a doc comment before the module header
+    Given Elm source:
+      """elm
+      {-| before header -}
+      module A exposing (T)
+      """
+    When I parse the source
+    Then the diagnostics include "KR-PARSE-007"
+
+  Scenario: Reject a stray doc comment before an import
+    Given Elm source:
+      """elm
+      module A exposing (T)
+
+      import B
+
+      {-| stray -}
+      import C
+      """
+    When I parse the source
+    Then the diagnostics include "KR-PARSE-007"
+
+  Scenario: Reject tokens the parser would otherwise skip
+    Given Elm source:
+      """elm
+      module A exposing (T)
+
+      import B C
+      """
+    When I parse the source
+    Then the diagnostics include "KR-PARSE-007"
+
+  Scenario: Report declarations the parser cannot produce yet
     Given Elm source:
       """elm
       module Main exposing (add)
 
-      {-| Candidate doc comment. -}
-      -- separating regular comment
       add x = x + 1
       """
     When I parse the source
-    Then parsing succeeds
-    And declaration "add" has no attached doc comment in AST metadata
-    And both comments are preserved in CST or token trivia
+    Then the diagnostics are "KR-PARSE-005"
+    And the AST has no declarations
+    And the CST has declaration "add"
+
+  Scenario: Report a missing module header
+    Given Elm source:
+      """elm
+      x = 1
+      """
+    When I parse the source
+    Then the diagnostics include "KR-PARSE-006"
+    And there is no AST
 
   Scenario: Surface malformed comment as diagnostic during parse
     Given Elm source:

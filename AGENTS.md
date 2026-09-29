@@ -9,32 +9,70 @@ You can browse and install extra skills here:
 
 This module (`moonrockz/krueger`) is a **parser and parsing utilities** library for
 [Elm](https://elm-lang.org/) and Elm-like dialects (e.g.
-[Morphir](https://github.com/finos/morphir)). It will provide:
+[Morphir](https://github.com/finos/morphir)). It provides:
 
 - **Scanner** — tokenization of Elm/Elm-like source
 - **Parser** — grammar-driven parsing into an AST
-- **AST** — algebraic data types for Elm/Elm-like syntax (with flexibility similar to moonrockz/gherkin)
-- **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.)
+- **AST** — an exact mirror of [stil4m/elm-syntax](https://package.elm-lang.org/packages/stil4m/elm-syntax/7.3.9/) 7.3.9, with a JSON encoder and decoder that match elm-syntax byte for byte
+- **CST** — every token and top-level declaration, with trivia (whitespace and comments)
+- **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.), planned
 
-The design of scanner, parser, AST, and visitor APIs will be done in a follow-up phase;
-this repository is set up for CI, release, mise, and moonrockz conventions.
+The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax output
+(epic `krueger-q56`).
 
-### Architecture Summary (Planned)
+### Architecture Summary
 
 ```
 moonrockz/krueger
 ├── src/                  # The library (sole artifact for now)
-│   ├── lib.mbt           # Package entry point
-│   ├── (scanner/)        # Tokenizer — to be designed
-│   ├── (parser/)         # Parser — to be designed
-│   ├── (ast/)            # AST types — to be designed
-│   ├── (visitor/)        # Visitor / fold / SAX APIs — to be designed
-│   └── moon.pkg          # Package config
+│   ├── lib.mbt           # Package entry point; re-exports the public types
+│   ├── scanner/          # Tokenizer (bobzhang/lexer adapter, trivia, diagnostics)
+│   ├── parser/           # Parser: tokens → AST + CST + diagnostics
+│   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
+│   ├── cst/              # Concrete syntax tree
+│   ├── bdd/              # MoonSpec step definitions (test-only)
+│   ├── e2e/              # End-to-end tests (test-only)
+│   └── (visitor/)        # Visitor / fold / SAX APIs — planned
+├── tests/features/       # Gherkin features
+├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
+├── scripts/              # MoonBit tooling scripts (.mbtx)
 ├── docs/plans/           # Older committed plans (new work documents go in .dev/)
 ├── .dev/                 # Gitignored working area for specs, plans and scratch files
 ├── .beads/               # Issue tracking (optional)
 └── mise-tasks/          # File-based mise tasks
 ```
+
+### AST and Parser Contract
+
+- `@ast` types, field names and JSON shape follow elm-syntax 7.3.9 exactly.
+  `@ast.encode_file` output must equal `Elm.Syntax.File.encode` output byte for byte.
+- The parser never produces an approximate AST node. Syntax it cannot produce
+  exactly is left out of the AST, kept in the CST, and reported:
+
+| Code | Meaning |
+|------|---------|
+| `KR-SCAN-001` | Unterminated block comment |
+| `KR-SCAN-002` | Malformed doc comment |
+| `KR-SCAN-003` | Invalid or unknown character sequence |
+| `KR-PARSE-001` | Malformed module header (no AST) |
+| `KR-PARSE-002` | Malformed import declaration |
+| `KR-PARSE-003` | Malformed type declaration |
+| `KR-PARSE-004` | Malformed function declaration |
+| `KR-PARSE-005` | Unsupported syntax: the parser cannot produce this construct yet |
+| `KR-PARSE-006` | Missing module header (no AST) |
+| `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
+
+- Fixture JSON in `tests/fixtures/` comes from elm-syntax 7.3.9. Regenerate it with the
+  oracle, never by hand.
+- Doc comments follow elm-syntax:
+  - The first doc comment after the module header documents the module and goes to
+    `File.comments`.
+  - A declaration's documentation is the last doc comment before it; regular comments
+    in between do not detach it. Its range starts at that doc comment.
+  - Any other doc comment (before the header, before an import, at the end of the
+    file) is an error (`KR-PARSE-007`); elm-syntax rejects such files.
+- `File.comments` holds every regular comment and the module documentation, in
+  source order.
 
 ## Library Dependencies
 
