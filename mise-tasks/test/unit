@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Run MoonBit unit tests"
 set -euo pipefail
-moon test src --target js
-moon test src/scanner --target js
+for pkg in src src/scanner src/parser src/cst src/syntax; do
+  moon test "$pkg" --target js
+done

@@ -1,4 +1,0 @@
-import {
-  "moonbitlang/core/builtin",
-  "moonrockz/krueger/scanner",
-}

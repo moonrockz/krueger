@@ -1,19 +1,12 @@
 ///|
-pub using @ast {
-  type DocComment,
-  type DeclMeta,
-  type FunctionDeclaration,
-  type TypeAliasDeclaration,
-  type UnionTypeCase,
-  type UnionTypeDeclaration,
-  type Declaration,
-  type ImportDecl,
-  type ModuleAst,
-}
-
-///|
+/// Result of parsing one Elm module.
+///
+/// `ast` is the elm-syntax AST, present when the module header is valid.
+/// `cst` keeps every token and every declaration. `diagnostics` lists scanner
+/// and parser problems, including syntax the parser cannot produce yet
+/// (`KR-PARSE-005`).
 pub(all) struct ParseResult {
-  ast : @ast.ModuleAst?
+  ast : @syntax.File?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
 } derive(Eq, Debug)

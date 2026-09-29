@@ -40,36 +40,26 @@ test "root package exposes parser entrypoints" {
 }
 
 ///|
-test "root package exposes ast domain wrappers" {
-  let identifier = @krueger.Identifier::Identifier("Main")
-  assert_eq(identifier.0, "Main")
+test "root package exposes the elm-syntax model" {
+  let location = @krueger.Location::{ row: 1, column: 1, }
+  let range = @krueger.Range::{ start: location, end: location, }
+  let name : @krueger.Node[@krueger.ModuleName] = { range, value: ["Main"], }
+  @expect.expect(name.value).to_equal(["Main"])
 }
 
 ///|
-test "root package parse_module uses default scanner and captures declarations" {
+test "root package parse_module uses default scanner and builds the module" {
   let source = @krueger.SourceText::{
     module_name: Some("Main"),
-    text: "module Main exposing (add)\nadd x = x + 1",
+    text: "module Main exposing (Msg)\ntype Msg = Inc",
   }
   let result = @krueger.parse_module(source)
-  match result.ast {
-    Some(ast) => {
-      match ast.module_name {
-        Some(module_name) => assert_eq(module_name.0.0, "Main")
-        None => fail("expected module name")
-      }
-      assert_true(
-        ast.declarations.any(fn(decl) {
-          match decl {
-            @krueger.Declaration::FunctionDecl(fn_decl) =>
-              fn_decl.name.0.0 == "add"
-            _ => false
-          }
-        }),
-      )
-    }
-    None => fail("expected ast")
+  guard result.ast is Some(file) else { fail("expected an AST") }
+  guard file.module_definition.value is @krueger.Module::NormalModule(data) else {
+    fail("expected a normal module")
   }
+  @expect.expect(data.module_name.value).to_equal(["Main"])
+  @expect.expect(file.declarations.length()).to_equal(1)
 }
 
 ///|
@@ -78,28 +68,12 @@ test "root package parse_tokens wraps parser parse_tokens" {
     module_name: Some("Main"),
     text: "module Main exposing (add)\nadd x = x + 1",
   }
-  let stream = match @krueger.tokenize(source) {
-    Ok(stream) => stream
-    Err(_) => fail("expected tokenize success")
+  guard @krueger.tokenize(source) is Ok(stream) else {
+    fail("expected tokenize success")
   }
   let result = @krueger.parse_tokens(stream)
-  match result.ast {
-    Some(ast) =>
-      assert_true(
-        ast.declarations.any(fn(decl) {
-          match decl {
-            @krueger.Declaration::FunctionDecl(fn_decl) =>
-              match fn_decl.body {
-                @ast.Expr::Unparsed(unparsed) =>
-                  fn_decl.name.0.0 == "add" && unparsed.tokens.length() > 0
-                _ => false
-              }
-            _ => false
-          }
-        }),
-      )
-    None => fail("expected ast")
-  }
+  @expect.expect(result.diagnostics.map(d => d.code)).to_equal(["KR-PARSE-005"])
+  @expect.expect(result.cst.map(c => c.declarations.length())).to_equal(Some(1))
 }
 
 ///|
