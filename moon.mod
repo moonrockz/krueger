@@ -7,6 +7,7 @@ import {
   "bobzhang/lexer@0.3.0",
   "moonrockz/moonspec@0.7.1",
   "moonbitlang/async@0.22.4",
+  "moonrockz/expect@0.2.0",
 }
 
 readme = "README.mbt.md"

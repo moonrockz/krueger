@@ -1,0 +1,319 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/syntax"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn decode_declaration(Json) -> Declaration raise DecodeError
+
+pub fn decode_exposing(Json) -> Exposing raise DecodeError
+
+pub fn decode_expression(Json) -> Expression raise DecodeError
+
+pub fn decode_file(Json) -> File raise DecodeError
+
+pub fn decode_function(Json) -> Function raise DecodeError
+
+pub fn decode_import(Json) -> Import raise DecodeError
+
+pub fn decode_infix(Json) -> Infix raise DecodeError
+
+pub fn decode_infix_direction(Json) -> InfixDirection raise DecodeError
+
+pub fn decode_module(Json) -> Module raise DecodeError
+
+pub fn decode_module_name(Json) -> Array[String] raise DecodeError
+
+pub fn[T] decode_node(Json, (Json) -> T raise DecodeError) -> Node[T] raise DecodeError
+
+pub fn decode_pattern(Json) -> Pattern raise DecodeError
+
+pub fn decode_range(Json) -> Range raise DecodeError
+
+pub fn decode_signature(Json) -> Signature raise DecodeError
+
+pub fn decode_top_level_expose(Json) -> TopLevelExpose raise DecodeError
+
+pub fn decode_type(Json) -> Type raise DecodeError
+
+pub fn decode_type_alias(Json) -> TypeAlias raise DecodeError
+
+pub fn decode_type_annotation(Json) -> TypeAnnotation raise DecodeError
+
+pub fn decode_value_constructor(Json) -> ValueConstructor raise DecodeError
+
+pub fn encode_declaration(Declaration) -> Json
+
+pub fn encode_exposing(Exposing) -> Json
+
+pub fn encode_expression(Expression) -> Json
+
+pub fn encode_file(File) -> Json
+
+pub fn encode_function(Function) -> Json
+
+pub fn encode_import(Import) -> Json
+
+pub fn encode_infix(Infix) -> Json
+
+pub fn encode_infix_direction(InfixDirection) -> Json
+
+pub fn encode_module(Module) -> Json
+
+pub fn encode_module_name(Array[String]) -> Json
+
+pub fn[T] encode_node(Node[T], (T) -> Json) -> Json
+
+pub fn encode_pattern(Pattern) -> Json
+
+pub fn encode_range(Range) -> Json
+
+pub fn encode_signature(Signature) -> Json
+
+pub fn encode_top_level_expose(TopLevelExpose) -> Json
+
+pub fn encode_type(Type) -> Json
+
+pub fn encode_type_alias(TypeAlias) -> Json
+
+pub fn encode_type_annotation(TypeAnnotation) -> Json
+
+pub fn encode_value_constructor(ValueConstructor) -> Json
+
+// Errors
+pub(all) suberror DecodeError {
+  DecodeError(path~ : String, message~ : String)
+} derive(Eq, @debug.Debug)
+pub impl Show for DecodeError
+
+// Types and methods
+pub(all) struct Case {
+  pattern : Node[Pattern]
+  expression : Node[Expression]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CaseBlock {
+  expression : Node[Expression]
+  cases : Array[Case]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Declaration {
+  FunctionDeclaration(Function)
+  AliasDeclaration(TypeAlias)
+  CustomTypeDeclaration(Type)
+  PortDeclaration(Signature)
+  InfixDeclaration(Infix)
+  Destructuring(Node[Pattern], Node[Expression])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DefaultModuleData {
+  module_name : Node[Array[String]]
+  exposing_list : Node[Exposing]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct EffectModuleData {
+  module_name : Node[Array[String]]
+  exposing_list : Node[Exposing]
+  command : Node[String]?
+  subscription : Node[String]?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExposedType {
+  name : String
+  open : Range?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Exposing {
+  All(Range)
+  Explicit(Array[Node[TopLevelExpose]])
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Expression {
+  UnitExpr
+  Application(Array[Node[Expression]])
+  OperatorApplication(String, InfixDirection, Node[Expression], Node[Expression])
+  FunctionOrValue(Array[String], String)
+  IfBlock(Node[Expression], Node[Expression], Node[Expression])
+  PrefixOperator(String)
+  Operator(String)
+  Integer(Int64)
+  Hex(Int64)
+  Floatable(Double)
+  Negation(Node[Expression])
+  Literal(String)
+  CharLiteral(Char)
+  TupledExpression(Array[Node[Expression]])
+  ParenthesizedExpression(Node[Expression])
+  LetExpression(LetBlock)
+  CaseExpression(CaseBlock)
+  LambdaExpression(Lambda)
+  RecordExpr(Array[Node[RecordSetter]])
+  ListExpr(Array[Node[Expression]])
+  RecordAccess(Node[Expression], Node[String])
+  RecordAccessFunction(String)
+  RecordUpdateExpression(Node[String], Array[Node[RecordSetter]])
+  GLSLExpression(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct File {
+  module_definition : Node[Module]
+  imports : Array[Node[Import]]
+  declarations : Array[Node[Declaration]]
+  comments : Array[Node[String]]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Function {
+  documentation : Node[String]?
+  signature : Node[Signature]?
+  declaration : Node[FunctionImplementation]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct FunctionImplementation {
+  name : Node[String]
+  arguments : Array[Node[Pattern]]
+  expression : Node[Expression]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Import {
+  module_name : Node[Array[String]]
+  module_alias : Node[Array[String]]?
+  exposing_list : Node[Exposing]?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Infix {
+  direction : Node[InfixDirection]
+  precedence : Node[Int]
+  operator : Node[String]
+  function : Node[String]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum InfixDirection {
+  Left
+  Right
+  Non
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Lambda {
+  args : Array[Node[Pattern]]
+  expression : Node[Expression]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LetBlock {
+  declarations : Array[Node[LetDeclaration]]
+  expression : Node[Expression]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum LetDeclaration {
+  LetFunction(Function)
+  LetDestructuring(Node[Pattern], Node[Expression])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Location {
+  row : Int
+  column : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Module {
+  NormalModule(DefaultModuleData)
+  PortModule(DefaultModuleData)
+  EffectModule(EffectModuleData)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Node[T] {
+  range : Range
+  value : T
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Pattern {
+  AllPattern
+  UnitPattern
+  CharPattern(Char)
+  StringPattern(String)
+  IntPattern(Int64)
+  HexPattern(Int64)
+  FloatPattern(Double)
+  TuplePattern(Array[Node[Pattern]])
+  RecordPattern(Array[Node[String]])
+  UnConsPattern(Node[Pattern], Node[Pattern])
+  ListPattern(Array[Node[Pattern]])
+  VarPattern(String)
+  NamedPattern(QualifiedNameRef, Array[Node[Pattern]])
+  AsPattern(Node[Pattern], Node[String])
+  ParenthesizedPattern(Node[Pattern])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct QualifiedNameRef {
+  module_name : Array[String]
+  name : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Range {
+  start : Location
+  end : Location
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RecordField {
+  name : Node[String]
+  type_annotation : Node[TypeAnnotation]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RecordSetter {
+  field : Node[String]
+  expression : Node[Expression]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Signature {
+  name : Node[String]
+  type_annotation : Node[TypeAnnotation]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum TopLevelExpose {
+  InfixExpose(String)
+  FunctionExpose(String)
+  TypeOrAliasExpose(String)
+  TypeExpose(ExposedType)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Type {
+  documentation : Node[String]?
+  name : Node[String]
+  generics : Array[Node[String]]
+  constructors : Array[Node[ValueConstructor]]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TypeAlias {
+  documentation : Node[String]?
+  name : Node[String]
+  generics : Array[Node[String]]
+  type_annotation : Node[TypeAnnotation]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum TypeAnnotation {
+  GenericType(String)
+  Typed(Node[(Array[String], String)], Array[Node[TypeAnnotation]])
+  Unit
+  Tupled(Array[Node[TypeAnnotation]])
+  Record(Array[Node[RecordField]])
+  GenericRecord(Node[String], Node[Array[Node[RecordField]]])
+  FunctionTypeAnnotation(Node[TypeAnnotation], Node[TypeAnnotation])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ValueConstructor {
+  name : Node[String]
+  arguments : Array[Node[TypeAnnotation]]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+pub type Cases = Array[Case]
+
+pub type Comment = String
+
+pub type Documentation = String
+
+pub type ModuleName = Array[String]
+
+pub type RecordDefinition = Array[Node[RecordField]]
+
+// Traits
