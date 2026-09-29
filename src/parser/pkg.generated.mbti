@@ -3,6 +3,7 @@ package "moonrockz/krueger/parser"
 
 import {
   "moonrockz/krueger/ast",
+  "moonrockz/krueger/cst",
   "moonrockz/krueger/scanner",
 }
 
@@ -14,25 +15,9 @@ pub fn parse_tokens(@scanner.TokenStream) -> ParseResult
 // Errors
 
 // Types and methods
-pub(all) struct CstDecl {
-  kind : String
-  span : @scanner.Span
-  tokens : Array[@scanner.Token]
-}
-pub impl Eq for CstDecl
-pub impl Show for CstDecl
-
-pub(all) struct ModuleCst {
-  tokens : Array[@scanner.Token]
-  declarations : Array[CstDecl]
-  span : @scanner.Span?
-}
-pub impl Eq for ModuleCst
-pub impl Show for ModuleCst
-
 pub(all) struct ParseResult {
   ast : @ast.ModuleAst?
-  cst : ModuleCst?
+  cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
 }
 pub impl Eq for ParseResult

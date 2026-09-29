@@ -42,7 +42,18 @@ pub using @scanner {
 }
 
 ///|
-pub using @parser {type ParseResult, type ModuleCst}
+pub using @cst {
+  type ModuleHeaderCst,
+  type ImportCst,
+  type FunctionCst,
+  type TypeAliasCst,
+  type UnionTypeCst,
+  type DeclarationCst,
+  type ModuleCst,
+}
+
+///|
+pub using @parser {type ParseResult}
 
 ///|
 /// Krueger — Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir).

@@ -1,0 +1,79 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/cst"
+
+import {
+  "moonrockz/krueger/scanner",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum DeclarationCst {
+  Function(FunctionCst)
+  TypeAlias(TypeAliasCst)
+  UnionType(UnionTypeCst)
+}
+pub impl Eq for DeclarationCst
+pub impl Show for DeclarationCst
+
+pub(all) struct FunctionCst {
+  name : String
+  args : Array[String]
+  tokens : Array[@scanner.Token]
+  span : @scanner.Span
+}
+pub impl Eq for FunctionCst
+pub impl Show for FunctionCst
+
+pub(all) struct ImportCst {
+  module_name : String
+  exposing : Array[String]?
+  tokens : Array[@scanner.Token]
+  span : @scanner.Span
+}
+pub impl Eq for ImportCst
+pub impl Show for ImportCst
+
+pub(all) struct ModuleCst {
+  tokens : Array[@scanner.Token]
+  header : ModuleHeaderCst?
+  imports : Array[ImportCst]
+  declarations : Array[DeclarationCst]
+  span : @scanner.Span?
+}
+pub impl Eq for ModuleCst
+pub impl Show for ModuleCst
+
+pub(all) struct ModuleHeaderCst {
+  module_name : String?
+  exposing : Array[String]
+  tokens : Array[@scanner.Token]
+  span : @scanner.Span
+}
+pub impl Eq for ModuleHeaderCst
+pub impl Show for ModuleHeaderCst
+
+pub(all) struct TypeAliasCst {
+  name : String
+  type_params : Array[String]
+  tokens : Array[@scanner.Token]
+  span : @scanner.Span
+}
+pub impl Eq for TypeAliasCst
+pub impl Show for TypeAliasCst
+
+pub(all) struct UnionTypeCst {
+  name : String
+  type_params : Array[String]
+  tokens : Array[@scanner.Token]
+  span : @scanner.Span
+}
+pub impl Eq for UnionTypeCst
+pub impl Show for UnionTypeCst
+
+// Type aliases
+
+// Traits
+

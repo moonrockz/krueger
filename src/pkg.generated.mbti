@@ -3,6 +3,7 @@ package "moonrockz/krueger"
 
 import {
   "moonrockz/krueger/ast",
+  "moonrockz/krueger/cst",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/scanner",
 }
@@ -31,6 +32,8 @@ pub using @ast {type DeclMeta}
 
 pub using @ast {type Declaration}
 
+pub using @cst {type DeclarationCst}
+
 pub using @scanner {type Diagnostic}
 
 pub using @ast {type DocComment}
@@ -39,9 +42,13 @@ pub using @ast {type ExposedName}
 
 pub using @ast {type Expr}
 
+pub using @cst {type FunctionCst}
+
 pub using @ast {type FunctionDeclaration}
 
 pub using @ast {type Identifier}
+
+pub using @cst {type ImportCst}
 
 pub using @ast {type ImportDecl}
 
@@ -49,7 +56,9 @@ pub using @scanner {type KeywordKind}
 
 pub using @ast {type ModuleAst}
 
-pub using @parser {type ModuleCst}
+pub using @cst {type ModuleCst}
+
+pub using @cst {type ModuleHeaderCst}
 
 pub using @ast {type ModuleName}
 
@@ -75,6 +84,8 @@ pub using @scanner {type TokenStream}
 
 pub using @scanner {type Trivia}
 
+pub using @cst {type TypeAliasCst}
+
 pub using @ast {type TypeAliasDeclaration}
 
 pub using @ast {type TypeExpr}
@@ -84,6 +95,8 @@ pub using @ast {type TypeName}
 pub using @ast {type TypeVarName}
 
 pub using @ast {type UnionTypeCase}
+
+pub using @cst {type UnionTypeCst}
 
 pub using @ast {type UnionTypeDeclaration}
 
