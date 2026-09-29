@@ -32,6 +32,9 @@ let raw_goldens_dir : String = ".dev/out/goldens/raw"
 let max_reported_mismatches : Int = 20
 
 ///|
+let reports_dir : String = "_build/reports/parity"
+
+///|
 fn parity_mode() -> Mode? raise {
   match @env.get_env_var("KRUEGER_PARITY_MODE") {
     None | Some("") => None
@@ -111,6 +114,22 @@ fn write_lock() -> Unit raise {
 }
 
 ///|
+/// Path of the first difference from the raw elm-syntax JSON, when the raw
+/// golden exists locally (`mise run corpus:goldens`).
+fn difference_path(key : String, actual : Json) -> String? {
+  let raw = "\{raw_goldens_dir}/\{key}.json"
+  if !@fs.path_exists(raw) {
+    return None
+  }
+  let expected = try @json.parse(@fs.read_file_to_string(raw)) catch {
+    _ => return None
+  } noraise {
+    j => j
+  }
+  first_difference(expected, actual).map(d => d.path)
+}
+
+///|
 /// Mismatch details for one file, printed after the scoreboard.
 fn mismatch_report(key : String, actual : Json?) -> String {
   let raw = "\{raw_goldens_dir}/\{key}.json"
@@ -136,7 +155,8 @@ fn mismatch_report(key : String, actual : Json?) -> String {
 }
 
 ///|
-fn score() -> Counts raise {
+/// Score every corpus file in the lock and return one result per file.
+fn score() -> Array[FileReport] raise {
   let entries = parse_lock(@fs.read_file_to_string(lock_path))
   let problems = source_problems(entries, manifest_sources())
   if !problems.is_empty() {
@@ -145,38 +165,87 @@ fn score() -> Counts raise {
       problems.join("; "),
     )
   }
-  let mut tokenized = 0
-  let mut parsed = 0
-  let mut matched = 0
-  let reports = []
+  let files = []
+  let mismatches = []
   for entry in entries {
     let text = verified_source(entry.key, entry.source_sha256)
     let source = @krueger.SourceText::{ module_name: None, text, }
-    if @krueger.tokenize(source) is Ok(_) {
-      tokenized += 1
-    }
+    let tokenized = @krueger.tokenize(source) is Ok(_)
     let result = @krueger.parse_module(source)
     let actual = result.ast.map(@ast.encode_file)
-    if actual is Some(_) && result.diagnostics.is_empty() {
-      parsed += 1
-    }
-    let is_match = match (entry.golden, actual) {
+    let parsed = actual is Some(_) && result.diagnostics.is_empty()
+    // A hash match counts even when krueger also reported diagnostics.
+    let matched = match (entry.golden, actual) {
       (Hash(h), Some(json)) => sha256_hex(canonical(json)) == h
       (ParseError, _) => !result.diagnostics.is_empty()
       _ => false
     }
-    if is_match {
-      matched += 1
-    } else if reports.length() < max_reported_mismatches {
-      reports.push(mismatch_report(entry.key, actual))
+    let diagnostic = result.diagnostics
+      .get(0)
+      .map(d => {
+        code: d.code,
+        message: d.message,
+        line: d.span.start.line,
+        column: d.span.start.column,
+      })
+    let difference = if matched {
+      None
+    } else {
+      actual.bind(json => difference_path(entry.key, json))
+    }
+    files.push({
+      key: entry.key,
+      tokenized,
+      parsed,
+      matched,
+      diagnostic,
+      difference,
+    })
+    if !matched && mismatches.length() < max_reported_mismatches {
+      mismatches.push(mismatch_report(entry.key, actual))
     }
   }
-  let counts = { files: entries.length(), tokenized, parsed, matched, }
+  let counts = parity_report(files, None).counts
   println(scoreboard(counts))
-  for r in reports {
-    println(r)
+  for m in mismatches {
+    println(m)
   }
-  counts
+  files
+}
+
+///|
+fn read_baseline() -> Counts? raise {
+  if @fs.path_exists(baseline_path) {
+    Some(counts_from_json(@json.parse(@fs.read_file_to_string(baseline_path))))
+  } else {
+    None
+  }
+}
+
+///|
+/// Create `path` and its parents (like `mkdir -p`).
+fn ensure_dir(path : String) -> Unit raise {
+  let mut prefix = ""
+  for part in path.split("/") {
+    prefix = if prefix == "" { part.to_owned() } else { "\{prefix}/\{part}" }
+    if !@fs.path_exists(prefix) {
+      @fs.create_dir(prefix)
+    }
+  }
+}
+
+///|
+/// Write `parity.json`, `parity.xml` (JUnit), `parity.html` and `summary.md`.
+fn write_reports(report : ParityReport) -> Unit raise {
+  ensure_dir(reports_dir)
+  @fs.write_string_to_file(
+    "\{reports_dir}/parity.json",
+    report_json(report).stringify(indent=2) + "\n",
+  )
+  @fs.write_string_to_file("\{reports_dir}/parity.xml", report_junit(report))
+  @fs.write_string_to_file("\{reports_dir}/parity.html", report_html(report))
+  @fs.write_string_to_file("\{reports_dir}/summary.md", report_markdown(report))
+  println("parity: wrote reports to \{reports_dir}")
 }
 
 ///|
@@ -187,30 +256,33 @@ test "parity corpus" {
         "parity: skipped (set KRUEGER_PARITY_MODE or run mise run test:parity)",
       )
     Some(WriteLock) => write_lock()
-    Some(Ratchet) => {
-      let counts = score()
-      if @fs.path_exists(baseline_path) {
-        let baseline = counts_from_json(
-          @json.parse(@fs.read_file_to_string(baseline_path)),
-        )
-        if ratchet(counts, baseline) is Err(message) {
-          fail("parity ratchet refused to lower the baseline: " + message)
+    Some(mode) => {
+      let baseline = read_baseline()
+      let report = parity_report(
+        score(),
+        baseline,
+        commit=@env.get_env_var("GITHUB_SHA"),
+      )
+      write_reports(report)
+      match mode {
+        Check => {
+          if baseline is None {
+            fail("missing \{baseline_path}; run mise run parity:ratchet")
+          }
+          if !report.regressions.is_empty() {
+            fail("parity regressed: " + report.regressions.join("; "))
+          }
         }
-      }
-      @fs.write_string_to_file(
-        baseline_path,
-        counts_to_json(counts).stringify(indent=2) + "\n",
-      )
-      println("parity: wrote \{baseline_path}")
-    }
-    Some(Check) => {
-      let counts = score()
-      let baseline = counts_from_json(
-        @json.parse(@fs.read_file_to_string(baseline_path)),
-      )
-      let found = regressions(counts, baseline)
-      if !found.is_empty() {
-        fail("parity regressed: " + found.join("; "))
+        _ => {
+          if baseline is Some(b) && ratchet(report.counts, b) is Err(message) {
+            fail("parity ratchet refused to lower the baseline: " + message)
+          }
+          @fs.write_string_to_file(
+            baseline_path,
+            counts_to_json(report.counts).stringify(indent=2) + "\n",
+          )
+          println("parity: wrote \{baseline_path}")
+        }
       }
     }
   }
