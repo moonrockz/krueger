@@ -1,0 +1,90 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.2.0",
+}
+
+///|
+/// Install lefthook git hooks into the git common hooks directory.
+///
+/// Using the common directory works for normal clones and worktrees, and
+/// does not overwrite the tracked `.beads/hooks` shims.
+
+///|
+/// Hooks directory for a `git rev-parse --git-common-dir` result.
+/// A relative result is resolved against `cwd`.
+fn hooks_dir(common_dir : String, cwd : String) -> String {
+  let dir = common_dir.trim().to_owned()
+  if dir.has_prefix("/") {
+    "\{dir}/hooks"
+  } else {
+    "\{cwd}/\{dir}/hooks"
+  }
+}
+
+///|
+/// Run a command with inherited output; exit with its code on failure.
+async fn run_or_exit(cmd : String, args : Array[String]) -> Unit {
+  let code = @process.run(cmd, args)
+  if code != 0 {
+    @sys.exit(code)
+  }
+}
+
+///|
+async fn main {
+  let (code, out) = @process.collect_stdout("git", [
+    "rev-parse", "--git-common-dir",
+  ])
+  if code != 0 {
+    @sys.exit(code)
+    return
+  }
+  let cwd = @env.current_dir().unwrap_or(".")
+  let hooks = hooks_dir(out.text(), cwd)
+  @fs.mkdir(hooks, recursive=true, allow_exist=true)
+  run_or_exit("git", ["config", "--local", "core.hooksPath", hooks])
+  run_or_exit("lefthook", ["install", "-f"])
+  println("Lefthook git hooks installed in \{hooks}.")
+}
+
+///|
+/// Scenario state for `features/hooks_install.feature`.
+struct HooksWorld {
+  mut common_dir : String
+  mut cwd : String
+}
+
+///|
+fn HooksWorld::new() -> HooksWorld {
+  { common_dir: "", cwd: "", }
+}
+
+///|
+impl @moonspec.World for HooksWorld with fn configure(self, setup) {
+  setup.given1("git reports the common dir {string}", fn(dir : String) {
+    self.common_dir = dir
+  })
+  setup.given1("the current directory is {string}", fn(cwd : String) {
+    self.cwd = cwd
+  })
+  setup.then1("the hooks directory is {string}", fn(expected : String) raise {
+    @expect.expect(hooks_dir(self.common_dir, self.cwd)).to_equal(expected)
+  })
+}
+
+///|
+async test "hooks_install feature" {
+  @moonspec.run_or_fail(
+    HooksWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/hooks_install.feature"),
+    ]),
+  )
+  |> ignore
+}

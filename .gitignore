@@ -15,3 +15,6 @@ __pycache__/
 .beads-credential-key
 .beads/proxieddb/
 *.gate.lock*
+
+# Local AI-assisted working area (specs, plans, scratch). Never committed.
+.dev/

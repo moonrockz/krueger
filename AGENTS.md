@@ -30,7 +30,8 @@ moonrockz/krueger
 │   ├── (ast/)            # AST types — to be designed
 │   ├── (visitor/)        # Visitor / fold / SAX APIs — to be designed
 │   └── moon.pkg          # Package config
-├── docs/plans/           # Design and implementation plans
+├── docs/plans/           # Older committed plans (new work documents go in .dev/)
+├── .dev/                 # Gitignored working area for specs, plans and scratch files
 ├── .beads/               # Issue tracking (optional)
 └── mise-tasks/          # File-based mise tasks
 ```
@@ -57,6 +58,7 @@ versioned on mooncakes.io, so keep them on the latest release when you bump the 
 |--------|---------|
 | [bobzhang/lexer](https://mooncakes.io/docs/bobzhang/lexer) | Lexer library (scanner/tokenization) |
 | [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`src/bdd`, test-only) |
+| [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect) | Fluent test assertions (scripts; new tests) |
 
 Module dependencies are declared in the `import` block of `moon.mod`. Each package lists
 what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"` for
@@ -67,8 +69,8 @@ test-only dependencies.
 - The MoonBit toolchain version is pinned in `.github/workflows/*.yml` (`MOONBIT_VERSION`).
   Keep your local toolchain on the same version (`moon version --all`, `moon upgrade`).
 - To upgrade: run `moon upgrade`, bump `MOONBIT_VERSION`, bump the `import` versions in
-  `moon.mod`, then run `moon update && moon check && mise run test`. Fix all new
-  warnings, not only errors.
+  `moon.mod` and the pinned imports in `scripts/*.mbtx`, then run
+  `moon update && moon check && mise run test`. Fix all new warnings, not only errors.
 - Use `derive(Debug)` (not `derive(Show)`) for data types. `assert_eq` requires `Debug`.
   Implement `Show` by hand only for real text formats.
 
@@ -97,7 +99,15 @@ Visitor and AST design will aim for **flexibility** similar to moonrockz/gherkin
 
 - **Red–Green–Refactor**: Write a failing test first, then minimal implementation, then refactor.
 - Use `#declaration_only` to sketch public APIs before implementation.
-- Use `inspect(...)` for snapshot tests and `assert_eq` for stable results.
+- Specify behavior as Gherkin features run by
+  [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec)
+  (`tests/features/` for the library, `scripts/features/` for scripts).
+- Write assertions with [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect):
+  `@expect.expect(actual).to_equal(expected)`, `.to_be_true()`, `.to_contain(...)`.
+  Use `inspect(...)` for snapshot tests. Existing `assert_eq` tests may stay; use
+  `@expect` in new tests.
+- Gherkin `{string}` parameters keep backslash escapes literally; use a
+  single-quoted string (`'a"b\c'`) to pass `"` or `\`.
 - Run `mise run test:unit` for tests; `moon test --update` to refresh snapshots.
 
 ## Coding Convention
@@ -132,10 +142,39 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:unit`         | Run MoonBit unit tests                         |
 | `test:bdd`          | Run MoonSpec BDD tests                         |
 | `test:e2e`          | Run end-to-end tests                           |
-| `test`              | Run all tests (unit + bdd + e2e)               |
+| `test:scripts`      | Run MoonBit script tests (`scripts/*.mbtx`)    |
+| `test`              | Run all tests (unit + bdd + e2e + scripts)     |
 | `release:version`   | Compute next version from conventional commits |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |
+
+## Scripts
+
+Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
+
+- Put tooling logic in standalone scripts: `scripts/<name>.mbtx`.
+- Keep each mise task a one-line launcher:
+  `exec moon run -q --target wasm scripts/<name>.mbtx -- <args>`.
+  `-q` hides dependency manifest warnings; errors and output still show.
+  Do not use `moonx`; the CI toolchain does not include it.
+- In a script, put logic in pure functions. `async fn main` does only I/O.
+- Specify each script's behavior in `scripts/features/<name>.feature`. The script
+  runs its feature with moonspec from an `async test`; `moon test` runs with
+  `scripts/` as the working directory, so load `features/<name>.feature`.
+- Pin module imports in each script (`moonbitlang/async@<version>`,
+  `moonbitlang/x@<version>/sys`, `moonrockz/moonspec@<version>`,
+  `moonrockz/expect@<version>`) to the versions used by the module.
+- Test the scripts with `mise run test:scripts`. `moon test` and `moon fmt`
+  handle a `.mbtx` file only when you give its path.
+- Do not add new logic to bash task files. A task that calls one `moon`
+  command can stay bash.
+
+| Script | Task | Purpose |
+|--------|------|---------|
+| `scripts/coverage.mbtx` | `coverage:ci-gate`, `coverage:ci-warn` | Coverage summary and threshold |
+| `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
+| `scripts/version.mbtx` | `release:version` | Next version from conventional commits |
+| `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 
 ## Tooling
 
@@ -144,12 +183,25 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 - `moon check` — typecheck.
 - Run `moon info && moon fmt` before committing when API or formatting may have changed.
 
+## The `.dev/` Working Area
+
+`.dev/` is a gitignored scratch area for AI-assisted development: temporary scripts, agent and
+script outputs, and working documents. Nothing in it is committed. Layout:
+
+- Specs from the superpowers `brainstorming` skill: `.dev/docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
+- Plans from the superpowers `writing-plans` skill: `.dev/docs/superpowers/plans/YYYY-MM-DD-<topic>-plan.md`
+- Scratch scripts and their outputs: `.dev/scripts/`, `.dev/out/`
+
+This layout overrides the default location of any skill or tool. Never place specs, plans or
+other working documents under `docs/`, and never `git add` anything under `.dev/`. When a
+design is final and meant for readers, write it up in a committed location on purpose.
+
 ## Release Process
 
 - Publishes to **mooncakes.io** and **GitHub Releases**.
 - Trigger: push tag `v*` or workflow_dispatch.
 - Requires `MOONCAKES_USER_TOKEN` org secret for publish.
-- Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`.
+- Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`, `mise run test:scripts`.
 
 ## Landing the Plane (Session Completion)
 

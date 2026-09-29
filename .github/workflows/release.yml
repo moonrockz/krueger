@@ -35,13 +35,17 @@ jobs:
       - name: Check formatting
         run: |
           moon fmt
-          git diff --exit-code -- '*.mbt' || (echo "::error::moon fmt produced changes — run 'moon fmt' locally and commit" && exit 1)
+          moon fmt scripts/*.mbtx
+          git diff --exit-code -- '*.mbt' '*.mbtx' || (echo "::error::moon fmt produced changes — run 'moon fmt' locally and commit" && exit 1)
 
       - name: Check code
         run: moon check
 
       - name: Run tests
         run: mise run test:unit
+
+      - name: Run script tests
+        run: mise run test:scripts
 
   publish:
     needs: validate

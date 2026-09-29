@@ -1,0 +1,504 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.2.0",
+}
+
+///|
+/// Coverage check for CI.
+///
+/// Usage: `coverage.mbtx <warn|gate> [threshold]`
+///
+/// Runs the coverage-enabled test suites, merges the MoonBit coverage
+/// payloads, prints a summary, and applies the threshold.
+
+///|
+enum Mode {
+  Warn
+  Gate
+} derive(Eq, Debug)
+
+///|
+struct Options {
+  mode : Mode
+  threshold : Int
+} derive(Eq, Debug)
+
+///|
+struct ModuleStat {
+  name : String
+  covered : Int
+  total : Int
+} derive(Eq, Debug)
+
+///|
+enum Verdict {
+  Pass
+  Warning(String)
+  Failure(String)
+} derive(Eq, Debug)
+
+///|
+let usage : String = "Usage: coverage.mbtx <warn|gate> [threshold]"
+
+///|
+let begin_marker : String = "----- BEGIN MOONBIT COVERAGE -----"
+
+///|
+let end_marker : String = "----- END MOONBIT COVERAGE -----"
+
+///|
+let coverage_dir : String = "_build"
+
+///|
+let coverage_prefix : String = "moonbit_coverage_"
+
+///|
+let test_suites : Array[String] = [
+  "src/scanner", "src/parser", "src", "src/bdd", "src/e2e",
+]
+
+///|
+/// Parse `[mode, threshold?]`. Returns the usage text on bad input.
+fn parse_options(args : ArrayView[String]) -> Result[Options, String] {
+  let mode = match args {
+    ["warn", ..] => Warn
+    ["gate", ..] => Gate
+    _ => return Err(usage)
+  }
+  let threshold = match args {
+    [_] => 80
+    [_, raw] => @string.parse_int(raw) catch { _ => return Err(usage) }
+    _ => return Err(usage)
+  }
+  Ok({ mode, threshold, })
+}
+
+///|
+/// Return the text between each pair of coverage markers.
+/// Raises when the text ends after a begin marker without its end marker,
+/// for example when a test run stopped while it wrote the artifact.
+fn extract_payloads(text : String) -> Array[String] raise {
+  let payloads = []
+  let current = StringBuilder()
+  let mut inside = false
+  for line in text.split("\n") {
+    let line = line.to_owned()
+    if line == begin_marker {
+      inside = true
+      current.reset()
+    } else if line == end_marker {
+      if inside {
+        payloads.push(current.to_string())
+      }
+      inside = false
+    } else if inside {
+      current.write_string(line)
+      current.write_char('\n')
+    }
+  }
+  if inside {
+    fail("coverage payload has no end marker")
+  }
+  payloads
+}
+
+///|
+/// Parse one payload: a JSON object of module name to branch hit counts.
+fn parse_payload(payload : String) -> Map[String, Array[Int]] raise {
+  let result : Map[String, Array[Int]] = Map([])
+  guard @json.parse(payload) is Object(modules) else {
+    fail("coverage payload is not a JSON object")
+  }
+  for name, value in modules {
+    guard value is Array(items) else {
+      fail("coverage entry for \{name} is not an array")
+    }
+    let counts = items.map(item => {
+      guard item is Number(n, ..) else {
+        fail("coverage count for \{name} is not a number")
+      }
+      n.to_int()
+    })
+    result[name] = counts
+  }
+  result
+}
+
+///|
+/// Merge payloads. Keys keep first-seen order; counts take the
+/// element-wise maximum, and a shorter array counts as 0 past its end.
+fn merge(payloads : Array[Map[String, Array[Int]]]) -> Map[String, Array[Int]] {
+  let merged : Map[String, Array[Int]] = Map([])
+  for payload in payloads {
+    for name, counts in payload {
+      match merged.get(name) {
+        None => merged[name] = counts.copy()
+        Some(existing) => {
+          let len = if existing.length() > counts.length() {
+            existing.length()
+          } else {
+            counts.length()
+          }
+          merged[name] = Array::makei(len, i => {
+            let a = if i < existing.length() { existing[i] } else { 0 }
+            let b = if i < counts.length() { counts[i] } else { 0 }
+            if a > b {
+              a
+            } else {
+              b
+            }
+          })
+        }
+      }
+    }
+  }
+  merged
+}
+
+///|
+fn is_test_module(name : String) -> Bool {
+  name.contains("_test") ||
+  name.contains("wbtest") ||
+  name.contains("blackbox_test") ||
+  name.contains("internal_test")
+}
+
+///|
+/// Per-module stats for non-test modules, in merged key order.
+fn module_stats(merged : Map[String, Array[Int]]) -> Array[ModuleStat] {
+  let stats = []
+  for name, counts in merged {
+    if !is_test_module(name) {
+      let covered = counts.filter(c => c > 0).length()
+      stats.push({ name, covered, total: counts.length(), })
+    }
+  }
+  stats
+}
+
+///|
+/// Percent of covered branch points; no branch points counts as 100%.
+fn percent(covered : Int, total : Int) -> Double {
+  if total == 0 {
+    100.0
+  } else {
+    covered.to_double() * 100.0 / total.to_double()
+  }
+}
+
+///|
+/// Format with exactly 2 decimals, like `printf '%.2f'`.
+fn format_fixed2(value : Double) -> String {
+  let hundredths = (value * 100.0).round().to_int()
+  let whole = hundredths / 100
+  let frac = (hundredths % 100).to_string().pad_start(2, '0')
+  "\{whole}.\{frac}"
+}
+
+///|
+/// Round to 2 decimals and drop trailing zeros, like jq number output.
+fn format_short2(value : Double) -> String {
+  let hundredths = (value * 100.0).round().to_int()
+  let whole = hundredths / 100
+  let frac = hundredths % 100
+  if frac == 0 {
+    whole.to_string()
+  } else if frac % 10 == 0 {
+    "\{whole}.\{frac / 10}"
+  } else {
+    "\{whole}.\{frac.to_string().pad_start(2, '0')}"
+  }
+}
+
+///|
+/// Summary line plus per-module lines, sorted by percent ascending.
+/// Equal percents keep their merged order.
+fn report_lines(stats : Array[ModuleStat]) -> Array[String] {
+  let covered = stats.fold(init=0, (acc, s) => acc + s.covered)
+  let total = stats.fold(init=0, (acc, s) => acc + s.total)
+  let lines = [
+    "Coverage summary: \{format_fixed2(percent(covered, total))}% (\{covered}/\{total} covered branch points)",
+  ]
+  let indexed = stats.mapi((i, s) => (i, s))
+  indexed.sort_by((a, b) => {
+    let by_pct = percent(a.1.covered, a.1.total).compare(
+      percent(b.1.covered, b.1.total),
+    )
+    if by_pct != 0 {
+      by_pct
+    } else {
+      a.0.compare(b.0)
+    }
+  })
+  for entry in indexed {
+    let s = entry.1
+    lines.push(
+      " - \{s.name}: \{format_short2(percent(s.covered, s.total))}% (\{s.covered}/\{s.total})",
+    )
+  }
+  lines
+}
+
+///|
+/// Total percent over all non-test modules.
+fn total_percent(stats : Array[ModuleStat]) -> Double {
+  let covered = stats.fold(init=0, (acc, s) => acc + s.covered)
+  let total = stats.fold(init=0, (acc, s) => acc + s.total)
+  percent(covered, total)
+}
+
+///|
+/// Result of reading coverage artifacts: printable lines and total percent.
+struct Report {
+  lines : Array[String]
+  total : Double
+} derive(Eq, Debug)
+
+///|
+/// Build the report from the text of each coverage artifact.
+/// Raises when an artifact holds a malformed payload.
+fn build_report(artifacts : Array[String]) -> Report? raise {
+  let payloads = []
+  for artifact in artifacts {
+    for payload in extract_payloads(artifact) {
+      payloads.push(parse_payload(payload))
+    }
+  }
+  if payloads.is_empty() {
+    return None
+  }
+  let stats = module_stats(merge(payloads))
+  Some({ lines: report_lines(stats), total: total_percent(stats), })
+}
+
+///|
+fn verdict(mode : Mode, total : Double, threshold : Int) -> Verdict {
+  if total >= threshold.to_double() {
+    return Pass
+  }
+  let pct = total.to_string()
+  match mode {
+    Gate =>
+      Failure("::error::Coverage \{pct}% is below threshold \{threshold}%")
+    Warn =>
+      Warning(
+        "::warning::Coverage \{pct}% is below threshold \{threshold}% (warn mode)",
+      )
+  }
+}
+
+///|
+fn mode_name(mode : Mode) -> String {
+  match mode {
+    Warn => "warn"
+    Gate => "gate"
+  }
+}
+
+///|
+async fn coverage_files() -> Array[String] {
+  if !@fs.exists(coverage_dir) {
+    return []
+  }
+  @fs.readdir(coverage_dir, sort=true)
+  .filter(f => f.has_prefix(coverage_prefix) && f.has_suffix(".txt"))
+  .map(f => "\{coverage_dir}/\{f}")
+}
+
+///|
+async fn main {
+  let args = @env.args()
+  let options = match parse_options(args[1:]) {
+    Ok(options) => options
+    Err(message) => {
+      eprintln(message)
+      @sys.exit(2)
+      return
+    }
+  }
+  for file in coverage_files() {
+    @fs.remove(file)
+  }
+  for suite in test_suites {
+    let code = @process.run("moon", [
+      "test", suite, "--target", "js", "--enable-coverage",
+    ])
+    if code != 0 {
+      @sys.exit(code)
+      return
+    }
+  }
+  let files = coverage_files()
+  if files.is_empty() {
+    eprintln("No MoonBit coverage artifacts were produced")
+    @sys.exit(1)
+    return
+  }
+  let artifacts = []
+  for file in files {
+    artifacts.push(@fs.read_file(file).text())
+  }
+  guard build_report(artifacts) is Some(report) else {
+    eprintln("Coverage artifacts exist but contain no coverage payloads")
+    @sys.exit(1)
+    return
+  }
+  for line in report.lines {
+    println(line)
+  }
+  match verdict(options.mode, report.total, options.threshold) {
+    Pass => ()
+    Warning(message) => println(message)
+    Failure(message) => {
+      println(message)
+      @sys.exit(1)
+      return
+    }
+  }
+  println(
+    "Coverage check mode=\{mode_name(options.mode)} threshold=\{options.threshold}% completed",
+  )
+}
+
+///|
+/// Scenario state for `features/coverage.feature`.
+struct CoverageWorld {
+  artifacts : Array[String]
+  mut report : Result[Report?, String]
+  mut total : Double
+  mut verdict : Verdict
+}
+
+///|
+fn CoverageWorld::new() -> CoverageWorld {
+  { artifacts: [], report: Ok(None), total: 0.0, verdict: Pass, }
+}
+
+///|
+impl @moonspec.World for CoverageWorld with fn configure(self, setup) {
+  setup.given1("a coverage artifact:", fn(doc : @moonspec.DocString) {
+    self.artifacts.push(doc.content)
+  })
+  setup.when0("I build the coverage report", fn() {
+    self.report = try build_report(self.artifacts) catch {
+      err => Err(err.to_string())
+    } noraise {
+      report => Ok(report)
+    }
+  })
+  setup.then1("the report is:", fn(doc : @moonspec.DocString) raise {
+    guard self.report is Ok(Some(report)) else {
+      fail("expected a report, got \{Repr(self.report)}")
+    }
+    @expect.expect(report.lines.join("\n")).to_equal(doc.content)
+  })
+  setup.then0("there is no report", fn() raise {
+    @expect.expect(self.report).to_equal(Ok(None))
+  })
+  setup.then0("building the report fails", fn() raise {
+    @expect.expect(self.report is Err(_)).to_be_true()
+  })
+  setup.given1("the total coverage is {float}%", fn(total : Double) {
+    self.total = total
+  })
+  setup.when2("I check it against {int}% in {word} mode", fn(
+    threshold : Int,
+    mode : String,
+  ) raise {
+    let mode = match mode {
+      "gate" => Gate
+      "warn" => Warn
+      other => fail("unknown mode \{other}")
+    }
+    self.verdict = verdict(mode, self.total, threshold)
+  })
+  setup.then1("the outcome is {string}", fn(outcome : String) raise {
+    let actual = match self.verdict {
+      Pass => "pass"
+      Warning(_) => "warning"
+      Failure(_) => "failure"
+    }
+    @expect.expect(actual).to_equal(outcome)
+  })
+}
+
+///|
+async test "coverage feature" {
+  @moonspec.run_or_fail(
+    CoverageWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/coverage.feature"),
+    ]),
+  )
+  |> ignore
+}
+
+///|
+test "parse_options accepts mode and optional threshold" {
+  @expect.expect(parse_options(["gate"])).to_equal(
+    Ok({ mode: Gate, threshold: 80, }),
+  )
+  @expect.expect(parse_options(["warn", "75"])).to_equal(
+    Ok({ mode: Warn, threshold: 75, }),
+  )
+}
+
+///|
+test "parse_options rejects bad input" {
+  @expect.expect(parse_options([])).to_equal(Err(usage))
+  @expect.expect(parse_options(["strict"])).to_equal(Err(usage))
+  @expect.expect(parse_options(["gate", "high"])).to_equal(Err(usage))
+  @expect.expect(parse_options(["gate", "80", "extra"])).to_equal(Err(usage))
+}
+
+///|
+test "merge takes element-wise max and keeps first-seen order" {
+  let merged = merge([
+    { "b": [1, 0, 0], "a": [0] },
+    { "a": [2, 5], "b": [0, 3] },
+  ])
+  @expect.expect(merged.keys().collect()).to_equal(["b", "a"])
+  @expect.expect(merged.get("b")).to_equal(Some([1, 3, 0]))
+  @expect.expect(merged.get("a")).to_equal(Some([2, 5]))
+}
+
+///|
+test "module_stats skips test modules" {
+  let stats = module_stats({
+    "m$lib": [1, 0],
+    "m$lib_test": [1],
+    "m$lib_wbtest": [1],
+    "m$lib_blackbox_test": [1],
+    "m$lib_internal_test": [1],
+  })
+  @expect.expect(stats).to_equal([{ name: "m$lib", covered: 1, total: 2, }])
+}
+
+///|
+test "number formats match printf and jq" {
+  @expect.expect(format_fixed2(91.558441558)).to_equal("91.56")
+  @expect.expect(format_fixed2(100.0)).to_equal("100.00")
+  @expect.expect(format_fixed2(5.0)).to_equal("5.00")
+  @expect.expect(format_short2(75.510204)).to_equal("75.51")
+  @expect.expect(format_short2(100.0)).to_equal("100")
+  @expect.expect(format_short2(88.1)).to_equal("88.1")
+  @expect.expect(format_short2(3.04)).to_equal("3.04")
+}
+
+///|
+test "verdict messages" {
+  @expect.expect(verdict(Gate, 79.5, 80)).to_equal(
+    Failure("::error::Coverage 79.5% is below threshold 80%"),
+  )
+  @expect.expect(verdict(Warn, 79.5, 80)).to_equal(
+    Warning("::warning::Coverage 79.5% is below threshold 80% (warn mode)"),
+  )
+}
