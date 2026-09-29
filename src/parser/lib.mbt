@@ -125,6 +125,14 @@ fn unsupported_syntax(
 }
 
 ///|
+fn unexpected_syntax(
+  what : String,
+  span : @scanner.Span,
+) -> @scanner.Diagnostic {
+  parser_error("KR-PARSE-007", "Unexpected syntax: \{what}", span)
+}
+
+///|
 fn missing_module_header(span : @scanner.Span) -> @scanner.Diagnostic {
   parser_error("KR-PARSE-006", "Missing module header", span)
 }
@@ -163,8 +171,9 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let mut module_definition : @ast.Node[@ast.Module]? = None
   let imports : Array[@ast.Node[@ast.Import]] = []
   let declarations : Array[@ast.Node[@ast.Declaration]] = []
-  let comments : Array[@ast.Node[@ast.Comment]] = []
-  let mut module_doc_index = -1
+  let mut module_doc : @scanner.Span? = None
+  let declaration_starts : Array[Int] = []
+  let mut skipped_from : Int? = None
   let mut cst_header : @cst.ModuleHeaderCst? = None
   let cst_imports = []
   let cst_decls : Array[@cst.DeclarationCst] = []
@@ -173,6 +182,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   if stream.length() > 0 && stream[0].kind == @scanner.TokenKind::module_kw() {
     let module_token = stream[0]
     let parsed = if token_kind_at(stream, 1, @scanner.TokenKind::Identifier) &&
+      is_upper_name(stream[1]) &&
       token_kind_at(stream, 2, @scanner.TokenKind::exposing_kw()) {
       parse_exposing(stream, 2)
     } else {
@@ -201,10 +211,10 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
           tokens: header_tokens,
         })
         cursor = p.next
-        if cursor < stream.length() &&
-          module_documentation(stream[cursor].trivia_before) is Some(doc) {
-          comments.push(doc)
-          module_doc_index = cursor
+        if cursor < stream.length() {
+          module_doc = module_documentation(stream[cursor].trivia_before).map(c => {
+            c.span
+          })
         }
       }
       None => {
@@ -225,14 +235,37 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   }
 
   while cursor < stream.length() {
+    let starts_item = stream[cursor].kind == @scanner.TokenKind::import_kw() ||
+      stream[cursor].kind == @scanner.TokenKind::type_kw() ||
+      (
+        stream[cursor].kind == @scanner.TokenKind::Identifier &&
+        (cursor == 0 || has_newline_trivia(stream[cursor].trivia_before))
+      )
+    if starts_item {
+      if skipped_from is Some(first) {
+        diagnostics.push(
+          unexpected_syntax(
+            "token",
+            span_from_tokens_or(
+              token_slice(stream, first, cursor),
+              stream[first].span,
+            ),
+          ),
+        )
+        skipped_from = None
+      }
+    } else {
+      if skipped_from is None {
+        skipped_from = Some(cursor)
+      }
+      cursor = cursor + 1
+      continue
+    }
     if stream[cursor].kind == @scanner.TokenKind::import_kw() {
       let import_start = cursor
       let start_token = stream[cursor]
-      let mut malformed = !token_kind_at(
-        stream,
-        cursor + 1,
-        @scanner.TokenKind::Identifier,
-      )
+      let mut malformed = cursor + 1 >= stream.length() ||
+        !is_upper_name(stream[cursor + 1])
       let mut module_alias : @ast.Node[@ast.ModuleName]? = None
       let mut exposing_list : @ast.Node[@ast.Exposing]? = None
       let mut cst_exposing : Array[String]? = None
@@ -290,6 +323,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
 
     if stream[cursor].kind == @scanner.TokenKind::type_kw() {
       let type_decl_start = cursor
+      declaration_starts.push(type_decl_start)
       let start_token = stream[cursor]
       cursor = cursor + 1
       let is_alias = token_kind_at(
@@ -300,7 +334,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       if is_alias {
         cursor = cursor + 1
       }
-      if !token_kind_at(stream, cursor, @scanner.TokenKind::Identifier) {
+      if cursor >= stream.length() || !is_upper_name(stream[cursor]) {
         diagnostics.push(malformed_type_declaration(start_token.span))
         cursor = recover_to_top_level(stream, cursor)
         continue
@@ -312,7 +346,8 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         params.push(stream[cursor])
         cursor = cursor + 1
       }
-      if !token_kind_at(stream, cursor, @scanner.TokenKind::Equals) {
+      if params.any(p => !is_lower_name(p)) ||
+        !token_kind_at(stream, cursor, @scanner.TokenKind::Equals) {
         diagnostics.push(malformed_type_declaration(start_token.span))
         cursor = recover_to_top_level(stream, cursor)
         continue
@@ -337,14 +372,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
           }),
         )
       } else {
-        match
-          custom_type(
-            start_token,
-            name_token,
-            params,
-            body,
-            type_decl_start == module_doc_index,
-          ) {
+        match custom_type(start_token, name_token, params, body, module_doc) {
           Some(decl) => declarations.push(decl)
           None => diagnostics.push(unsupported_syntax("custom type", decl_span))
         }
@@ -360,17 +388,8 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       continue
     }
 
-    if stream[cursor].kind != @scanner.TokenKind::Identifier {
-      cursor = cursor + 1
-      continue
-    }
-
-    if cursor > 0 && !has_newline_trivia(stream[cursor].trivia_before) {
-      cursor = cursor + 1
-      continue
-    }
-
     let function_decl_start = cursor
+    declaration_starts.push(function_decl_start)
     let name_token = stream[cursor]
     cursor = cursor + 1
     let cst_args = []
@@ -400,6 +419,25 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
     )
   }
 
+  if skipped_from is Some(first) {
+    diagnostics.push(
+      unexpected_syntax(
+        "token",
+        span_from_tokens_or(
+          token_slice(stream, first, cursor),
+          stream[first].span,
+        ),
+      ),
+    )
+  }
+  let (comments, stray_docs) = collect_comments(
+    stream, declaration_starts, module_doc,
+  )
+  for span in stray_docs {
+    diagnostics.push(
+      unexpected_syntax("doc comment not attached to a declaration", span),
+    )
+  }
   ParseResult::{
     ast: module_definition.map(m => {
       module_definition: m,

@@ -74,7 +74,11 @@ fn parse_exposing(
     return Some({
       exposing: node(
         range_between(exposing_token.span, close.span),
-        @ast.Exposing::All(range_of(dots.span)),
+        // elm-syntax ends the range at the start of `)`.
+        @ast.Exposing::All({
+          start: location(dots.span.start),
+          end: location(close.span.start),
+        }),
       ),
       names: [],
       next: cursor + 2,
@@ -144,19 +148,17 @@ fn parse_exposing(
 }
 
 ///|
-/// The doc comment directly before a declaration, if any. A regular comment
-/// between the doc comment and the declaration detaches it.
+/// The doc comment that documents a declaration: the last doc comment before
+/// it. Regular comments between the doc comment and the declaration do not
+/// detach it (elm-syntax behavior).
 fn doc_comment(trivia : Array[@scanner.Trivia]) -> @scanner.Comment? {
-  let mut candidate : @scanner.Comment? = None
+  let mut last : @scanner.Comment? = None
   for item in trivia {
-    if item is @scanner.Trivia::Comment(comment) {
-      match comment.kind {
-        Doc => candidate = Some(comment)
-        Line | Block => if candidate is Some(_) { return None }
-      }
+    if item is @scanner.Trivia::Comment({ kind: Doc, .. } as comment) {
+      last = Some(comment)
     }
   }
-  candidate
+  last
 }
 
 ///|
@@ -183,14 +185,14 @@ fn simple_type_argument(
 ///|
 /// Build a custom type with exactly one constructor whose arguments are simple
 /// names. Returns `None` for any other body, which the caller reports as
-/// unsupported. When `module_documented` is true, the doc comment before
-/// `start` documents the module and is not attached to the type.
+/// unsupported. `module_doc` is the module documentation, which is never
+/// attached to a declaration.
 fn custom_type(
   start : @scanner.Token,
   name : @scanner.Token,
   params : Array[@scanner.Token],
   body : Array[@scanner.Token],
-  module_documented : Bool,
+  module_doc : @scanner.Span?,
 ) -> @ast.Node[@ast.Declaration]? {
   guard body is [ctor, .. args] && is_upper_name(ctor) else { return None }
   let arguments = []
@@ -199,10 +201,9 @@ fn custom_type(
     arguments.push(a)
   }
   let last = body[body.length() - 1]
-  let doc = if module_documented {
-    None
-  } else {
-    doc_comment(start.trivia_before)
+  let doc = match doc_comment(start.trivia_before) {
+    Some(c) if module_doc != Some(c.span) => Some(c)
+    _ => None
   }
   let documentation = doc.map(c => node(range_of(c.span), c.text))
   let first_span = match doc {
@@ -229,13 +230,45 @@ fn custom_type(
 ///|
 /// The module documentation: the first doc comment before the first item after
 /// the module header. elm-syntax lists it in `File.comments`.
-fn module_documentation(
-  trivia : Array[@scanner.Trivia],
-) -> @ast.Node[@ast.Comment]? {
+fn module_documentation(trivia : Array[@scanner.Trivia]) -> @scanner.Comment? {
   for item in trivia {
-    if item is @scanner.Trivia::Comment({ kind: Doc, text, span, }) {
-      return Some(node(range_of(span), text))
+    if item is @scanner.Trivia::Comment({ kind: Doc, .. } as comment) {
+      return Some(comment)
     }
   }
   None
+}
+
+///|
+/// All comments for `File.comments`, in source order: regular comments and the
+/// module documentation. Doc comments attached to a declaration (the last doc
+/// comment before a declaration start) are left out. Any other doc comment is
+/// stray: elm-syntax rejects the file, so it is returned in `stray`.
+fn collect_comments(
+  tokens : Array[@scanner.Token],
+  declaration_starts : Array[Int],
+  module_doc : @scanner.Span?,
+) -> (Array[@ast.Node[@ast.Comment]], Array[@scanner.Span]) {
+  let comments : Array[@ast.Node[@ast.Comment]] = []
+  let stray = []
+  for i, token in tokens {
+    let attached = if declaration_starts.contains(i) {
+      doc_comment(token.trivia_before).map(c => c.span)
+    } else {
+      None
+    }
+    for trivia in [..token.trivia_before, ..token.trivia_after] {
+      guard trivia is @scanner.Trivia::Comment(c) else { continue }
+      match c.kind {
+        Line | Block => comments.push(node(range_of(c.span), c.text))
+        Doc =>
+          if module_doc == Some(c.span) {
+            comments.push(node(range_of(c.span), c.text))
+          } else if attached != Some(c.span) {
+            stray.push(c.span)
+          }
+      }
+    }
+  }
+  (comments, stray)
 }

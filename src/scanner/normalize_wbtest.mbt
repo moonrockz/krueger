@@ -28,3 +28,22 @@ test "normalizes module declaration tokens" {
   assert_true(contains_kind(stream, TokenKind::LParen))
   assert_true(contains_kind(stream, TokenKind::RParen))
 }
+
+///|
+test "keeps comments after the last token as its trailing trivia" {
+  let source = SourceText::{
+    module_name: None,
+    text: "module A exposing (T) -- end\n\n-- last\n",
+  }
+  guard DefaultScanner::new().tokenize(source) is Ok(stream) else {
+    fail("expected tokenization success")
+  }
+  let last = stream.tokens[stream.tokens.length() - 1]
+  let comments = last.trivia_after.filter_map(t => {
+    match t {
+      Comment(c) => Some(c.text)
+      _ => None
+    }
+  })
+  @expect.expect(comments).to_equal(["-- end", "-- last"])
+}

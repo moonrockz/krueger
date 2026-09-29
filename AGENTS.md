@@ -60,11 +60,19 @@ moonrockz/krueger
 | `KR-PARSE-004` | Malformed function declaration |
 | `KR-PARSE-005` | Unsupported syntax: the parser cannot produce this construct yet |
 | `KR-PARSE-006` | Missing module header (no AST) |
+| `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 
 - Fixture JSON in `tests/fixtures/` comes from elm-syntax 7.3.9. Regenerate it with the
   oracle, never by hand.
-- The first doc comment after the module header documents the module: it goes to
-  `File.comments` and is not attached to the next declaration (elm-syntax behavior).
+- Doc comments follow elm-syntax:
+  - The first doc comment after the module header documents the module and goes to
+    `File.comments`.
+  - A declaration's documentation is the last doc comment before it; regular comments
+    in between do not detach it. Its range starts at that doc comment.
+  - Any other doc comment (before the header, before an import, at the end of the
+    file) is an error (`KR-PARSE-007`); elm-syntax rejects such files.
+- `File.comments` holds every regular comment and the module documentation, in
+  source order.
 
 ## Library Dependencies
 
