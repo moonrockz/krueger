@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Raise tests/corpus/baseline.json to the current parity counts"
+set -euo pipefail
+
+KRUEGER_PARITY_MODE=ratchet exec moon test src/parity --target js
