@@ -160,10 +160,10 @@ pub fn[S : @scanner.Scanner] parse_module(
 pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
   let stream = tokens.tokens
   let mut cursor = 0
-  let mut module_definition : @syntax.Node[@syntax.Module]? = None
-  let imports : Array[@syntax.Node[@syntax.Import]] = []
-  let declarations : Array[@syntax.Node[@syntax.Declaration]] = []
-  let comments : Array[@syntax.Node[@syntax.Comment]] = []
+  let mut module_definition : @ast.Node[@ast.Module]? = None
+  let imports : Array[@ast.Node[@ast.Import]] = []
+  let declarations : Array[@ast.Node[@ast.Declaration]] = []
+  let comments : Array[@ast.Node[@ast.Comment]] = []
   let mut module_doc_index = -1
   let mut cst_header : @cst.ModuleHeaderCst? = None
   let cst_imports = []
@@ -188,7 +188,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
               module_token.span,
               header_tokens[header_tokens.length() - 1].span,
             ),
-            @syntax.Module::NormalModule({
+            @ast.Module::NormalModule({
               module_name: node(range_of(name_token.span), [name_token.lexeme]),
               exposing_list: p.exposing,
             }),
@@ -233,8 +233,8 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         cursor + 1,
         @scanner.TokenKind::Identifier,
       )
-      let mut module_alias : @syntax.Node[@syntax.ModuleName]? = None
-      let mut exposing_list : @syntax.Node[@syntax.Exposing]? = None
+      let mut module_alias : @ast.Node[@ast.ModuleName]? = None
+      let mut exposing_list : @ast.Node[@ast.Exposing]? = None
       let mut cst_exposing : Array[String]? = None
       let mut name_token = start_token
       if !malformed {

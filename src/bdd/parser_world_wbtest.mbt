@@ -1,8 +1,5 @@
 ///|
-fn find_custom_type(
-  result : @krueger.ParseResult,
-  name : String,
-) -> @syntax.Type? {
+fn find_custom_type(result : @krueger.ParseResult, name : String) -> @ast.Type? {
   guard result.ast is Some(file) else { return None }
   for decl in file.declarations {
     if decl.value is CustomTypeDeclaration(t) && t.name.value == name {
@@ -77,7 +74,7 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
     let expected = @fs.read_file_to_string("tests/fixtures/parser/\{name}.json")
       .trim_end(chars="\n")
       .to_owned()
-    @expect.expect(@syntax.encode_file(file).stringify()).to_equal(expected)
+    @expect.expect(@ast.encode_file(file).stringify()).to_equal(expected)
   })
   setup.then2("declaration {string} has documentation {string}", fn(
     name : String,

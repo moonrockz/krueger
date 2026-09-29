@@ -13,18 +13,18 @@ fn codes(result : @parser.ParseResult) -> Array[String] {
 }
 
 ///|
-fn ast(result : @parser.ParseResult) -> @syntax.File raise {
+fn ast(result : @parser.ParseResult) -> @ast.File raise {
   guard result.ast is Some(file) else { fail("expected an AST") }
   file
 }
 
 ///|
-fn range(r1 : Int, c1 : Int, r2 : Int, c2 : Int) -> @syntax.Range {
+fn range(r1 : Int, c1 : Int, r2 : Int, c2 : Int) -> @ast.Range {
   { start: { row: r1, column: c1, }, end: { row: r2, column: c2, }, }
 }
 
 ///|
-fn custom_type(file : @syntax.File, name : String) -> @syntax.Type? {
+fn custom_type(file : @ast.File, name : String) -> @ast.Type? {
   for decl in file.declarations {
     if decl.value is CustomTypeDeclaration(t) && t.name.value == name {
       return Some(t)

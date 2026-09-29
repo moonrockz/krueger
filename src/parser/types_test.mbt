@@ -1,12 +1,12 @@
 ///|
-fn location(row : Int, column : Int) -> @syntax.Location {
+fn location(row : Int, column : Int) -> @ast.Location {
   { row, column, }
 }
 
 ///|
 test "parse result holds an elm-syntax file" {
-  let range : @syntax.Range = { start: location(1, 1), end: location(1, 26), }
-  let file : @syntax.File = {
+  let range : @ast.Range = { start: location(1, 1), end: location(1, 26), }
+  let file : @ast.File = {
     module_definition: {
       range,
       value: NormalModule({

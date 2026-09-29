@@ -6,7 +6,7 @@
 /// and parser problems, including syntax the parser cannot produce yet
 /// (`KR-PARSE-005`).
 pub(all) struct ParseResult {
-  ast : @syntax.File?
+  ast : @ast.File?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
 } derive(Eq, Debug)

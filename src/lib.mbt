@@ -1,7 +1,7 @@
 ///|
 /// elm-syntax 7.3.9 model. `Elm.Syntax.Comments.Comment` is not re-exported
 /// because the scanner's `Comment` type uses the same name.
-pub using @syntax {
+pub using @ast {
   type Location,
   type Range,
   type Node,

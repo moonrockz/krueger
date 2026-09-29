@@ -1,6 +1,6 @@
 import {
   "moonrockz/krueger",
-  "moonrockz/krueger/syntax",
+  "moonrockz/krueger/ast",
   "moonrockz/moonspec",
   "moonrockz/expect",
   "moonbitlang/async",

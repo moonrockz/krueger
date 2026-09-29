@@ -3,9 +3,9 @@ package "moonrockz/krueger/parser"
 
 import {
   "moonbitlang/core/debug",
+  "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
   "moonrockz/krueger/scanner",
-  "moonrockz/krueger/syntax",
 }
 
 // Values
@@ -17,7 +17,7 @@ pub fn parse_tokens(@scanner.TokenStream) -> ParseResult
 
 // Types and methods
 pub(all) struct ParseResult {
-  ast : @syntax.File?
+  ast : @ast.File?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
 } derive(Eq, @debug.Debug)

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "moonrockz/krueger/syntax"
+package "moonrockz/krueger/ast"
 
 import {
   "moonbitlang/core/debug",

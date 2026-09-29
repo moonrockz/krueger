@@ -1,22 +1,22 @@
 ///|
 /// Convert a scanner position (1-based line and column) to an elm-syntax location.
-fn location(position : @scanner.Position) -> @syntax.Location {
+fn location(position : @scanner.Position) -> @ast.Location {
   { row: position.line, column: position.column, }
 }
 
 ///|
 /// Range from the start of `first` to the end of `last`.
-fn range_between(first : @scanner.Span, last : @scanner.Span) -> @syntax.Range {
+fn range_between(first : @scanner.Span, last : @scanner.Span) -> @ast.Range {
   { start: location(first.start), end: location(last.end), }
 }
 
 ///|
-fn range_of(span : @scanner.Span) -> @syntax.Range {
+fn range_of(span : @scanner.Span) -> @ast.Range {
   range_between(span, span)
 }
 
 ///|
-fn[T] node(range : @syntax.Range, value : T) -> @syntax.Node[T] {
+fn[T] node(range : @ast.Range, value : T) -> @ast.Node[T] {
   { range, value, }
 }
 
@@ -38,7 +38,7 @@ fn is_lower_name(token : @scanner.Token) -> Bool {
 /// Result of parsing `exposing ( ... )`.
 priv struct ParsedExposing {
   /// The exposing list node, from `exposing` to the closing `)`.
-  exposing : @syntax.Node[@syntax.Exposing]
+  exposing : @ast.Node[@ast.Exposing]
   /// Exposed names as the CST records them.
   names : Array[String]
   /// Index of the first token after the closing `)`.
@@ -74,13 +74,13 @@ fn parse_exposing(
     return Some({
       exposing: node(
         range_between(exposing_token.span, close.span),
-        @syntax.Exposing::All(range_of(dots.span)),
+        @ast.Exposing::All(range_of(dots.span)),
       ),
       names: [],
       next: cursor + 2,
     })
   }
-  let items : Array[@syntax.Node[@syntax.TopLevelExpose]] = []
+  let items : Array[@ast.Node[@ast.TopLevelExpose]] = []
   let names = []
   while cursor < tokens.length() {
     let token = tokens[cursor]
@@ -96,7 +96,7 @@ fn parse_exposing(
         items.push(
           node(
             range_between(token.span, tokens[cursor + 3].span),
-            @syntax.TopLevelExpose::TypeExpose({
+            @ast.TopLevelExpose::TypeExpose({
               name: token.lexeme,
               open: Some(open),
             }),
@@ -107,7 +107,7 @@ fn parse_exposing(
         items.push(
           node(
             range_of(token.span),
-            @syntax.TopLevelExpose::TypeOrAliasExpose(token.lexeme),
+            @ast.TopLevelExpose::TypeOrAliasExpose(token.lexeme),
           ),
         )
         cursor = cursor + 1
@@ -117,7 +117,7 @@ fn parse_exposing(
       items.push(
         node(
           range_of(token.span),
-          @syntax.TopLevelExpose::FunctionExpose(token.lexeme),
+          @ast.TopLevelExpose::FunctionExpose(token.lexeme),
         ),
       )
       cursor = cursor + 1
@@ -131,7 +131,7 @@ fn parse_exposing(
       return Some({
         exposing: node(
           range_between(exposing_token.span, close.span),
-          @syntax.Exposing::Explicit(items),
+          @ast.Exposing::Explicit(items),
         ),
         names,
         next: cursor + 1,
@@ -164,15 +164,15 @@ fn doc_comment(trivia : Array[@scanner.Trivia]) -> @scanner.Comment? {
 /// name is an unqualified type with no arguments.
 fn simple_type_argument(
   token : @scanner.Token,
-) -> @syntax.Node[@syntax.TypeAnnotation]? {
+) -> @ast.Node[@ast.TypeAnnotation]? {
   let range = range_of(token.span)
   if is_lower_name(token) {
-    Some(node(range, @syntax.TypeAnnotation::GenericType(token.lexeme)))
+    Some(node(range, @ast.TypeAnnotation::GenericType(token.lexeme)))
   } else if is_upper_name(token) {
     Some(
       node(
         range,
-        @syntax.TypeAnnotation::Typed(node(range, ([], token.lexeme)), []),
+        @ast.TypeAnnotation::Typed(node(range, ([], token.lexeme)), []),
       ),
     )
   } else {
@@ -191,7 +191,7 @@ fn custom_type(
   params : Array[@scanner.Token],
   body : Array[@scanner.Token],
   module_documented : Bool,
-) -> @syntax.Node[@syntax.Declaration]? {
+) -> @ast.Node[@ast.Declaration]? {
   guard body is [ctor, .. args] && is_upper_name(ctor) else { return None }
   let arguments = []
   for arg in args {
@@ -209,14 +209,14 @@ fn custom_type(
     Some(c) => c.span
     None => start.span
   }
-  let value_constructor : @syntax.Node[@syntax.ValueConstructor] = node(
+  let value_constructor : @ast.Node[@ast.ValueConstructor] = node(
     range_between(ctor.span, last.span),
     { name: node(range_of(ctor.span), ctor.lexeme), arguments, },
   )
   Some(
     node(
       range_between(first_span, last.span),
-      @syntax.Declaration::CustomTypeDeclaration({
+      @ast.Declaration::CustomTypeDeclaration({
         documentation,
         name: node(range_of(name.span), name.lexeme),
         generics: params.map(p => node(range_of(p.span), p.lexeme)),
@@ -231,7 +231,7 @@ fn custom_type(
 /// the module header. elm-syntax lists it in `File.comments`.
 fn module_documentation(
   trivia : Array[@scanner.Trivia],
-) -> @syntax.Node[@syntax.Comment]? {
+) -> @ast.Node[@ast.Comment]? {
   for item in trivia {
     if item is @scanner.Trivia::Comment({ kind: Doc, text, span, }) {
       return Some(node(range_of(span), text))
