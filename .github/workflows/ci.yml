@@ -86,3 +86,33 @@ jobs:
           else
             mise run coverage:ci-warn
           fi
+
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hustcer/setup-moonbit@v1
+        with:
+          version: ${{ env.MOONBIT_VERSION }}
+          core-version: ${{ env.MOONBIT_VERSION }}
+
+      - uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+
+      - name: Install dependencies
+        run: moon update
+
+      - name: Cache Elm parity corpus
+        uses: actions/cache@v4
+        with:
+          path: .corpus
+          key: elm-parity-corpus-${{ hashFiles('tests/corpus/manifest.json') }}
+
+      - name: Fetch and verify the corpus
+        run: mise run corpus:fetch
+
+      - name: Score Elm parity
+        run: mise run test:parity

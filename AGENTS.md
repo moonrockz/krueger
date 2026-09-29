@@ -181,6 +181,11 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:bdd`          | Run MoonSpec BDD tests                         |
 | `test:e2e`          | Run end-to-end tests                           |
 | `test:scripts`      | Run MoonBit script tests (`scripts/*.mbtx`)    |
+| `test:parity`       | Score Elm parity against the golden lock (needs `corpus:fetch`) |
+| `parity:ratchet`    | Raise `tests/corpus/baseline.json` to the current counts |
+| `corpus:fetch`      | Download and verify the pinned corpus into `.corpus/` |
+| `corpus:manifest`   | Rebuild `tests/corpus/manifest.json` from `packages.txt` |
+| `corpus:goldens`    | Regenerate elm-syntax goldens and `goldens.lock` (needs Elm and Node) |
 | `test`              | Run all tests (unit + bdd + e2e + scripts)     |
 | `release:version`   | Compute next version from conventional commits |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
@@ -213,6 +218,30 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
 | `scripts/version.mbtx` | `release:version` | Next version from conventional commits |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
+| `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
+| `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |
+
+## Elm Parity
+
+krueger measures parity with Elm 0.19.1 against stil4m/elm-syntax 7.3.9 on a pinned
+corpus of real packages (`tests/corpus/`).
+
+- `tests/corpus/packages.txt` lists the packages; `manifest.json` pins each zip (SHA-1)
+  and each `.elm` file (SHA-256).
+- `tests/corpus/goldens.lock` holds, per file, the SHA-256 of the canonical elm-syntax
+  JSON (or `PARSE_ERROR`). Only hashes are committed; the full JSON stays local in
+  `.dev/out/goldens/raw/`.
+- `mise run test:parity` prints the scoreboard: files, tokenized, parsed (no
+  diagnostics), matched (krueger's `@ast.encode_file` hash equals the golden). It fails
+  when a count drops below `tests/corpus/baseline.json`. CI runs it in the `parity` job.
+- When a change raises the counts, run `mise run parity:ratchet` and commit
+  `baseline.json`.
+- To see why a file does not match, run `mise run corpus:goldens` once (needs Elm and
+  Node; `mise x` installs them), then `mise run test:parity`: it prints the first
+  differing node path and both values for up to 20 files.
+- To add a package: add it to `packages.txt`, run `mise run corpus:manifest`, then
+  `mise run corpus:goldens`, then commit the manifest and the lock.
+- The oracle is `tools/elm-syntax-oracle/` (Elm worker plus Node runner). CI never runs it.
 
 ## Tooling
 
