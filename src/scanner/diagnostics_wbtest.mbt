@@ -13,7 +13,7 @@ fn first_error(result : Result[TokenStream, ScanErrorList]) -> Diagnostic? {
 
 ///|
 test "unterminated block comment returns KR-SCAN-001 with eof span" {
-  let source = SourceText::{ module_name: None, text: "{- missing close" }
+  let source = SourceText::{ module_name: None, text: "{- missing close", }
   let scanner = DefaultScanner::new()
   let diag = match first_error(scanner.tokenize(source)) {
     Some(diag) => diag
@@ -25,7 +25,7 @@ test "unterminated block comment returns KR-SCAN-001 with eof span" {
 
 ///|
 test "unterminated doc comment returns KR-SCAN-002" {
-  let source = SourceText::{ module_name: None, text: "{-| missing close" }
+  let source = SourceText::{ module_name: None, text: "{-| missing close", }
   let scanner = DefaultScanner::new()
   let diag = match first_error(scanner.tokenize(source)) {
     Some(diag) => diag

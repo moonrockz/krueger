@@ -4,7 +4,7 @@ pub(all) struct ModuleHeaderCst {
   exposing : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct ImportCst {
@@ -12,7 +12,7 @@ pub(all) struct ImportCst {
   exposing : Array[String]?
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct FunctionCst {
@@ -20,7 +20,7 @@ pub(all) struct FunctionCst {
   args : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct TypeAliasCst {
@@ -28,7 +28,7 @@ pub(all) struct TypeAliasCst {
   type_params : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct UnionTypeCst {
@@ -36,14 +36,14 @@ pub(all) struct UnionTypeCst {
   type_params : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum DeclarationCst {
   Function(FunctionCst)
   TypeAlias(TypeAliasCst)
   UnionType(UnionTypeCst)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct ModuleCst {
@@ -52,4 +52,4 @@ pub(all) struct ModuleCst {
   imports : Array[ImportCst]
   declarations : Array[DeclarationCst]
   span : @scanner.Span?
-} derive(Eq, Show)
+} derive(Eq, Debug)

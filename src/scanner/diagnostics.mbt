@@ -1,6 +1,6 @@
 ///|
 fn scanner_error(code : String, message : String, span : Span) -> Diagnostic {
-  Diagnostic::{ code, severity: Severity::Error, message, span }
+  Diagnostic::{ code, severity: Severity::Error, message, span, }
 }
 
 ///|

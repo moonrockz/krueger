@@ -1,11 +1,11 @@
 ///|
 fn pos(offset : Int, line : Int, column : Int) -> @scanner.Position {
-  @scanner.Position::{ offset, line, column }
+  @scanner.Position::{ offset, line, column, }
 }
 
 ///|
 fn span() -> @scanner.Span {
-  @scanner.Span::{ start: pos(0, 1, 1), end: pos(1, 1, 2) }
+  @scanner.Span::{ start: pos(0, 1, 1), end: pos(1, 1, 2), }
 }
 
 ///|
@@ -21,7 +21,7 @@ fn token(kind : @scanner.TokenKind, lexeme : String) -> @scanner.Token {
 
 ///|
 test "module cst captures header imports and typed declarations" {
-  let header = ModuleHeaderCst::{
+  let header = @cst.ModuleHeaderCst::{
     module_name: Some("Main"),
     exposing: ["add"],
     span: span(),
@@ -31,7 +31,7 @@ test "module cst captures header imports and typed declarations" {
       token(@scanner.TokenKind::exposing_kw(), "exposing"),
     ],
   }
-  let import_node = ImportCst::{
+  let import_node = @cst.ImportCst::{
     module_name: "Html",
     exposing: Some(["text"]),
     span: span(),
@@ -40,24 +40,24 @@ test "module cst captures header imports and typed declarations" {
       token(@scanner.TokenKind::Identifier, "Html"),
     ],
   }
-  let cst = ModuleCst::{
+  let cst = @cst.ModuleCst::{
     tokens: header.tokens + import_node.tokens,
     header: Some(header),
     imports: [import_node],
     declarations: [
-      DeclarationCst::Function(FunctionCst::{
+      @cst.DeclarationCst::Function(@cst.FunctionCst::{
         name: "add",
         args: ["x"],
         span: span(),
         tokens: [token(@scanner.TokenKind::Identifier, "add")],
       }),
-      DeclarationCst::TypeAlias(TypeAliasCst::{
+      @cst.DeclarationCst::TypeAlias(@cst.TypeAliasCst::{
         name: "User",
         type_params: ["a"],
         span: span(),
         tokens: [token(@scanner.TokenKind::Identifier, "User")],
       }),
-      DeclarationCst::UnionType(UnionTypeCst::{
+      @cst.DeclarationCst::UnionType(@cst.UnionTypeCst::{
         name: "Color",
         type_params: [],
         span: span(),
@@ -81,19 +81,19 @@ test "module cst captures header imports and typed declarations" {
 
 ///|
 test "typed declaration variants expose payload contracts" {
-  let function_decl = DeclarationCst::Function(FunctionCst::{
+  let function_decl = @cst.DeclarationCst::Function(@cst.FunctionCst::{
     name: "add",
     args: ["x", "y"],
     span: span(),
     tokens: [token(@scanner.TokenKind::Identifier, "add")],
   })
-  let type_alias_decl = DeclarationCst::TypeAlias(TypeAliasCst::{
+  let type_alias_decl = @cst.DeclarationCst::TypeAlias(@cst.TypeAliasCst::{
     name: "User",
     type_params: ["a"],
     span: span(),
     tokens: [token(@scanner.TokenKind::Identifier, "User")],
   })
-  let union_decl = DeclarationCst::UnionType(UnionTypeCst::{
+  let union_decl = @cst.DeclarationCst::UnionType(@cst.UnionTypeCst::{
     name: "Color",
     type_params: ["a"],
     span: span(),
@@ -101,21 +101,21 @@ test "typed declaration variants expose payload contracts" {
   })
 
   match function_decl {
-    DeclarationCst::Function(fn_decl) => {
+    @cst.DeclarationCst::Function(fn_decl) => {
       assert_eq(fn_decl.name, "add")
       assert_eq(fn_decl.args, ["x", "y"])
     }
     _ => fail("expected function declaration cst")
   }
   match type_alias_decl {
-    DeclarationCst::TypeAlias(alias_decl) => {
+    @cst.DeclarationCst::TypeAlias(alias_decl) => {
       assert_eq(alias_decl.name, "User")
       assert_eq(alias_decl.type_params, ["a"])
     }
     _ => fail("expected type alias declaration cst")
   }
   match union_decl {
-    DeclarationCst::UnionType(union_type_decl) => {
+    @cst.DeclarationCst::UnionType(union_type_decl) => {
       assert_eq(union_type_decl.name, "Color")
       assert_eq(union_type_decl.type_params, ["a"])
     }

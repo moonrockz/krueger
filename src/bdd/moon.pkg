@@ -2,4 +2,4 @@ import {
   "moonrockz/krueger",
   "moonrockz/moonspec",
   "moonbitlang/async",
-}
+} for "wbtest"

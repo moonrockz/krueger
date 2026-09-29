@@ -20,7 +20,7 @@ struct TokenizerWorld {
 } derive(Default)
 
 ///|
-impl @moonspec.World for TokenizerWorld with configure(self, setup) {
+impl @moonspec.World for TokenizerWorld with fn configure(self, setup) {
   setup.given("Elm source:", fn(ctx) {
     match ctx[0] {
       { value: @moonspec.StepValue::DocStringVal(doc), .. } =>
@@ -29,7 +29,7 @@ impl @moonspec.World for TokenizerWorld with configure(self, setup) {
     }
   })
   setup.when("I tokenize the source", fn(_ctx) {
-    let source = @krueger.SourceText::{ module_name: None, text: self.source }
+    let source = @krueger.SourceText::{ module_name: None, text: self.source, }
     self.result = Some(@krueger.tokenize(source))
   })
   setup.then("tokenization succeeds", fn(_ctx) raise {

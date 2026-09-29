@@ -37,22 +37,48 @@ moonrockz/krueger
 
 ## Library Dependencies
 
-From a library perspective, krueger uses:
+### MoonBit Core Library
 
-| Package | Purpose |
-|---------|---------|
-| `moonbitlang/core` | Core standard library (builtin, etc.) |
-| `moonbitlang/x` | Standard library extensions |
-| `moonbitlang/async` | Async execution primitives |
+Treat these three official `moonbitlang` modules together as the MoonBit core library.
+Look in them first before you write a helper or add a third-party dependency.
+
+| Module | Purpose |
+|--------|---------|
+| `moonbitlang/core` | Standard library that ships with the toolchain (builtin, debug, collections, strings, etc.) |
+| [`moonbitlang/x`](https://mooncakes.io/docs/moonbitlang/x) | Official standard library extensions (fs, sys, path, time, json5, crypto, codec, encoding, uuid, decimal, etc.) |
+| [`moonbitlang/async`](https://mooncakes.io/docs/moonbitlang/async) | Official async runtime (tasks, task groups, I/O, process, HTTP); native target preferred |
+
+`moonbitlang/core` comes with the toolchain. `moonbitlang/x` and `moonbitlang/async` are
+versioned on mooncakes.io, so keep them on the latest release when you bump the toolchain.
+
+### Third-Party Dependencies
+
+| Module | Purpose |
+|--------|---------|
 | [bobzhang/lexer](https://mooncakes.io/docs/bobzhang/lexer) | Lexer library (scanner/tokenization) |
+| [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`src/bdd`, test-only) |
 
-These are declared in `moon.mod.json` and in each package’s `moon.pkg` as needed.
+Module dependencies are declared in the `import` block of `moon.mod`. Each package lists
+what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"` for
+test-only dependencies.
+
+### Toolchain
+
+- The MoonBit toolchain version is pinned in `.github/workflows/*.yml` (`MOONBIT_VERSION`).
+  Keep your local toolchain on the same version (`moon version --all`, `moon upgrade`).
+- To upgrade: run `moon upgrade`, bump `MOONBIT_VERSION`, bump the `import` versions in
+  `moon.mod`, then run `moon update && moon check && mise run test`. Fix all new
+  warnings, not only errors.
+- Use `derive(Debug)` (not `derive(Show)`) for data types. `assert_eq` requires `Debug`.
+  Implement `Show` by hand only for real text formats.
 
 ## Project Structure
 
-- MoonBit packages are organized per directory; each has a `moon.pkg` (or `moon.pkg.json`) listing dependencies.
-- Blackbox tests: `*_test.mbt`; whitebox tests: `*_wbtest.mbt`.
-- Top-level `moon.mod.json` describes the module and metadata.
+- MoonBit packages are organized per directory; each has a `moon.pkg` listing dependencies.
+- Blackbox tests: `*_test.mbt`; whitebox tests: `*_wbtest.mbt`. In blackbox tests,
+  qualify names from the package under test (for example `@scanner.TokenKind`).
+- Top-level `moon.mod` describes the module and metadata (the legacy `moon.mod.json`
+  format is deprecated).
 
 ## Design Philosophy
 

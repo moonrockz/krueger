@@ -1,6 +1,6 @@
 ///|
 fn to_comment_trivia(raw : RawToken, kind : CommentKind) -> Trivia {
-  Trivia::Comment(Comment::{ kind, text: raw.lexeme, span: raw.span })
+  Trivia::Comment(Comment::{ kind, text: raw.lexeme, span: raw.span, })
 }
 
 ///|

@@ -3,26 +3,26 @@ pub(all) enum Severity {
   Error
   Warning
   Info
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct Position {
   offset : Int
   line : Int
   column : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct Span {
   start : Position
   end : Position
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct SourceText {
   module_name : String?
   text : String
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct Diagnostic {
@@ -30,28 +30,28 @@ pub(all) struct Diagnostic {
   severity : Severity
   message : String
   span : Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum CommentKind {
   Line
   Block
   Doc
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct Comment {
   kind : CommentKind
   text : String
   span : Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Trivia {
   Whitespace(String, Span)
   Newline(String, Span)
   Comment(Comment)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum KeywordKind {
@@ -67,7 +67,7 @@ pub(all) enum KeywordKind {
   In
   Case
   Of
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum TokenKind {
@@ -82,7 +82,7 @@ pub(all) enum TokenKind {
   DotDot
   Arrow
   Unknown
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub fn TokenKind::keyword(kind : KeywordKind) -> TokenKind {
@@ -156,14 +156,14 @@ pub(all) struct Token {
   span : Span
   trivia_before : Array[Trivia]
   trivia_after : Array[Trivia]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct TokenStream {
   tokens : Array[Token]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct ScanErrorList {
   diagnostics : Array[Diagnostic]
-} derive(Eq, Show)
+} derive(Eq, Debug)

@@ -2,6 +2,7 @@
 package "moonrockz/krueger/parser"
 
 import {
+  "moonbitlang/core/debug",
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
   "moonrockz/krueger/scanner",
@@ -19,9 +20,7 @@ pub(all) struct ParseResult {
   ast : @ast.ModuleAst?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
-}
-pub impl Eq for ParseResult
-pub impl Show for ParseResult
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 pub using @ast {type DeclMeta}
@@ -43,4 +42,3 @@ pub using @ast {type UnionTypeCase}
 pub using @ast {type UnionTypeDeclaration}
 
 // Traits
-
