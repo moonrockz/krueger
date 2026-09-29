@@ -2,4 +2,4 @@
 #MISE description="Run coverage in warn mode (non-blocking for low coverage)"
 set -euo pipefail
 
-scripts/coverage_ci.sh warn 80
+exec moon run -q --target wasm scripts/coverage.mbtx -- warn 80
