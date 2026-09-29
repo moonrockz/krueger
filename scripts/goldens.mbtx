@@ -1,0 +1,215 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.2.0",
+}
+
+///|
+/// Run the elm-syntax oracle over the fetched corpus and write one raw
+/// JSON file per corpus file.
+///
+/// Usage: goldens.mbtx <manifest.json> <corpus-dir> <oracle-dir> <out-dir>
+///
+/// For `<pkg>@<version>/<path>` it writes `<out-dir>/<pkg>@<version>/<path>.json`
+/// with the `Elm.Syntax.File` JSON, or `<path>.error` with the parse error.
+
+///|
+let usage : String = "Usage: goldens.mbtx <manifest.json> <corpus-dir> <oracle-dir> <out-dir>"
+
+///|
+/// One oracle result line: the corpus key and either the file JSON or an error.
+enum OracleResult {
+  Parsed(String, Json)
+  Rejected(String, String)
+} derive(Eq, Debug)
+
+///|
+/// Corpus keys (`<pkg>@<version>/<path>`) listed in a manifest.
+fn manifest_keys(manifest : Json) -> Array[String] raise {
+  guard manifest is Object(root) && root.get("packages") is Some(Array(items)) else {
+    fail("manifest: missing packages array")
+  }
+  let keys = []
+  for item in items {
+    guard item is Object(p) &&
+      p.get("name") is Some(String(name)) &&
+      p.get("version") is Some(String(version)) &&
+      p.get("files") is Some(Array(files)) else {
+      fail("manifest: malformed package entry")
+    }
+    for f in files {
+      guard f is Object(fo) && fo.get("path") is Some(String(path)) else {
+        fail("manifest: malformed file entry in \{name}")
+      }
+      keys.push("\{name}@\{version}/\{path}")
+    }
+  }
+  keys
+}
+
+///|
+/// Parse one line of oracle output. `prefix` is the corpus directory plus `/`,
+/// which the runner saw as part of each file name.
+fn parse_result(line : String, prefix : String) -> OracleResult raise {
+  guard @json.parse(line) is Object(o) && o.get("name") is Some(String(name)) else {
+    fail("oracle: unexpected line")
+  }
+  let key = if name.has_prefix(prefix) {
+    name.unsafe_substring(start=prefix.length(), end=name.length())
+  } else {
+    name
+  }
+  match (o.get("ok"), o.get("file"), o.get("error")) {
+    (Some(True), Some(file), _) => Parsed(key, file)
+    (Some(False), _, Some(String(error))) => Rejected(key, error)
+    _ => fail("oracle: malformed result for \{name}")
+  }
+}
+
+///|
+async fn run_or_exit(
+  cmd : String,
+  args : Array[String],
+  cwd? : String = ".",
+) -> Unit {
+  let code = @process.run(cmd, args, cwd~)
+  if code != 0 {
+    eprintln("\{cmd} failed with exit code \{code}")
+    @sys.exit(code)
+  }
+}
+
+///|
+fn parent(path : String) -> String {
+  match path.rev_find("/") {
+    Some(i) => path.unsafe_substring(start=0, end=i)
+    None => "."
+  }
+}
+
+///|
+async fn main {
+  guard @env.args()[1:] is [manifest, corpus, oracle, out] else {
+    eprintln(usage)
+    @sys.exit(2)
+    return
+  }
+  let keys = manifest_keys(@fs.read_file(manifest).json())
+  run_or_exit(
+    "mise",
+    [
+      "x", "elm@0.19.1", "--", "elm", "make", "src/Oracle.elm", "--optimize", "--output",
+      "oracle.js",
+    ],
+    cwd=oracle,
+  )
+  let files = keys.map(k => "\{corpus}/\{k}")
+  let (code, stdout) = @process.collect_stdout(
+    "mise",
+    ["x", "node@24", "--", "node", "\{oracle}/run.js", ..files],
+  )
+  if code != 0 {
+    eprintln("oracle failed with exit code \{code}")
+    @sys.exit(code)
+    return
+  }
+  // Start from an empty output directory so no stale result survives.
+  if @fs.exists(out) {
+    @fs.rmdir(out, recursive=true)
+  }
+  let mut parsed = 0
+  let mut rejected = 0
+  for line in stdout.text().split("\n") {
+    let line = line.to_owned()
+    if line == "" {
+      continue
+    }
+    match parse_result(line, "\{corpus}/") {
+      Parsed(key, file) => {
+        let path = "\{out}/\{key}.json"
+        @fs.mkdir(parent(path), recursive=true, allow_exist=true)
+        @fs.write_file(path, file.stringify() + "\n")
+        parsed += 1
+      }
+      Rejected(key, error) => {
+        let path = "\{out}/\{key}.error"
+        @fs.mkdir(parent(path), recursive=true, allow_exist=true)
+        @fs.write_file(path, error + "\n")
+        rejected += 1
+      }
+    }
+  }
+  println(
+    "oracle: \{parsed} parsed, \{rejected} rejected, \{keys.length()} files",
+  )
+  if parsed + rejected != keys.length() {
+    eprintln("oracle: result count does not match the manifest")
+    @sys.exit(1)
+  }
+}
+
+///|
+/// Scenario state for `features/goldens.feature`.
+struct GoldensWorld {
+  mut manifest : String
+  mut line : String
+  mut result : Result[OracleResult, String]
+}
+
+///|
+fn GoldensWorld::new() -> GoldensWorld {
+  { manifest: "", line: "", result: Err("not run"), }
+}
+
+///|
+impl @moonspec.World for GoldensWorld with fn configure(self, setup) {
+  setup.given1("the manifest:", fn(doc : @moonspec.DocString) {
+    self.manifest = doc.content
+  })
+  setup.then1("the corpus keys are {string}", fn(expected : String) raise {
+    @expect.expect(manifest_keys(@json.parse(self.manifest)).join(", ")).to_equal(
+      expected,
+    )
+  })
+  setup.given1("the oracle line:", fn(doc : @moonspec.DocString) {
+    self.line = doc.content
+  })
+  setup.when1("I read the oracle line with corpus {string}", fn(
+    corpus : String,
+  ) {
+    self.result = try parse_result(self.line, "\{corpus}/") catch {
+      err => Err(err.to_string())
+    } noraise {
+      r => Ok(r)
+    }
+  })
+  setup.then1("the result is parsed for {string}", fn(key : String) raise {
+    guard self.result is Ok(Parsed(actual, _)) else {
+      fail("expected a parsed result, got \{Repr(self.result)}")
+    }
+    @expect.expect(actual).to_equal(key)
+  })
+  setup.then2("the result is rejected for {string} with {string}", fn(
+    key : String,
+    error : String,
+  ) raise {
+    @expect.expect(self.result).to_equal(Ok(Rejected(key, error)))
+  })
+}
+
+///|
+async test "goldens feature" {
+  @moonspec.run_or_fail(
+    GoldensWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/goldens.feature"),
+    ]),
+  )
+  |> ignore
+}

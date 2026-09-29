@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Rebuild the parity corpus manifest from tests/corpus/packages.txt"
+set -euo pipefail
+
+exec moon run -q --target wasm scripts/corpus.mbtx -- manifest tests/corpus/packages.txt tests/corpus/manifest.json

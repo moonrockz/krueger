@@ -1,0 +1,1905 @@
+{
+  "elm": "0.19.1",
+  "packages": [
+    {
+      "name": "avh4/elm-color",
+      "version": "1.0.0",
+      "zipball": "https://github.com/avh4/elm-color/zipball/1.0.0/",
+      "sha1": "07c005de1b1af369e63e3a076820cf86422b8aa7",
+      "files": [
+        {
+          "path": "src/Color.elm",
+          "sha256": "557499a8fda931acd45f96fd62a765b5876632792c2ee3727c3b7249b1195251"
+        }
+      ]
+    },
+    {
+      "name": "avh4/elm-fifo",
+      "version": "1.0.4",
+      "zipball": "https://github.com/avh4/elm-fifo/zipball/1.0.4/",
+      "sha1": "c82ae6ab0790d8fd7b44b6f51e162065e444940a",
+      "files": [
+        {
+          "path": "src/Fifo.elm",
+          "sha256": "59cd391df4fc320cb162626df4a41ec30b33881ea22a9e8d3c5ace1f885a47b5"
+        }
+      ]
+    },
+    {
+      "name": "chain-partners/elm-bignum",
+      "version": "1.0.1",
+      "zipball": "https://github.com/chain-partners/elm-bignum/zipball/1.0.1/",
+      "sha1": "77f80b44ceef54982b0f161753d029412ae442e0",
+      "files": [
+        {
+          "path": "src/Decimal.elm",
+          "sha256": "60e4a11de3a5ecf1c479fdad471812a3ed6541aa5354b4bd1606ffbc33cf1d60"
+        },
+        {
+          "path": "src/Integer.elm",
+          "sha256": "160b7a0e35210fff7e670650a00a6a868cf2d04b0ad4ea7a5c4ff925e36c8941"
+        }
+      ]
+    },
+    {
+      "name": "cmditch/elm-bigint",
+      "version": "1.0.1",
+      "zipball": "https://github.com/cmditch/elm-bigint/zipball/1.0.1/",
+      "sha1": "bdd571cedac6f8bafe7e21e49cdbd14090aa5764",
+      "files": [
+        {
+          "path": "src/BigInt.elm",
+          "sha256": "3ec199c85e63a9dc19f8bd06d89deade017e91d4ffbd3dcd3be26049104f7f05"
+        },
+        {
+          "path": "src/Constants.elm",
+          "sha256": "5d016bfc82a7e20a7a5e91a2d2e335867ab7caf7a2c85b7d794b6030a552d263"
+        }
+      ]
+    },
+    {
+      "name": "cuducos/elm-format-number",
+      "version": "9.0.1",
+      "zipball": "https://github.com/cuducos/elm-format-number/zipball/9.0.1/",
+      "sha1": "f20e40990b4a3763e7fcc2422d29fac923247fed",
+      "files": [
+        {
+          "path": "src/FormatNumber/Parser.elm",
+          "sha256": "63ae2457a16941272da6fa68c2e579f8e450a1798c7801439ed68d15f43ffd2e"
+        },
+        {
+          "path": "src/FormatNumber/Locales.elm",
+          "sha256": "659c9394b147bbc112f1d3ee846361ea297b6240dcbc4971728c2562e6d40594"
+        },
+        {
+          "path": "src/FormatNumber/Stringfy.elm",
+          "sha256": "a698a1e683dfcad6701eb630291f366a032edc21d5a1191ac77ac65388cb0a52"
+        },
+        {
+          "path": "src/FormatNumber.elm",
+          "sha256": "f94aa584e3350d0ee811e576d959f3ca1275b4b431f8024736ba0a2558d82d3d"
+        }
+      ]
+    },
+    {
+      "name": "danfishgold/base64-bytes",
+      "version": "1.1.0",
+      "zipball": "https://github.com/danfishgold/base64-bytes/zipball/1.1.0/",
+      "sha1": "06652510ae2ebad979409b3ea74e38c7ae47ff3b",
+      "files": [
+        {
+          "path": "src/Base64.elm",
+          "sha256": "a63205d33844c7e70139e07dea28f49ea6a67bf57d64e88fd4a1fa3addfda093"
+        },
+        {
+          "path": "src/Decode.elm",
+          "sha256": "0d0312f6866522b3b84765b640e38fd0c30a775899221c4f110bc03bda0ee18e"
+        },
+        {
+          "path": "src/Encode.elm",
+          "sha256": "b8a03ff9def7fd2e9de41bfa23c59c9f24d1da2e113e65c72465dcdb887a73b2"
+        }
+      ]
+    },
+    {
+      "name": "dillonkearns/elm-markdown",
+      "version": "7.0.1",
+      "zipball": "https://github.com/dillonkearns/elm-markdown/zipball/7.0.1/",
+      "sha1": "fad11b2fcd8e5a365f1452d4a07bf17ad13ef17b",
+      "files": [
+        {
+          "path": "src/List/Helpers.elm",
+          "sha256": "ca65bb7ddd7d52746b928a9f342090327f6d8444f50906488a1aefeaccb12077"
+        },
+        {
+          "path": "src/Parser/Extra.elm",
+          "sha256": "5f8e35bcd215d2a73a75f75e449ac1ec30249ee5f23cb9b4c2ddbe3a974e3543"
+        },
+        {
+          "path": "src/Parser/Token.elm",
+          "sha256": "f2cc17b78034f7f92e7ddb5c1af95a5bb0899ef310ae48d113b2f2d8a014d5c6"
+        },
+        {
+          "path": "src/Markdown/Html.elm",
+          "sha256": "fa6a48b27bb5690860c9f3c292e57df606ff12a96970a0703ab82a6c6e604932"
+        },
+        {
+          "path": "src/Markdown/Block.elm",
+          "sha256": "c955b203cf21a197ec55f50802e06eba71a0ec79985d76c0facd482f16488997"
+        },
+        {
+          "path": "src/Markdown/Table.elm",
+          "sha256": "48834bce00fe686efdf58333aa59fb6b1482e50af7b5ecaee590c0f7dd86226a"
+        },
+        {
+          "path": "src/Markdown/Entity.elm",
+          "sha256": "4979620b319b69ad1920ccd05ae0de8b26679018775328e880a7fc8648d51a8b"
+        },
+        {
+          "path": "src/Markdown/Inline.elm",
+          "sha256": "ac23a2943f99944f8353f25a470344c20a189bdc34db15bc87dadc67d6517c7e"
+        },
+        {
+          "path": "src/Markdown/Parser.elm",
+          "sha256": "ceac9851029453b02077afc30d89220ba9736e1fb9e5fe73384868209b8a03b1"
+        },
+        {
+          "path": "src/Markdown/Heading.elm",
+          "sha256": "5e74a704fae350270597f793fb680b2f0603424ab03370df856414f263c314dd"
+        },
+        {
+          "path": "src/Markdown/Helpers.elm",
+          "sha256": "e56040c3450facc80270d8b7f92544f3d06a1bdd8484eb45a6ffa1f58444bdc7"
+        },
+        {
+          "path": "src/Markdown/ListItem.elm",
+          "sha256": "8c0df4efd0a7b620de8f5340280da3dad3e7fbd0ff85106d356f310f2fbc0508"
+        },
+        {
+          "path": "src/Markdown/RawBlock.elm",
+          "sha256": "b1b1ad1159be6d58e232451235691857a59bd8d429d9b7a2295ae984110a4d98"
+        },
+        {
+          "path": "src/Markdown/Renderer.elm",
+          "sha256": "32839b13db88fead42a2fbb42d7f2a6290040a996c09f6c45e43fca86d5e5491"
+        },
+        {
+          "path": "src/Markdown/CodeBlock.elm",
+          "sha256": "7e7cd2264e44b9119005a68326234b332aebddfd4010440528575ce02e9214a3"
+        },
+        {
+          "path": "src/Markdown/OrderedList.elm",
+          "sha256": "173415fd3709a8628f748aef339c42a6027409ae23373936aff07bbe271513e3"
+        },
+        {
+          "path": "src/Markdown/TableParser.elm",
+          "sha256": "86c41628b51e67966a28b8bd9a4863fe7da69f5d614f2aed91fd77401695c819"
+        },
+        {
+          "path": "src/Markdown/HtmlRenderer.elm",
+          "sha256": "28dc88e7564c4fa2305885d1d5e5ac01c063bd8eb9c3d868a6c89f6f87c61e22"
+        },
+        {
+          "path": "src/Markdown/InlineParser.elm",
+          "sha256": "5d454c534e37fcbc8038f63af25f5da5b0b5935b223a5f333491c4637d368313"
+        },
+        {
+          "path": "src/Markdown/UnorderedList.elm",
+          "sha256": "abf81f7738a54e8359c29fd79cde86fb0688c24e0d3530f4ab45e8e3e64d3e7c"
+        },
+        {
+          "path": "src/Markdown/LinkReferenceDefinition.elm",
+          "sha256": "6bb781fd6d7982b6632889aa4dbfa26f2e8d45fa5246bf2e86e4c4eefdc4dd03"
+        },
+        {
+          "path": "src/Helpers.elm",
+          "sha256": "454d83251238100d46ca7c913863a368f23d45c64ce692e93b6664d451972905"
+        },
+        {
+          "path": "src/HtmlParser.elm",
+          "sha256": "88a9b036839078d9792e5b497e02db24b2a99db6ac3ba6f8fc17d19452d6bf76"
+        },
+        {
+          "path": "src/Whitespace.elm",
+          "sha256": "6a83dae855367721a0e7d2cf6cd1794961ab8cf8cbfd45a212931d1ac77fc2a8"
+        },
+        {
+          "path": "src/GithubSlugs.elm",
+          "sha256": "153af8d5cd788fb636503c0dd0f9a6bc1babd2b735dbd564517faa0ae4a9b04f"
+        },
+        {
+          "path": "src/ThematicBreak.elm",
+          "sha256": "c9ca60fe7b2cd49152d749fc1fbf3506d60ce84fcf258ff363f736b0a09d0604"
+        }
+      ]
+    },
+    {
+      "name": "dosarf/elm-tree-view",
+      "version": "3.0.0",
+      "zipball": "https://github.com/dosarf/elm-tree-view/zipball/3.0.0/",
+      "sha1": "01508f933e1d036c9de932f4b6ed95ee5949139b",
+      "files": [
+        {
+          "path": "src/Tree.elm",
+          "sha256": "c12849cc5b741c34257d6670e43d2033a5bf40ed81351ad9c52947397fc2b841"
+        },
+        {
+          "path": "src/TreeView.elm",
+          "sha256": "0e57737f2dbc910a06babd8c20e3d4fcff1b89ebaf45fd243d21b2ffeea69a32"
+        }
+      ]
+    },
+    {
+      "name": "elm/browser",
+      "version": "1.0.2",
+      "zipball": "https://github.com/elm/browser/zipball/1.0.2/",
+      "sha1": "3e42bad1272885793ce153613e446f8425e29e32",
+      "files": [
+        {
+          "path": "src/Browser/Dom.elm",
+          "sha256": "03bee2960770cea5b6ee2a208f33622432b8a1ae12e77412cf84b67a453ac2a7"
+        },
+        {
+          "path": "src/Browser/Events.elm",
+          "sha256": "b72f8970ee085dab3c7e5504f661e21ed6cefaea21890899d9cd32ebc7f2bd4f"
+        },
+        {
+          "path": "src/Browser/Navigation.elm",
+          "sha256": "329085431ef02615190706903d090364097ed3ddaf466370918af69379354706"
+        },
+        {
+          "path": "src/Browser/AnimationManager.elm",
+          "sha256": "b5eec62b6f9e2e94f5f1b573228e332784580fddc5898c732c4f5c48f4a5a854"
+        },
+        {
+          "path": "src/Debugger/Main.elm",
+          "sha256": "4513896c62d0ba2f3f27bae3cf39145af8e5ccf428abde16db782ed1c7db3b6a"
+        },
+        {
+          "path": "src/Debugger/Report.elm",
+          "sha256": "2323bbd81acaaf3b6077d66fda4fd12a15b1d9c21e9571ab21f0b7c069a5d096"
+        },
+        {
+          "path": "src/Debugger/Expando.elm",
+          "sha256": "c93b00af7bf99c8929db06cdfaf7c6b26b955ac576e62ee4fe2c0be6e4f01a6b"
+        },
+        {
+          "path": "src/Debugger/History.elm",
+          "sha256": "4ef4701403e4b960a902a12f20f5feb3ac8881850ba7a71ca6c50f363c60caa9"
+        },
+        {
+          "path": "src/Debugger/Overlay.elm",
+          "sha256": "cbb5380cc49af503a462d4e1c0112fe6d46653fc34d8948243f5782591094b47"
+        },
+        {
+          "path": "src/Debugger/Metadata.elm",
+          "sha256": "733be27ac5b7651c55b62161f24c508c9a62cf69a481672f17a0c58068591cd8"
+        },
+        {
+          "path": "src/Browser.elm",
+          "sha256": "2722873214de2d381a02e037dd56f764c522c0b4ccbbfb3edccce69e0c3c32a5"
+        }
+      ]
+    },
+    {
+      "name": "elm/bytes",
+      "version": "1.0.8",
+      "zipball": "https://github.com/elm/bytes/zipball/1.0.8/",
+      "sha1": "4368395241cc79679f686217339c37373d43cfc6",
+      "files": [
+        {
+          "path": "src/Bytes/Decode.elm",
+          "sha256": "0081a9ec6a859589b689aad1cd1cb401d8f89f6b71f7dd26a243bcf6cc1a6a4d"
+        },
+        {
+          "path": "src/Bytes/Encode.elm",
+          "sha256": "fbad353e50263bc3e8d0a563fad68ab919df0bfd249bf66697031dca033a8607"
+        },
+        {
+          "path": "src/Bytes.elm",
+          "sha256": "3a40eb753082a46a555d8169cb87c551f1a10e48876592c69a25a5e5ccf3bd41"
+        }
+      ]
+    },
+    {
+      "name": "elm/core",
+      "version": "1.0.5",
+      "zipball": "https://github.com/elm/core/zipball/1.0.5/",
+      "sha1": "9288a7574b778b4ebc6557d504a0b16c09daab43",
+      "files": [
+        {
+          "path": "src/Elm/JsArray.elm",
+          "sha256": "bfa0bc6ae1b5b5786f1224b9c0eb476380e9818af53523fdda4b0c30eb60a0d2"
+        },
+        {
+          "path": "src/Set.elm",
+          "sha256": "765ce399f1ed4c92bb47fe0af07808875a2377fdc89f951d513b6f55e5744f85"
+        },
+        {
+          "path": "src/Char.elm",
+          "sha256": "90db4547054916b2e71b364e3253f50f551e03627ce7e8ae53d1fb1ae667e387"
+        },
+        {
+          "path": "src/Dict.elm",
+          "sha256": "2afc5fcbc080b98903d9b05a98eb0efbf65265eb42ed076b2d442d9e4aca14e5"
+        },
+        {
+          "path": "src/List.elm",
+          "sha256": "79e513a52ab45ab98f3a5ad9c87779c2cb29519c5adcf91ab3b70fb5de234f41"
+        },
+        {
+          "path": "src/Platform/Cmd.elm",
+          "sha256": "015c3c2469abeb1cfcf757017d4448c0e453da972fb846f93a91768488e7dfd5"
+        },
+        {
+          "path": "src/Platform/Sub.elm",
+          "sha256": "fdb296916f45f3ed0096959e5d727b32a05e7459ef5cc95f00e76951221499dd"
+        },
+        {
+          "path": "src/Task.elm",
+          "sha256": "f546ccb07a58b26fcf791ed45a6236e80e45aaed00c29cbaeced5dcd6da034fa"
+        },
+        {
+          "path": "src/Array.elm",
+          "sha256": "1f60be42ecfeaae7dab6e5f6887c49ecdc4089e4348b6f9694e095bd0f434eac"
+        },
+        {
+          "path": "src/Debug.elm",
+          "sha256": "1407cfff0d9882dc4b6557c7b99f8bbb6f19dbf345ae919c87daf0ca979fd4fe"
+        },
+        {
+          "path": "src/Maybe.elm",
+          "sha256": "35aa285d930a4da6d918717209f230667ab127d357f69d6ea3dbab31e567f5aa"
+        },
+        {
+          "path": "src/Tuple.elm",
+          "sha256": "b970211ee185cf3184634702aa54f6ec33e2aafb8930caead713ee7929236b46"
+        },
+        {
+          "path": "src/Basics.elm",
+          "sha256": "649e41513480066f951eef04931a1caea463d3b052cb4a86182c6fcd87e980f2"
+        },
+        {
+          "path": "src/Result.elm",
+          "sha256": "1efa7ed54dfcfc31c35ffae770afc6b9b095e063b325d80f5e5550600ded746b"
+        },
+        {
+          "path": "src/String.elm",
+          "sha256": "e7300d71211211e5e0b8b1b3bcd0d6407416a498bcfb682b26a8642fa965e4a0"
+        },
+        {
+          "path": "src/Bitwise.elm",
+          "sha256": "0b3c9aef28504672f08209b26e24390aa65ee8a7ae97e71ba84770ff56d25978"
+        },
+        {
+          "path": "src/Process.elm",
+          "sha256": "a6af86afca70423a8ec9092c34f5b4b4247cb25dc67074864cdcab8c895d0455"
+        },
+        {
+          "path": "src/Platform.elm",
+          "sha256": "71d83575a51451379e81fc2712e925a5fc242286c5c971259ff1740274f7e527"
+        }
+      ]
+    },
+    {
+      "name": "elm/file",
+      "version": "1.0.5",
+      "zipball": "https://github.com/elm/file/zipball/1.0.5/",
+      "sha1": "9be249cec687caeb7cbdd85027b5e38625a9789e",
+      "files": [
+        {
+          "path": "src/File/Select.elm",
+          "sha256": "c7d40566987ed90ab8735c16f2d6c1eb813c73e78aaa4fde18fff331e35f4a5d"
+        },
+        {
+          "path": "src/File/Download.elm",
+          "sha256": "9516bec7c52dd9aba7d781410af88a63cd9e36cc3a07cd0d8d843870049f342a"
+        },
+        {
+          "path": "src/File.elm",
+          "sha256": "87e2d28653ec162f589d5fec45ec9d0aa0f4a040aa9d58419ac56ed15519dbd6"
+        }
+      ]
+    },
+    {
+      "name": "elm/html",
+      "version": "1.0.1",
+      "zipball": "https://github.com/elm/html/zipball/1.0.1/",
+      "sha1": "a68fbf209e52732e094e6f3e58708d06f0230742",
+      "files": [
+        {
+          "path": "src/Html/Lazy.elm",
+          "sha256": "e6ec7de40a8c6318a055898a144e8cc56b2c9b32f7694be1bf223e98db6cd031"
+        },
+        {
+          "path": "src/Html/Keyed.elm",
+          "sha256": "346e9fe65945ccedc250e5d5cc739fe3505dc9be37bcb93fd311527964b55ff7"
+        },
+        {
+          "path": "src/Html/Events.elm",
+          "sha256": "294468ac7bf6fabb0b1aa49969fa4c66f7fa185e63323efcf901a26dc21ba34b"
+        },
+        {
+          "path": "src/Html/Attributes.elm",
+          "sha256": "337c5fd650f3928a9c58f9f155ea49b7c70543fcbd2e7c3d1d6e10a1baf2e2f2"
+        },
+        {
+          "path": "src/Html.elm",
+          "sha256": "786dd0ee8617af3c9f2734e8ab4436cf51a8e78c7ab14ae53d5b604e0a018a0c"
+        }
+      ]
+    },
+    {
+      "name": "elm/http",
+      "version": "2.0.0",
+      "zipball": "https://github.com/elm/http/zipball/2.0.0/",
+      "sha1": "83cb7ecb6800e55e3728c756aac451881e55c40a",
+      "files": [
+        {
+          "path": "src/Http.elm",
+          "sha256": "791023f4674eedb81e09d4509b5b642006f216b076480b4dac76ce49ea065009"
+        }
+      ]
+    },
+    {
+      "name": "elm/json",
+      "version": "1.1.4",
+      "zipball": "https://github.com/elm/json/zipball/1.1.4/",
+      "sha1": "a8d113c274b8d414a1ff565c3de6739fe65ae702",
+      "files": [
+        {
+          "path": "src/Json/Decode.elm",
+          "sha256": "52054aede61fafa06bf3722703b9ca26510d225a027681ed88e72f1e51464a8e"
+        },
+        {
+          "path": "src/Json/Encode.elm",
+          "sha256": "9cdf3d660f182aed97117205e72388e2bb0d0ad795b4749975fa2c639b808a2a"
+        }
+      ]
+    },
+    {
+      "name": "elm/parser",
+      "version": "1.1.0",
+      "zipball": "https://github.com/elm/parser/zipball/1.1.0/",
+      "sha1": "8d2110746c0c85c019e71fd776f848ebb15ba430",
+      "files": [
+        {
+          "path": "src/Parser/Advanced.elm",
+          "sha256": "ca653aa79db42cd6d26db8d23682d80a77bcf55ffde925e3fe02297ade486a5a"
+        },
+        {
+          "path": "src/Parser.elm",
+          "sha256": "70634dfc528ec45617b52ecded7a8f0a5d339211db4c8d159b94ffd878557f4e"
+        }
+      ]
+    },
+    {
+      "name": "elm/random",
+      "version": "1.0.0",
+      "zipball": "https://github.com/elm/random/zipball/1.0.0/",
+      "sha1": "aa2cdd98e008d05ae9ea0dabb44b1caf0da90f09",
+      "files": [
+        {
+          "path": "src/Random.elm",
+          "sha256": "62bc5496b27a6bebfe5ad208f4b10e4d41a849a50e7bc17c7686d238e80eb98c"
+        }
+      ]
+    },
+    {
+      "name": "elm/regex",
+      "version": "1.0.0",
+      "zipball": "https://github.com/elm/regex/zipball/1.0.0/",
+      "sha1": "82c352510ce4da707ad0d11f6dc6254bfdceacbe",
+      "files": [
+        {
+          "path": "src/Regex.elm",
+          "sha256": "748c81050fa699ae4692d2af3b514fab286392728a637585b7175878cc446f34"
+        }
+      ]
+    },
+    {
+      "name": "elm/svg",
+      "version": "1.0.1",
+      "zipball": "https://github.com/elm/svg/zipball/1.0.1/",
+      "sha1": "8d6b59e6fea0f345e7d0be7067baf64f24bd732c",
+      "files": [
+        {
+          "path": "src/Svg/Lazy.elm",
+          "sha256": "b44c83642f82153fa19711b937c4cf88b652c09d388348df4a94acdc9033f4ab"
+        },
+        {
+          "path": "src/Svg/Keyed.elm",
+          "sha256": "01f8ab6cdc8b614b06bf2f1f61b5efc92e41a25f965f7cd690c55f2cfb342e9c"
+        },
+        {
+          "path": "src/Svg/Events.elm",
+          "sha256": "612b0ed785cfabb6ca63786063a59f02861283c4a6b2d626b8d1b3e5c2f97458"
+        },
+        {
+          "path": "src/Svg/Attributes.elm",
+          "sha256": "45ebba3826dbcd28909b8297c46f87e47f6da9adc1224e4647abe8b82049cc01"
+        },
+        {
+          "path": "src/Svg.elm",
+          "sha256": "181ecb9c536a31b309069651243868faddf2485d50dd0e108a012746cb54207c"
+        }
+      ]
+    },
+    {
+      "name": "elm/time",
+      "version": "1.0.0",
+      "zipball": "https://github.com/elm/time/zipball/1.0.0/",
+      "sha1": "45c179776e7b79601c3f935c751a5fab159d79cf",
+      "files": [
+        {
+          "path": "src/Time.elm",
+          "sha256": "e4c55a925c664c25b8ffcd1510c827793d670ec159dc18af3ebd7f642ee4e638"
+        }
+      ]
+    },
+    {
+      "name": "elm/url",
+      "version": "1.0.0",
+      "zipball": "https://github.com/elm/url/zipball/1.0.0/",
+      "sha1": "314aca93c5f65928ed7e01cdfa90b8f51b860536",
+      "files": [
+        {
+          "path": "src/Url/Parser/Query.elm",
+          "sha256": "2b14aab77b663bef2b9434fccc3ca6c102990b9cf87dea650ae8341a9325bf4e"
+        },
+        {
+          "path": "src/Url/Parser/Internal.elm",
+          "sha256": "91cec106bc5eb47ae5b1ff86ac1589989785080805bc4e38dd187ec22dbbfc26"
+        },
+        {
+          "path": "src/Url/Parser.elm",
+          "sha256": "0a42ac79944c28778c0e32510cd089e7d80e6d202937238f829d4de2d942d028"
+        },
+        {
+          "path": "src/Url/Builder.elm",
+          "sha256": "e4922467375bcedd187bbd811b5dfd49b7f9b6a08063b7ef411f2ad0aa6e8dad"
+        },
+        {
+          "path": "src/Url.elm",
+          "sha256": "c1dad01869f5a4fe29406b3409508ec4754bf8125cc01ef5106b2e369c5c647c"
+        }
+      ]
+    },
+    {
+      "name": "elm/virtual-dom",
+      "version": "1.0.5",
+      "zipball": "https://github.com/elm/virtual-dom/zipball/1.0.5/",
+      "sha1": "a3d2fd3439e4dd783991789e0eb4976aa5c6c124",
+      "files": [
+        {
+          "path": "src/VirtualDom.elm",
+          "sha256": "85f06afbc5f418f69c424ecc9b61969cc460444f97987054fb14d2a944d3bba8"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/array-extra",
+      "version": "2.6.0",
+      "zipball": "https://github.com/elm-community/array-extra/zipball/2.6.0/",
+      "sha1": "5f3c38a003060f4994863841c8478b59aa1b1351",
+      "files": [
+        {
+          "path": "src/Array/Extra.elm",
+          "sha256": "73d4b387310ddc9827afbb64978927ec0cd5ba6da9f997787290f55a578c999e"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/graph",
+      "version": "6.0.0",
+      "zipball": "https://github.com/elm-community/graph/zipball/6.0.0/",
+      "sha1": "6e0132e9b29427e4ab1a6d52bd403730c12ddfbb",
+      "files": [
+        {
+          "path": "src/Graph/DOT.elm",
+          "sha256": "20920c88ac7f59a6d99182556240116a87b37ec36cd0a99938a8e482f4c0ab81"
+        },
+        {
+          "path": "src/Graph/TGF.elm",
+          "sha256": "05e9da12cdd88e405d906324a386600b8df8a661a7699476687ccb96bd9113f0"
+        },
+        {
+          "path": "src/Graph/Tree.elm",
+          "sha256": "e3b518ed6203288eeda2ca160034aa56b45e0deebd21430411759047ef81e863"
+        },
+        {
+          "path": "src/Graph.elm",
+          "sha256": "874a9c16172da19d25086c8a26bbeacf01f041bcbafb39fde8f0cabfff637796"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/intdict",
+      "version": "3.1.0",
+      "zipball": "https://github.com/elm-community/intdict/zipball/3.1.0/",
+      "sha1": "0cc2faef640933244b07e2a037075f42ef1ea64c",
+      "files": [
+        {
+          "path": "src/IntDict/Safe.elm",
+          "sha256": "231c8d46a0f38ba6a23f59a4b8eb50c073b96c6cbd04a16eab056bf81ae77d68"
+        },
+        {
+          "path": "src/IntDict.elm",
+          "sha256": "b422411b7a872e3aaaed24392f9597461b0e947643024ed4a827f0748f210fff"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/json-extra",
+      "version": "4.2.0",
+      "zipball": "https://github.com/elm-community/json-extra/zipball/4.2.0/",
+      "sha1": "923d91583b5453bbd80f4ad56d1591b149b8d08f",
+      "files": [
+        {
+          "path": "src/Json/Decode/Extra.elm",
+          "sha256": "6a7fb8f8c9c297cb3c2af28a9b9c1ba66ea1512a27845883220324eadf443bec"
+        },
+        {
+          "path": "src/Json/Encode/Extra.elm",
+          "sha256": "5e456413bbc3b02a4db88da1d1c2a008e0a2adbcdd61309ebccb7cda78cf71cd"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/list-extra",
+      "version": "8.7.0",
+      "zipball": "https://github.com/elm-community/list-extra/zipball/8.7.0/",
+      "sha1": "39727d26635a72da649800b38b3fc19612290cf8",
+      "files": [
+        {
+          "path": "src/List/Extra.elm",
+          "sha256": "4cae98623b9caec456986b7c399fc0b11e02d618d8421be2e23fe2e339aa0278"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/maybe-extra",
+      "version": "5.3.0",
+      "zipball": "https://github.com/elm-community/maybe-extra/zipball/5.3.0/",
+      "sha1": "c839b429df7bb510f527fb98f95dafbd93f45b98",
+      "files": [
+        {
+          "path": "src/Maybe/Extra.elm",
+          "sha256": "92553db78747b9e9481f4af2c25e93e9c94b88e6645233eda0c6214dcb3b572f"
+        }
+      ]
+    },
+    {
+      "name": "elm-community/random-extra",
+      "version": "3.2.0",
+      "zipball": "https://github.com/elm-community/random-extra/zipball/3.2.0/",
+      "sha1": "2246e01a366352a6604976866409a70feac8c4d4",
+      "files": [
+        {
+          "path": "src/Random/Int.elm",
+          "sha256": "93f0a87c39f3c1d9bf05bb19f4a7d4dc409a2ca374c30903b25c524d304b2023"
+        },
+        {
+          "path": "src/Random/Set.elm",
+          "sha256": "81a7da6b128227b4b2bfec3ec88426b9c3d56f18591deae741bbebf68b18ab4f"
+        },
+        {
+          "path": "src/Random/Char.elm",
+          "sha256": "67509bbb236e3d3f6a582b07d0260c9a58cfbccb4a1d4a79ad27dd222257e4bb"
+        },
+        {
+          "path": "src/Random/Date.elm",
+          "sha256": "bfe183ab5ae1d2725b70f0071a97c2c104ad2b0f23f525ffa90fdd2b9a21a7b6"
+        },
+        {
+          "path": "src/Random/Dict.elm",
+          "sha256": "8d74fa2f8638385c7c6a91b0e3dc91aa25c3c071a2575710ef37645d1d6520b6"
+        },
+        {
+          "path": "src/Random/List.elm",
+          "sha256": "1f9211893731e6e6ce8eb3bd0b453574455af8abad2c053ca31a6dfdaaa250c4"
+        },
+        {
+          "path": "src/Random/Array.elm",
+          "sha256": "c6dc429f5819572a67643e87537a3502705e7272356d765dcc1a8b6e2b6ba9b3"
+        },
+        {
+          "path": "src/Random/Extra.elm",
+          "sha256": "8514b557eecb509c139f4bd334f9ecf3b674241f66e2f874a6be2538a47b34c0"
+        },
+        {
+          "path": "src/Random/Float.elm",
+          "sha256": "6e37a597a7f056450b189694e8d88f9e1d9af4276c10f20af85da3b07e406fdd"
+        },
+        {
+          "path": "src/Random/Order.elm",
+          "sha256": "b5db9e9454004800e673500e1b11d63f0bbfcc831f86f99a7ed5ca88c9a86281"
+        },
+        {
+          "path": "src/Random/String.elm",
+          "sha256": "80a8c9b31b84ca8c7fade737d04aaa0329571331604e6b406983a03fc8c72644"
+        }
+      ]
+    },
+    {
+      "name": "elm-explorations/markdown",
+      "version": "1.0.0",
+      "zipball": "https://github.com/elm-explorations/markdown/zipball/1.0.0/",
+      "sha1": "9ae1c29291395d3db4add7205fe1b3584e471c41",
+      "files": [
+        {
+          "path": "src/Markdown.elm",
+          "sha256": "ab1d08ff9f0a1f1e0464890548045785aef276ff78bd102bd1e8410bb7c5c3ca"
+        }
+      ]
+    },
+    {
+      "name": "elm-explorations/test",
+      "version": "2.2.1",
+      "zipball": "https://github.com/elm-explorations/test/zipball/2.2.1/",
+      "sha1": "eefbb97802f2f63b003bd299510fc86a1f72d0ae",
+      "files": [
+        {
+          "path": "src/Fuzz/Float.elm",
+          "sha256": "f3d4e964a769fa964e9472a02a96c5aa086350fab7bfe8efcd2a3e399ec84e87"
+        },
+        {
+          "path": "src/Fuzz/Internal.elm",
+          "sha256": "b8f5e02d4ede79d29b1880a03851dd0848a2002da70409d30ed404548b237685"
+        },
+        {
+          "path": "src/Test/Html/Query/Internal.elm",
+          "sha256": "79f053e5eeda8989eab8ad9133e7214fd6ac204fcf190bffcb061c2e0e0f1969"
+        },
+        {
+          "path": "src/Test/Html/Internal/ElmHtml/Query.elm",
+          "sha256": "93118dd2daf6a967205b44ece1a1ab77950c8c99bdeb6c859e0a712faa4d39b2"
+        },
+        {
+          "path": "src/Test/Html/Internal/ElmHtml/Helpers.elm",
+          "sha256": "def271351e166332684779934bf99a40c69c3bb6ba2db5569f480655b1f4da35"
+        },
+        {
+          "path": "src/Test/Html/Internal/ElmHtml/Markdown.elm",
+          "sha256": "0be4170ac91d6915d951def87b7e7a67959f3201c10f0779898978e181e68e8a"
+        },
+        {
+          "path": "src/Test/Html/Internal/ElmHtml/ToString.elm",
+          "sha256": "1e3677826d74a588dc4983b133e5fae824e4a572879efa28d6c95dc297403e6b"
+        },
+        {
+          "path": "src/Test/Html/Internal/ElmHtml/Constants.elm",
+          "sha256": "8929e96da7572ef8c27832767a3a05321e4ac0b2b8616680f39b72d47ed2c45b"
+        },
+        {
+          "path": "src/Test/Html/Internal/ElmHtml/InternalTypes.elm",
+          "sha256": "946f1717b19c39bf4ecb84dd9823822619227c26c83a0978b3fa14b5d4a8c440"
+        },
+        {
+          "path": "src/Test/Html/Internal/Inert.elm",
+          "sha256": "bcbebab89d84a2b66198a3723ab2b75ca7e24e552a585455cf062ec7218b4ccb"
+        },
+        {
+          "path": "src/Test/Html/Selector/Internal.elm",
+          "sha256": "85dcff2118fbbed28d2d0cc9c5cb5a9b69b99c083b7166a5c8080054fe0ec2ca"
+        },
+        {
+          "path": "src/Test/Html/Event.elm",
+          "sha256": "50ffa824aea795305de7be60beeb49a46dc86029aa3659a7e2c6269a5ea2a068"
+        },
+        {
+          "path": "src/Test/Html/Query.elm",
+          "sha256": "e8a7fa1aeb5affe1bf30a3bf83ea3c26162345f7c7f971e03ca65848bd03556c"
+        },
+        {
+          "path": "src/Test/Html/Selector.elm",
+          "sha256": "f0cefd876fc17e5d4ce0a78f9171719f37f0a3e1928b68a453b0f636ee8e83d2"
+        },
+        {
+          "path": "src/Test/Html/Descendant.elm",
+          "sha256": "5655faa4afbb5f9d353b86c689e3ef86c27ee8855ef5b243e7709e8310643b98"
+        },
+        {
+          "path": "src/Test/Runner/Failure.elm",
+          "sha256": "c1b16477b83c17b97d346d1f692f7805ab6202eb50a35d6d2038da1267edda38"
+        },
+        {
+          "path": "src/Test/Runner/Distribution.elm",
+          "sha256": "e2fd49a6f7a3e9a16b854f8488431c4abde36913688c6ebbfd0c6eeb4197ff4a"
+        },
+        {
+          "path": "src/Test/Fuzz.elm",
+          "sha256": "7f151a8e3169b85884fde2d4e92a1e4528697d5993bc915134ed6354b659138a"
+        },
+        {
+          "path": "src/Test/Internal/KernelConstants.elm",
+          "sha256": "037695cd96d876274c999a2404bb57dcfb1ec9f7b4c13ad8a8bdada4a75ddaf1"
+        },
+        {
+          "path": "src/Test/Runner.elm",
+          "sha256": "287945b396572616feb65b4e99879f209b971aed0633a7148734cdc3722cdf19"
+        },
+        {
+          "path": "src/Test/Distribution/Internal.elm",
+          "sha256": "1ba0fea8483ef4a8372f9617022b840d31de55b9420af0d2e353353188df3b56"
+        },
+        {
+          "path": "src/Test/Internal.elm",
+          "sha256": "8dbfde1292b02b7722bb442daf1b271ba4e55bfa893e5b6e186ba66ea2906fe7"
+        },
+        {
+          "path": "src/Test/Expectation.elm",
+          "sha256": "438654516acbaace5926cc136d794c9a1772e217a2fef83968e906738ae202c7"
+        },
+        {
+          "path": "src/Test/Distribution.elm",
+          "sha256": "815027e48f1ae723333aa8b263dd1aa2ee743ce73e611ada9bbd04d2d7f1bf6a"
+        },
+        {
+          "path": "src/Fuzz.elm",
+          "sha256": "ef5e44f4a3bea2094a892f33b511fc9fe5e497de8557027b2a7217f15e6e6500"
+        },
+        {
+          "path": "src/PRNG.elm",
+          "sha256": "086feed0832f14bc09bf841638d88e8486b1530e8bc2ab2cbe9233c217aad602"
+        },
+        {
+          "path": "src/Simplify/Cmd.elm",
+          "sha256": "ce61733a706da785599bf947e1bdad3c8a00532f885802497bfd3fc83a2e274e"
+        },
+        {
+          "path": "src/Test.elm",
+          "sha256": "89537ee1f3cb9a3e0782a1979687f3457fba37510877bb2c68b0f58ea29109b1"
+        },
+        {
+          "path": "src/Queue.elm",
+          "sha256": "ae01d4c1ba50198f10e35b46681360a8df1407058ce016c8155c165190f8b05d"
+        },
+        {
+          "path": "src/Expect.elm",
+          "sha256": "32965a7d2580b8e24d0ae3e4074ef193f2820686fc169a7b72608315dbec5512"
+        },
+        {
+          "path": "src/Simplify.elm",
+          "sha256": "510dce8abe49de56c425515358454f456b78a812df4141c0bc9949b28afdd71e"
+        },
+        {
+          "path": "src/GenResult.elm",
+          "sha256": "5ea27678e1da9adde28079081040b95ab18816462a63505040ff00461f30a23d"
+        },
+        {
+          "path": "src/RandomRun.elm",
+          "sha256": "0b9a905394fd741dec206fc3b84303e333ae6b49df7a9f59473ae70b87b7166c"
+        },
+        {
+          "path": "src/AsciiTable.elm",
+          "sha256": "11359463fa63e6e8c5b0494bc9ada2262a067aff7e2a7a4d15370d07330691bf"
+        },
+        {
+          "path": "src/MicroDictExtra.elm",
+          "sha256": "715f19e1467807e6e560eaebff8e3e2051343ee6f03ea1d0f9dc573d54788bf4"
+        },
+        {
+          "path": "src/MicroListExtra.elm",
+          "sha256": "cebbfd54b35877cd5543fe7d0b2b8b7a90edc05e467a0f15324649c05f77a6eb"
+        },
+        {
+          "path": "src/MicroMaybeExtra.elm",
+          "sha256": "74888329abd1558d6c0c123f3a933973c2c69192299e420ffbe6363c8dcd56bc"
+        },
+        {
+          "path": "src/MicroBitwiseExtra.elm",
+          "sha256": "ceca4d0f816e2f9eb4b8b28a219a30b9d44419268bc890ba24fcedec340d0d07"
+        }
+      ]
+    },
+    {
+      "name": "erlandsona/assoc-set",
+      "version": "1.1.3",
+      "zipball": "https://github.com/erlandsona/assoc-set/zipball/1.1.3/",
+      "sha1": "c66a78577679ecd8d2db04217e98706fee6d7388",
+      "files": [
+        {
+          "path": "src/AssocSet.elm",
+          "sha256": "7f36c5a0ee0e304c9a82b31fa1c9dc38c7e9dd2f31ae6d2909922d36810dfe0d"
+        }
+      ]
+    },
+    {
+      "name": "fabhof/elm-ui-datepicker",
+      "version": "5.0.0",
+      "zipball": "https://github.com/fabhof/elm-ui-datepicker/zipball/5.0.0/",
+      "sha1": "9fa85dc274c9d7765bbfa3b2a47edbe508c7131f",
+      "files": [
+        {
+          "path": "src/Internal/Date.elm",
+          "sha256": "57eb78c33ea277ff62c50938fd026c2e315f0af085505bc9c1536df109c31243"
+        },
+        {
+          "path": "src/Internal/Week.elm",
+          "sha256": "66e5479c93fc5e28f9274d29db52e9b31b5d267908efbfbbb0f4a5697a3abd7c"
+        },
+        {
+          "path": "src/Internal/TestHelper.elm",
+          "sha256": "05a19cdcddf1f26ae600d7e20f23fe04d7c1ccd06088b722999177658c97a03e"
+        },
+        {
+          "path": "src/DatePicker.elm",
+          "sha256": "bc3ec49377089b759885bedff31e7d5513e13d3d9b8f92ab2f3f2c214c57e80c"
+        }
+      ]
+    },
+    {
+      "name": "justinmimbs/date",
+      "version": "4.0.1",
+      "zipball": "https://github.com/justinmimbs/date/zipball/4.0.1/",
+      "sha1": "ca58fcd8ab06d378d617243adf32a9d370493ff3",
+      "files": [
+        {
+          "path": "src/Date.elm",
+          "sha256": "2a209daf72d99aa4e4c173c9c2648da43b7a8f7bfc4d85428f864145b5a527cd"
+        },
+        {
+          "path": "src/Pattern.elm",
+          "sha256": "60e6750d86abb8924351bb5601163d7c3d82edaa275b90f2228a1186cfb29018"
+        }
+      ]
+    },
+    {
+      "name": "justinmimbs/timezone-data",
+      "version": "2.1.4",
+      "zipball": "https://github.com/justinmimbs/timezone-data/zipball/2.1.4/",
+      "sha1": "154e01746eef5fd947794f6a545fccdaddba0664",
+      "files": [
+        {
+          "path": "src/TimeZone/Specification.elm",
+          "sha256": "471aed4a2b893ddca2a499582c308f57ba98753c70d70f04aee3d8c158b5cf72"
+        },
+        {
+          "path": "src/RataDie.elm",
+          "sha256": "fec245a0c00358b70e2bcee4ee7c1b63f99c5c78375e3426faec5cadb5f4f0e8"
+        },
+        {
+          "path": "src/TimeZone.elm",
+          "sha256": "fc2da7de4b77bb76e7856da8e2583b06c8f3bfbd025e59a4eb40ed1cab02337c"
+        }
+      ]
+    },
+    {
+      "name": "lattyware/elm-fontawesome",
+      "version": "6.0.0",
+      "zipball": "https://github.com/lattyware/elm-fontawesome/zipball/6.0.0/",
+      "sha1": "197c9327f11c78d6c62e115b55847a1ac7f55363",
+      "files": [
+        {
+          "path": "src/FontAwesome/Solid/Definitions.elm",
+          "sha256": "e5eabde64c85fcab1e422c564af3f087cd4e2cf7eb9d665ee00c844542b6bb79"
+        },
+        {
+          "path": "src/FontAwesome/Brands/Definitions.elm",
+          "sha256": "67f335830af92d199cfe340c7960b7a21875a6ab279f9008c022ca0b93a1a3fc"
+        },
+        {
+          "path": "src/FontAwesome/Regular/Definitions.elm",
+          "sha256": "99dfa02801af4db6ae76d4b8eb2d84c2510d2506ca64b19cd29801f1c7acb234"
+        },
+        {
+          "path": "src/FontAwesome/Svg.elm",
+          "sha256": "8efb5ff0b1c067d55b659c5f03912f423e395a18ac3525fa4d70f5cf6a4592c0"
+        },
+        {
+          "path": "src/FontAwesome/Solid.elm",
+          "sha256": "0b8db04ae18be76850e7d29f3bea53d8b1f97ccc6b244df06b25dba46ecb6b58"
+        },
+        {
+          "path": "src/FontAwesome/Brands.elm",
+          "sha256": "e17f3429cce6b5d379d7fe4f2f25d1bde4cfbbdc5e7197856d6a389b50152b0a"
+        },
+        {
+          "path": "src/FontAwesome/Styles.elm",
+          "sha256": "83dce0c7f30c3b06ff09dde013368bfe3e67ab5c998723f6214b3032902d7817"
+        },
+        {
+          "path": "src/FontAwesome/Transforms/Internal.elm",
+          "sha256": "f845ce7965216ec6b4f1b159e62c85c698fa45c04e645a5107526db93af80478"
+        },
+        {
+          "path": "src/FontAwesome/Regular.elm",
+          "sha256": "58a6797b70710717db9d2fa7c31f5d483131df21df4ae05c1218525c4223ca22"
+        },
+        {
+          "path": "src/FontAwesome/Internal.elm",
+          "sha256": "4eb34696883a123a4fa7bbba4ea1d8c10c712e4948f213f234d07a350341d265"
+        },
+        {
+          "path": "src/FontAwesome/Layering.elm",
+          "sha256": "a916c2c7636fc3a4ec7bee1a3648d0750238184d2eb67bc53f6857180c8b6148"
+        },
+        {
+          "path": "src/FontAwesome/Attributes.elm",
+          "sha256": "91f44cde164f2b54009c749fb770d8792b43995fa76b00f2ec297225ced715da"
+        },
+        {
+          "path": "src/FontAwesome/Transforms.elm",
+          "sha256": "3e65d0a40707416315fd975b298fc742d978c862f1dbfd033e17ec370a20c813"
+        },
+        {
+          "path": "src/FontAwesome.elm",
+          "sha256": "8cacb5e71c5b503e90ed81584b6718a4a6cd1015c2a1230f7873999118c59945"
+        }
+      ]
+    },
+    {
+      "name": "matthewsj/elm-ordering",
+      "version": "2.0.0",
+      "zipball": "https://github.com/matthewsj/elm-ordering/zipball/2.0.0/",
+      "sha1": "d0197dcaa467affcf3157b8ca0ea5d14e622be72",
+      "files": [
+        {
+          "path": "src/Ordering.elm",
+          "sha256": "abf1f03e628d62bf6fb1d24690694fa42ef339fc4ed4296a730a8d4e8acead0b"
+        }
+      ]
+    },
+    {
+      "name": "mdgriffith/elm-ui",
+      "version": "1.1.8",
+      "zipball": "https://github.com/mdgriffith/elm-ui/zipball/1.1.8/",
+      "sha1": "ee7e06882108b6edc156c1ce4f47c5c78b3990a6",
+      "files": [
+        {
+          "path": "src/Element/Font.elm",
+          "sha256": "31d5566e1257ff62532c47b5f3f2dcb4ae826693c6ab678780c0b13a7a083638"
+        },
+        {
+          "path": "src/Element/Lazy.elm",
+          "sha256": "4ec07fde711f818f79c8f7d4d01554c72e43980c8cc7399232be46ab47a7a13f"
+        },
+        {
+          "path": "src/Element/Input.elm",
+          "sha256": "2ef63faa892478055d7bc2b906eb24c50f0f5711b04d51091af3af19eec635e5"
+        },
+        {
+          "path": "src/Element/Keyed.elm",
+          "sha256": "101e6089636d2a028b5597305815b150cd44d1c3941fdd91716a7f2c22216550"
+        },
+        {
+          "path": "src/Element/Border.elm",
+          "sha256": "1cbea164b59ab5fc93a501761ca3e973489923e5e77ab2cc8d004ac2e7d7b12a"
+        },
+        {
+          "path": "src/Element/Events.elm",
+          "sha256": "1f8050dc9bd572366187980dca6bc0b48300b5521b60ff536afa168dd263e4b3"
+        },
+        {
+          "path": "src/Element/Region.elm",
+          "sha256": "53b98fc578bd63e70efd1101e7d1dcc0097326d45ecc3465d48ffe52927be9a3"
+        },
+        {
+          "path": "src/Element/Background.elm",
+          "sha256": "78a96f16c743961e0dfec4915873cf915a4f9b6382ff287e3c7b9e307c7ae513"
+        },
+        {
+          "path": "src/Internal/Flag.elm",
+          "sha256": "81e633801ab2f0feb781038a3c644f7c1df993e17ebdf136b39ad966bc592bda"
+        },
+        {
+          "path": "src/Internal/Grid.elm",
+          "sha256": "50279400d5a76f3e24e0cbb965828645b3045a31d4dde90b533c9ef9ea243c30"
+        },
+        {
+          "path": "src/Internal/Model.elm",
+          "sha256": "7e5da5dfaa70f63be1213ece514d6aab01ebbbb1199ff7d7931bb488567543ad"
+        },
+        {
+          "path": "src/Internal/Style.elm",
+          "sha256": "13040599cd8f913e685c9fb85d90a7f4f16f2e2164cb1d462b289900e5e71c17"
+        },
+        {
+          "path": "src/Element.elm",
+          "sha256": "6f797b99dd3d1d6ff1f8498850bb4b8b960de2499672cbf7f86c2c40f6768e75"
+        }
+      ]
+    },
+    {
+      "name": "miniBill/elm-unicode",
+      "version": "1.0.3",
+      "zipball": "https://github.com/miniBill/elm-unicode/zipball/1.0.3/",
+      "sha1": "1d31fad765d22a17c7d2b95451df45d838f019ef",
+      "files": [
+        {
+          "path": "src/Unicode.elm",
+          "sha256": "647dbef6411fc2a7b2bc310a088ec19c91a476ce57f193e22729a4ee90c4b8d9"
+        }
+      ]
+    },
+    {
+      "name": "mpizenberg/elm-test-runner",
+      "version": "6.0.0",
+      "zipball": "https://github.com/mpizenberg/elm-test-runner/zipball/6.0.0/",
+      "sha1": "35f205eba1dbe66fb1293002838ea63248ecfbb3",
+      "files": [
+        {
+          "path": "src/ElmTestRunner/Vendor/Diff.elm",
+          "sha256": "fc9c5be112096bb1c49d0ed7793de8b1ed6a34b391eb1e2fe8f3fea72c24bc0b"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/XmlEncode.elm",
+          "sha256": "b3cb8ed67095f0cb89fe0fcb15c47d1bc1932b8aa81d30cf19fa97d5de7d9283"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/ConsoleText.elm",
+          "sha256": "f6318c5749753ad44a6c95e3149f7b95f2672296a85969817b8a155bf53e9f66"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/FormatColor.elm",
+          "sha256": "bdc1a6dec3c730999426ecd2246e7bfbb70651e351c9f1b6b436219787348153"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/NodeConsole.elm",
+          "sha256": "a09f1ad02edc04ac56f2e92e26bc3c8bf2f7b6dd638d7d9e1be7e9d2197f2ecf"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/ConsoleFormat.elm",
+          "sha256": "61a8052bed03bfef6e9d2d24e3a2083166ec0ad7364e794e63b7cde7b898845a"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/Highlightable.elm",
+          "sha256": "f929699f63bf0ff1f831996f02e690bd3811f70577d00bb65ac00cf0bea1d9b8"
+        },
+        {
+          "path": "src/ElmTestRunner/Vendor/FormatMonochrome.elm",
+          "sha256": "f5e894404a99f8864957742f8696a115e3636655e7a866245641a0db23263c7a"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter/Json.elm",
+          "sha256": "3cbf47ba5fd1ea125da747433c0d215812f5f1ca0c6e55a6989a987e87a20a27"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter/Junit.elm",
+          "sha256": "c4d9031db4e78c73ddb505f573445c31c419b6879e9e417a7e9a0f34f64a68c8"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter/Exercism.elm",
+          "sha256": "ac3a4c41f22d696875de0349d6850d0f8765811c22606976cce9ecd0f21bf970"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter/Interface.elm",
+          "sha256": "7d2f39a2a783bc0cec37a1b8a2bead9661554687905b4c6ecfd7defa9aa3c85b"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter/ConsoleColor.elm",
+          "sha256": "6a9a82f903d3fe40a8baf4bc2d626c212b618b6f5bb603cf4e6209eb91b47094"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter/ConsoleDebug.elm",
+          "sha256": "24d9ad4518d79ece9f1b4bd79bdc097fc2bed46ecc7603a9a4b1e25e15a163db"
+        },
+        {
+          "path": "src/ElmTestRunner/Result.elm",
+          "sha256": "07434ea576e24893cd4c9d1e683e6f3f3b4c1254d2dbb2c4cfbf653a06d5e0b6"
+        },
+        {
+          "path": "src/ElmTestRunner/Runner.elm",
+          "sha256": "cf4fb28b951aef597d1ca09314509ef51917619e466cd76fb4db0c4ef3c040f5"
+        },
+        {
+          "path": "src/ElmTestRunner/Failure.elm",
+          "sha256": "2ba614b516a6f3239049e92c1223cc83bc608110653707ec4a79d5392f7cb7c8"
+        },
+        {
+          "path": "src/ElmTestRunner/Reporter.elm",
+          "sha256": "1601fa2cfa1ec81a43f538655f7e4017beedc328e32603fc16b78a8bad9f2668"
+        },
+        {
+          "path": "src/ElmTestRunner/SeededRunners.elm",
+          "sha256": "34add69bce145a5b197e5e91b3d3790b8e73aa01758ea8bc41f91029e2298608"
+        }
+      ]
+    },
+    {
+      "name": "myrho/elm-round",
+      "version": "1.0.5",
+      "zipball": "https://github.com/myrho/elm-round/zipball/1.0.5/",
+      "sha1": "230d05e794ebb080812e62647711b07eabb4b942",
+      "files": [
+        {
+          "path": "src/Round.elm",
+          "sha256": "55f204fd618a001020d47f6ffc437a730cd9b3c8ae352a5c1c2294216b07deb5"
+        }
+      ]
+    },
+    {
+      "name": "perzanko/elm-loading",
+      "version": "2.0.5",
+      "zipball": "https://github.com/perzanko/elm-loading/zipball/2.0.5/",
+      "sha1": "9b585054c8de4ce760bd7e85a7ee779f942f3b62",
+      "files": [
+        {
+          "path": "src/Loading/Bars.elm",
+          "sha256": "4fec7b332de403602ec506b12d3a11d333cadd5b2fad451024ff901524493dc1"
+        },
+        {
+          "path": "src/Loading/Sonar.elm",
+          "sha256": "255d4be084da048ce87d3e8253caad4202049f0c319ecdaadf0decb8a302994f"
+        },
+        {
+          "path": "src/Loading/Circle.elm",
+          "sha256": "087d4cc84dbee844a7fa4e9cd57fc1aa24a34a29b75ffd2fe567a3a213f242a9"
+        },
+        {
+          "path": "src/Loading/Spinner.elm",
+          "sha256": "a30d09b88889adb0628b2c239d9409de752aec01a093b85a78ea532ea22b8f10"
+        },
+        {
+          "path": "src/Loading/DoubleBounce.elm",
+          "sha256": "9074cc4e9f92ab27766b66d3ce06138f69b07fe6793f7e24ee6971645fd6b4f7"
+        },
+        {
+          "path": "src/Loading/BouncingBalls.elm",
+          "sha256": "4ea6d92ba1a0c7ae33537be5acf77edfb11f97788c8107513e839cf8b56b19ac"
+        },
+        {
+          "path": "src/Loading.elm",
+          "sha256": "2c1a20569bd482ee9d9557b06f6b20d5b791d838625a6a1da257e4d78e5500c3"
+        }
+      ]
+    },
+    {
+      "name": "pzp1997/assoc-list",
+      "version": "1.0.0",
+      "zipball": "https://github.com/pzp1997/assoc-list/zipball/1.0.0/",
+      "sha1": "811d6168a45c551b95c3322e15f5e7e01fb5c764",
+      "files": [
+        {
+          "path": "src/AssocList.elm",
+          "sha256": "d0ebf6e5f8e094ae951af33257e1fb492e03e7c4a546dbd20b1dabab1950c189"
+        }
+      ]
+    },
+    {
+      "name": "robinheghan/murmur3",
+      "version": "1.0.0",
+      "zipball": "https://github.com/robinheghan/murmur3/zipball/1.0.0/",
+      "sha1": "cc300658d490f65ed3253a9909a938329da9ed71",
+      "files": [
+        {
+          "path": "src/Murmur3.elm",
+          "sha256": "e3edf55f8b28158e0d6b1c948b3d5c60120aa6d9537236679cf3e09b9d32ed4e"
+        }
+      ]
+    },
+    {
+      "name": "rtfeldman/elm-css",
+      "version": "17.1.1",
+      "zipball": "https://github.com/rtfeldman/elm-css/zipball/17.1.1/",
+      "sha1": "3ade2785768ce3c502ed8b536f5f88f17bb7326e",
+      "files": [
+        {
+          "path": "src/Css/Media.elm",
+          "sha256": "dece9d8fa67d9c345379b7e3d47bb0710eeeda8fce41f9843ff718b8827e9df4"
+        },
+        {
+          "path": "src/Css/Structure/Output.elm",
+          "sha256": "5df59debd6a56ad131b08f0675d8925db98d189c864610671ed4c32456f7f8ad"
+        },
+        {
+          "path": "src/Css/Global.elm",
+          "sha256": "a5986459ea0a54abcabd2b872e292820aa60fe9b1a2a0108d33c4b5072467288"
+        },
+        {
+          "path": "src/Css/Preprocess/Resolve.elm",
+          "sha256": "1981bcc9ead684540a6b32d1e46340ec83d9cff078288209c6a8146e6d176d19"
+        },
+        {
+          "path": "src/Css/String.elm",
+          "sha256": "a4fbfd33060854542638001aef3b1feb2a424740f1875c14be2e995dc89cd148"
+        },
+        {
+          "path": "src/Css/Internal.elm",
+          "sha256": "38e21fb5f842f3f4d7d145ff529239204981c5d61c8e68b3d25a278de8f5acb4"
+        },
+        {
+          "path": "src/Css/Structure.elm",
+          "sha256": "dca4c8b0f0e43c8300d95d495abad8f71f8bfd1f05ffdf62edf94b21cc3a5109"
+        },
+        {
+          "path": "src/Css/Animations.elm",
+          "sha256": "5e802770dee09f3f9dea33df39d788035f29f7ebb013af10f13e339fd94db1e4"
+        },
+        {
+          "path": "src/Css/Preprocess.elm",
+          "sha256": "15cf269e5c793da0bf9dc5d807b3c96e553c0a5919221162cebac7c6e29a81cd"
+        },
+        {
+          "path": "src/Css/Transitions.elm",
+          "sha256": "878031d5251185fa1676a165e97636608a16680ba5e0a67ef238231ea86741ca"
+        },
+        {
+          "path": "src/Svg/Styled/Lazy.elm",
+          "sha256": "8e7352fead4055d00754c22366bc98dc998bed67495d9381ea6cac9171f13db2"
+        },
+        {
+          "path": "src/Svg/Styled/Keyed.elm",
+          "sha256": "a9847c62eb543b570562dd3ba2904a4a5a2a45714c50c39daf47e390174a907d"
+        },
+        {
+          "path": "src/Svg/Styled/Events.elm",
+          "sha256": "22f6d947602f98bc9ccfbcb1ea92504de3fb0a3d8f2130c6c9191509f95ab295"
+        },
+        {
+          "path": "src/Svg/Styled/Internal.elm",
+          "sha256": "f348e01ff1c1461a110dd7b516f66a2894c4b12272907e74323d32c28e9c58e7"
+        },
+        {
+          "path": "src/Svg/Styled/Attributes.elm",
+          "sha256": "cce20701a8b8087e92f816be92b4c13dfa73864424a2d26b5a9952092f6156f4"
+        },
+        {
+          "path": "src/Svg/Styled.elm",
+          "sha256": "063408ff9adff7a3e039836e1ebbc76428c5299e768fcb888ac7c71208bab290"
+        },
+        {
+          "path": "src/Html/Styled/Lazy.elm",
+          "sha256": "8275ab3f6ec0f756521f67d91b6780710d5179ec0c974dedc0387e9e1457a219"
+        },
+        {
+          "path": "src/Html/Styled/Keyed.elm",
+          "sha256": "d6e45ae232447b9bfab3b35cdf1a35b80b8e1a8bde6209b075bd715d5c31796a"
+        },
+        {
+          "path": "src/Html/Styled/Events.elm",
+          "sha256": "bb7a1c79d4670af09abcfbc21ca876ddd88a382c88da4bc32a6cbc8fe6138dfe"
+        },
+        {
+          "path": "src/Html/Styled/Internal.elm",
+          "sha256": "28655cfb6bfbf36232008060685f6527bf3329d4e6a27d67d742a7223dc422a0"
+        },
+        {
+          "path": "src/Html/Styled/Attributes.elm",
+          "sha256": "2eb0a2d57efa925621ee08802ec5868bc5820de889cdc0a1e0dc15c8e27f5bab"
+        },
+        {
+          "path": "src/Html/Styled.elm",
+          "sha256": "52593242bba1d70a3418256ddb09a9909178a77041dba54d8d56483461214cdc"
+        },
+        {
+          "path": "src/Css.elm",
+          "sha256": "a7fd2d9c0fe4a3ccd121eaf507332a4c54ecf7f38158315efa11d658f9182884"
+        },
+        {
+          "path": "src/Hash.elm",
+          "sha256": "dfe3dcfaf9a982b8f7c7264342c86f88838867c6f4847ccaa664e905dce6daaa"
+        },
+        {
+          "path": "src/DEPRECATED/Css/File.elm",
+          "sha256": "37aa6bce8cdce41aaa1dfbae1383baa75f745c26ada429c5df56400a9f61dca0"
+        },
+        {
+          "path": "src/VirtualDom/Styled.elm",
+          "sha256": "3d0d4c2f62534e0e8bcace550b38b47b91ab14bca099a4a811e0d3b274a90604"
+        }
+      ]
+    },
+    {
+      "name": "rtfeldman/elm-hex",
+      "version": "1.0.0",
+      "zipball": "https://github.com/rtfeldman/elm-hex/zipball/1.0.0/",
+      "sha1": "02f218a4df33964ac9c2ad92ff6018b8dc07fa4d",
+      "files": [
+        {
+          "path": "src/Hex.elm",
+          "sha256": "3cb6192357870de305afbf9240cca28ad377d94dfc47672bbc7986a16d973ed1"
+        }
+      ]
+    },
+    {
+      "name": "rtfeldman/elm-iso8601-date-strings",
+      "version": "1.1.4",
+      "zipball": "https://github.com/rtfeldman/elm-iso8601-date-strings/zipball/1.1.4/",
+      "sha1": "9a9696d73294269e390d4f4abb48d2584fddc40b",
+      "files": [
+        {
+          "path": "src/Iso8601.elm",
+          "sha256": "7e9dffa266063f9f6318fbe972e6e89c1fcb8ea79d657ba4e01e52589107366c"
+        },
+        {
+          "path": "src/DeadEnds.elm",
+          "sha256": "9646ad16e0a81c6d8fab774970b93ffb7c07795042104da57a33cf2a456c672c"
+        }
+      ]
+    },
+    {
+      "name": "rundis/elm-bootstrap",
+      "version": "5.2.0",
+      "zipball": "https://github.com/rundis/elm-bootstrap/zipball/5.2.0/",
+      "sha1": "8f35fb264a8e3148227bbed64891f5e5172d836f",
+      "files": [
+        {
+          "path": "src/Main.elm",
+          "sha256": "285e7b5e64110388264063a72123ca01909cca216306a23c88b8826847e22700"
+        },
+        {
+          "path": "src/Bootstrap/Card/Block.elm",
+          "sha256": "c9deb282c897de6b0b83daf1ffc070aec5456ea26a10be5e211fba42ae74e149"
+        },
+        {
+          "path": "src/Bootstrap/Card/Internal.elm",
+          "sha256": "0616c2ed0af6f2b5e1c95cb9306dc5196f6ee61caea6a16ad5fbe4009cc649f1"
+        },
+        {
+          "path": "src/Bootstrap/Form/Input.elm",
+          "sha256": "cc540f265875e65b50ff5a4985bf1dd0fbc54259825e3e61395634ffe5b4c44f"
+        },
+        {
+          "path": "src/Bootstrap/Form/Radio.elm",
+          "sha256": "8be60f36651e93a87f10a7cd20e9319244923c6aa47167e887fd3420eafe07d4"
+        },
+        {
+          "path": "src/Bootstrap/Form/Range.elm",
+          "sha256": "95b369e82d4ddf0e9f7e45655ff24076cd1e0b797bbcec8e170e6fb74f41a2c9"
+        },
+        {
+          "path": "src/Bootstrap/Form/Select.elm",
+          "sha256": "143ebfdd58134aa489aed8545e9b3eed0a3f2e01cc6762e2a14b4e1968302b62"
+        },
+        {
+          "path": "src/Bootstrap/Form/Checkbox.elm",
+          "sha256": "8da37453d34317749c88809e062bcf7646f0519a0852b269053f17356b6490ad"
+        },
+        {
+          "path": "src/Bootstrap/Form/Fieldset.elm",
+          "sha256": "ff8055f3fc4f37cdcd9c9b409d62c3fe70de25377d0144e03cf8083c081bcfa4"
+        },
+        {
+          "path": "src/Bootstrap/Form/Textarea.elm",
+          "sha256": "20ff517192216c557538a6eb0967b597d8e6526b06770ef725036ac3967a27d0"
+        },
+        {
+          "path": "src/Bootstrap/Form/InputGroup.elm",
+          "sha256": "df2fd6fc4cd0edbb66ce683c5f1203a1b81be981173e8ee488beac5004444e59"
+        },
+        {
+          "path": "src/Bootstrap/Form/FormInternal.elm",
+          "sha256": "e9cd1651dc01c481c6ae6c44cf25130f8618b8bb0160b39a06d5b16b88260230"
+        },
+        {
+          "path": "src/Bootstrap/Grid/Col.elm",
+          "sha256": "dce1b9b9a6a61fff74e88b5305be2332cd7ff768783e81f0eda3c3326a9ae0f1"
+        },
+        {
+          "path": "src/Bootstrap/Grid/Row.elm",
+          "sha256": "0f7cc9390035ad1a46932e32673cb0505a0adcbad7857d1953edae4b5664e06d"
+        },
+        {
+          "path": "src/Bootstrap/Grid/Internal.elm",
+          "sha256": "d50447a25b2a6c133d3c4acf394741f818516fe707efb8f5c2e8d159977272c4"
+        },
+        {
+          "path": "src/Bootstrap/CDN.elm",
+          "sha256": "47fe7838c2a26354ed230d8c9abe72751b6073944a8677417f43594047650e24"
+        },
+        {
+          "path": "src/Bootstrap/General/HAlign.elm",
+          "sha256": "98fab1d012d4a4cbbc2b943af085a998b21c7666858c02e533b3b021c94cc33c"
+        },
+        {
+          "path": "src/Bootstrap/General/Internal.elm",
+          "sha256": "01359bf45e4cffc5143cbe0b1b49a4ae917b005b4788f525c870b02538c8aabc"
+        },
+        {
+          "path": "src/Bootstrap/Tab.elm",
+          "sha256": "8aba111e10d928180a2ac1b240c91e4beb3335ea7284a2b8313a0e05ab4dd5e8"
+        },
+        {
+          "path": "src/Bootstrap/Card.elm",
+          "sha256": "4ce4ce6d3d09a4113c38950223239fbc6b468d688d8909e0d54074febf954f24"
+        },
+        {
+          "path": "src/Bootstrap/Carousel/Slide.elm",
+          "sha256": "c65fc8577d3f53f5e23488235b1f8793fff0315b6eaba01ae815971824b2a9a1"
+        },
+        {
+          "path": "src/Bootstrap/Carousel/SlideInternal.elm",
+          "sha256": "bcdfdcb5268e7d62a07ee72bef1fb2b6be820fe85c51a8d2d5b58fe50d43505a"
+        },
+        {
+          "path": "src/Bootstrap/Form.elm",
+          "sha256": "0158ef9baf33e05773a92076c96ba9c479ba58a59efda3f7208bbdcbb17ff0ab"
+        },
+        {
+          "path": "src/Bootstrap/Grid.elm",
+          "sha256": "bbfb962a5d6184792b66b91546d553948ae3304aff9fb9e3d609307281a8643c"
+        },
+        {
+          "path": "src/Bootstrap/Internal/Role.elm",
+          "sha256": "0ad155f24a88b6b45d2b519e092384b8e52eec454c5cdd090ca5129eed1a030e"
+        },
+        {
+          "path": "src/Bootstrap/Internal/Text.elm",
+          "sha256": "991ca77ee4a5688caa4ad237f42c707e205ecdd5fc5258a27dc369464a6c879d"
+        },
+        {
+          "path": "src/Bootstrap/Internal/Button.elm",
+          "sha256": "c8bfb85b01a0c3aebccfa6f0e07b29823751618bb60bdc05c83d4073894f3126"
+        },
+        {
+          "path": "src/Bootstrap/Internal/ListGroup.elm",
+          "sha256": "3ce679c79a463a5d7ab6b90853a58187d2a1e50ae10873495441dcb8ca4bc712"
+        },
+        {
+          "path": "src/Bootstrap/Text.elm",
+          "sha256": "cf66fedb47c0763ffaf1ddde3b124106e3fce74638fc0c73b9d33cd1a213a09f"
+        },
+        {
+          "path": "src/Bootstrap/Alert.elm",
+          "sha256": "8f6f557fbc1bbd7a1aaa27bc4be538605b574327991c5c3ec16575f645b0f476"
+        },
+        {
+          "path": "src/Bootstrap/Badge.elm",
+          "sha256": "357b7d01cb63a787444c290d862c6758af81e9f61e01ecd1298dd5ce10d70ec5"
+        },
+        {
+          "path": "src/Bootstrap/Modal.elm",
+          "sha256": "96a69edc1d96a595e4a2f518324ba414ee20a661f612cc3b85b87e6b482defcc"
+        },
+        {
+          "path": "src/Bootstrap/Table.elm",
+          "sha256": "4e8a9f69bbd4ec171384b59faaab20514433afa15086901111cd779fb55eec8c"
+        },
+        {
+          "path": "src/Bootstrap/Utilities/Flex.elm",
+          "sha256": "db1fbdd0f191f5a686c3792dce9e92a3f563101babdaf6b2de8b21cb2375a606"
+        },
+        {
+          "path": "src/Bootstrap/Utilities/Size.elm",
+          "sha256": "a87ef80f3a1c2ae817c2a0022618ec13efad2ea3a301af2eef59ef6ef5d4ccde"
+        },
+        {
+          "path": "src/Bootstrap/Utilities/Border.elm",
+          "sha256": "5e55baa93ed4404e8855038d2f9dcf0b3d7a941d4c12cdb24ac96ff5eea1fc95"
+        },
+        {
+          "path": "src/Bootstrap/Utilities/Display.elm",
+          "sha256": "4d6ac6a3a6c98d756be72a6b1b6259ca9111658c887a4af0dfd01dc7e67ba539"
+        },
+        {
+          "path": "src/Bootstrap/Utilities/Spacing.elm",
+          "sha256": "de8c8f7e8bd65130637420fcff703333d5a97bdc4b35ed9299dbebbbe3c105a9"
+        },
+        {
+          "path": "src/Bootstrap/Utilities/DomHelper.elm",
+          "sha256": "19500f025230508e6882222add70124f4dbfbfcd9c59a88f7b80945f9061f80b"
+        },
+        {
+          "path": "src/Bootstrap/Button.elm",
+          "sha256": "231588d38f36734e80919212a05afa69582ebb41b5803f4351397638d5237b94"
+        },
+        {
+          "path": "src/Bootstrap/Navbar.elm",
+          "sha256": "ef6fd57a55933ed9c840c0d7b0fa9a2e7ced343932fab35a97249dc0646dd87d"
+        },
+        {
+          "path": "src/Bootstrap/Pagination/Item.elm",
+          "sha256": "777e26b55a6d48a8e1c557106cb4fafe5271d26852ce66b5e2adf00d764a6456"
+        },
+        {
+          "path": "src/Bootstrap/Pagination/Internal.elm",
+          "sha256": "5ab60b33433496637dff93af6302d8105a276c5d5224917783c8a4f49f659e5a"
+        },
+        {
+          "path": "src/Bootstrap/Popover.elm",
+          "sha256": "cfcd63cfac91aaa8fcd2b39ee502cefacc871c072ec148e248810a79cd3febde"
+        },
+        {
+          "path": "src/Bootstrap/Spinner.elm",
+          "sha256": "406746c1d7335d708368feed26163060ef7b9e8370cee6f4aa9220e7a4e172d2"
+        },
+        {
+          "path": "src/Bootstrap/Carousel.elm",
+          "sha256": "52dced8c2cce4728ea5d9b644b7ae0e84400897633b64b8cfff1801fb029f227"
+        },
+        {
+          "path": "src/Bootstrap/Dropdown.elm",
+          "sha256": "65c61f6ab12441aad27d3fcb1da89008d34980ee9b3039d82a16aa706317803a"
+        },
+        {
+          "path": "src/Bootstrap/Progress.elm",
+          "sha256": "0fb5586faa87521d3e53b5a38b010d22556b74c6df99c9670e4708009771a72c"
+        },
+        {
+          "path": "src/Bootstrap/Accordion.elm",
+          "sha256": "2b4ce0608ddbb6878709d6bb37f923e38b87400ea33592861d201dc81309d07f"
+        },
+        {
+          "path": "src/Bootstrap/ListGroup.elm",
+          "sha256": "2e4d63dfc945c2ec6230d88eb169489c47c674cb3f547eff27c6093e53dfd98e"
+        },
+        {
+          "path": "src/Bootstrap/Breadcrumb.elm",
+          "sha256": "65c5035a9887ecdfb3f4180d0d44188aabca71de4fed8f228036eaede8525e28"
+        },
+        {
+          "path": "src/Bootstrap/Pagination.elm",
+          "sha256": "77cbb0156bd80ffe2eca5028030aec6011ae7dd376ce676120bb3a43286452aa"
+        },
+        {
+          "path": "src/Bootstrap/ButtonGroup.elm",
+          "sha256": "52943e6eb127a848534479a6f17cce4e150d34742d97dae6299e1be9ba778c42"
+        }
+      ]
+    },
+    {
+      "name": "stil4m/elm-syntax",
+      "version": "7.3.9",
+      "zipball": "https://github.com/stil4m/elm-syntax/zipball/7.3.9/",
+      "sha1": "c09d90c98cda40f75395bbfee31c655e4ebac756",
+      "files": [
+        {
+          "path": "src/Elm/Json/Util.elm",
+          "sha256": "f8412bfed802d396f8a137dc709ca1dc5c8c3459f67c38adfaa446702c14919f"
+        },
+        {
+          "path": "src/Elm/Parser/Base.elm",
+          "sha256": "6b5259942da6788bb70dfcad099e7de09ceeb0d44aaa0d2b426cab76b7504733"
+        },
+        {
+          "path": "src/Elm/Parser/File.elm",
+          "sha256": "be0499526438505383a1159a420bba07e0482b936bb62cb9090f0717b7169763"
+        },
+        {
+          "path": "src/Elm/Parser/Expose.elm",
+          "sha256": "71fc6b91bc51d68ad429fd9bfe447523e9043a7c07b1d6fe62682bcaba4bd276"
+        },
+        {
+          "path": "src/Elm/Parser/Layout.elm",
+          "sha256": "d34e7a7b2e8eadf6689ed813375d4816552bbd4f554aa492b48aecc942cd55f9"
+        },
+        {
+          "path": "src/Elm/Parser/Tokens.elm",
+          "sha256": "8e84d9b7c89b4b78b7c7f1803f1fc4a82906b3de3c5d9572dae9ac61245e89c0"
+        },
+        {
+          "path": "src/Elm/Parser/Imports.elm",
+          "sha256": "c6a836592d92ec8b2fbf4453fdffaf85ab45225454998d9e28786504d95ce19b"
+        },
+        {
+          "path": "src/Elm/Parser/Modules.elm",
+          "sha256": "307bd7316632c28aed30e0413642c77327c43ed9b7e465d19bf1ef142a4a093f"
+        },
+        {
+          "path": "src/Elm/Parser/Comments.elm",
+          "sha256": "6c8a18523b7cdfd0f7c98f3762176bbd782a65ea2b2f0696f9323bfdd4652a35"
+        },
+        {
+          "path": "src/Elm/Parser/Patterns.elm",
+          "sha256": "d36e80df48c8639730bf08642232148e98664d12f550d8ace52cfafe27722553"
+        },
+        {
+          "path": "src/Elm/Parser/Expression.elm",
+          "sha256": "25cad8d86b68d44625e6f3a3274251248e352714263a96f0c70b5de3699d784e"
+        },
+        {
+          "path": "src/Elm/Parser/Declarations.elm",
+          "sha256": "31f007ccbb20cf45af44dd743a9e5b4c21215bebce01da07034c388d4abd319b"
+        },
+        {
+          "path": "src/Elm/Parser/TypeAnnotation.elm",
+          "sha256": "f5cee49948165bbadc19b675a740813f57c8d1c78e4229756105947204f8bffb"
+        },
+        {
+          "path": "src/Elm/Syntax/File.elm",
+          "sha256": "47c24f8cdb0f12cd0473f821e59750707683faf81a52698e30ee09e1fb47a504"
+        },
+        {
+          "path": "src/Elm/Syntax/Node.elm",
+          "sha256": "7b7c14d5b962e4b6fd97c734ca6f32ceeef3e15696a4cfa61089af1bd47bc2cd"
+        },
+        {
+          "path": "src/Elm/Syntax/Type.elm",
+          "sha256": "5ad33fdd74a15d3c380cdf48b431845c0918910cef3e4009110807ff4bf0b96c"
+        },
+        {
+          "path": "src/Elm/Syntax/Infix.elm",
+          "sha256": "2f365278a065a94bdb5463c67eb56d6e6b726add90182f0d7f9c00417c0d7689"
+        },
+        {
+          "path": "src/Elm/Syntax/Range.elm",
+          "sha256": "ad5815011a29cdd34d955acfcc524d49a4e1ee8b6478d330eb202f4bab819d85"
+        },
+        {
+          "path": "src/Elm/Syntax/Import.elm",
+          "sha256": "ea40298055bf3bf92c3e41b2308d6befbe619fe595da3abe43e7e6d603dd468f"
+        },
+        {
+          "path": "src/Elm/Syntax/Module.elm",
+          "sha256": "f2a9393bf3d09545493a81f3345648142376eee91843afe1a32702194ac8883d"
+        },
+        {
+          "path": "src/Elm/Syntax/Pattern.elm",
+          "sha256": "e526faf6fa60061ff48b3d65dd3c9ce7da8d46b4643659e5f7340e3326d4ea0c"
+        },
+        {
+          "path": "src/Elm/Syntax/Comments.elm",
+          "sha256": "0774255d02bbaffd803c2130dc96d9361542325dbc0b85cf3939164a1b3057aa"
+        },
+        {
+          "path": "src/Elm/Syntax/Exposing.elm",
+          "sha256": "ade38581e4c08bf157889a81ad6efe264a5cebfefba2cf79ab5c3dca4b2b957c"
+        },
+        {
+          "path": "src/Elm/Syntax/Signature.elm",
+          "sha256": "13d71f3900f7f90b6978bf49b0d332500f6fd68935fb13281b82c8de5cfbe1f3"
+        },
+        {
+          "path": "src/Elm/Syntax/TypeAlias.elm",
+          "sha256": "affd7932d404d60d0e6658df4efc4a753424fc15ae2de341aeb1e46b40394cd3"
+        },
+        {
+          "path": "src/Elm/Syntax/Expression.elm",
+          "sha256": "8de12e17766f943b98e3d59636a8708d79d08a38185a80d20082e0e224432887"
+        },
+        {
+          "path": "src/Elm/Syntax/ModuleName.elm",
+          "sha256": "ae96dad9ca64bbea5072ae1cccaae2bfdbf5db5edd83139e33661adbfc9e6c93"
+        },
+        {
+          "path": "src/Elm/Syntax/Declaration.elm",
+          "sha256": "831132d54834c2531f0017c6064b85b2785dcf43149f59a7820b0a6ba0b66c75"
+        },
+        {
+          "path": "src/Elm/Syntax/Documentation.elm",
+          "sha256": "d31bc0a2bbd4f70579b0953092e920f2dcdf1aa7ee37afc6e105421b0e0c694c"
+        },
+        {
+          "path": "src/Elm/Syntax/TypeAnnotation.elm",
+          "sha256": "ca123353c704555261d2afa08f0d22289e46976f933761e75b8827f93cb30741"
+        },
+        {
+          "path": "src/Elm/Internal/RawFile.elm",
+          "sha256": "85ab4026988ea5569e4204b0a226ea9c79a9315de28038e121e57c7e5376aed0"
+        },
+        {
+          "path": "src/Elm/Parser.elm",
+          "sha256": "48a10f0380bfca746613044f8c688bc4fcad1295655100abd123440c497407d4"
+        },
+        {
+          "path": "src/Elm/Writer.elm",
+          "sha256": "84505a148b81d7267d8dc96a57a23fb2ffbc65d20b8562376e4724c327fccefb"
+        },
+        {
+          "path": "src/Elm/RawFile.elm",
+          "sha256": "872f17b3405c4a3e50990ac80e701fa72b88742aee77fc161a8cb3aa891e1278"
+        },
+        {
+          "path": "src/Elm/Interface.elm",
+          "sha256": "24997077ec58c07b65da06b8b6ea08e5970278571331f8378379c53e2d361683"
+        },
+        {
+          "path": "src/Elm/Dependency.elm",
+          "sha256": "f422a0b17b5131e8d2c022c19d7a3b34e26bc46a63ef6b8ad45c58fb03e31967"
+        },
+        {
+          "path": "src/Elm/Processing.elm",
+          "sha256": "4e3853bb16788634a1fdc188c7bf7b8dbf134afa8611cbb593122fcd180885bf"
+        },
+        {
+          "path": "src/Char/Extra.elm",
+          "sha256": "56605a112b162ef62b42fb04902423be3c8c284489096cb2ab8ebb49adac3957"
+        },
+        {
+          "path": "src/List/Extra.elm",
+          "sha256": "cb705b5c2b9770772dd30b52adb3aa7af2c3981bae5b56b728958bd649c84af8"
+        },
+        {
+          "path": "src/Rope.elm",
+          "sha256": "8c52ace1efcbab750532a0b6edd1a84559d0524f6bd4001399ab80c10092be3e"
+        },
+        {
+          "path": "src/ParserFast.elm",
+          "sha256": "f3c0694b3a8be8ad2fc3e1260869a44d14df4ef6a256a928e15af2c2e78c0dbb"
+        },
+        {
+          "path": "src/ParserWithComments.elm",
+          "sha256": "8424ed188e6157ab295768265575ae44293604c3d4d8ad9fb11a0a66ec8cd3c1"
+        }
+      ]
+    },
+    {
+      "name": "stil4m/structured-writer",
+      "version": "1.0.3",
+      "zipball": "https://github.com/stil4m/structured-writer/zipball/1.0.3/",
+      "sha1": "fbf02289be464e750f8c08aed757a2da38341283",
+      "files": [
+        {
+          "path": "src/StructuredWriter.elm",
+          "sha256": "0dc44788fdbbc42ab671cce6da1e22ba77a43ab1398eafbf65bf0828cad84489"
+        }
+      ]
+    },
+    {
+      "name": "TSFoster/elm-bytes-extra",
+      "version": "1.3.0",
+      "zipball": "https://github.com/TSFoster/elm-bytes-extra/zipball/1.3.0/",
+      "sha1": "e7b84ef87713772b31c3ac3c7b89cd463f546681",
+      "files": [
+        {
+          "path": "src/Bytes/Decode/Extra.elm",
+          "sha256": "a1ccb986d1b46ef3eae7dd98a351ebda9dbaa763a10f3cf39383147d10be0080"
+        },
+        {
+          "path": "src/Bytes/Encode/Extra.elm",
+          "sha256": "a8423055eab2926734e2544380218f296e1691484ebcb1009d7146efecfd4392"
+        },
+        {
+          "path": "src/Bytes/Extra.elm",
+          "sha256": "b9bebdc778ed53762ad33c16c52e47c0cb2d4a8ffcd26d972ecbaf52758efa02"
+        }
+      ]
+    },
+    {
+      "name": "TSFoster/elm-md5",
+      "version": "2.0.1",
+      "zipball": "https://github.com/TSFoster/elm-md5/zipball/2.0.1/",
+      "sha1": "35900e07beb38ecbd77dbe33acb5d39ca881c997",
+      "files": [
+        {
+          "path": "src/MD5.elm",
+          "sha256": "e2084d84eea4e40cbf36bd5ad71de9cbabb53ac7baa259f8e228179664bb7d9e"
+        }
+      ]
+    },
+    {
+      "name": "TSFoster/elm-sha1",
+      "version": "2.1.1",
+      "zipball": "https://github.com/TSFoster/elm-sha1/zipball/2.1.1/",
+      "sha1": "bdb7d83e14c20a36529570d402c41dbe537108be",
+      "files": [
+        {
+          "path": "src/SHA1.elm",
+          "sha256": "b3809fe85c612a906d4a7171f47354fea954da2abdb9841185d650c4adf881c6"
+        }
+      ]
+    },
+    {
+      "name": "TSFoster/elm-uuid",
+      "version": "4.3.1",
+      "zipball": "https://github.com/TSFoster/elm-uuid/zipball/4.3.1/",
+      "sha1": "943fd9c17ea19594932e03f1ea6207b8e6fe6307",
+      "files": [
+        {
+          "path": "src/UUID.elm",
+          "sha256": "865bcb7df476c052c91fe3c78662fb9af4e64bbc77ec4f1373c146de6fe236fc"
+        }
+      ]
+    },
+    {
+      "name": "waratuman/json-extra",
+      "version": "1.0.2",
+      "zipball": "https://github.com/waratuman/json-extra/zipball/1.0.2/",
+      "sha1": "ef20d47da0744c213aa4e4665f965aab6bc17cd0",
+      "files": [
+        {
+          "path": "src/Json/Decode/Extra.elm",
+          "sha256": "e721a6f551b5524f0f92311665ec03ab69d74719552e32551a506c439498182a"
+        },
+        {
+          "path": "src/Json/Encode/Extra.elm",
+          "sha256": "b597ffb26f24b26cd8137111413c64655980efa546935135ca27785abda2046e"
+        }
+      ]
+    },
+    {
+      "name": "waratuman/time-extra",
+      "version": "1.1.0",
+      "zipball": "https://github.com/waratuman/time-extra/zipball/1.1.0/",
+      "sha1": "33408f8a7181590eb98699c36c4a0ca87db6983e",
+      "files": [
+        {
+          "path": "src/Time/Extra.elm",
+          "sha256": "054f32ec90f878c883fe2779a5b84cdbb74fd2eb7c0a659d19a2eab710c9b4be"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Regenerate elm-syntax goldens for the corpus (needs Elm and Node via mise)"
+#MISE depends=["corpus:fetch"]
+set -euo pipefail
+
+moon run -q --target wasm scripts/goldens.mbtx -- tests/corpus/manifest.json .corpus tools/elm-syntax-oracle .dev/out/goldens/raw
+KRUEGER_PARITY_MODE=write-lock moon test src/parity --target js
