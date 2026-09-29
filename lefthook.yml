@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     bd-pre-commit:
-      run: bd hook pre-commit
+      run: bd hooks run pre-commit
     format-check:
       run: mise run format:check
     lint-check:
@@ -17,12 +17,12 @@ pre-push:
 post-merge:
   commands:
     bd-post-merge:
-      run: bd hook post-merge
+      run: bd hooks run post-merge
 
 post-checkout:
   commands:
     bd-post-checkout:
-      run: bd hook post-checkout {1} {2} {3}
+      run: bd hooks run post-checkout {1} {2} {3}
 
 prepare-commit-msg:
   commands:

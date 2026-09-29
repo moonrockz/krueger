@@ -158,7 +158,7 @@ When ending a work session:
 1. File issues for remaining work.
 2. Run quality gates (tests, fmt, check) if code changed.
 3. Update issue status (e.g. bd close / bd update).
-4. **PUSH TO REMOTE** — mandatory: `git pull --rebase`, then `git push`. Work is not complete until push succeeds.
+4. **PUSH TO REMOTE** — mandatory: `bd sync`, then `git pull --rebase` and `git push`. Work is not complete until both pushes succeed.
 5. Clean up; verify all changes committed and pushed; hand off context for next session.
 
 
@@ -227,13 +227,26 @@ bd close bd-42 --reason "Completed" --json
    - `bd create "Found bug" --description="Details about what was found" -p 1 --deps discovered-from:<parent-id>`
 5. **Complete**: `bd close <id> --reason "Done"`
 
-### Auto-Sync
+### Storage and Sync
 
-bd automatically syncs with git:
+- bd stores issues in an embedded Dolt database at `.beads/embeddeddolt/` (not committed).
+- Git worktrees share the database of the main checkout. Do not create a
+  database inside a worktree.
+- Cross-machine sync uses a Dolt remote on the GitHub origin. Dolt keeps issue
+  history under `refs/dolt/data`, separate from source branches:
+  - `bd sync` — pull, check for conflicts, and push in one step.
+  - `bd dolt pull` / `bd dolt push` — the individual steps.
+- `.beads/issues.jsonl` is a readable snapshot for code review. It is not the
+  source of truth. Refresh it before you commit issue changes:
+  `bd export -o .beads/issues.jsonl`.
 
-- Exports to `.beads/issues.jsonl` after changes (5s debounce)
-- Imports from JSONL when newer (e.g., after `git pull`)
-- No manual export/import needed!
+### Setup on a Fresh Clone
+
+```bash
+bd bootstrap            # clones refs/dolt/data from origin and wires the Dolt remote
+mise run hooks:install  # installs lefthook git hooks (these call `bd hooks run <hook>`)
+git config beads.role maintainer   # or contributor
+```
 
 ### Important Rules
 
