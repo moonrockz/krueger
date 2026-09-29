@@ -44,6 +44,9 @@ jobs:
       - name: Run tests
         run: mise run test:unit
 
+      - name: Run script tests
+        run: mise run test:scripts
+
   publish:
     needs: validate
     runs-on: ubuntu-latest

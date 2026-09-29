@@ -201,7 +201,7 @@ design is final and meant for readers, write it up in a committed location on pu
 - Publishes to **mooncakes.io** and **GitHub Releases**.
 - Trigger: push tag `v*` or workflow_dispatch.
 - Requires `MOONCAKES_USER_TOKEN` org secret for publish.
-- Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`.
+- Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`, `mise run test:scripts`.
 
 ## Landing the Plane (Session Completion)
 
