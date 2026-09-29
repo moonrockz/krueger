@@ -30,7 +30,8 @@ moonrockz/krueger
 │   ├── (ast/)            # AST types — to be designed
 │   ├── (visitor/)        # Visitor / fold / SAX APIs — to be designed
 │   └── moon.pkg          # Package config
-├── docs/plans/           # Design and implementation plans
+├── docs/plans/           # Older committed plans (new work documents go in .dev/)
+├── .dev/                 # Gitignored working area for specs, plans and scratch files
 ├── .beads/               # Issue tracking (optional)
 └── mise-tasks/          # File-based mise tasks
 ```
@@ -143,6 +144,19 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 - `moon info` — update generated `.mbti` interface.
 - `moon check` — typecheck.
 - Run `moon info && moon fmt` before committing when API or formatting may have changed.
+
+## The `.dev/` Working Area
+
+`.dev/` is a gitignored scratch area for AI-assisted development: temporary scripts, agent and
+script outputs, and working documents. Nothing in it is committed. Layout:
+
+- Specs from the superpowers `brainstorming` skill: `.dev/docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md`
+- Plans from the superpowers `writing-plans` skill: `.dev/docs/superpowers/plans/YYYY-MM-DD-<topic>-plan.md`
+- Scratch scripts and their outputs: `.dev/scripts/`, `.dev/out/`
+
+This layout overrides the default location of any skill or tool. Never place specs, plans or
+other working documents under `docs/`, and never `git add` anything under `.dev/`. When a
+design is final and meant for readers, write it up in a committed location on purpose.
 
 ## Release Process
 
