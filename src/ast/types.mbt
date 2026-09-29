@@ -1,45 +1,45 @@
 ///|
-pub(all) struct Identifier(String) derive(Eq, Show)
+pub(all) struct Identifier(String) derive(Eq, Debug)
 
 ///|
-pub(all) struct ModuleName(Identifier) derive(Eq, Show)
+pub(all) struct ModuleName(Identifier) derive(Eq, Debug)
 
 ///|
-pub(all) struct ValueName(Identifier) derive(Eq, Show)
+pub(all) struct ValueName(Identifier) derive(Eq, Debug)
 
 ///|
-pub(all) struct TypeName(Identifier) derive(Eq, Show)
+pub(all) struct TypeName(Identifier) derive(Eq, Debug)
 
 ///|
-pub(all) struct TypeVarName(Identifier) derive(Eq, Show)
+pub(all) struct TypeVarName(Identifier) derive(Eq, Debug)
 
 ///|
-pub(all) struct ConstructorName(Identifier) derive(Eq, Show)
+pub(all) struct ConstructorName(Identifier) derive(Eq, Debug)
 
 ///|
-pub(all) struct OperatorName(String) derive(Eq, Show)
+pub(all) struct OperatorName(String) derive(Eq, Debug)
 
 ///|
 pub(all) enum ExposedName {
   Value(ValueName)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct DocComment {
   text : String
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct DeclMeta {
   doc_comment : DocComment?
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct UnparsedExpr {
   tokens : Array[@scanner.Token]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Expr {
@@ -47,12 +47,12 @@ pub(all) enum Expr {
   IntLiteral(Int)
   BinaryOp(Expr, OperatorName, Expr)
   Unparsed(UnparsedExpr)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct UnparsedTypeExpr {
   tokens : Array[@scanner.Token]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum TypeExpr {
@@ -60,7 +60,7 @@ pub(all) enum TypeExpr {
   TypeVar(TypeVarName)
   TypeApp(TypeName, Array[TypeExpr])
   Unparsed(UnparsedTypeExpr)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct FunctionDeclaration {
@@ -68,7 +68,7 @@ pub(all) struct FunctionDeclaration {
   args : Array[ValueName]
   body : Expr
   meta : DeclMeta
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct TypeAliasDeclaration {
@@ -76,13 +76,13 @@ pub(all) struct TypeAliasDeclaration {
   type_params : Array[TypeVarName]
   body : TypeExpr
   meta : DeclMeta
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct UnionTypeCase {
   name : ConstructorName
   args : Array[TypeExpr]
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct UnionTypeDeclaration {
@@ -90,21 +90,21 @@ pub(all) struct UnionTypeDeclaration {
   type_params : Array[TypeVarName]
   cases : Array[UnionTypeCase]
   meta : DeclMeta
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) enum Declaration {
   FunctionDecl(FunctionDeclaration)
   TypeAliasDecl(TypeAliasDeclaration)
   UnionTypeDecl(UnionTypeDeclaration)
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct ImportDecl {
   module_name : ModuleName
   exposing : Array[ExposedName]?
   span : @scanner.Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct ModuleAst {
@@ -113,4 +113,4 @@ pub(all) struct ModuleAst {
   imports : Array[ImportDecl]
   declarations : Array[Declaration]
   span : @scanner.Span?
-} derive(Eq, Show)
+} derive(Eq, Debug)

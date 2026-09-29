@@ -60,7 +60,7 @@ struct ParserWorld {
 } derive(Default)
 
 ///|
-impl @moonspec.World for ParserWorld with configure(self, setup) {
+impl @moonspec.World for ParserWorld with fn configure(self, setup) {
   setup.given("Elm source:", fn(ctx) {
     match ctx[0] {
       { value: @moonspec.StepValue::DocStringVal(doc), .. } =>
@@ -69,7 +69,7 @@ impl @moonspec.World for ParserWorld with configure(self, setup) {
     }
   })
   setup.when("I parse the source", fn(_ctx) {
-    let source = @krueger.SourceText::{ module_name: None, text: self.source }
+    let source = @krueger.SourceText::{ module_name: None, text: self.source, }
     self.result = Some(@krueger.parse_module(source))
   })
   setup.then("parsing succeeds without diagnostics", fn(_ctx) raise {

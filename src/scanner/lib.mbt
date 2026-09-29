@@ -1,6 +1,6 @@
 ///|
 pub trait Scanner {
-  tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
+  fn tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
 }
 
 ///|
@@ -8,7 +8,7 @@ pub struct DefaultScanner {}
 
 ///|
 pub fn DefaultScanner::new() -> DefaultScanner {
-  DefaultScanner::{  }
+  DefaultScanner::{ }
 }
 
 ///|
@@ -24,6 +24,6 @@ pub fn DefaultScanner::tokenize(
 }
 
 ///|
-pub impl Scanner for DefaultScanner with tokenize(self, source) {
+pub impl Scanner for DefaultScanner with fn tokenize(self, source) {
   DefaultScanner::tokenize(self, source)
 }

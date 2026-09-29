@@ -1,11 +1,11 @@
 ///|
 fn pos(offset : Int, line : Int, column : Int) -> @scanner.Position {
-  @scanner.Position::{ offset, line, column }
+  @scanner.Position::{ offset, line, column, }
 }
 
 ///|
 fn span() -> @scanner.Span {
-  @scanner.Span::{ start: pos(0, 1, 1), end: pos(1, 1, 2) }
+  @scanner.Span::{ start: pos(0, 1, 1), end: pos(1, 1, 2), }
 }
 
 ///|
@@ -30,7 +30,11 @@ test "parse result ast uses ast package module type" {
     declarations: [],
     span: Some(span()),
   }
-  let result = ParseResult::{ ast: Some(ast), cst: None, diagnostics: [] }
+  let result = @parser.ParseResult::{
+    ast: Some(ast),
+    cst: None,
+    diagnostics: [],
+  }
   match result.ast {
     Some(module_ast) => assert_eq(module_ast.module_name, ast.module_name)
     None => fail("expected ast")
@@ -45,7 +49,7 @@ test "parse result supports typed declarations through ast wrappers" {
     body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{
       tokens: [token(@scanner.TokenKind::Identifier, "x")],
     }),
-    meta: @ast.DeclMeta::{ doc_comment: None, span: span() },
+    meta: @ast.DeclMeta::{ doc_comment: None, span: span(), },
   }
   let declaration = @ast.Declaration::FunctionDecl(fn_decl)
   match declaration {
@@ -64,7 +68,7 @@ test "parse result cst uses dedicated cst package module type" {
     declarations: [],
     span: None,
   }
-  let result = ParseResult::{
+  let result = @parser.ParseResult::{
     ast: None,
     cst: Some(module_cst),
     diagnostics: [],

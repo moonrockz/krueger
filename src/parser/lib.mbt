@@ -1,14 +1,14 @@
 ///|
 fn normalize_doc_comment_text(raw : String) -> String {
   let without_prefix = match raw.strip_prefix("{-|") {
-    Some(view) => view.to_string()
+    Some(view) => view.to_owned()
     None => raw
   }
   let without_suffix = match without_prefix.strip_suffix("-}") {
-    Some(view) => view.to_string()
+    Some(view) => view.to_owned()
     None => without_prefix
   }
-  without_suffix.trim().to_string()
+  without_suffix.trim().to_owned()
 }
 
 ///|
@@ -205,7 +205,7 @@ pub fn[S : @scanner.Scanner] parse_module(
   match scanner.tokenize(source) {
     Ok(tokens) => parse_tokens(tokens)
     Err(errs) =>
-      ParseResult::{ ast: None, cst: None, diagnostics: errs.diagnostics }
+      ParseResult::{ ast: None, cst: None, diagnostics: errs.diagnostics, }
   }
 }
 
@@ -518,7 +518,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       Declaration::FunctionDecl(FunctionDeclaration::{
         name: to_value_name(name.to_string()),
         args,
-        body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{ tokens: body_tokens }),
+        body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{ tokens: body_tokens, }),
         meta,
       }),
     )

@@ -1,26 +1,30 @@
 ///|
 /// Tests for krueger library (placeholder until scanner/parser/AST exist).
 test "version returns 0.1.0" {
-  assert_eq(version(), "0.1.0")
+  assert_eq(@krueger.version(), "0.1.0")
 }
 
 ///|
 test "root package exposes scanner tokenize entrypoint" {
-  let source = SourceText::{
+  let source = @krueger.SourceText::{
     module_name: Some("Main"),
     text: "module Main exposing (..)",
   }
-  let result = tokenize(source)
+  let result = @krueger.tokenize(source)
   match result {
     Ok(stream) => {
       assert_true(
-        stream.tokens.any(fn(token) { token.kind == TokenKind::module_kw() }),
+        stream.tokens.any(fn(token) {
+          token.kind == @krueger.TokenKind::module_kw()
+        }),
       )
       assert_true(
-        stream.tokens.any(fn(token) { token.kind == TokenKind::exposing_kw() }),
+        stream.tokens.any(fn(token) {
+          token.kind == @krueger.TokenKind::exposing_kw()
+        }),
       )
       assert_true(
-        stream.tokens.any(fn(token) { token.kind == TokenKind::DotDot }),
+        stream.tokens.any(fn(token) { token.kind == @krueger.TokenKind::DotDot }),
       )
     }
     Err(_) =>
@@ -30,24 +34,24 @@ test "root package exposes scanner tokenize entrypoint" {
 
 ///|
 test "root package exposes parser entrypoints" {
-  let _ = parse_module
-  let _ = parse_tokens
+  let _ = @krueger.parse_module
+  let _ = @krueger.parse_tokens
   assert_true(true)
 }
 
 ///|
 test "root package exposes ast domain wrappers" {
-  let identifier = Identifier::Identifier("Main")
+  let identifier = @krueger.Identifier::Identifier("Main")
   assert_eq(identifier.0, "Main")
 }
 
 ///|
 test "root package parse_module uses default scanner and captures declarations" {
-  let source = SourceText::{
+  let source = @krueger.SourceText::{
     module_name: Some("Main"),
     text: "module Main exposing (add)\nadd x = x + 1",
   }
-  let result = parse_module(source)
+  let result = @krueger.parse_module(source)
   match result.ast {
     Some(ast) => {
       match ast.module_name {
@@ -57,7 +61,8 @@ test "root package parse_module uses default scanner and captures declarations" 
       assert_true(
         ast.declarations.any(fn(decl) {
           match decl {
-            Declaration::FunctionDecl(fn_decl) => fn_decl.name.0.0 == "add"
+            @krueger.Declaration::FunctionDecl(fn_decl) =>
+              fn_decl.name.0.0 == "add"
             _ => false
           }
         }),
@@ -69,21 +74,21 @@ test "root package parse_module uses default scanner and captures declarations" 
 
 ///|
 test "root package parse_tokens wraps parser parse_tokens" {
-  let source = SourceText::{
+  let source = @krueger.SourceText::{
     module_name: Some("Main"),
     text: "module Main exposing (add)\nadd x = x + 1",
   }
-  let stream = match tokenize(source) {
+  let stream = match @krueger.tokenize(source) {
     Ok(stream) => stream
     Err(_) => fail("expected tokenize success")
   }
-  let result = parse_tokens(stream)
+  let result = @krueger.parse_tokens(stream)
   match result.ast {
     Some(ast) =>
       assert_true(
         ast.declarations.any(fn(decl) {
           match decl {
-            Declaration::FunctionDecl(fn_decl) =>
+            @krueger.Declaration::FunctionDecl(fn_decl) =>
               match fn_decl.body {
                 @ast.Expr::Unparsed(unparsed) =>
                   fn_decl.name.0.0 == "add" && unparsed.tokens.length() > 0
@@ -99,22 +104,22 @@ test "root package parse_tokens wraps parser parse_tokens" {
 
 ///|
 test "root package exposes cst contracts" {
-  let node_span = Span::{
-    start: Position::{ offset: 0, line: 1, column: 1 },
-    end: Position::{ offset: 1, line: 1, column: 2 },
+  let node_span = @krueger.Span::{
+    start: @krueger.Position::{ offset: 0, line: 1, column: 1, },
+    end: @krueger.Position::{ offset: 1, line: 1, column: 2, },
   }
-  let header = ModuleHeaderCst::{
+  let header = @krueger.ModuleHeaderCst::{
     module_name: Some("Main"),
     exposing: ["add"],
     tokens: [],
     span: node_span,
   }
-  let cst = ModuleCst::{
+  let cst = @krueger.ModuleCst::{
     tokens: [],
     header: Some(header),
     imports: [],
     declarations: [
-      DeclarationCst::Function(FunctionCst::{
+      @krueger.DeclarationCst::Function(@krueger.FunctionCst::{
         name: "add",
         args: ["x"],
         tokens: [],

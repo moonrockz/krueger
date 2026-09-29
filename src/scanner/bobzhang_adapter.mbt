@@ -8,19 +8,23 @@ pub(all) enum RawTokenKind {
   LineComment
   BlockComment
   DocComment
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 pub(all) struct RawToken {
   kind : RawTokenKind
   lexeme : String
   span : Span
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 fn position(lexer : @lexer.Lexer) -> Position {
   let loc = lexer.get_loc()
-  Position::{ offset: lexer.get_position(), line: loc.line, column: loc.column }
+  Position::{
+    offset: lexer.get_position(),
+    line: loc.line,
+    column: loc.column,
+  }
 }
 
 ///|
@@ -31,7 +35,7 @@ fn push_token(
   start : Position,
   end_ : Position,
 ) -> Unit {
-  tokens.push(RawToken::{ kind, lexeme, span: Span::{ start, end: end_ } })
+  tokens.push(RawToken::{ kind, lexeme, span: Span::{ start, end: end_, }, })
 }
 
 ///|
@@ -175,7 +179,7 @@ fn symbol_lexeme_or_invalid(lexer : @lexer.Lexer) -> (String, Bool) {
 
 ///|
 pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
-  let lexer = @lexer.Lexer::new(source.text)
+  let lexer = @lexer.Lexer(source.text)
   let tokens = []
   let diagnostics = []
   while lexer.peek() is Some(_) {
@@ -222,7 +226,7 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
         )
         if !closed {
           diagnostics.push(
-            malformed_doc_comment(Span::{ start, end: position(lexer) }),
+            malformed_doc_comment(Span::{ start, end: position(lexer), }),
           )
         }
       }
@@ -237,7 +241,7 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
         )
         if !closed {
           diagnostics.push(
-            unterminated_block_comment(Span::{ start, end: position(lexer) }),
+            unterminated_block_comment(Span::{ start, end: position(lexer), }),
           )
         }
       }
@@ -273,7 +277,7 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
           )
         } else {
           diagnostics.push(
-            invalid_sequence(Span::{ start, end: position(lexer) }),
+            invalid_sequence(Span::{ start, end: position(lexer), }),
           )
         }
       }

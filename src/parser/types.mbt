@@ -16,4 +16,4 @@ pub(all) struct ParseResult {
   ast : @ast.ModuleAst?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
-} derive(Eq, Show)
+} derive(Eq, Debug)

@@ -77,7 +77,7 @@ fn find_union_decl(
 }
 
 ///|
-fn has_diag_code(result : ParseResult, code : String) -> Bool {
+fn has_diag_code(result : @parser.ParseResult, code : String) -> Bool {
   result.diagnostics.any(fn(diag) { diag.code == code })
 }
 
@@ -102,7 +102,7 @@ test "parse tokens captures module header information" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.ast {
     Some(ast) => {
       assert_eq(
@@ -126,7 +126,7 @@ test "parse tokens captures cst header and imports" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.cst {
     Some(cst) => {
       match cst.header {
@@ -162,7 +162,7 @@ test "parse tokens captures function declaration" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.ast {
     Some(ast) =>
       match find_function_decl(ast, "add") {
@@ -191,7 +191,7 @@ test "parse tokens emits typed cst declarations with token span fidelity" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.cst {
     Some(cst) => {
       assert_eq(cst.declarations.length(), 3)
@@ -238,7 +238,7 @@ test "parse tokens attaches doc comment to function declaration" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.ast {
     Some(ast) =>
       match find_function_decl(ast, "add") {
@@ -264,7 +264,7 @@ test "parse tokens captures imports and type declarations" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.ast {
     Some(ast) => {
       assert_eq(ast.imports.length(), 1)
@@ -291,7 +291,7 @@ test "parse tokens supports mixed top-level declaration ordering" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   match result.ast {
     Some(ast) => {
       assert_true(find_function_decl(ast, "add") != None)
@@ -313,7 +313,7 @@ test "parse tokens reports diagnostic for malformed module header" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   assert_true(has_diag_code(result, "KR-PARSE-001"))
 }
 
@@ -328,7 +328,7 @@ test "parse tokens recovers from malformed import and parses later function" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   assert_true(has_diag_code(result, "KR-PARSE-002"))
   match result.ast {
     Some(ast) => assert_true(find_function_decl(ast, "add") != None)
@@ -347,7 +347,7 @@ test "parse tokens reports diagnostic for malformed type declaration" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   assert_true(has_diag_code(result, "KR-PARSE-003"))
 }
 
@@ -362,7 +362,7 @@ test "parse tokens reports diagnostic for malformed function declaration" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   assert_true(has_diag_code(result, "KR-PARSE-004"))
   match result.ast {
     Some(ast) => assert_true(find_function_decl(ast, "ok") != None)
@@ -376,7 +376,7 @@ test "parse module returns scanner diagnostics when tokenization fails" {
     module_name: Some("Main"),
     text: "{-| missing close",
   }
-  let result = parse_module(source, @scanner.DefaultScanner::new())
+  let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
   assert_eq(result.ast, None)
   assert_eq(result.cst, None)
   assert_true(has_diag_code(result, "KR-SCAN-002"))
@@ -393,7 +393,7 @@ test "parse tokens reports diagnostic when module exposing list is malformed" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   assert_true(has_diag_code(result, "KR-PARSE-001"))
 }
 
@@ -408,7 +408,7 @@ test "parse tokens reports diagnostic when import exposing list is malformed" {
     Some(tokens) => tokens
     None => fail("expected tokenization success")
   }
-  let result = parse_tokens(tokens)
+  let result = @parser.parse_tokens(tokens)
   assert_true(has_diag_code(result, "KR-PARSE-002"))
   match result.ast {
     Some(ast) => assert_true(find_function_decl(ast, "add") != None)
@@ -418,7 +418,7 @@ test "parse tokens reports diagnostic when import exposing list is malformed" {
 
 ///|
 test "parse tokens handles empty stream with empty ast and cst spans" {
-  let result = parse_tokens(@scanner.TokenStream::{ tokens: [] })
+  let result = @parser.parse_tokens(@scanner.TokenStream::{ tokens: [], })
   match result.ast {
     Some(ast) => assert_eq(ast.span, None)
     None => fail("expected ast")

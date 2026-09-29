@@ -2,25 +2,25 @@
 
 ///|
 fn pos(offset : Int, line : Int, column : Int) -> @scanner.Position {
-  @scanner.Position::{ offset, line, column }
+  @scanner.Position::{ offset, line, column, }
 }
 
 ///|
 fn span() -> @scanner.Span {
-  @scanner.Span::{ start: pos(0, 1, 1), end: pos(1, 1, 2) }
+  @scanner.Span::{ start: pos(0, 1, 1), end: pos(1, 1, 2), }
 }
 
 ///|
 test "ast domain wrappers compose around identifiers" {
-  let identifier = Identifier::Identifier("Main")
-  let module_name = ModuleName::ModuleName(identifier)
-  let value_name = ValueName::ValueName(Identifier::Identifier("add"))
-  let type_name = TypeName::TypeName(Identifier::Identifier("User"))
-  let type_var = TypeVarName::TypeVarName(Identifier::Identifier("a"))
-  let ctor_name = ConstructorName::ConstructorName(
-    Identifier::Identifier("Just"),
+  let identifier = @ast.Identifier::Identifier("Main")
+  let module_name = @ast.ModuleName::ModuleName(identifier)
+  let value_name = @ast.ValueName::ValueName(@ast.Identifier::Identifier("add"))
+  let type_name = @ast.TypeName::TypeName(@ast.Identifier::Identifier("User"))
+  let type_var = @ast.TypeVarName::TypeVarName(@ast.Identifier::Identifier("a"))
+  let ctor_name = @ast.ConstructorName::ConstructorName(
+    @ast.Identifier::Identifier("Just"),
   )
-  let op_name = OperatorName::OperatorName("+")
+  let op_name = @ast.OperatorName::OperatorName("+")
 
   assert_eq(module_name.0.0, "Main")
   assert_eq(value_name.0.0, "add")
@@ -32,17 +32,23 @@ test "ast domain wrappers compose around identifiers" {
 
 ///|
 test "ast supports hybrid expression and type expression nodes" {
-  let expr = Expr::BinaryOp(
-    Expr::Var(ValueName::ValueName(Identifier::Identifier("x"))),
-    OperatorName::OperatorName("+"),
-    Expr::IntLiteral(1),
+  let expr = @ast.Expr::BinaryOp(
+    @ast.Expr::Var(@ast.ValueName::ValueName(@ast.Identifier::Identifier("x"))),
+    @ast.OperatorName::OperatorName("+"),
+    @ast.Expr::IntLiteral(1),
   )
-  let type_expr = TypeExpr::TypeApp(
-    TypeName::TypeName(Identifier::Identifier("List")),
-    [TypeExpr::TypeVar(TypeVarName::TypeVarName(Identifier::Identifier("a")))],
+  let type_expr = @ast.TypeExpr::TypeApp(
+    @ast.TypeName::TypeName(@ast.Identifier::Identifier("List")),
+    [
+      @ast.TypeExpr::TypeVar(
+        @ast.TypeVarName::TypeVarName(@ast.Identifier::Identifier("a")),
+      ),
+    ],
   )
-  let fallback_expr = Expr::Unparsed(UnparsedExpr::{ tokens: [] })
-  let fallback_type = TypeExpr::Unparsed(UnparsedTypeExpr::{ tokens: [] })
+  let fallback_expr = @ast.Expr::Unparsed(@ast.UnparsedExpr::{ tokens: [], })
+  let fallback_type = @ast.TypeExpr::Unparsed(@ast.UnparsedTypeExpr::{
+    tokens: [],
+  })
 
   assert_true(expr != fallback_expr)
   assert_true(type_expr != fallback_type)
@@ -50,17 +56,21 @@ test "ast supports hybrid expression and type expression nodes" {
 
 ///|
 test "module ast stores typed declarations and exposing names" {
-  let meta = DeclMeta::{ doc_comment: None, span: span() }
-  let fn_decl = Declaration::FunctionDecl(FunctionDeclaration::{
-    name: ValueName::ValueName(Identifier::Identifier("add")),
-    args: [ValueName::ValueName(Identifier::Identifier("x"))],
-    body: Expr::Unparsed(UnparsedExpr::{ tokens: [] }),
+  let meta = @ast.DeclMeta::{ doc_comment: None, span: span(), }
+  let fn_decl = @ast.Declaration::FunctionDecl(@ast.FunctionDeclaration::{
+    name: @ast.ValueName::ValueName(@ast.Identifier::Identifier("add")),
+    args: [@ast.ValueName::ValueName(@ast.Identifier::Identifier("x"))],
+    body: @ast.Expr::Unparsed(@ast.UnparsedExpr::{ tokens: [], }),
     meta,
   })
-  let module_ast = ModuleAst::{
-    module_name: Some(ModuleName::ModuleName(Identifier::Identifier("Main"))),
+  let module_ast = @ast.ModuleAst::{
+    module_name: Some(
+      @ast.ModuleName::ModuleName(@ast.Identifier::Identifier("Main")),
+    ),
     exposing: [
-      ExposedName::Value(ValueName::ValueName(Identifier::Identifier("add"))),
+      @ast.ExposedName::Value(
+        @ast.ValueName::ValueName(@ast.Identifier::Identifier("add")),
+      ),
     ],
     imports: [],
     declarations: [fn_decl],
