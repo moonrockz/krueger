@@ -83,7 +83,9 @@ fn parse_options(args : ArrayView[String]) -> Result[Options, String] {
 
 ///|
 /// Return the text between each pair of coverage markers.
-fn extract_payloads(text : String) -> Array[String] {
+/// Raises when the text ends after a begin marker without its end marker,
+/// for example when a test run stopped while it wrote the artifact.
+fn extract_payloads(text : String) -> Array[String] raise {
   let payloads = []
   let current = StringBuilder()
   let mut inside = false
@@ -101,6 +103,9 @@ fn extract_payloads(text : String) -> Array[String] {
       current.write_string(line)
       current.write_char('\n')
     }
+  }
+  if inside {
+    fail("coverage payload has no end marker")
   }
   payloads
 }

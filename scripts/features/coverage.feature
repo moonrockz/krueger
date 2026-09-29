@@ -42,6 +42,21 @@ Feature: Coverage report
     When I build the coverage report
     Then building the report fails
 
+  Scenario: Payload cut off before the end marker
+    Given a coverage artifact:
+      """
+      ----- BEGIN MOONBIT COVERAGE -----
+      { "m$lib": [1, 1] }
+      ----- END MOONBIT COVERAGE -----
+      """
+    And a coverage artifact:
+      """
+      ----- BEGIN MOONBIT COVERAGE -----
+      { "m$other": [0, 0, 0, 0,
+      """
+    When I build the coverage report
+    Then building the report fails
+
   Scenario Outline: Threshold outcome
     Given the total coverage is <total>%
     When I check it against <threshold>% in <mode> mode
