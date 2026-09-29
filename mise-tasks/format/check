@@ -3,3 +3,5 @@
 set -euo pipefail
 
 moon fmt --check
+# moon fmt skips standalone .mbtx scripts unless their paths are given.
+moon fmt --check scripts/*.mbtx

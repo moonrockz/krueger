@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Run MoonBit script tests (scripts/*.mbtx)"
+set -euo pipefail
+
+# moon test accepts exactly one .mbtx path per call.
+for script in scripts/*.mbtx; do
+  moon test --target wasm "$script"
+done
