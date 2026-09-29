@@ -7,6 +7,7 @@ struct ParityWorld {
   mut lock_result : Result[String, String]
   mut counts : Counts
   mut baseline : Counts
+  mut manifest : Array[(String, String)]
 }
 
 ///|
@@ -19,6 +20,7 @@ fn ParityWorld::new() -> ParityWorld {
     lock_result: Ok(""),
     counts: zero,
     baseline: zero,
+    manifest: [],
   }
 }
 
@@ -62,6 +64,29 @@ impl @moonspec.World for ParityWorld with fn configure(self, setup) {
     @expect.expect(regressions(self.counts, self.baseline).join("; ")).to_equal(
       expected,
     )
+  })
+  setup.given1("the manifest sources {string}", fn(text : String) {
+    self.manifest = text
+      .split(", ")
+      .map(item => {
+        let parts = item.split(" ").map(p => p.to_owned()).collect()
+        (parts[0], parts[1])
+      })
+      .collect()
+  })
+  setup.then1("the source problems are {string}", fn(expected : String) raise {
+    let lock = parse_lock(self.lock_text)
+    @expect.expect(source_problems(lock, self.manifest).join("; ")).to_equal(
+      expected,
+    )
+  })
+  setup.then1("ratcheting gives {string}", fn(expected : String) raise {
+    let actual = match ratchet(self.counts, self.baseline) {
+      Ok(c) =>
+        "\{c.files} files, \{c.tokenized} tokenized, \{c.parsed} parsed, \{c.matched} matched"
+      Err(message) => "refused: \{message}"
+    }
+    @expect.expect(actual).to_equal(expected)
   })
   setup.then1("the S-expression is {string}", fn(expected : String) raise {
     @expect.expect(sexpr(self.json)).to_equal(expected)

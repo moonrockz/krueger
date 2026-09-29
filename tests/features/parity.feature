@@ -51,3 +51,23 @@ Feature: Elm parity scoreboard
     Given the golden JSON '{"declarations": [{"range": [3, 1, 3, 6], "value": {"type": "integer", "integer": 1}}]}'
     And the krueger JSON '{"declarations": [{"range": [3, 1, 3, 7], "value": {"type": "integer", "integer": 1}}]}'
     Then the first difference is at "$.declarations[0].range[3]"
+
+  Scenario: Lock and manifest must list the same files with the same sources
+    Given the lock text:
+      """
+      pkg/a@1.0.0/src/A.elm 11 aa
+      pkg/b@1.0.0/src/B.elm 99 bb
+      pkg/c@1.0.0/src/C.elm 33 cc
+      """
+    And the manifest sources "pkg/a@1.0.0/src/A.elm 11, pkg/b@1.0.0/src/B.elm 22, pkg/d@1.0.0/src/D.elm 44"
+    Then the source problems are "source hash differs from the manifest: pkg/b@1.0.0/src/B.elm; not in the manifest: pkg/c@1.0.0/src/C.elm; not in the lock: pkg/d@1.0.0/src/D.elm"
+
+  Scenario Outline: Ratchet never lowers the baseline
+    Given the counts <files> files, <tokenized> tokenized, <parsed> parsed, <matched> matched
+    And the baseline 363 files, 10 tokenized, 5 parsed, 0 matched
+    Then ratcheting gives "<result>"
+
+    Examples:
+      | files | tokenized | parsed | matched | result                                  |
+      | 363   | 12        | 5      | 1       | 363 files, 12 tokenized, 5 parsed, 1 matched |
+      | 363   | 9         | 5      | 0       | refused: tokenized: 9 < baseline 10      |

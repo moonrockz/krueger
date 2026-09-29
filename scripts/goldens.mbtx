@@ -119,6 +119,10 @@ async fn main {
     @sys.exit(code)
     return
   }
+  // Start from an empty output directory so no stale result survives.
+  if @fs.exists(out) {
+    @fs.rmdir(out, recursive=true)
+  }
   let mut parsed = 0
   let mut rejected = 0
   for line in stdout.text().split("\n") {

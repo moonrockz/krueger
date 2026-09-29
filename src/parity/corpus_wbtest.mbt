@@ -70,10 +70,28 @@ fn manifest_sources() -> Array[(String, String)] raise {
 }
 
 ///|
+/// Read a corpus file after checking it against its expected SHA-256.
+fn verified_source(key : String, expected_sha256 : String) -> String raise {
+  let path = "\{corpus_dir}/\{key}"
+  if !@fs.path_exists(path) {
+    fail("missing corpus file \{path}; run mise run corpus:fetch")
+  }
+  let bytes = @fs.read_file_to_bytes(path)
+  if sha256_bytes_hex(bytes) != expected_sha256 {
+    fail(
+      "corpus file \{path} does not match its pinned hash; run rm -rf .corpus && mise run corpus:fetch",
+    )
+  }
+  @fs.read_file_to_string(path)
+}
+
+///|
 fn write_lock() -> Unit raise {
   let entries = []
   for source in manifest_sources() {
     let (key, source_sha256) = source
+    // The oracle parsed this file, so it must be the pinned source.
+    ignore(verified_source(key, source_sha256))
     let raw = "\{raw_goldens_dir}/\{key}"
     let golden = if @fs.path_exists("\{raw}.json") {
       Hash(
@@ -120,16 +138,19 @@ fn mismatch_report(key : String, actual : Json?) -> String {
 ///|
 fn score() -> Counts raise {
   let entries = parse_lock(@fs.read_file_to_string(lock_path))
+  let problems = source_problems(entries, manifest_sources())
+  if !problems.is_empty() {
+    fail(
+      "\{lock_path} does not match \{manifest_path} (run mise run corpus:goldens): " +
+      problems.join("; "),
+    )
+  }
   let mut tokenized = 0
   let mut parsed = 0
   let mut matched = 0
   let reports = []
   for entry in entries {
-    let path = "\{corpus_dir}/\{entry.key}"
-    if !@fs.path_exists(path) {
-      fail("missing corpus file \{path}; run mise run corpus:fetch")
-    }
-    let text = @fs.read_file_to_string(path)
+    let text = verified_source(entry.key, entry.source_sha256)
     let source = @krueger.SourceText::{ module_name: None, text, }
     if @krueger.tokenize(source) is Ok(_) {
       tokenized += 1
@@ -168,6 +189,14 @@ test "parity corpus" {
     Some(WriteLock) => write_lock()
     Some(Ratchet) => {
       let counts = score()
+      if @fs.path_exists(baseline_path) {
+        let baseline = counts_from_json(
+          @json.parse(@fs.read_file_to_string(baseline_path)),
+        )
+        if ratchet(counts, baseline) is Err(message) {
+          fail("parity ratchet refused to lower the baseline: " + message)
+        }
+      }
       @fs.write_string_to_file(
         baseline_path,
         counts_to_json(counts).stringify(indent=2) + "\n",

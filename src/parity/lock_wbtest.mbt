@@ -75,3 +75,32 @@ fn compare_lexical(a : String, b : String) -> Int {
   }
   a.length().compare(b.length())
 }
+
+///|
+/// Differences between the lock and the manifest: lock entries whose source
+/// hash differs or that the manifest does not list, then manifest files the
+/// lock does not list. The lock must be regenerated when this is not empty.
+fn source_problems(
+  lock : Array[LockEntry],
+  manifest : Array[(String, String)],
+) -> Array[String] {
+  let expected : Map[String, String] = Map::from_array(manifest)
+  let problems = []
+  let locked : Map[String, Bool] = Map([])
+  for entry in lock {
+    locked[entry.key] = true
+    match expected.get(entry.key) {
+      None => problems.push("not in the manifest: \{entry.key}")
+      Some(sha) =>
+        if sha != entry.source_sha256 {
+          problems.push("source hash differs from the manifest: \{entry.key}")
+        }
+    }
+  }
+  for m in manifest {
+    if !locked.contains(m.0) {
+      problems.push("not in the lock: \{m.0}")
+    }
+  }
+  problems
+}

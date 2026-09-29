@@ -28,3 +28,9 @@ fn normalize(json : Json) -> Json {
 fn sha256_hex(text : String) -> String {
   @hex.encode(Bytes::from_array(@crypto.sha256(@utf8.encode(text))))
 }
+
+///|
+/// Lowercase hex SHA-256 of raw bytes (corpus source files).
+fn sha256_bytes_hex(bytes : Bytes) -> String {
+  @hex.encode(Bytes::from_array(@crypto.sha256(bytes)))
+}

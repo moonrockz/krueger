@@ -58,3 +58,15 @@ fn regressions(current : Counts, baseline : Counts) -> Array[String] {
 fn scoreboard(c : Counts) -> String {
   "parity: \{c.files} files | tokenized \{c.tokenized} | parsed \{c.parsed} | matched \{c.matched}"
 }
+
+///|
+/// The new baseline for a ratchet: the current counts, or an error when any
+/// count is below the baseline (a ratchet never lowers it).
+fn ratchet(current : Counts, baseline : Counts) -> Result[Counts, String] {
+  let found = regressions(current, baseline)
+  if found.is_empty() {
+    Ok(current)
+  } else {
+    Err(found.join("; "))
+  }
+}
