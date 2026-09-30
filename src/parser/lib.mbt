@@ -274,8 +274,7 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
         name_token = stream[cursor + 1]
         cursor = cursor + 2
         if cursor < stream.length() &&
-          stream[cursor].kind == @scanner.TokenKind::Identifier &&
-          stream[cursor].lexeme == "as" {
+          stream[cursor].kind == @scanner.TokenKind::as_kw() {
           if cursor + 1 < stream.length() && is_upper_name(stream[cursor + 1]) {
             let alias_token = stream[cursor + 1]
             module_alias = Some(
@@ -326,11 +325,13 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
       declaration_starts.push(type_decl_start)
       let start_token = stream[cursor]
       cursor = cursor + 1
+      // `alias` is not reserved in Elm; it is an identifier after `type`.
       let is_alias = token_kind_at(
-        stream,
-        cursor,
-        @scanner.TokenKind::alias_kw(),
-      )
+          stream,
+          cursor,
+          @scanner.TokenKind::Identifier,
+        ) &&
+        stream[cursor].lexeme == "alias"
       if is_alias {
         cursor = cursor + 1
       }

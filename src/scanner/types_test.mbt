@@ -67,8 +67,16 @@ test "token kind keyword helpers create keyword token kinds" {
     @scanner.TokenKind::Keyword(@scanner.KeywordKind::Type),
   )
   assert_eq(
-    @scanner.TokenKind::alias_kw(),
-    @scanner.TokenKind::Keyword(@scanner.KeywordKind::Alias),
+    @scanner.TokenKind::as_kw(),
+    @scanner.TokenKind::Keyword(@scanner.KeywordKind::As),
+  )
+  assert_eq(
+    @scanner.TokenKind::port_kw(),
+    @scanner.TokenKind::Keyword(@scanner.KeywordKind::Port),
+  )
+  assert_eq(
+    @scanner.TokenKind::where_kw(),
+    @scanner.TokenKind::Keyword(@scanner.KeywordKind::Where),
   )
   assert_eq(
     @scanner.TokenKind::if_kw(),

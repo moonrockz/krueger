@@ -61,6 +61,27 @@ jobs:
       - name: Run script tests
         run: mise run test:scripts
 
+  targets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hustcer/setup-moonbit@v1
+        with:
+          version: ${{ env.MOONBIT_VERSION }}
+          core-version: ${{ env.MOONBIT_VERSION }}
+
+      - uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+
+      - name: Install dependencies
+        run: moon update
+
+      - name: Test the library on every supported target
+        run: mise run test:targets
+
   coverage:
     runs-on: ubuntu-latest
     steps:
