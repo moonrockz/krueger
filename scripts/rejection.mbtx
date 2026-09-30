@@ -22,7 +22,8 @@ import {
 /// Each fixture is compiled as `src/Fixture.elm` in a fresh Elm application
 /// in `<project-dir>`. When elm make fails with an error that is not a syntax
 /// error (naming, types), its parser accepted the file: the verdict is
-/// `accepted` with `later_error` set to that title.
+/// `accepted` with `later_error` set to that title. Operator problems
+/// (`always_rejected_later`) are the exception: they count as rejections.
 
 ///|
 let usage : String = "Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json>"
@@ -62,6 +63,14 @@ let syntax_title_prefixes : Array[String] = [
 ]
 
 ///|
+/// Titles from after parsing that still count as rejections: operator
+/// problems. Elm 0.19.1 user code cannot define operators, so an unknown
+/// operator or a chain of non-associative operators fails in every project.
+let always_rejected_later : Array[String] = [
+  "INFIX PROBLEM", "UNKNOWN OPERATOR",
+]
+
+///|
 fn is_syntax_title(title : String) -> Bool {
   syntax_titles.contains(title) ||
   syntax_title_prefixes.any(p => title.has_prefix(p))
@@ -91,10 +100,6 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
     problem.get("message") is Some(message) else {
     fail("elm make: " + excerpt(stderr))
   }
-  if !is_syntax_title(title) {
-    // The parser accepted the file; a later phase (naming, types) failed.
-    return { "accepted": true, "later_error": title.to_json() }
-  }
   guard region.get("start") is Some(Object(start)) &&
     region.get("end") is Some(Object(end)) &&
     start.get("line") is Some(sl) &&
@@ -103,10 +108,31 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
     end.get("column") is Some(ec) else {
     fail("elm make: malformed region")
   }
+  let region_json : Json = [sl, sc, el, ec]
+  if is_syntax_title(title) {
+    return {
+      "accepted": false,
+      "title": title.to_json(),
+      "region": region_json,
+      "message": message,
+    }
+  }
+  if always_rejected_later.contains(title) {
+    // Elm 0.19.1 user code cannot define operators, so these are errors in
+    // every project even though the parser accepted the file.
+    return {
+      "accepted": false,
+      "title": title.to_json(),
+      "region": region_json,
+      "message": message,
+      "later": true,
+    }
+  }
+  // The parser accepted the file; a later phase (naming, types) failed.
   {
-    "accepted": false,
-    "title": title.to_json(),
-    "region": [sl, sc, el, ec],
+    "accepted": true,
+    "later_error": title.to_json(),
+    "region": region_json,
     "message": message,
   }
 }

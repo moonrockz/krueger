@@ -50,7 +50,17 @@ Feature: Rejection oracle
       """
     Then the elm make verdict is:
       """
-      {"accepted":true,"later_error":"NAMING ERROR"}
+      {"accepted":true,"later_error":"NAMING ERROR","region":[6,5,6,8],"message":["x"]}
+      """
+
+  Scenario: Operator errors from a later phase count as rejections
+    When elm make exits with 1 and stderr:
+      """
+      {"type":"compile-errors","errors":[{"path":"src/Fixture.elm","name":"Fixture","problems":[{"title":"INFIX PROBLEM","region":{"start":{"line":9,"column":5},"end":{"line":9,"column":19}},"message":["x"]}]}]}
+      """
+    Then the elm make verdict is:
+      """
+      {"accepted":false,"title":"INFIX PROBLEM","region":[9,5,9,19],"message":["x"],"later":true}
       """
 
   Scenario: Other elm make failures are reported

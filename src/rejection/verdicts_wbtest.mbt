@@ -40,3 +40,22 @@ test "pending entries round-trip through JSON" {
   @expect.expect(text).to_contain("\"a.elm\"")
   @expect.expect(parse_pending(text)).to_equal([entries[1], entries[0]])
 }
+
+///|
+test "fixtures on disk and recorded verdicts must agree" {
+  let text = "module Fixture exposing (..)\n\n\nf = 1\n"
+  let verdicts : Json = {
+    "a.elm": {
+      "sha256": sha256_hex(text).to_json(),
+      "elm-0.19.1": { "accepted": true },
+      "elm-syntax-7.3.9": { "accepted": true },
+    },
+  }
+  @expect.expect(unrecorded(verdicts, ["a.elm"])).to_equal([])
+  @expect.expect(unrecorded(verdicts, ["a.elm", "b/new.elm"])).to_equal([
+    "b/new.elm not recorded: run `mise run rejection:record`",
+  ])
+  @expect.expect(unrecorded(verdicts, [])).to_equal([
+    "a.elm removed: run `mise run rejection:record`",
+  ])
+}

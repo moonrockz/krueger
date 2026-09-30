@@ -265,11 +265,6 @@
     "check": "verdict"
   },
   {
-    "fixture": "operators/non_assoc_chain.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
     "fixture": "operators/spaced_exposing.elm",
     "dialect": "elm-0.19.1",
     "check": "verdict"
@@ -277,16 +272,6 @@
   {
     "fixture": "operators/spaced_exposing.elm",
     "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "operators/touching_plus_minus.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "operators/unknown_operator.elm",
-    "dialect": "elm-0.19.1",
     "check": "verdict"
   },
   {

@@ -1523,7 +1523,58 @@
     "sha256": "b35affb707c0f829d345760092a79d658c12df190e19423063b8931dd6f5753b",
     "elm-0.19.1": {
       "accepted": true,
-      "later_error": "NAMING ERROR"
+      "later_error": "NAMING ERROR",
+      "region": [
+        9,
+        22,
+        9,
+        25
+      ],
+      "message": [
+        "I cannot find a `FFF` variant:\n\n9|     0xFFFFFFFFFFFFFFFFFF\n                        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^"
+        },
+        "\nThese names seem close though:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "EQ"
+        },
+        "\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "Err"
+        },
+        "\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "GT"
+        },
+        "\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "LT"
+        },
+        "\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Hint"
+        },
+        ": Read <https://elm-lang.org/0.19.1/imports> to see how `import`\ndeclarations work in Elm."
+      ]
     },
     "elm-syntax-7.3.9": {
       "accepted": true
@@ -2103,8 +2154,25 @@
   "operators/non_assoc_chain.elm": {
     "sha256": "64011329b0b8868de2849c5e01ae6fa0a783f5c5d41c05724647a5aba5dfdde3",
     "elm-0.19.1": {
-      "accepted": true,
-      "later_error": "INFIX PROBLEM"
+      "accepted": false,
+      "title": "INFIX PROBLEM",
+      "region": [
+        9,
+        5,
+        9,
+        19
+      ],
+      "message": [
+        "You cannot mix (==) and (==) without parentheses.\n\n9|     x == 1 == True\n       ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^^^^^^^^^^^"
+        },
+        "\nI do not know how to group these expressions. Add parentheses for me!"
+      ],
+      "later": true
     },
     "elm-syntax-7.3.9": {
       "accepted": false
@@ -2247,8 +2315,39 @@
   "operators/touching_plus_minus.elm": {
     "sha256": "fc50b89fea2d32f1c9a17b0a66f8f9ede8909cd43d11c0bd33a811a80288a9fd",
     "elm-0.19.1": {
-      "accepted": true,
-      "later_error": "UNKNOWN OPERATOR"
+      "accepted": false,
+      "title": "UNKNOWN OPERATOR",
+      "region": [
+        9,
+        7,
+        9,
+        9
+      ],
+      "message": [
+        "I do not recognize the (+-) operator.\n\n9|     x +- 1\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nIs there an `import` and `exposing` entry for it? Maybe you want ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "(+)"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "(++)"
+        },
+        "\ninstead?"
+      ],
+      "later": true
     },
     "elm-syntax-7.3.9": {
       "accepted": false
@@ -2257,8 +2356,39 @@
   "operators/unknown_operator.elm": {
     "sha256": "aca92cbabcaa14a4f91397e755d27c825f13ca4bb21974d0cbfd80ff1c0e7dea",
     "elm-0.19.1": {
-      "accepted": true,
-      "later_error": "UNKNOWN OPERATOR"
+      "accepted": false,
+      "title": "UNKNOWN OPERATOR",
+      "region": [
+        9,
+        7,
+        9,
+        10
+      ],
+      "message": [
+        "I do not recognize the (<=>) operator.\n\n9|     x <=> 1\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^"
+        },
+        "\nIs there an `import` and `exposing` entry for it? Maybe you want ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "(<=)"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "(/=)"
+        },
+        "\ninstead?"
+      ],
+      "later": true
     },
     "elm-syntax-7.3.9": {
       "accepted": false

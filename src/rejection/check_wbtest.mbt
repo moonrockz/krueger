@@ -104,6 +104,49 @@ fn mismatches(
 }
 
 ///|
+/// Differences between the fixture files on disk and the recorded verdicts,
+/// as messages.
+fn unrecorded(verdicts : Json, files : Array[String]) -> Array[String] {
+  let recorded = match verdicts {
+    Object(entries) => entries.keys().collect()
+    _ => []
+  }
+  let problems = []
+  for file in files {
+    if !recorded.contains(file) {
+      problems.push("\{file} not recorded: run `mise run rejection:record`")
+    }
+  }
+  for key in recorded {
+    if !files.contains(key) {
+      problems.push("\{key} removed: run `mise run rejection:record`")
+    }
+  }
+  problems
+}
+
+///|
+/// `.elm` files under `dir`, as paths relative to it.
+fn elm_files(dir : String) -> Array[String] raise {
+  let found = []
+  fn go(rel : String) raise {
+    let full = if rel == "" { dir } else { "\{dir}/\{rel}" }
+    for entry in @fs.read_dir(full) {
+      let child = if rel == "" { entry } else { "\{rel}/\{entry}" }
+      if @fs.is_dir("\{dir}/\{child}") {
+        go(child)
+      } else if child.has_suffix(".elm") {
+        found.push(child)
+      }
+    }
+  }
+
+  go("")
+  found.sort_by(compare_lexical)
+  found
+}
+
+///|
 fn format_pending(entries : Array[Pending]) -> String {
   let sorted = entries.copy()
   sorted.sort_by(compare_pending)
@@ -142,6 +185,10 @@ fn describe(p : Pending) -> String {
 ///|
 test "rejection fixtures" {
   let verdicts = @json.parse(@fs.read_file_to_string(verdicts_path))
+  let missing = unrecorded(verdicts, elm_files(fixtures_dir))
+  if !missing.is_empty() {
+    fail(missing.join("\n"))
+  }
   let current = mismatches(verdicts, fixture => {
     @fs.read_file_to_string("\{fixtures_dir}/\{fixture}")
   })
