@@ -26,7 +26,7 @@ import {
 /// (`always_rejected_later`) are the exception: they count as rejections.
 
 ///|
-let usage : String = "Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json>"
+let usage : String = "Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json> [<attribute-compat-dir>]"
 
 ///|
 /// Fixed titles of the syntax errors in the Elm compiler
@@ -329,6 +329,39 @@ async fn record(
 }
 
 ///|
+/// Check that elm make accepts every file in `compat` (doc-comment attribute
+/// examples) and that elm-format leaves it unchanged. Either failure stops.
+async fn check_compat(compat : String, project : String) -> Unit {
+  let files = elm_files(compat)
+  for file in files {
+    let path = "\{compat}/\{file}"
+    @fs.write_file("\{project}/src/Fixture.elm", @fs.read_file(path).text())
+    let (code, _, stderr) = @process.collect_output(
+      "mise",
+      [
+        "x", "elm@0.19.1", "--", "elm", "make", "src/Fixture.elm", "--report=json",
+        "--output=/dev/null",
+      ],
+      cwd=project,
+    )
+    if code != 0 {
+      eprintln("\{path}: elm make rejects it:\n\{excerpt(stderr.text())}")
+      @sys.exit(1)
+    }
+    let (format_code, stdout, _) = @process.collect_output("mise", [
+      "x", "github:avh4/elm-format@0.8.7", "--", "elm-format", "--validate", path,
+    ])
+    if format_code != 0 {
+      eprintln(
+        "\{path}: elm-format would change it:\n\{excerpt(stdout.text())}",
+      )
+      @sys.exit(1)
+    }
+    println("\{path}: elm make accepts it; elm-format leaves it unchanged")
+  }
+}
+
+///|
 fn summary(verdict : Json) -> String {
   match verdict {
     Object(o) if o.get("title") is Some(String(title)) => "rejects (\{title})"
@@ -340,12 +373,18 @@ fn summary(verdict : Json) -> String {
 
 ///|
 async fn main {
-  guard @env.args()[1:] is ["record", fixtures, oracle, project, out] else {
-    eprintln(usage)
-    @sys.exit(2)
-    return
+  match @env.args()[1:] {
+    ["record", fixtures, oracle, project, out] =>
+      record(fixtures, oracle, project, out)
+    ["record", fixtures, oracle, project, out, compat] => {
+      record(fixtures, oracle, project, out)
+      check_compat(compat, project)
+    }
+    _ => {
+      eprintln(usage)
+      @sys.exit(2)
+    }
   }
-  record(fixtures, oracle, project, out)
 }
 
 ///|

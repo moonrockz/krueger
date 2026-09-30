@@ -22,6 +22,7 @@ test "parse result holds an elm-syntax file" {
     ast: Some(file),
     cst: None,
     diagnostics: [],
+    attributes: [],
   }
   @expect.expect(result.ast.map(f => f.imports.length())).to_equal(Some(0))
 }
@@ -39,6 +40,7 @@ test "parse result cst uses dedicated cst package module type" {
     ast: None,
     cst: Some(module_cst),
     diagnostics: [],
+    attributes: [],
   }
   guard result.cst is Some(cst) else { fail("expected a CST") }
   @expect.expect(cst.declarations.length()).to_equal(0)

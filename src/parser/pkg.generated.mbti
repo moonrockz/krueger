@@ -10,6 +10,8 @@ import {
 }
 
 // Values
+pub fn encode_attributes(Array[AttributeGroup]) -> Json
+
 pub fn[S : @scanner.Scanner] parse_module(@scanner.SourceText, S, dialect? : @dialect.Dialect) -> ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> ParseResult
@@ -17,10 +19,26 @@ pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> ParseR
 // Errors
 
 // Types and methods
+pub(all) struct AttributeGroup {
+  target : AttributeTarget
+  attributes : Array[DocAttribute]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum AttributeTarget {
+  Module
+  Declaration(name~ : String, range~ : @ast.Range)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum DocAttribute {
+  Attribute(name~ : @ast.Node[String], arguments~ : Array[@ast.Node[@ast.Expression]], range~ : @ast.Range)
+  Docs(names~ : Array[@ast.Node[String]], range~ : @ast.Range)
+} derive(Eq, @debug.Debug)
+
 pub(all) struct ParseResult {
   ast : @ast.File?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
+  attributes : Array[AttributeGroup]
 } derive(Eq, @debug.Debug)
 
 // Type aliases

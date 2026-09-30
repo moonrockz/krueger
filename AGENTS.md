@@ -76,6 +76,7 @@ moonrockz/krueger
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 | `KR-PARSE-008` | Syntax error in a port or infix declaration |
 | `KR-PARSE-009` | Number literal out of range (warning; the value is clamped) |
+| `KR-ATTR-001` | Malformed doc attribute (warning; the attribute is skipped) |
 
 `src/diagnostics.mbt` holds these descriptions (`diagnostic_description(code)`); the parity
 summary reads them. Keep this table and that file in step when you add a code.
@@ -109,6 +110,50 @@ Every `Diagnostic` has a `code` (`KR-SCAN-*`, `KR-PARSE-*`), a `severity`, a one
   layout: `-- TITLE ---- path` header, reflow to 80 columns, source excerpt with `^`
   markers) and `render_elm_json` (the `elm make --report=json` shape). All are
   re-exported from the root package, with `encode_diagnostics` for krueger's own JSON.
+
+### Doc-Comment Attributes
+
+A doc comment can carry attributes. krueger reads them into
+`ParseResult.attributes` (per module and declaration, with file ranges);
+`encode_attributes` gives JSON. Their meaning belongs to the tools that read them.
+elm-format treats doc comments as Markdown and rewrites plain text (it escapes `_`,
+turns `*a*` into `_a_`, doubles backslashes and wraps URLs), but keeps code spans and
+code blocks byte for byte. So there are three forms:
+
+1. An attributes block (use it for anything non-trivial): a code block whose fence
+   info string is `-attributes:`, or a fenced or indented code block whose first
+   line is `-attributes:` (elm-format turns a plain fence into an indented block).
+   Content is read verbatim; an attribute runs until the next `@` line or a blank
+   line.
+
+   ````elm
+   {-| A customer account.
+
+   ```-attributes:
+   @derive [ Json.encoder, Json.decoder ]
+   @morphir
+       { kind = "entity"
+       , key = "account_id"
+       }
+   ```
+
+   -}
+   ````
+
+2. A value in a code span: ``@morphir `{ key = "account_id" }` ``.
+3. A plain value, `@unit "EUR"` — only safe when the value has no `_`, `*`, `\`
+   or URL. It continues on the next lines only while brackets are open or while the
+   `@` line has no value yet.
+
+- The name is `lower ("." lower)*`. Values are Elm data in application form:
+  literals, lists, records, tuples, names and constructor applications.
+- `@docs a, b` is the built-in list form. Other code blocks, prose and `@` in the
+  middle of a line are not attributes. A malformed attribute is warning `KR-ATTR-001`
+  and is skipped. Leave a blank line before `@docs` (elm-format joins the lines after
+  `@docs`).
+- `Dialect.attributes` (`DocComment` or `Off`) switches them on or off.
+- `mise run rejection:record` also checks `tests/attributes/compat/*.elm`: `elm make`
+  must accept each file and `elm-format --validate` must pass.
 
 ### Dialects
 

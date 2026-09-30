@@ -253,6 +253,7 @@ pub fn parse_tokens(
   let mut cst_header : @cst.ModuleHeaderCst? = None
   let imports : Array[@ast.Node[@ast.Import]] = []
   let cst_imports = []
+  let attribute_groups : Array[AttributeGroup] = []
   let declarations : Array[@ast.Node[@ast.Declaration]] = []
   let cst_decls = []
   let starts_header = match c.peek() {
@@ -290,6 +291,7 @@ pub fn parse_tokens(
         if c.peek() is Some(next) &&
           first_doc_comment(next.trivia_before) is Some(doc) {
           listed.push(doc.span)
+          collect_attributes(c, doc, Module, attribute_groups, diagnostics)
         }
       }
     }
@@ -360,6 +362,7 @@ pub fn parse_tokens(
       continue
     }
     let kind = declaration_kind(c)
+    let mut port_doc : @scanner.Comment? = None
     let doc = match kind {
       FunctionKind | TypeKind =>
         match last_doc_comment(t.trivia_before) {
@@ -370,6 +373,7 @@ pub fn parse_tokens(
         match last_doc_comment(t.trivia_before) {
           Some(d) if !listed.contains(d.span) => {
             listed.push(d.span)
+            port_doc = Some(d)
             None
           }
           _ => None
@@ -422,6 +426,16 @@ pub fn parse_tokens(
         if doc is Some(d) {
           attached.push(d.span)
         }
+        let target_doc = if doc is Some(_) { doc } else { port_doc }
+        if target_doc is Some(d) && declaration_name(decl) is Some(name) {
+          collect_attributes(
+            c,
+            d,
+            Declaration(name~, range=decl.range),
+            attribute_groups,
+            diagnostics,
+          )
+        }
         declarations.push(decl)
         let decl_tokens = stream[start:c.pos].to_owned()
         if declaration_cst(decl, decl_tokens, span_since(c, start))
@@ -473,6 +487,37 @@ pub fn parse_tokens(
       },
     }),
     diagnostics,
+    attributes: attribute_groups,
+  }
+}
+
+///|
+/// The name of a declaration that can carry attributes.
+fn declaration_name(decl : @ast.Node[@ast.Declaration]) -> String? {
+  match decl.value {
+    FunctionDeclaration(f) => Some(f.declaration.value.name.value)
+    AliasDeclaration(a) => Some(a.name.value)
+    CustomTypeDeclaration(t) => Some(t.name.value)
+    PortDeclaration(p) => Some(p.name.value)
+    _ => None
+  }
+}
+
+///|
+/// Read the attributes of `comment` for `target`, when the dialect parses
+/// them; malformed ones become warnings.
+fn collect_attributes(
+  c : Cursor,
+  comment : @scanner.Comment,
+  target : AttributeTarget,
+  groups : Array[AttributeGroup],
+  diagnostics : Array[@scanner.Diagnostic],
+) -> Unit {
+  guard c.dialect.attributes is DocComment else { return }
+  let (attributes, warnings) = doc_attributes(comment, c.dialect)
+  diagnostics.append(warnings)
+  if !attributes.is_empty() {
+    groups.push({ target, attributes, })
   }
 }
 
@@ -486,6 +531,7 @@ pub fn[S : @scanner.Scanner] parse_module(
 ) -> ParseResult {
   match scanner.tokenize(source) {
     Ok(tokens) => parse_tokens(tokens, dialect~)
-    Err(errs) => { ast: None, cst: None, diagnostics: errs.diagnostics, }
+    Err(errs) =>
+      { ast: None, cst: None, diagnostics: errs.diagnostics, attributes: [], }
   }
 }
