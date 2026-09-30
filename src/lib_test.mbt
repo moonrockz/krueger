@@ -104,3 +104,18 @@ test "root package exposes cst contracts" {
   }
   assert_eq(cst.declarations.length(), 1)
 }
+
+///|
+test "diagnostic_description describes every scanner and parser code" {
+  let codes = [
+    "KR-SCAN-001", "KR-SCAN-002", "KR-SCAN-003", "KR-PARSE-001", "KR-PARSE-002",
+    "KR-PARSE-003", "KR-PARSE-004", "KR-PARSE-005", "KR-PARSE-006", "KR-PARSE-007",
+  ]
+  for code in codes {
+    @expect.expect(@krueger.diagnostic_description(code) is Some(_)).to_be_true()
+  }
+  @expect.expect(@krueger.diagnostic_description("KR-SCAN-003")).to_equal(
+    Some("Invalid or unknown character sequence"),
+  )
+  @expect.expect(@krueger.diagnostic_description("KR-NOPE-999")).to_equal(None)
+}

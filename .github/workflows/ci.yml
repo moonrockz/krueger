@@ -116,3 +116,19 @@ jobs:
 
       - name: Score Elm parity
         run: mise run test:parity
+
+      - name: Add parity summary to the job summary
+        if: always()
+        run: |
+          if [ -f _build/reports/parity/summary.md ]; then
+            cat _build/reports/parity/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload parity reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-report
+          path: _build/reports/parity/
+          if-no-files-found: warn
+          retention-days: 30

@@ -62,6 +62,9 @@ moonrockz/krueger
 | `KR-PARSE-006` | Missing module header (no AST) |
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 
+`src/diagnostics.mbt` holds these descriptions (`diagnostic_description(code)`); the parity
+summary reads them. Keep this table and that file in step when you add a code.
+
 - Fixture JSON in `tests/fixtures/` comes from elm-syntax 7.3.9. Regenerate it with the
   oracle, never by hand.
 - Doc comments follow elm-syntax:
@@ -234,6 +237,11 @@ corpus of real packages (`tests/corpus/`).
 - `mise run test:parity` prints the scoreboard: files, tokenized, parsed (no
   diagnostics), matched (krueger's `@ast.encode_file` hash equals the golden). It fails
   when a count drops below `tests/corpus/baseline.json`. CI runs it in the `parity` job.
+- `test:parity` and `parity:ratchet` write reports to `_build/reports/parity/`:
+  `parity.html` (open in a browser; filter by status), `parity.json` (full results),
+  `parity.xml` (JUnit: one testsuite per package; unmatched files are `skipped`, only
+  a baseline regression is a `failure`) and `summary.md`. CI uploads them as the
+  `parity-report` artifact and adds `summary.md` to the job summary.
 - When a change raises the counts, run `mise run parity:ratchet` and commit
   `baseline.json`.
 - To see why a file does not match, run `mise run corpus:goldens` once (needs Elm and

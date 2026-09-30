@@ -8,6 +8,7 @@ import {
   "moonbitlang/x/crypto",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
+  "moonbitlang/core/string",
   "moonbitlang/core/encoding/hex",
   "moonbitlang/core/encoding/utf8",
 } for "wbtest"
