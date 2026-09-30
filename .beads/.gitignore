@@ -82,3 +82,7 @@ bd.db
 
 # Auto-import state marker (per-machine)
 .auto-import-issues.jsonl
+
+# Passive JSONL export (bd export). Issues sync through the Dolt remote
+# (refs/dolt/data), so the export is not committed.
+issues.jsonl
