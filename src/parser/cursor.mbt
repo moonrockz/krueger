@@ -12,11 +12,15 @@ priv struct Cursor {
   mut pos : Int
   mut indent : Int
   mut depth : Int
+  dialect : @dialect.Dialect
 }
 
 ///|
-fn Cursor::new(tokens : Array[@scanner.Token]) -> Cursor {
-  { tokens, pos: 0, indent: 1, depth: 0, }
+fn Cursor::new(
+  tokens : Array[@scanner.Token],
+  dialect : @dialect.Dialect,
+) -> Cursor {
+  { tokens, pos: 0, indent: 1, depth: 0, dialect, }
 }
 
 ///|

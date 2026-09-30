@@ -1,26 +1,4 @@
 ///|
-/// Precedence and direction of the infix operators elm-syntax knows.
-fn operator_info(op : String) -> (Int, @ast.InfixDirection)? {
-  match op {
-    "|>" => Some((1, Left))
-    "<|" => Some((1, Right))
-    "||" => Some((2, Right))
-    "&&" => Some((3, Right))
-    "==" | "/=" | "<=" | ">=" | ">" | "<" => Some((4, Non))
-    "++" | "::" => Some((5, Right))
-    "|=" => Some((5, Left))
-    "+" | "-" | "|." => Some((6, Left))
-    "//" | "*" | "/" => Some((7, Left))
-    "</>" => Some((7, Right))
-    "<?>" => Some((8, Left))
-    "^" => Some((8, Right))
-    ">>" => Some((9, Right))
-    "<<" => Some((9, Left))
-    _ => None
-  }
-}
-
-///|
 /// `Elm.Parser.Expression.expression`.
 fn expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
   expression_above(c, 0, false)
@@ -39,7 +17,7 @@ fn expression_above(
     guard c.peek() is Some({ kind: Operator(op), .. } as op_token) else {
       break
     }
-    guard operator_info(op) is Some((precedence, direction)) else {
+    guard c.dialect.operator(op) is Some({ precedence, direction, .. }) else {
       raise SyntaxError("unknown infix operator `\{op}`", op_token.span)
     }
     let accepted = if or_equal { precedence >= min } else { precedence > min }
@@ -70,7 +48,7 @@ fn non_associative_right(
   let right = expression_above(c, precedence, false)
   if c.positively_indented() &&
     c.peek() is Some({ kind: Operator(op), .. } as t) &&
-    operator_info(op) is Some((p, _)) &&
+    c.dialect.operator(op) is Some({ precedence: p, .. }) &&
     p == precedence {
     raise SyntaxError(
       "cannot mix non-associative infix operators without parentheses",
