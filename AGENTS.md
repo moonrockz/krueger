@@ -111,6 +111,32 @@ Every `Diagnostic` has a `code` (`KR-SCAN-*`, `KR-PARSE-*`), a `severity`, a one
   markers) and `render_elm_json` (the `elm make --report=json` shape). All are
   re-exported from the root package, with `encode_diagnostics` for krueger's own JSON.
 
+### Doc-Comment Attributes
+
+A doc-comment line that starts with `@name` is an attribute. krueger reads them into
+`ParseResult.attributes` (per module and declaration, with file ranges);
+`encode_attributes` gives JSON. Their meaning belongs to the tools that read them.
+
+```elm
+{-| A customer account.
+
+@deprecated "Use Account.V2"
+@derive [ Json.encoder, Json.decoder ]
+@morphir { kind = "entity", key = "id" }
+-}
+```
+
+- The name is `lower ("." lower)*`. Arguments are Elm data in application form:
+  literals, lists, records, tuples, names and constructor applications.
+- An attribute runs until a blank line or the next `@` line; continuation lines may
+  have any indentation (elm-format may remove it). Leave a blank line between
+  attributes and prose, and before `@docs` (elm-format joins lines after `@docs`).
+- `@docs a, b` is the built-in list form. Code blocks and `@` in prose are not
+  attributes. A malformed attribute is warning `KR-ATTR-001` and is skipped.
+- `Dialect.attributes` (`DocComment` or `Off`) switches them on or off.
+- `mise run rejection:record` also checks `tests/attributes/compat/*.elm`: `elm make`
+  must accept each file and `elm-format --validate` must pass.
+
 ### Dialects
 
 A `Dialect` (`src/dialect`) selects what krueger accepts and rejects, and carries

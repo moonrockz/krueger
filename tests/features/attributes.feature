@@ -86,6 +86,32 @@ Feature: Attributes in doc comments
       balance @tag(one | two) 12:1
       """
 
+  Scenario: Continuation lines as elm-format leaves them
+    Given Elm source:
+      """elm
+      module Bank exposing (..)
+
+      {-| Bank. -}
+
+
+      {-| The balance. Some prose first.
+      @pure
+      @morphir
+      { kind = "function"
+      , total = True
+      }
+      -}
+      balance =
+          1
+      """
+    When I parse the source
+    Then the attributes are:
+      """
+      balance @pure() 7:1
+      balance @morphir({ kind = "function"\n, total = True\n}) 8:1
+      """
+    And there are no warnings
+
   Scenario: Prose and code blocks are not attributes
     Given Elm source:
       """elm

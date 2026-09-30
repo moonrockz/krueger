@@ -55,8 +55,10 @@ fn is_blank(text : String) -> Bool {
 }
 
 ///|
-/// Attribute lines of a doc comment. Skips the first line, fenced code
-/// blocks and indented code blocks (4 spaces after a blank line).
+/// Attribute lines of a doc comment. An attribute starts with a line that
+/// begins with `@` and runs until a blank line or the next `@` line. Skips
+/// the first line, fenced code blocks and indented code blocks (4 spaces
+/// after a blank line).
 fn raw_attributes(lines : Array[DocLine]) -> Array[RawAttribute] {
   let found : Array[RawAttribute] = []
   let mut current : RawAttribute? = None
@@ -96,10 +98,11 @@ fn raw_attributes(lines : Array[DocLine]) -> Array[RawAttribute] {
       let attribute = { lines: [line], }
       found.push(attribute)
       current = Some(attribute)
-    } else if text.has_prefix(" ") && current is Some(attribute) {
+    } else if current is Some(attribute) {
+      // An attribute runs until a blank line or the next `@` line.
+      // elm-format may remove the indentation of these lines, so it does not
+      // matter.
       attribute.lines.push(line)
-    } else {
-      current = None
     }
   }
   found
@@ -290,6 +293,9 @@ fn parse_attribute(
     shift_token(t, first, name_end)
   })
   let c = Cursor::new(tokens, dialect)
+  // Attribute values are not laid out like Elm code: elm-format may move
+  // continuation lines to column 1.
+  c.indent = 0
   let arguments = []
   while !c.at_end() {
     let argument = sub_expression(c) catch {
