@@ -131,13 +131,13 @@ Feature: Elm lexer
       lower:a lower:b lower:c
       """
 
-  Scenario: Columns after a character outside the BMP count UTF-16 code units
+  Scenario: Columns after a character outside the BMP count code points
     Given Elm source:
       """elm
       x = "🌈" y
       """
     When I tokenize the source
-    Then token 4 starts at "1:10"
+    Then token 4 starts at "1:9"
 
   Scenario Outline: Reject characters Elm does not allow
     Given Elm source:

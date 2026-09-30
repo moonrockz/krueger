@@ -17,7 +17,8 @@ pub(all) struct RawToken {
 } derive(Eq, Debug)
 
 ///|
-/// Position in the source. Columns count UTF-16 code units, as elm/parser does.
+/// Position in the source. Columns count code points, as elm-syntax does: the
+/// low half of a surrogate pair does not add a column.
 priv struct Cursor {
   text : String
   mut pos : Int
@@ -52,12 +53,17 @@ fn Cursor::position(self : Cursor) -> Position {
 }
 
 ///|
-/// Move one code unit forward, tracking lines and columns.
+/// Move one code unit forward, tracking lines and columns. Does nothing at
+/// the end of the input.
 fn Cursor::advance(self : Cursor) -> Unit {
-  if self.at() == '\n'.to_int() {
+  if self.done() {
+    return
+  }
+  let c = self.at()
+  if c == '\n'.to_int() {
     self.line += 1
     self.column = 1
-  } else {
+  } else if c < 0xDC00 || c > 0xDFFF {
     self.column += 1
   }
   self.pos += 1
@@ -216,6 +222,20 @@ fn skip_quoted(cursor : Cursor, close : String, multiline : Bool) -> Bool {
 }
 
 ///|
+/// Skip up to and including `close`, with no escapes (GLSL blocks). Returns
+/// whether `close` was found.
+fn skip_until(cursor : Cursor, close : String) -> Bool {
+  while !cursor.done() {
+    if cursor.starts_with(close) {
+      cursor.advance_by(close.length())
+      return true
+    }
+    cursor.advance()
+  }
+  false
+}
+
+///|
 /// Skip a number: decimal or `0x` hexadecimal integer, or a float with an
 /// optional fraction and exponent. Returns whether it is a float.
 fn skip_number(cursor : Cursor) -> Bool {
@@ -299,7 +319,7 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
       Some(BlockComment)
     } else if cursor.starts_with("[glsl|") {
       cursor.advance_by(6)
-      if !skip_quoted(cursor, "|]", true) {
+      if !skip_until(cursor, "|]") {
         diagnostics.push(
           unterminated_literal({ start, end: cursor.position(), }),
         )
