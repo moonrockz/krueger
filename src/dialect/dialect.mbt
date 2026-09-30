@@ -50,6 +50,14 @@ pub(all) enum AttributeSyntax {
 /// A variant of Elm: which rejection rules run, and the extension data (operator
 /// table, extra reserved words, extra operator symbols) the scanner and the
 /// parser read. The AST shape is elm-syntax 7.3.9 in every dialect.
+///
+/// - An extra operator symbol must start with a character the lexer already
+///   treats as a symbol (`+ - / * = . < > : & | ^ ?`) and must not start with
+///   `--` (a line comment).
+/// - An extra reserved word must not be `alias`, `infix` or `effect`: the
+///   parser reads those by name.
+/// - `{ ..d, field: value }` shares `rules` and `operators` with `d`; copy them
+///   before changing either.
 pub(all) struct Dialect {
   name : String
   rules : @hashset.HashSet[Rule]

@@ -145,11 +145,13 @@ let symbol_tokens : Array[String] = [
 
 ///|
 /// The dialect's extra operator symbols plus the standard ones, longest first.
+/// Empty symbols are ignored: they would match without moving the cursor.
 fn symbols_of(dialect : @dialect.Dialect) -> Array[String] {
-  if dialect.operator_symbols.is_empty() {
+  let extra = dialect.operator_symbols.filter(s => s != "")
+  if extra.is_empty() {
     return symbol_tokens
   }
-  let all = [..dialect.operator_symbols, ..symbol_tokens]
+  let all = [..extra, ..symbol_tokens]
   all.sort_by((a, b) => b.length().compare(a.length()))
   all
 }

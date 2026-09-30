@@ -94,3 +94,19 @@ test "the default scanner uses the dialect it was built with" {
     Keyword(Custom("forall")),
   ])
 }
+
+///|
+test "an empty operator symbol in a dialect is ignored" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  let custom = { ..d, operator_symbols: [""], }
+  @expect.expect(kinds_in("a + b", custom)).to_equal([
+    Identifier,
+    Operator("+"),
+    Identifier,
+  ])
+  guard lex_raw({ module_name: None, text: "a & b", }, dialect=custom)
+    is Err(errs) else {
+    fail("expected KR-SCAN-003")
+  }
+  @expect.expect(errs.diagnostics.map(e => e.code)).to_equal(["KR-SCAN-003"])
+}
