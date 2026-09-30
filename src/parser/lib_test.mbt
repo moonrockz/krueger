@@ -459,3 +459,33 @@ test "a doc comment on a failing declaration is not also reported as stray" {
   )
   @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
 }
+
+///|
+fn chain(op : String, terms : Int, tail : String) -> String {
+  let sb = StringBuilder()
+  sb.write_string("module Main exposing (..)\n\n\nf =\n    1")
+  for _ in 0..<terms {
+    sb.write_string(op + "1")
+  }
+  sb.to_string() + tail + "\n"
+}
+
+///|
+test "very long operator chains are a diagnostic, not a stack overflow" {
+  for text in [chain(" + ", 5000, ""), chain(" :: ", 5000, " :: []")] {
+    let result = parse(text)
+    @expect.expect(result.diagnostics.map(d => d.title)).to_equal([
+      "TOO MUCH NESTING",
+    ])
+  }
+}
+
+///|
+test "long operator chains still parse and encode" {
+  for text in [chain(" + ", 300, ""), chain(" :: ", 100, " :: []")] {
+    let result = parse(text)
+    @expect.expect(codes(result)).to_equal([])
+    let json = @ast.encode_file(ast(result)).stringify()
+    @expect.expect(json.length() > 0).to_equal(true)
+  }
+}

@@ -514,6 +514,10 @@ fn[T] Cursor::with_indent(
 const MAX_DEPTH : Int = 150
 
 ///|
+/// Most operators in one left-associative chain (`a + b + c ...`).
+const MAX_CHAIN : Int = 400
+
+///|
 /// Run `body` one nesting level deeper; fail above `MAX_DEPTH`.
 fn[T] Cursor::nested(
   self : Cursor,
