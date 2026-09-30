@@ -144,6 +144,19 @@ let symbol_tokens : Array[String] = [
 ]
 
 ///|
+/// The dialect's extra operator symbols plus the standard ones, longest first.
+/// Empty symbols are ignored: they would match without moving the cursor.
+fn symbols_of(dialect : @dialect.Dialect) -> Array[String] {
+  let extra = dialect.operator_symbols.filter(s => s != "")
+  if extra.is_empty() {
+    return symbol_tokens
+  }
+  let all = [..extra, ..symbol_tokens]
+  all.sort_by((a, b) => b.length().compare(a.length()))
+  all
+}
+
+///|
 fn symbol_kind(symbol : String) -> TokenKind {
   match symbol {
     "=" => Equals
@@ -157,7 +170,7 @@ fn symbol_kind(symbol : String) -> TokenKind {
 }
 
 ///|
-fn keyword_of(name : String) -> KeywordKind? {
+fn keyword_of(name : String, dialect : @dialect.Dialect) -> KeywordKind? {
   match name {
     "module" => Some(Module)
     "exposing" => Some(Exposing)
@@ -173,6 +186,7 @@ fn keyword_of(name : String) -> KeywordKind? {
     "of" => Some(Of)
     "port" => Some(Port)
     "where" => Some(Where)
+    _ if dialect.reserved_words.contains(name) => Some(Custom(name))
     _ => None
   }
 }
@@ -281,7 +295,11 @@ fn skip_number(cursor : Cursor) -> Bool {
 /// `KR-SCAN-001` unterminated block comment, `KR-SCAN-002` malformed doc
 /// comment, `KR-SCAN-003` a character Elm does not allow here, `KR-SCAN-004`
 /// an unterminated string, char or GLSL literal.
-pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
+pub fn lex_raw(
+  source : SourceText,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+) -> Result[Array[RawToken], ScanErrorList] {
+  let symbols = symbols_of(dialect)
   let cursor = Cursor::new(source.text)
   let tokens : Array[RawToken] = []
   let diagnostics = []
@@ -357,14 +375,14 @@ pub fn lex_raw(source : SourceText) -> Result[Array[RawToken], ScanErrorList] {
       while is_name_char(cursor.at()) {
         cursor.advance()
       }
-      match keyword_of(cursor.slice(start.offset)) {
+      match keyword_of(cursor.slice(start.offset), dialect) {
         Some(k) => Some(Significant(Keyword(k)))
         None => Some(Significant(Identifier))
       }
     } else if is_symbol_char(c) {
-      match symbol_tokens.search_by(s => cursor.starts_with(s)) {
+      match symbols.search_by(s => cursor.starts_with(s)) {
         Some(i) => {
-          let symbol = symbol_tokens[i]
+          let symbol = symbols[i]
           cursor.advance_by(symbol.length())
           Some(Significant(symbol_kind(symbol)))
         }

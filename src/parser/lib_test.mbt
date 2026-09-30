@@ -386,3 +386,67 @@ test "an operator at the branch column after the last branch applies to the case
   }
   @expect.expect(left.range).to_equal(range(5, 5, 6, 15))
 }
+
+///|
+fn parse_with(text : String, dialect : @dialect.Dialect) -> @parser.ParseResult {
+  let source = @scanner.SourceText::{ module_name: Some("Main"), text, }
+  @parser.parse_module(source, @scanner.DefaultScanner::new(dialect~), dialect~)
+}
+
+///|
+test "a dialect operator table decides precedence" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  // `+` binds looser than `*` normally; swap them.
+  let swapped = {
+    ..d,
+    operators: d.operators.map(o => {
+      match o.symbol {
+        "+" => { ..o, precedence: 7, }
+        "*" => { ..o, precedence: 6, }
+        _ => o
+      }
+    }),
+  }
+  let text = "module Main exposing (..)\n\n\nf = a + b * c\n"
+  let normal = body_of(ast(parse_with(text, d)), "f")
+  guard normal.value is OperatorApplication("+", _, _, _) else {
+    fail("expected + on top")
+  }
+  let custom = body_of(ast(parse_with(text, swapped)), "f")
+  guard custom.value is OperatorApplication("*", _, _, _) else {
+    fail("expected * on top")
+  }
+}
+
+///|
+test "a lexed symbol without an operator entry is an unknown operator" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  let custom = { ..d, operator_symbols: ["<=>"], }
+  let result = parse_with(
+    "module Main exposing (..)\n\n\nf = a <=> b\n", custom,
+  )
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
+  @expect.expect(result.diagnostics[0].message).to_contain(
+    "unknown infix operator `<=>`",
+  )
+}
+
+///|
+test "a dialect operator entry makes a new operator usable" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  let custom = {
+    ..d,
+    operator_symbols: ["<=>"],
+    operators: [
+      ..d.operators,
+      { symbol: "<=>", precedence: 4, direction: Non, },
+    ],
+  }
+  let result = parse_with(
+    "module Main exposing (..)\n\n\nf = a <=> b\n", custom,
+  )
+  @expect.expect(codes(result)).to_equal([])
+  guard body_of(ast(result), "f").value is OperatorApplication("<=>", Non, _, _) else {
+    fail("expected <=>")
+  }
+}

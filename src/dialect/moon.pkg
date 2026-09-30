@@ -1,8 +1,9 @@
 import {
   "moonbitlang/core/builtin",
-  "moonrockz/krueger/dialect",
+  "moonbitlang/core/hashset",
+  "moonrockz/krueger/ast",
 }
 
 import {
   "moonrockz/expect",
-} for "wbtest"
+} for "test"

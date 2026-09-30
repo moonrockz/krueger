@@ -1,0 +1,56 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/dialect"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/hashset",
+  "moonrockz/krueger/ast",
+}
+
+// Values
+pub fn standard_operators() -> Array[OperatorDef]
+
+// Errors
+
+// Types and methods
+pub(all) enum AttributeSyntax {
+  Off
+  DocComment
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Dialect {
+  name : String
+  rules : @hashset.HashSet[Rule]
+  operators : Array[OperatorDef]
+  reserved_words : Array[String]
+  operator_symbols : Array[String]
+  attributes : AttributeSyntax
+}
+pub fn Dialect::elm_0_19_1() -> Self
+pub fn Dialect::elm_syntax_7_3_9() -> Self
+pub fn Dialect::has(Self, Rule) -> Bool
+pub fn Dialect::operator(Self, String) -> OperatorDef?
+
+pub(all) struct OperatorDef {
+  symbol : String
+  precedence : Int
+  direction : @ast.InfixDirection
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Rule {
+  LeadingZero
+  EmptyHex
+  BadUnicodeEscape
+  CharLength
+  IndentedContinuation
+  LetDeclarationColumn
+  CaseBodyColumn
+  ModuleLevelColumn
+  TouchingOperators
+  SpacedOperatorName
+} derive(Eq, Hash, @debug.Debug)
+pub fn Rule::name(Self) -> String
+
+// Type aliases
+
+// Traits

@@ -34,8 +34,8 @@ test "root package exposes scanner tokenize entrypoint" {
 
 ///|
 test "root package exposes parser entrypoints" {
-  let _ = @krueger.parse_module
-  let _ = @krueger.parse_tokens
+  let _ = (s : @krueger.SourceText) => @krueger.parse_module(s)
+  let _ = (t : @krueger.TokenStream) => @krueger.parse_tokens(t)
   assert_true(true)
 }
 
@@ -120,4 +120,26 @@ test "diagnostic_description describes every scanner and parser code" {
     Some("Invalid or unknown character sequence"),
   )
   @expect.expect(@krueger.diagnostic_description("KR-NOPE-999")).to_equal(None)
+}
+
+///|
+test "root parse_module and tokenize take a dialect" {
+  let d = @krueger.Dialect::elm_syntax_7_3_9()
+  let source = @krueger.SourceText::{
+    module_name: Some("Main"),
+    text: "module Main exposing (..)\n\n\nf = 1\n",
+  }
+  @expect.expect(@krueger.parse_module(source, dialect=d).diagnostics).to_equal([],
+  )
+  let custom = { ..d, reserved_words: ["forall"], }
+  guard @krueger.tokenize(
+      { module_name: None, text: "forall", },
+      dialect=custom,
+    )
+    is Ok(stream) else {
+    fail("tokenize failed")
+  }
+  @expect.expect(stream.tokens.map(t => t.kind)).to_equal([
+    Keyword(Custom("forall")),
+  ])
 }

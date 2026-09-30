@@ -178,9 +178,12 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 ///|
 /// Parse a token stream into an elm-syntax AST, a CST and diagnostics,
 /// following stil4m/elm-syntax 7.3.9.
-pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
+pub fn parse_tokens(
+  tokens : @scanner.TokenStream,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+) -> ParseResult {
   let stream = tokens.tokens
-  let c = Cursor::new(stream)
+  let c = Cursor::new(stream, dialect)
   let diagnostics = []
   let attached = []
   let listed = []
@@ -343,13 +346,15 @@ pub fn parse_tokens(tokens : @scanner.TokenStream) -> ParseResult {
 }
 
 ///|
-/// Tokenize `source` with `scanner` and parse it.
+/// Tokenize `source` with `scanner` and parse it in `dialect`. The caller
+/// builds `scanner` for the same dialect.
 pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> ParseResult {
   match scanner.tokenize(source) {
-    Ok(tokens) => parse_tokens(tokens)
+    Ok(tokens) => parse_tokens(tokens, dialect~)
     Err(errs) => { ast: None, cst: None, diagnostics: errs.diagnostics, }
   }
 }

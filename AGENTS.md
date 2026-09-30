@@ -26,6 +26,7 @@ The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax outp
 moonrockz/krueger
 ├── src/                  # The library (sole artifact for now)
 │   ├── lib.mbt           # Package entry point; re-exports the public types
+│   ├── dialect/          # Dialect: rejection rules, operator table, extension hooks
 │   ├── scanner/          # Hand-written Elm 0.19.1 lexer, trivia, diagnostics
 │   ├── parser/           # Parser: tokens → AST + CST + diagnostics
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
@@ -86,6 +87,21 @@ summary reads them. Keep this table and that file in step when you add a code.
     file) is an error (`KR-PARSE-007`); elm-syntax rejects such files.
 - `File.comments` holds every regular comment and the module documentation, in
   source order.
+
+### Dialects
+
+A `Dialect` (`src/dialect`) selects what krueger accepts and rejects, and carries
+extension data for Elm-like languages:
+
+- `Dialect::elm_0_19_1()` is the default: it rejects what `elm make` 0.19.1 rejects as
+  syntax. `Dialect::elm_syntax_7_3_9()` rejects exactly what elm-syntax 7.3.9 rejects.
+- Fields: `rules` (the rejection `Rule`s that run), `operators` (the infix operator
+  table), `reserved_words` and `operator_symbols` (extra keywords and operator symbols
+  for the lexer), `attributes` (doc-comment attributes on or off).
+- `tokenize`, `parse_module`, `parse_tokens` and `DefaultScanner::new` take an optional
+  `dialect` argument; without it they use `elm-0.19.1`. Build the scanner and the parser
+  with the same dialect.
+- The AST shape is elm-syntax 7.3.9 in every dialect.
 
 ## Library Dependencies
 
@@ -255,6 +271,9 @@ corpus of real packages (`tests/corpus/`).
 - `mise run test:parity` prints the scoreboard: files, tokenized, parsed (no
   diagnostics), matched (krueger's `@ast.encode_file` hash equals the golden). It fails
   when a count drops below `tests/corpus/baseline.json`. CI runs it in the `parity` job.
+- Scoring parses in the `elm-syntax-7.3.9` dialect. A second pass parses every corpus
+  file in the default `elm-0.19.1` dialect and fails on any error, because `elm make`
+  accepts published packages.
 - `test:parity` and `parity:ratchet` write reports to `_build/reports/parity/`:
   `parity.html` (open in a browser; filter by status), `parity.json` (full results),
   `parity.xml` (JUnit: one testsuite per package; unmatched files are `skipped`, only

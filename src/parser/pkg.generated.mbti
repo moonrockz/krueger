@@ -5,13 +5,14 @@ import {
   "moonbitlang/core/debug",
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
+  "moonrockz/krueger/dialect",
   "moonrockz/krueger/scanner",
 }
 
 // Values
-pub fn[S : @scanner.Scanner] parse_module(@scanner.SourceText, S) -> ParseResult
+pub fn[S : @scanner.Scanner] parse_module(@scanner.SourceText, S, dialect? : @dialect.Dialect) -> ParseResult
 
-pub fn parse_tokens(@scanner.TokenStream) -> ParseResult
+pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> ParseResult
 
 // Errors
 
