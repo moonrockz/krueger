@@ -465,7 +465,7 @@ When ending a work session:
 ### Why bd?
 
 - Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: Auto-syncs to JSONL for version control
+- Git-friendly: syncs through a Dolt remote on the Git origin (`refs/dolt/data`), separate from source branches
 - Agent-optimized: JSON output, ready work detection, discovered-from links
 - Prevents duplicate tracking systems and confusion
 
@@ -531,9 +531,10 @@ bd close bd-42 --reason "Completed" --json
   history under `refs/dolt/data`, separate from source branches:
   - `bd sync` — pull, check for conflicts, and push in one step.
   - `bd dolt pull` / `bd dolt push` — the individual steps.
-- `.beads/issues.jsonl` is a readable snapshot for code review. It is not the
-  source of truth. Refresh it before you commit issue changes:
-  `bd export -o .beads/issues.jsonl`.
+- Issue changes need no commit or pull request: `bd sync` publishes them to
+  `refs/dolt/data`.
+- `.beads/issues.jsonl` is a passive export (`bd export -o .beads/issues.jsonl`)
+  for viewers and interchange. It is gitignored; do not commit it.
 
 ### Setup on a Fresh Clone
 
