@@ -72,7 +72,8 @@ test "root package parse_tokens wraps parser parse_tokens" {
     fail("expected tokenize success")
   }
   let result = @krueger.parse_tokens(stream)
-  @expect.expect(result.diagnostics.map(d => d.code)).to_equal(["KR-PARSE-005"])
+  @expect.expect(result.diagnostics.map(d => d.code)).to_equal([])
+  @expect.expect(result.ast.map(f => f.declarations.length())).to_equal(Some(1))
   @expect.expect(result.cst.map(c => c.declarations.length())).to_equal(Some(1))
 }
 
@@ -110,6 +111,7 @@ test "diagnostic_description describes every scanner and parser code" {
   let codes = [
     "KR-SCAN-001", "KR-SCAN-002", "KR-SCAN-003", "KR-PARSE-001", "KR-PARSE-002",
     "KR-PARSE-003", "KR-PARSE-004", "KR-PARSE-005", "KR-PARSE-006", "KR-PARSE-007",
+    "KR-PARSE-008",
   ]
   for code in codes {
     @expect.expect(@krueger.diagnostic_description(code) is Some(_)).to_be_true()

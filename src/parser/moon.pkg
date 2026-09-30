@@ -3,8 +3,13 @@ import {
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
   "moonrockz/krueger/scanner",
+  "moonbitlang/core/string",
 }
 
 import {
   "moonrockz/expect",
 } for "test"
+
+import {
+  "moonrockz/expect",
+} for "wbtest"

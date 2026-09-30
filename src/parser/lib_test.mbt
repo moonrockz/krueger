@@ -114,25 +114,29 @@ test "imports keep their alias and exposing list" {
 }
 
 ///|
-test "function declarations are reported as unsupported and kept in the cst" {
+test "function declarations are parsed and kept in the cst" {
   let result = parse("module Main exposing (add)\nadd x = x + 1")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-005"])
-  @expect.expect(ast(result).declarations.length()).to_equal(0)
+  @expect.expect(codes(result)).to_equal([])
+  guard ast(result).declarations is [{ value: FunctionDeclaration(f), .. }] else {
+    fail("expected one function declaration")
+  }
+  @expect.expect(f.declaration.value.name.value).to_equal("add")
   guard result.cst is Some(cst) else { fail("expected a CST") }
-  guard cst.declarations is [Function(f)] else {
+  guard cst.declarations is [Function(cst_f)] else {
     fail("expected one function in the CST")
   }
-  @expect.expect(f.name).to_equal("add")
-  @expect.expect(f.args).to_equal(["x"])
-  assert_node_span_matches_tokens(f.span, f.tokens)
+  @expect.expect(cst_f.name).to_equal("add")
+  @expect.expect(cst_f.args).to_equal(["x"])
+  assert_node_span_matches_tokens(cst_f.span, cst_f.tokens)
 }
 
 ///|
-test "cst keeps every declaration while the ast keeps supported ones" {
+test "ast and cst keep every declaration" {
   let result = parse(
     "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
   )
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-005", "KR-PARSE-005"])
+  @expect.expect(codes(result)).to_equal([])
+  @expect.expect(ast(result).declarations.length()).to_equal(3)
   guard result.cst is Some(cst) else { fail("expected a CST") }
   guard cst.declarations
     is [TypeAlias(type_alias), UnionType(union), Function(f)] else {
@@ -167,10 +171,20 @@ test "custom type with one simple constructor becomes a custom type declaration"
 }
 
 ///|
-test "custom type with arguments the parser cannot type is unsupported" {
+test "custom type arguments can be any type" {
   let result = parse("module Main exposing (Box)\ntype Box = Box (Maybe Int)")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-005"])
-  @expect.expect(ast(result).declarations.length()).to_equal(0)
+  @expect.expect(codes(result)).to_equal([])
+  guard custom_type(ast(result), "Box") is Some(t) else {
+    fail("expected custom type Box")
+  }
+  guard t.constructors is [{ value: { arguments: [arg], .. }, .. }] else {
+    fail("expected one constructor with one argument")
+  }
+  // A parenthesized type is the inner type with a range over the parens.
+  @expect.expect(arg.range).to_equal(range(2, 16, 2, 27))
+  guard arg.value is Typed({ value: ([], "Maybe"), .. }, [_]) else {
+    fail("expected Maybe Int")
+  }
 }
 
 ///|
@@ -255,7 +269,8 @@ test "malformed type declaration is reported" {
 ///|
 test "malformed function declaration is reported" {
   let result = parse("module Main exposing (add)\nadd x x + 1\nok y = y")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-004", "KR-PARSE-005"])
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
+  @expect.expect(ast(result).declarations.length()).to_equal(1)
 }
 
 ///|
@@ -277,4 +292,97 @@ test "empty stream has no ast and an empty cst span" {
   @expect.expect(result.ast is None).to_be_true()
   guard result.cst is Some(cst) else { fail("expected a CST") }
   @expect.expect(cst.span is None).to_be_true()
+}
+
+///|
+fn body_of(file : @ast.File, name : String) -> @ast.Node[@ast.Expression] raise {
+  for decl in file.declarations {
+    if decl.value is FunctionDeclaration(f) &&
+      f.declaration.value.name.value == name {
+      return f.declaration.value.expression
+    }
+  }
+  fail("no function \{name}")
+}
+
+///|
+test "unicode escapes out of range become the replacement character" {
+  let result = parse(
+    "module Main exposing (..)\n\n\na = '\\u{110000}'\n\n\nb = \"\\u{FFFFFFFFFFFF}\"\n\n\nc = '\\u{D800}'\n",
+  )
+  @expect.expect(codes(result)).to_equal([])
+  let file = ast(result)
+  @expect.expect(body_of(file, "a").value).to_equal(CharLiteral('\u{FFFD}'))
+  @expect.expect(body_of(file, "b").value).to_equal(Literal("\u{FFFD}"))
+  @expect.expect(body_of(file, "c").value).to_equal(CharLiteral('\u{FFFD}'))
+}
+
+///|
+fn nested(
+  open : String,
+  middle : String,
+  close : String,
+  depth : Int,
+) -> String {
+  let sb = StringBuilder()
+  for _ in 0..<depth {
+    sb.write_string(open)
+  }
+  sb.write_string(middle)
+  for _ in 0..<depth {
+    sb.write_string(close)
+  }
+  sb.to_string()
+}
+
+///|
+test "deep nesting is a diagnostic, not a stack overflow" {
+  let header = "module Main exposing (..)\n\n\n"
+  let deep = 5000
+  let expr = parse(header + "f = " + nested("(", "1", ")", deep) + "\n")
+  @expect.expect(codes(expr)).to_equal(["KR-PARSE-004"])
+  let unclosed = parse(header + "f = " + nested("(", "1", "", deep) + "\n")
+  @expect.expect(codes(unclosed)).to_equal(["KR-PARSE-004"])
+  let list = parse(header + "f = " + nested("[", "1", "]", deep) + "\n")
+  @expect.expect(codes(list)).to_equal(["KR-PARSE-004"])
+  let typ = parse(header + "f : " + nested("(", "Int", ")", deep) + "\nf = 1\n")
+  @expect.expect(codes(typ)).to_equal(["KR-PARSE-004"])
+  let pat = parse(header + "f " + nested("(", "x", ")", deep) + " = 1\n")
+  @expect.expect(codes(pat)).to_equal(["KR-PARSE-004"])
+  let type_alias = parse(
+    header + "type alias A = " + nested("(", "Int", ")", deep) + "\n",
+  )
+  @expect.expect(codes(type_alias)).to_equal(["KR-PARSE-003"])
+}
+
+///|
+test "moderate nesting still parses" {
+  let header = "module Main exposing (..)\n\n\n"
+  let depth = 100
+  @expect.expect(
+    codes(parse(header + "f = " + nested("(", "1", ")", depth) + "\n")),
+  ).to_equal([])
+  @expect.expect(
+    codes(parse(header + "f = " + nested("[", "1", "]", depth) + "\n")),
+  ).to_equal([])
+  @expect.expect(
+    codes(parse(header + "f : " + nested("(", "Int", ")", depth) + "\nf = 1\n")),
+  ).to_equal([])
+  @expect.expect(
+    codes(parse(header + "f " + nested("(", "x", ")", depth) + " = 1\n")),
+  ).to_equal([])
+}
+
+///|
+test "an operator at the branch column after the last branch applies to the case" {
+  let result = parse(
+    "module Main exposing (..)\n\n\nf x =\n    case x of\n        A -> 1\n        + 2\n",
+  )
+  @expect.expect(codes(result)).to_equal([])
+  let body = body_of(ast(result), "f")
+  @expect.expect(body.range).to_equal(range(5, 5, 7, 12))
+  guard body.value is OperatorApplication("+", Left, left, _) else {
+    fail("expected `+` applied to the case")
+  }
+  @expect.expect(left.range).to_equal(range(5, 5, 6, 15))
 }
