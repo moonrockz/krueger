@@ -121,6 +121,24 @@ extension data for Elm-like languages:
   `dialect` argument; without it they use `elm-0.19.1`. Build the scanner and the parser
   with the same dialect.
 - The AST shape is elm-syntax 7.3.9 in every dialect.
+- Rejection rules (`Rule`, named in diagnostics as `[rule: <name>]`):
+
+| Rule | elm-0.19.1 | elm-syntax-7.3.9 | Rejects |
+|------|------------|------------------|---------|
+| `indented-continuation` | on | on | a token not right of the current indent (except item starts) |
+| `let-declaration-column` | on | on | a let declaration at or left of its `let` |
+| `module-level-column` | on | on | a module header or import not in column 1 |
+| `char-length` | on | on | a char literal with more than one character |
+| `empty-hex` | on | on | `0x` without digits |
+| `spaced-operator-name` | on | on | `( + )` in an exposing list |
+| `leading-zero` | on | off | `007`, `01` |
+| `uppercase-hex-prefix` | on | off | `0X1F` |
+| `exponent-without-digits` | on | off | `1e` |
+| `bad-unicode-escape` | on | off | a code point above `10FFFF` |
+
+  Both built-in dialects reject what both oracles reject; a rule that only one oracle
+  enforces is on only in that dialect. The rejection check (`tests/rejection`) decides
+  membership.
 
 ## Library Dependencies
 
