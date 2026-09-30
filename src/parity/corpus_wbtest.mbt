@@ -156,7 +156,9 @@ fn mismatch_report(key : String, actual : Json?) -> String {
 
 ///|
 /// Score every corpus file in the lock and return one result per file.
-fn score() -> Array[FileReport] raise {
+/// Score every corpus file; also returns the files with errors in the
+/// default dialect (`elm-0.19.1`).
+fn score() -> (Array[FileReport], Array[String]) raise {
   let entries = parse_lock(@fs.read_file_to_string(lock_path))
   let problems = source_problems(entries, manifest_sources())
   if !problems.is_empty() {
@@ -230,13 +232,7 @@ fn score() -> Array[FileReport] raise {
   println(
     "\{@krueger.Dialect::elm_0_19_1().name}: \{default_errors.length()} corpus files with errors",
   )
-  if !default_errors.is_empty() {
-    fail(
-      "corpus files with errors in the default dialect:\n" +
-      default_errors.iter().take(10).collect().join("\n"),
-    )
-  }
-  files
+  (files, default_errors)
 }
 
 ///|
@@ -303,12 +299,20 @@ test "parity corpus" {
     Some(WriteLock) => write_lock()
     Some(mode) => {
       let baseline = read_baseline()
+      let (files, default_errors) = score()
       let report = parity_report(
-        score(),
+        files,
         baseline,
         commit=@env.get_env_var("GITHUB_SHA"),
       )
       write_reports(report)
+      // Reports are written first, so CI keeps them when this fails.
+      if !default_errors.is_empty() {
+        fail(
+          "corpus files with errors in the default dialect:\n" +
+          default_errors.iter().take(10).collect().join("\n"),
+        )
+      }
       match mode {
         Check => {
           if baseline is None {

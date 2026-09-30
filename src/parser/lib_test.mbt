@@ -451,3 +451,11 @@ test "a dialect operator entry makes a new operator usable" {
     fail("expected <=>")
   }
 }
+
+///|
+test "a doc comment on a failing declaration is not also reported as stray" {
+  let result = parse(
+    "module Main exposing (..)\n\n\n{-| The answer. -}\nf =\n    (\n\n\ng =\n    1\n",
+  )
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
+}

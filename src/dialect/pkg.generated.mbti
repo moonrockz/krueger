@@ -31,6 +31,7 @@ pub fn Dialect::elm_0_19_1() -> Self
 pub fn Dialect::elm_syntax_7_3_9() -> Self
 pub fn Dialect::has(Self, Rule) -> Bool
 pub fn Dialect::operator(Self, String) -> OperatorDef?
+pub fn Dialect::validate(Self) -> Array[String]
 
 pub(all) struct OperatorDef {
   symbol : String

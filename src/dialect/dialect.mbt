@@ -185,3 +185,48 @@ pub fn Dialect::operator(self : Dialect, symbol : String) -> OperatorDef? {
   }
   None
 }
+
+///|
+/// Problems with the dialect's extension data, as messages (empty when it is
+/// valid). The scanner and parser do not check these; call this when a
+/// dialect comes from outside (a config file, a CLI flag).
+pub fn Dialect::validate(self : Dialect) -> Array[String] {
+  let problems = []
+  let seen : Array[String] = []
+  for op in self.operators {
+    if op.symbol == "" {
+      problems.push("an operator has an empty symbol")
+      continue
+    }
+    if seen.contains(op.symbol) {
+      problems.push("operator `\{op.symbol}` is defined twice")
+    }
+    seen.push(op.symbol)
+    if op.precedence < 1 || op.precedence > 9 {
+      problems.push(
+        "operator `\{op.symbol}` has precedence \{op.precedence}; precedences are 1 to 9",
+      )
+    }
+  }
+  for symbol in self.operator_symbols {
+    match symbol.get_char(0) {
+      None => problems.push("operator symbol `` is empty")
+      Some(c) =>
+        if !"+-/*=.<>:&|^?".contains_char(c) {
+          problems.push(
+            "operator symbol `\{symbol}` does not start with a symbol character",
+          )
+        } else if symbol.has_prefix("--") {
+          problems.push("operator symbol `\{symbol}` starts a line comment")
+        }
+    }
+  }
+  for word in self.reserved_words {
+    if ["alias", "infix", "effect"].contains(word) {
+      problems.push(
+        "reserved word `\{word}` is a name the parser reads by its text",
+      )
+    }
+  }
+  problems
+}
