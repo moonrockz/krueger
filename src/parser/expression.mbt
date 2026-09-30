@@ -229,6 +229,23 @@ fn weird_number_check(
   let text = number.lexeme
   let is_decimal = !text.has_prefix("0x")
   if c.dialect.has(LeadingZero) &&
+    (text.has_prefix("0e") || text.has_prefix("0E")) {
+    raise c.error_at(
+      "a number cannot start with 0 before an exponent [rule: leading-zero]",
+      {
+        start: shift_position(number.span.start, 1),
+        end: shift_position(number.span.start, 1),
+      },
+      "WEIRD NUMBER",
+      "I thought I was reading a number, but I ran into some weird stuff here:",
+      [
+        plain("I recognize numbers in the following formats:"),
+        Example("42\n3.14\n6.022e23\n0x002B"),
+        plain("So is there a way to write it like one of those?"),
+      ],
+    )
+  }
+  if c.dialect.has(LeadingZero) &&
     is_decimal &&
     text.length() > 1 &&
     text.has_prefix("0") &&
@@ -544,6 +561,12 @@ fn case_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
   ignore(c.expect(Keyword(Of), "`of`"))
   guard c.peek() is Some(first) else { raise c.fail("a case branch") }
   let column = first.span.start.column
+  if c.dialect.has(IndentedContinuation) && column <= c.indent {
+    c.layout_failure = true
+    let error = c.fail("a case branch indented more")
+    c.layout_failure = false
+    raise error
+  }
   let cases = c.with_indent(column, () => {
     let cases = [case_branch(c)]
     // A token at the branch column that cannot start a pattern (for example

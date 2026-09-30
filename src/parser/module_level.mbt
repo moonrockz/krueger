@@ -151,15 +151,37 @@ fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
 
 ///|
 /// `import A.B as C exposing (...)`; the range ends at the last part.
-fn import_declaration(c : Cursor) -> @ast.Node[@ast.Import] raise SyntaxError {
-  c.within(Import, () => import_declaration_body(c))
+fn import_declaration(
+  c : Cursor,
+  first : Bool,
+) -> @ast.Node[@ast.Import] raise SyntaxError {
+  c.within(Import, () => import_declaration_body(c, first))
 }
 
 ///|
 fn import_declaration_body(
   c : Cursor,
+  first : Bool,
 ) -> @ast.Node[@ast.Import] raise SyntaxError {
-  module_level_column(c, "import")
+  // elm-syntax checks the column of the first import only; elm make reads an
+  // indented import as part of the one before.
+  if first {
+    module_level_column(c, "import")
+  } else if c.dialect.has(ImportColumn) &&
+    c.peek() is Some(t) &&
+    t.span.start.column != 1 {
+    raise c.error_at(
+      "an import must start in column 1 [rule: import-column]",
+      t.span,
+      "UNFINISHED IMPORT",
+      "I am partway through parsing an import, but I got stuck here:",
+      [
+        plain(
+          "Each import starts at the beginning of its own line. Delete the spaces before `import`.",
+        ),
+      ],
+    )
+  }
   let keyword = c.expect(Keyword(Import), "`import`")
   let name = module_name(c)
   let mut end = name.range.end

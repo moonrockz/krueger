@@ -12,6 +12,7 @@ pub(all) enum Rule {
   SpacedOperatorName
   UppercaseHexPrefix
   ExponentWithoutDigits
+  ImportColumn
 } derive(Eq, Hash, Debug)
 
 ///|
@@ -28,6 +29,7 @@ pub fn Rule::name(self : Rule) -> String {
     SpacedOperatorName => "spaced-operator-name"
     UppercaseHexPrefix => "uppercase-hex-prefix"
     ExponentWithoutDigits => "exponent-without-digits"
+    ImportColumn => "import-column"
   }
 }
 
@@ -140,6 +142,7 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
       UppercaseHexPrefix,
       ExponentWithoutDigits,
       BadUnicodeEscape,
+      ImportColumn,
     ],
   )
 }

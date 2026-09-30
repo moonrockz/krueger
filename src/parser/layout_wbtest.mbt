@@ -105,3 +105,55 @@ test "layout failures are marked right after the previous token" {
     (5, 8),
   )
 }
+
+///|
+test "the first case branch must be indented" {
+  @expect.expect(layout_title("f y =\n    case y of\n1 -> 2\n")).to_equal(
+    "UNFINISHED CASE",
+  )
+  @expect.expect(
+    first_in(
+      "module Fixture exposing (..)\n\n\nf y =\n    case y of\n1 -> 2\n",
+      @dialect.Dialect::elm_syntax_7_3_9(),
+    ),
+  ).to_equal("UNFINISHED CASE")
+}
+
+///|
+test "a layout failure gives one error, not a second one for the same token" {
+  for
+    body in [
+      "f =\n    if True then 1\nelse 2\n", "f =\n    [ 1\n, 2 ]\n", "type alias A =\nInt\n",
+      "f =\n    \\a ->\na\n",
+    ] {
+    let text = "module Fixture exposing (..)\n\n\nx =\n    1\n\n\n" + body
+    let source = @scanner.SourceText::{ module_name: Some("Fixture"), text, }
+    guard @scanner.DefaultScanner::new().tokenize(source) is Ok(tokens) else {
+      fail("scan error")
+    }
+    @expect.expect(parse_tokens(tokens).diagnostics.length()).to_equal(1)
+  }
+}
+
+///|
+test "a declaration after a failing one is still parsed" {
+  let text = "module Fixture exposing (..)\n\n\nf =\ng =\n    1\n"
+  let source = @scanner.SourceText::{ module_name: Some("Fixture"), text, }
+  guard @scanner.DefaultScanner::new().tokenize(source) is Ok(tokens) else {
+    fail("scan error")
+  }
+  let result = parse_tokens(tokens)
+  guard result.ast is Some(file) else { fail("expected an AST") }
+  @expect.expect(file.declarations.length()).to_equal(1)
+}
+
+///|
+test "only the first import must be in column 1 for elm-syntax" {
+  let text = "module Fixture exposing (..)\n\nimport Dict\n  import Set\n\n\nx =\n    1\n"
+  @expect.expect(first_in(text, @dialect.Dialect::elm_syntax_7_3_9())).to_equal(
+    "no error",
+  )
+  @expect.expect(first_in(text, @dialect.Dialect::elm_0_19_1())).to_equal(
+    "UNFINISHED IMPORT",
+  )
+}

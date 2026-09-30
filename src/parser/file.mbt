@@ -26,8 +26,34 @@ fn skip_to_top_level(c : Cursor, start : Int) -> Unit {
   if !c.at_end() && c.pos <= start {
     c.pos = start + 1
   }
-  while c.peek() is Some(t) && t.span.start.column != 1 {
+  // A token in column 1 that cannot start a declaration (a badly indented
+  // `in`, `else`, `,` or type) belongs to the failed item: skip it too, so it
+  // is not reported a second time.
+  while c.peek() is Some(t) &&
+        (t.span.start.column != 1 || !starts_declaration(c)) {
     c.pos += 1
+  }
+}
+
+///|
+/// Whether the token at the cursor can start a top-level declaration: `type`,
+/// `port`, `infix`, or a lower-case name with `=` or `:` later on its line.
+fn starts_declaration(c : Cursor) -> Bool {
+  guard c.peek() is Some(t) else { return false }
+  match t.kind {
+    Keyword(Type | Port | Import | Module) => true
+    Identifier if t.lexeme == "infix" => true
+    Identifier if is_lower(t) => {
+      let mut i = 1
+      while c.peek_at(i) is Some(n) && n.span.start.line == t.span.start.line {
+        if n.kind is (Equals | Colon) {
+          return true
+        }
+        i += 1
+      }
+      false
+    }
+    _ => false
   }
 }
 
@@ -285,10 +311,13 @@ pub fn parse_tokens(
       ),
     )
   }
+  let mut first_import = true
   while c.is_keyword(Import) {
     c.start_item()
     let start = c.pos
-    try import_declaration(c) catch {
+    let first = first_import
+    first_import = false
+    try import_declaration(c, first) catch {
       SyntaxError(message, span, problem) => {
         diagnostics.push(
           parser_error(

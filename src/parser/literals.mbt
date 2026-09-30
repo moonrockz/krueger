@@ -127,6 +127,10 @@ fn literal_problem(
           ]),
         ],
       )
+    "BAD UNICODE ESCAPE" if message.has_prefix("code point") =>
+      span_problem(title, "This is not a valid code point:", highlight, [
+        plain("The valid code points are between 0 and 10FFFF inclusive."),
+      ])
     "BAD UNICODE ESCAPE" =>
       span_problem(title, "I ran into an invalid Unicode escape:", highlight, [
         Text([

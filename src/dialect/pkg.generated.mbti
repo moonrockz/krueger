@@ -48,6 +48,7 @@ pub(all) enum Rule {
   SpacedOperatorName
   UppercaseHexPrefix
   ExponentWithoutDigits
+  ImportColumn
 } derive(Eq, Hash, @debug.Debug)
 pub fn Rule::name(Self) -> String
 
