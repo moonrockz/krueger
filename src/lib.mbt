@@ -93,6 +93,9 @@ pub using @report {
 }
 
 ///|
+pub using @syntax {type NodeRef, type Tree, kind_table}
+
+///|
 pub using @dialect {
   type Dialect,
   type OperatorDef,
