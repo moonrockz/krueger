@@ -1,0 +1,7 @@
+-- UNFINISHED TYPE ALIAS --------------------------------------- src/Fixture.elm
+
+I was partway through parsing a type alias, but I got stuck here:
+
+8| type alias A =
+                 ^
+I was expecting Int to be indented more. Try adding some spaces before it?

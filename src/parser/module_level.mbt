@@ -87,6 +87,7 @@ fn module_header(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
 
 ///|
 fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
+  module_level_column(c, "module")
   guard c.peek() is Some(first) else { raise c.fail("a module header") }
   if first.kind == Keyword(Port) {
     ignore(c.advance())
@@ -152,6 +153,7 @@ fn import_declaration(c : Cursor) -> @ast.Node[@ast.Import] raise SyntaxError {
 fn import_declaration_body(
   c : Cursor,
 ) -> @ast.Node[@ast.Import] raise SyntaxError {
+  module_level_column(c, "import")
   let keyword = c.expect(Keyword(Import), "`import`")
   let name = module_name(c)
   let mut end = name.range.end
@@ -190,4 +192,28 @@ fn import_declaration_body(
     module_alias,
     exposing_list: exposing,
   })
+}
+
+///|
+/// A module header or import must start in column 1.
+fn module_level_column(c : Cursor, keyword : String) -> Unit raise SyntaxError {
+  guard c.dialect.has(ModuleLevelColumn) &&
+    c.peek() is Some(t) &&
+    t.span.start.column != 1 else {
+    return
+  }
+  raise SyntaxError(
+    "`\{keyword}` must start in column 1 [rule: \{@dialect.Rule::ModuleLevelColumn.name()}]",
+    t.span,
+    span_problem(
+      "TOO MUCH INDENTATION",
+      "This `\{keyword}` should not have any spaces before it:",
+      point(t.span.start),
+      [
+        plain(
+          "Delete the spaces before `\{keyword}` until there are none left!",
+        ),
+      ],
+    ),
+  )
 }

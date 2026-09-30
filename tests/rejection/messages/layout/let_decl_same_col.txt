@@ -1,0 +1,16 @@
+-- UNFINISHED LET ---------------------------------------------- src/Fixture.elm
+
+I was partway through parsing a let expression, but I got stuck here:
+
+9|     let
+          ^
+I was expecting to see a let declaration indented more than `let` next.
+
+Note: Here is an example of a valid `let` expression for reference:
+
+    viewPerson person =
+      let
+        fullName =
+          person.firstName ++ " " ++ person.lastName
+      in
+      div [] [ text fullName ]

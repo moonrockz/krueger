@@ -1,0 +1,9 @@
+-- WEIRD ELSE BRANCH ------------------------------------------- src/Fixture.elm
+
+I was partway through an if expression when I got stuck here:
+
+ 9|     if True then 1
+10| else 2
+    ^^^^
+I think this else keyword needs to be indented more. Try adding some spaces
+before it.

@@ -15,6 +15,9 @@ priv struct Cursor {
   mut depth : Int
   dialect : @dialect.Dialect
   contexts : Array[Frame]
+  /// Position of the token that starts the current item (declaration, let
+  /// declaration, case branch): it may sit at the indent column.
+  mut item_start : Int
 }
 
 ///|
@@ -22,7 +25,7 @@ fn Cursor::new(
   tokens : Array[@scanner.Token],
   dialect : @dialect.Dialect,
 ) -> Cursor {
-  { tokens, pos: 0, indent: 1, depth: 0, dialect, contexts: [], }
+  { tokens, pos: 0, indent: 1, depth: 0, dialect, contexts: [], item_start: 0, }
 }
 
 ///|
@@ -375,8 +378,67 @@ fn[T] Cursor::within(
 ///|
 fn Cursor::advance(self : Cursor) -> @scanner.Token raise SyntaxError {
   guard self.peek() is Some(t) else { raise self.fail("more input") }
+  if self.dialect.has(IndentedContinuation) &&
+    self.pos != self.item_start &&
+    t.span.start.column <= self.indent {
+    raise self.layout_fail(t)
+  }
   self.pos += 1
   t
+}
+
+///|
+/// Mark the next token as the start of an item, which may sit at the indent
+/// column.
+fn Cursor::start_item(self : Cursor) -> Unit {
+  self.item_start = self.pos
+}
+
+///|
+/// A token that is not indented enough to continue the current construct.
+fn Cursor::layout_fail(self : Cursor, t : @scanner.Token) -> SyntaxError {
+  let message = "`\{t.lexeme}` must be indented more [rule: \{@dialect.Rule::IndentedContinuation.name()}]"
+  let context = self.contexts.last().map(f => f.context)
+  if t.kind is Keyword(Else) && context is Some(If) {
+    return SyntaxError(
+      message,
+      t.span,
+      make_problem(
+        "WEIRD ELSE BRANCH",
+        [
+          Plain("I was partway through an "),
+          @scanner.Chunk::keyword("if"),
+          Plain(" expression when I got stuck here:"),
+        ],
+        self.excerpt_context(t.span),
+        t.span,
+        [
+          Text([
+            Plain("I think this "),
+            @scanner.Chunk::keyword("else"),
+            Plain(
+              " keyword needs to be indented more. Try adding some spaces before it.",
+            ),
+          ]),
+        ],
+      ),
+    )
+  }
+  let problem = self.problem("`\{t.lexeme}` indented more")
+  let report = problem.report.map(b => {
+    match b {
+      Text([Plain(s)]) if s.has_prefix("I was expecting to see") =>
+        @scanner.Block::Text([
+          @scanner.Chunk::Plain("I was expecting "),
+          @scanner.Chunk::code(t.lexeme),
+          @scanner.Chunk::Plain(
+            " to be indented more. Try adding some spaces before it?",
+          ),
+        ])
+      other => other
+    }
+  })
+  SyntaxError(message, t.span, { ..problem, report, })
 }
 
 ///|

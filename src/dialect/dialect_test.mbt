@@ -16,12 +16,16 @@ test "built-in dialects have names and the standard operator table" {
 
 ///|
 test "rules are off unless the dialect enables them" {
-  let elm = @dialect.Dialect::elm_0_19_1()
-  @expect.expect(elm.has(LeadingZero)).to_equal(false)
-  elm.rules.add(LeadingZero)
-  @expect.expect(elm.has(LeadingZero)).to_equal(true)
-  @expect.expect(@dialect.Dialect::elm_0_19_1().has(LeadingZero)).to_equal(
+  let syntax = @dialect.Dialect::elm_syntax_7_3_9()
+  @expect.expect(syntax.has(LeadingZero)).to_equal(false)
+  syntax.rules.add(LeadingZero)
+  @expect.expect(syntax.has(LeadingZero)).to_equal(true)
+  @expect.expect(@dialect.Dialect::elm_syntax_7_3_9().has(LeadingZero)).to_equal(
     false,
+  )
+  @expect.expect(@dialect.Dialect::elm_0_19_1().has(LeadingZero)).to_equal(true)
+  @expect.expect(@dialect.Dialect::elm_syntax_7_3_9().has(IndentedContinuation)).to_equal(
+    true,
   )
   @expect.expect(@dialect.Rule::LeadingZero.name()).to_equal("leading-zero")
   @expect.expect(@dialect.Rule::IndentedContinuation.name()).to_equal(

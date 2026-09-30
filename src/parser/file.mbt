@@ -234,6 +234,7 @@ pub fn parse_tokens(
     _ => false
   }
   if starts_header {
+    c.start_item()
     let start = c.pos
     try module_header(c) catch {
       SyntaxError(message, span, problem) => {
@@ -284,6 +285,7 @@ pub fn parse_tokens(
     )
   }
   while c.is_keyword(Import) {
+    c.start_item()
     let start = c.pos
     try import_declaration(c) catch {
       SyntaxError(message, span, problem) => {
@@ -350,6 +352,7 @@ pub fn parse_tokens(
       )
     })
     let start = c.pos
+    c.start_item()
     try declaration(c, documentation) catch {
       SyntaxError(message, span, problem) => {
         let (code, what) = declaration_error_code(kind)

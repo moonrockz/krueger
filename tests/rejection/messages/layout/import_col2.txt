@@ -1,0 +1,7 @@
+-- TOO MUCH INDENTATION ---------------------------------------- src/Fixture.elm
+
+This `import` should not have any spaces before it:
+
+4|  import Dict
+    ^
+Delete the spaces before `import` until there are none left!

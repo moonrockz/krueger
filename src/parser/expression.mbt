@@ -474,6 +474,7 @@ fn if_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
 
 ///|
 fn case_branch(c : Cursor) -> @ast.Case raise SyntaxError {
+  c.start_item()
   let pat = pattern(c)
   ignore(c.expect(Arrow, "`->`"))
   { pattern: pat, expression: expression(c), }
@@ -509,6 +510,10 @@ fn let_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let let_token = c.advance()
   guard c.peek() is Some(first) else { raise c.fail("a let declaration") }
   let column = first.span.start.column
+  if c.dialect.has(LetDeclarationColumn) &&
+    column <= let_token.span.start.column {
+    raise c.fail("a let declaration indented more than `let`")
+  }
   let declarations = c.with_indent(column, () => {
     let declarations = [let_declaration(c)]
     while !c.is_keyword(In) {
@@ -531,6 +536,7 @@ fn let_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
 fn let_declaration(
   c : Cursor,
 ) -> @ast.Node[@ast.LetDeclaration] raise SyntaxError {
+  c.start_item()
   if c.peek() is Some(t) && is_lower(t) {
     let f = c.within(Definition(t.lexeme), () => function_parts(c, None))
     node(f.range, LetFunction(f.value))
@@ -561,6 +567,7 @@ fn function_parts(
       impl_name.span.start.column == c.indent else {
       raise c.fail("the implementation of `\{start_name.lexeme}`")
     }
+    c.start_item()
     if impl_name.lexeme != start_name.lexeme {
       raise c.error_at(
         "expected to find the same name for declaration and signature",
