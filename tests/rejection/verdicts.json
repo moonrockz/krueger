@@ -1,0 +1,2506 @@
+{
+  "accepted/basic.elm": {
+    "sha256": "b68666e9feb88014b7f2be2ddd0b5040a52a2604e0474422d9b202a7741fd7e6",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "comments/stray_doc_before_import.elm": {
+    "sha256": "d3f55b3741906ae7d9bb131ea4578f713ce8f7a8a7e7f65c42dcb296eb953451",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "expressions/case_no_branch.elm": {
+    "sha256": "b0e7a7d915b86c2a1d3e3df4897a06b2f81541d929de18a8a26775237e9235bd",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED CASE",
+      "region": [
+        9,
+        14,
+        9,
+        14
+      ],
+      "message": [
+        "I was partway through parsing a `case` expression, but I got stuck here:\n\n9|     case x of\n                ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see a pattern next.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example of a valid `case` expression for reference.\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "case"
+        },
+        " maybeWidth ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "of"
+        },
+        "\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "BLUE",
+          "string": "Just"
+        },
+        " width ->\n        width + ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "200"
+        },
+        "\n\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "BLUE",
+          "string": "Nothing"
+        },
+        " ->\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "400"
+        },
+        "\n\nNotice the indentation. Each pattern is aligned, and each branch is indented a\nbit more than the corresponding pattern. That is important!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/if_missing_else.elm": {
+    "sha256": "34c475dfeab02fd7966d518127925b3426ed6993a879076fc68afa13e7dc1680",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED IF",
+      "region": [
+        9,
+        19,
+        9,
+        19
+      ],
+      "message": [
+        "I was expecting to see an `else` branch after this:\n\n9|     if True then 1\n                     ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI know what to do when the condition is True, but what happens when it is False?\nAdd an ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "else"
+        },
+        " branch to handle that scenario!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/lambda_missing_arrow.elm": {
+    "sha256": "42230489dcc9d8588dd5ff9506fc1053ab043aa0a88dc086cbd31637d56908ee",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED ANONYMOUS FUNCTION",
+      "region": [
+        9,
+        9,
+        9,
+        9
+      ],
+      "message": [
+        "I just saw the beginning of an anonymous function, so I was expecting to see an\narrow next:\n\n9|     \\a a\n           ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nThe syntax for anonymous functions is ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(\\x -> x + 1)"
+        },
+        " so I am missing the arrow\nand the body of the function.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": It is possible that I am confused about indetation! I generally recommend\nswitching to named functions if the definition cannot fit inline nicely, so\neither (1) try to fit the whole anonymous function on one line or (2) break the\nwhole thing out into a named function. Things tend to be clearer that way!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/let_empty.elm": {
+    "sha256": "ca7d6c28cbeb65aabb1722d118d889b8e3da384b0b98bc0101cd0403b14ff8d8",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "RESERVED WORD",
+      "region": [
+        9,
+        9,
+        9,
+        11
+      ],
+      "message": [
+        "I was partway through parsing a `let` expression, but I got stuck here:\n\n9|     let in 1\n           ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nIt looks like you are trying to use `in` as a variable name, but it is a\nreserved word! Try using a different name instead."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/list_trailing_comma.elm": {
+    "sha256": "9065a4ce4fe6060becd49ed3661769ebd2f34894c86bfcdb5b8d94aa2ce00d9f",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED LIST",
+      "region": [
+        9,
+        10,
+        9,
+        10
+      ],
+      "message": [
+        "I was expecting to see another list entry after that last comma:\n\n9|     [ 1, ]\n            ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nTrailing commas are not allowed in lists, so the fix may be to delete the comma?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I recommend using the following format for lists that span multiple lines:\n\n    [ ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Alice\""
+        },
+        "\n    , ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Bob\""
+        },
+        "\n    , ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Chuck\""
+        },
+        "\n    ]\n\nNotice that each line starts with some indentation. Usually two or four spaces.\nThis is the stylistic convention in the Elm ecosystem."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/negate_spaced.elm": {
+    "sha256": "706914e6fa1d8d1d1fc1b82c345b683ebfda5f57c1f9acae24b682b890ade4a7",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "MISSING EXPRESSION",
+      "region": [
+        9,
+        6,
+        9,
+        6
+      ],
+      "message": [
+        "I am partway through parsing the `f` definition, but I got stuck here:\n\n8| f =\n9|     - x\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see an expression like ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "42"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"hello\""
+        },
+        ". Once there is something\nthere, I can probably give a more specific hint!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": This can also happen if run into reserved words like `let` or `as`\nunexpectedly. Or if I run into operators in unexpected spots. Point is, there\nare a couple ways I can get confused and give sort of weird advice!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/record_trailing_comma.elm": {
+    "sha256": "9457a237f3d1bd99b6f4f95280d7d17688be7ec017f0e2f8deea911405daa31b",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "EXTRA COMMA",
+      "region": [
+        9,
+        14,
+        9,
+        14
+      ],
+      "message": [
+        "I am partway through parsing a record, but I got stuck here:\n\n9|     { a = 1, }\n                ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nTrailing commas are not allowed in records. Try deleting the comma that appears\nbefore this closing curly brace.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": If you are trying to define a record across multiple lines, I recommend\nusing this format:\n\n    { name = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Alice\""
+        },
+        "\n    , age = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "42"
+        },
+        "\n    , height = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "1.75"
+        },
+        "\n    }\n\nNotice that each line starts with some indentation. Usually two or four spaces.\nThis is the stylistic convention in the Elm ecosystem."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "expressions/record_update_qualified.elm": {
+    "sha256": "45ff5a5d68ba8a84ad167f53f6ada309602a0a0b55e28dd2af30cd1621f84132",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "PROBLEM IN RECORD",
+      "region": [
+        9,
+        7,
+        9,
+        7
+      ],
+      "message": [
+        "I just started parsing a record, but I got stuck here:\n\n9|     { Fixture.r | a = 2 }\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see a record field defined next, so I am looking for a name\nlike ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "userName"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "plantHeight"
+        },
+        ".\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Field names must start with a lower-case letter. After that, you can use\nany sequence of letters, numbers, and underscores.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": If you are trying to define a record across multiple lines, I recommend\nusing this format:\n\n    { name = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Alice\""
+        },
+        "\n    , age = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "42"
+        },
+        "\n    , height = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "1.75"
+        },
+        "\n    }\n\nNotice that each line starts with some indentation. Usually two or four spaces.\nThis is the stylistic convention in the Elm ecosystem."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/alias_body_col1.elm": {
+    "sha256": "9c2fd11e1c7fa88fc76bb3ff346863e91bb4b7607cd6ee310228b5c25ee6e869",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED TYPE ALIAS",
+      "region": [
+        8,
+        15,
+        8,
+        15
+      ],
+      "message": [
+        "I am partway through parsing a type alias, but I got stuck here:\n\n8| type alias A =\n                 ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see a type next. Something as simple as ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "Int"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "Float"
+        },
+        " would\nwork!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example of a valid `type alias` for reference:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "type"
+        },
+        " ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "alias"
+        },
+        " Person =\n      { name : String\n      , age : Int\n      , height : Float\n      }\n\nThis would let us use `Person` as a shorthand for that record type. Using this\nshorthand makes type annotations much easier to read, and makes changing code\neasier if you decide later that there is more to a person than age and height!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/case_body_branch_col.elm": {
+    "sha256": "880ef0360f76366cd4f2d56ae52e9ab95c9a06416e221f5e6a56bc9c889e3119",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED CASE",
+      "region": [
+        10,
+        13,
+        10,
+        13
+      ],
+      "message": [
+        "I was partway through parsing a `case` expression, but I got stuck here:\n\n 9|     case x of\n10|         1 ->\n                ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see an expression next. What should I do when I run into this\nparticular pattern?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example of a valid `case` expression for reference.\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "case"
+        },
+        " maybeWidth ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "of"
+        },
+        "\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "BLUE",
+          "string": "Just"
+        },
+        " width ->\n        width + ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "200"
+        },
+        "\n\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "BLUE",
+          "string": "Nothing"
+        },
+        " ->\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "400"
+        },
+        "\n\nNotice the indentation. Each pattern is aligned, and each branch is indented a\nbit more than the corresponding pattern. That is important!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/case_branch_misaligned.elm": {
+    "sha256": "c8cb40adb30a7332a8a8e70be432771dcfbf9be6252a732f8873cf93f7f6a9b7",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "SYNTAX PROBLEM",
+      "region": [
+        13,
+        11,
+        13,
+        11
+      ],
+      "message": [
+        "I got stuck here:\n\n13|           _ ->\n              ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nWhatever I am running into is confusing me a lot! Normally I can give fairly\nspecific hints, but something is really tripping me up this time."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/declaration_col2.elm": {
+    "sha256": "3d4a81c6f45c9d4f4c55b122f1d2c3e21824c697272f4a2b24d519ad265d58f4",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNEXPECTED EQUALS",
+      "region": [
+        8,
+        4,
+        8,
+        4
+      ],
+      "message": [
+        "I was not expecting to see this equals sign:\n\n8|  y =\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nMaybe you want == instead? To check if two values are equal?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I may be getting confused by your indentation. I think I am still parsing\nthe `x` definition. Is this supposed to be part of a definition after that? If\nso, the problem may be a bit before the equals sign. I need all definitions to\nbe indented exactly the same amount, so the problem may be that this new\ndefinition has too many spaces in front of it."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/else_col1.elm": {
+    "sha256": "2011055a2ef53ff2926511e299aefe0e408cdbce11ca1b187da22d4e5023f959",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "WEIRD ELSE BRANCH",
+      "region": [
+        10,
+        1,
+        10,
+        5
+      ],
+      "message": [
+        "I was partway through an `if` expression when I got stuck here:\n\n 9|     if True then 1\n10| else 2\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^"
+        },
+        "\nI think this ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "else"
+        },
+        " keyword needs to be indented more. Try adding some spaces\nbefore it."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/header_col2.elm": {
+    "sha256": "9b4097ee540f2f5a4455acb2328a46fb9784c40ab6b1d82354ad53ac599a71fb",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "TOO MUCH INDENTATION",
+      "region": [
+        1,
+        2,
+        1,
+        2
+      ],
+      "message": [
+        "This `module` should not have any spaces before it:\n\n1|  module Fixture exposing (..)\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nDelete the spaces before `module` until there are none left!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/import_col2.elm": {
+    "sha256": "c15167c130a7b673c718b4007c042afb2dcf76ca9be790b8ccd7eb8b5568e9fa",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "TOO MUCH INDENTATION",
+      "region": [
+        4,
+        2,
+        4,
+        2
+      ],
+      "message": [
+        "This `import` should not have any spaces before it:\n\n4|  import Dict\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nDelete the spaces before `import` until there are none left!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/in_col1.elm": {
+    "sha256": "41a2f033c14c6ef372c1080062f688c62bde1a8cbf535431a48b5a1754b7f654",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED LET",
+      "region": [
+        10,
+        14,
+        10,
+        14
+      ],
+      "message": [
+        "I was partway through parsing a `let` expression, but I got stuck here:\n\n 9|     let\n10|         y = 1\n                 ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see the ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "in"
+        },
+        " keyword next. Or maybe more of that expression?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example with a valid `let` expression for reference:\n\n    viewPerson person =\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "let"
+        },
+        "\n        fullName =\n          person.firstName ++ ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\" \""
+        },
+        " ++ person.lastName\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "in"
+        },
+        "\n      div [] [ text fullName ]\n\nHere we defined a `viewPerson` function that turns a person into some HTML. We\nuse a `let` expression to define the `fullName` we want to show. Notice the\nindentation! The `fullName` is indented more than the `let` keyword, and the\nactual value of `fullName` is indented a bit more than that. That is important!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/lambda_body_col1.elm": {
+    "sha256": "24075aeacf65c96522867f3e99e2b60db3f27482bdda8212e4266038b90c874b",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED ANONYMOUS FUNCTION",
+      "region": [
+        9,
+        10,
+        9,
+        10
+      ],
+      "message": [
+        "I was expecting to see the body of your anonymous function next:\n\n9|     \\a ->\n            ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nThe syntax for anonymous functions is ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(\\x -> x + 1)"
+        },
+        " so I am missing all the\nstuff after the arrow!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": It is possible that I am confused about indetation! I generally recommend\nswitching to named functions if the definition cannot fit inline nicely, so\neither (1) try to fit the whole anonymous function on one line or (2) break the\nwhole thing out into a named function. Things tend to be clearer that way!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/let_decl_left_of_let.elm": {
+    "sha256": "a37117e6af9aeb5aeed06a7f27b46981f05d97d60cf3572ff249444654ade616",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED LET",
+      "region": [
+        9,
+        8,
+        9,
+        8
+      ],
+      "message": [
+        "I was partway through parsing a `let` expression, but I got stuck here:\n\n9|     let\n          ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting a value to be defined here.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example with a valid `let` expression for reference:\n\n    viewPerson person =\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "let"
+        },
+        "\n        fullName =\n          person.firstName ++ ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\" \""
+        },
+        " ++ person.lastName\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "in"
+        },
+        "\n      div [] [ text fullName ]\n\nHere we defined a `viewPerson` function that turns a person into some HTML. We\nuse a `let` expression to define the `fullName` we want to show. Notice the\nindentation! The `fullName` is indented more than the `let` keyword, and the\nactual value of `fullName` is indented a bit more than that. That is important!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/let_decl_same_col.elm": {
+    "sha256": "f4f7ca9fb2d30128a3691b40fc1f92a250738cd952d85bfafae71b4d87a8ed3d",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED LET",
+      "region": [
+        9,
+        8,
+        9,
+        8
+      ],
+      "message": [
+        "I was partway through parsing a `let` expression, but I got stuck here:\n\n9|     let\n          ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting a value to be defined here.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example with a valid `let` expression for reference:\n\n    viewPerson person =\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "let"
+        },
+        "\n        fullName =\n          person.firstName ++ ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\" \""
+        },
+        " ++ person.lastName\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "in"
+        },
+        "\n      div [] [ text fullName ]\n\nHere we defined a `viewPerson` function that turns a person into some HTML. We\nuse a `let` expression to define the `fullName` we want to show. Notice the\nindentation! The `fullName` is indented more than the `let` keyword, and the\nactual value of `fullName` is indented a bit more than that. That is important!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/list_comma_col1.elm": {
+    "sha256": "20cfc14c2fd61cde74f29f3606d728e1a72e705c9c626b6a6a8dd13aeda3d9c3",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED LIST",
+      "region": [
+        9,
+        8,
+        9,
+        8
+      ],
+      "message": [
+        "I cannot find the end of this list:\n\n9|     [ 1\n          ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nYou can just add a closing ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "]"
+        },
+        " right here, and I will be all set!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I may be confused by indentation. For example, if you are trying to define\na list across multiple lines, I recommend using this format:\n\n    [ ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Alice\""
+        },
+        "\n    , ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Bob\""
+        },
+        "\n    , ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Chuck\""
+        },
+        "\n    ]\n\nNotice that each line starts with some indentation. Usually two or four spaces.\nThis is the stylistic convention in the Elm ecosystem."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/paren_close_col1.elm": {
+    "sha256": "22a5ca120534b37ecc5bffb3b84a227cdcc298b46154836f872de353cbef6249",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED PARENTHESES",
+      "region": [
+        9,
+        7,
+        9,
+        7
+      ],
+      "message": [
+        "I was expecting to see a closing parenthesis next:\n\n9|     (1\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nTry adding a ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": ")"
+        },
+        " to see if that helps!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I can get confused by indentation in cases like this, so maybe you have a\nclosing parenthesis but it is not indented enough?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/record_comma_col1.elm": {
+    "sha256": "fa11ba26835da6b71aab90ed9955ce55a013338be1ecc63013347e7284c5a380",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED RECORD",
+      "region": [
+        9,
+        12,
+        9,
+        12
+      ],
+      "message": [
+        "I was partway through parsing a record, but I got stuck here:\n\n9|     { a = 1\n              ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see a closing curly brace next. Try putting a ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "}"
+        },
+        " next and see\nif that helps?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I may be confused by indentation. For example, if you are trying to define\na record across multiple lines, I recommend using this format:\n\n    { name = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Alice\""
+        },
+        "\n    , age = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "42"
+        },
+        "\n    , height = ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "1.75"
+        },
+        "\n    }\n\nNotice that each line starts with some indentation. Usually two or four spaces.\nThis is the stylistic convention in the Elm ecosystem!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/tab.elm": {
+    "sha256": "db6ee38977f22da4b0ed779d2d8540790497c211c0a01dbce0e1b13603eaba76",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "NO TABS",
+      "region": [
+        9,
+        1,
+        9,
+        1
+      ],
+      "message": [
+        "I ran into a tab, but tabs are not allowed in Elm files.\n\n9| \tx\n   ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nReplace the tab with spaces."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/then_col1.elm": {
+    "sha256": "b60b2235d15afb64e2f46be36cd0ebbc524a58dafa2e066cc9df8f4c2ba3aa57",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED IF",
+      "region": [
+        9,
+        12,
+        9,
+        12
+      ],
+      "message": [
+        "I was expecting to see more of this `if` expression, but I got stuck here:\n\n9|     if True\n              ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see the ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "then"
+        },
+        " keyword next.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I can be confused by indentation. Maybe something is not indented enough?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "layout/tuple_pattern_branch_col.elm": {
+    "sha256": "0ea6f6f5010ba9048e99678e8570f7f36061d02aa2c7ccf9c26eda9ff068fcf4",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED PARENTHESES",
+      "region": [
+        10,
+        12,
+        10,
+        12
+      ],
+      "message": [
+        "I was expecting a closing parenthesis next:\n\n10|         ( 1\n               ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nTry adding a ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": ")"
+        },
+        " to see if that helps?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I can get confused by indentation in cases like this, so maybe you have a\nclosing parenthesis but it is not indented enough?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/char_empty.elm": {
+    "sha256": "00815f5dc4d748220ef33be0ae39cc87fb4f7da4228afe58432baa240c72beaf",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "NEEDS DOUBLE QUOTES",
+      "region": [
+        9,
+        5,
+        9,
+        7
+      ],
+      "message": [
+        "The following string uses single quotes:\n\n9|     ''\n       ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nPlease switch to double quotes instead:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "'this'"
+        },
+        " => ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "\"this\""
+        },
+        "\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Elm uses double quotes for strings like \"hello\", whereas it uses single\nquotes for individual characters like 'a' and 'ø'. This distinction helps with\ncode like (String.any (\\c -> c == 'X') \"90210\") where you are inspecting\nindividual characters."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/char_two.elm": {
+    "sha256": "5630d5fc128a3f056149399e813ca58f03ab0ce3e69212460330f618b256d2eb",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "NEEDS DOUBLE QUOTES",
+      "region": [
+        9,
+        5,
+        9,
+        9
+      ],
+      "message": [
+        "The following string uses single quotes:\n\n9|     'ab'\n       ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^"
+        },
+        "\nPlease switch to double quotes instead:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "'this'"
+        },
+        " => ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "\"this\""
+        },
+        "\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Elm uses double quotes for strings like \"hello\", whereas it uses single\nquotes for individual characters like 'a' and 'ø'. This distinction helps with\ncode like (String.any (\\c -> c == 'X') \"90210\") where you are inspecting\nindividual characters."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/empty_hex.elm": {
+    "sha256": "ab595fd6e2679666b75aa9fb0123e7c92e0098a5189a05b7eee5c27b3bfc1687",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "WEIRD HEXIDECIMAL",
+      "region": [
+        9,
+        7,
+        9,
+        7
+      ],
+      "message": [
+        "I thought I was reading a hexidecimal number until I got here:\n\n9|     0x\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nValid hexidecimal digits include 0123456789abcdefABCDEF, so I can only recognize\nthings like this:\n\n    0x2B\n    0x002B\n    0x00ffb3"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/endless_comment.elm": {
+    "sha256": "8ae019f4472cab6b40806d39cc958ffcd8c3b0e169c1dbea046681035ef55df8",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "ENDLESS COMMENT",
+      "region": [
+        12,
+        1,
+        12,
+        3
+      ],
+      "message": [
+        "I cannot find the end of this multi-line comment:\n\n12| {- abc\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nAdd a -} somewhere after this to end the comment.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Hint"
+        },
+        ": Multi-line comments can be nested in Elm, so {- {- -} -} is a comment that\nhappens to contain another comment. Like parentheses and curly braces, the start\nand end markers must always be balanced. Maybe that is the problem?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/endless_multiline_string.elm": {
+    "sha256": "89841ee0d82a3651d0ecc652a4eaf7cbecce71e9a83785294b95568607d918a8",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "ENDLESS STRING",
+      "region": [
+        9,
+        5,
+        9,
+        8
+      ],
+      "message": [
+        "I cannot find the end of this multi-line string:\n\n9|     \"\"\"abc\n       ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^"
+        },
+        "\nAdd a \"\"\" somewhere after this to end the string.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is a valid multi-line string for reference:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \"\"\"\n    # Multi-line Strings\n    \n    - start with triple double quotes\n    - write whatever you want\n    - no need to escape newlines or double quotes\n    - end with triple double quotes\n    \"\"\""
+        },
+        ""
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/endless_string.elm": {
+    "sha256": "e61250d07580b0b3ea58cd41e294e1ef8faf57b1faff4b14b314fdd54c0eefde",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "ENDLESS STRING",
+      "region": [
+        9,
+        9,
+        9,
+        9
+      ],
+      "message": [
+        "I got to the end of the line without seeing the closing double quote:\n\n9|     \"abc\n           ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nStrings look like ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "\"this\""
+        },
+        " with double quotes on each end. Is the closing double\nquote missing in your code?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": For a string that spans multiple lines, you can use the multi-line string\nsyntax like this:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \"\"\"\n    # Multi-line Strings\n    \n    - start with triple double quotes\n    - write whatever you want\n    - no need to escape newlines or double quotes\n    - end with triple double quotes\n    \"\"\""
+        },
+        ""
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/float_exponent_no_digits.elm": {
+    "sha256": "3510fc8d47a2042e8efed2d8c9b035ec1fe750723fa165a1a15ce2f0790ddc3a",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "WEIRD NUMBER",
+      "region": [
+        9,
+        7,
+        9,
+        7
+      ],
+      "message": [
+        "I thought I was reading a number, but I ran into some weird stuff here:\n\n9|     1e\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI recognize numbers in the following formats:\n\n    42\n    3.14\n    6.022e23\n    0x002B\n\nSo is there a way to write it like one of those?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/float_trailing_dot.elm": {
+    "sha256": "e2fbafba7128f4596193bda85719d0880e6c8b25ecdf2019b093f81fa7c2ad71",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "WEIRD NUMBER",
+      "region": [
+        9,
+        6,
+        9,
+        6
+      ],
+      "message": [
+        "Numbers cannot end with a dot like this:\n\n9|     1.\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nSwitching to ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "1"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "1.0"
+        },
+        " will work though!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/hex_upper_x.elm": {
+    "sha256": "5b8e72ef9a7ccfc8ab46d8bdbea684b8d07ce656f7b2203cdddd1e2e1a022754",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "WEIRD NUMBER",
+      "region": [
+        9,
+        6,
+        9,
+        6
+      ],
+      "message": [
+        "I thought I was reading a number, but I ran into some weird stuff here:\n\n9|     0X1F\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI recognize numbers in the following formats:\n\n    42\n    3.14\n    6.022e23\n    0x002B\n\nSo is there a way to write it like one of those?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/huge_float.elm": {
+    "sha256": "e47c02c097763a8c5c6bcaae9c84372c924d131af9e24c697a50b91490b9414a",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/huge_hex.elm": {
+    "sha256": "b35affb707c0f829d345760092a79d658c12df190e19423063b8931dd6f5753b",
+    "elm-0.19.1": {
+      "accepted": true,
+      "later_error": "NAMING ERROR"
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/huge_int.elm": {
+    "sha256": "bc962a1cd93f77639d54b7904fe48a4a7d8e2e5485d0df58d82cb0bcdd704aff",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/leading_zero.elm": {
+    "sha256": "586c57574bf5c53dbbfc979fe541a5fb09af35c090affd3d3ab9ef60f3b9e634",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "LEADING ZEROS",
+      "region": [
+        9,
+        6,
+        9,
+        6
+      ],
+      "message": [
+        "I do not accept numbers with leading zeros:\n\n9|     007\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nJust delete the leading zeros and it should work!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Some languages let you to specify octal numbers by adding a leading zero.\nSo in C, writing 0111 is the same as writing 73. Some people are used to that,\nbut others probably want it to equal 111. Either path is going to surprise\npeople from certain backgrounds, so Elm tries to avoid this whole situation."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/leading_zero_01.elm": {
+    "sha256": "1d5dadcf09d34f7fad0828c7d9426a2de477dbdcc52321e1453a61bc0126e1f9",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "LEADING ZEROS",
+      "region": [
+        9,
+        6,
+        9,
+        6
+      ],
+      "message": [
+        "I do not accept numbers with leading zeros:\n\n9|     01\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nJust delete the leading zeros and it should work!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Some languages let you to specify octal numbers by adding a leading zero.\nSo in C, writing 0111 is the same as writing 73. Some people are used to that,\nbut others probably want it to equal 111. Either path is going to surprise\npeople from certain backgrounds, so Elm tries to avoid this whole situation."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/single_quoted_string.elm": {
+    "sha256": "facbd00bfab6fda3027aed2173a98f5f54c6a528e5febd16cc218afd1671da5b",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "NEEDS DOUBLE QUOTES",
+      "region": [
+        9,
+        5,
+        9,
+        10
+      ],
+      "message": [
+        "The following string uses single quotes:\n\n9|     'abc'\n       ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^^"
+        },
+        "\nPlease switch to double quotes instead:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "'this'"
+        },
+        " => ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "GREEN",
+          "string": "\"this\""
+        },
+        "\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Elm uses double quotes for strings like \"hello\", whereas it uses single\nquotes for individual characters like 'a' and 'ø'. This distinction helps with\ncode like (String.any (\\c -> c == 'X') \"90210\") where you are inspecting\nindividual characters."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/unicode_escape_empty.elm": {
+    "sha256": "767e035a7fbd9842e9df834b1f0909a767a84f045ce6ef8c7c2828d5a654b78e",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "BAD UNICODE ESCAPE",
+      "region": [
+        9,
+        6,
+        9,
+        10
+      ],
+      "message": [
+        "This is not a valid code point:\n\n9|     \"\\u{}\"\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^"
+        },
+        "\nThe valid code points are between 0 and 10FFFF inclusive."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/unicode_escape_non_hex.elm": {
+    "sha256": "98833870eff3c3fa20de347a1b3942da5510773149b4da68520d9bc9a53b29c7",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "BAD UNICODE ESCAPE",
+      "region": [
+        9,
+        6,
+        9,
+        9
+      ],
+      "message": [
+        "I ran into an invalid Unicode escape:\n\n9|     \"\\u{zz}\"\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^"
+        },
+        "\nHere are some examples of valid Unicode escapes:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \\u{0041}\n    \\u{03BB}\n    \\u{6728}\n    \\u{1F60A}"
+        },
+        "\n\nNotice that the code point is always surrounded by curly braces. Maybe you are\nmissing the opening or closing curly brace?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/unicode_escape_surrogate.elm": {
+    "sha256": "7ea3430bdbbaad8b66318aa02b83cf3463a7c7aa368b1eda70b755a96cd43049",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/unicode_escape_too_big.elm": {
+    "sha256": "a56a02a063eb4f0dd57236ea8a919e52befd3fba5025ed949965f30bea018c09",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "BAD UNICODE ESCAPE",
+      "region": [
+        9,
+        6,
+        9,
+        16
+      ],
+      "message": [
+        "This is not a valid code point:\n\n9|     '\\u{110000}'\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^^^^^^^"
+        },
+        "\nThe valid code points are between 0 and 10FFFF inclusive."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "literals/unicode_escape_unclosed.elm": {
+    "sha256": "194ccb5826fc991241c5f9a6cca7557418aa4e4c30dbf48243c9cccb9d618832",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "BAD UNICODE ESCAPE",
+      "region": [
+        9,
+        6,
+        9,
+        11
+      ],
+      "message": [
+        "I ran into an invalid Unicode escape:\n\n9|     \"\\u{41\"\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^^"
+        },
+        "\nHere are some examples of valid Unicode escapes:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \\u{0041}\n    \\u{03BB}\n    \\u{6728}\n    \\u{1F60A}"
+        },
+        "\n\nNotice that the code point is always surrounded by curly braces. Maybe you are\nmissing the opening or closing curly brace?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/unknown_escape.elm": {
+    "sha256": "a809653c9150fd4edcd3df132dd4620515b550b5875b5f9f9adee2a9131b3979",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNKNOWN ESCAPE",
+      "region": [
+        9,
+        6,
+        9,
+        8
+      ],
+      "message": [
+        "Backslashes always start escaped characters, but I do not recognize this one:\n\n9|     \"\\q\"\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nValid escape characters include:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \\n\n    \\r\n    \\t\n    \\\"\n    \\'\n    \\\\\n    \\u{003D}"
+        },
+        "\n\nDo you want one of those instead? Maybe you need \\\\ to escape a backslash?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": The last style lets encode ANY character by its Unicode code point. That\nmeans \\u{0009} and \\t are the same. You can use that style for anything not\ncovered by the other six escapes!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "module/effect_duplicate_key.elm": {
+    "sha256": "1a05abf6e2d10479fcd6a094dc72b3561e142b04e85d8ade47cb38585eab9380",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "BAD MODULE DECLARATION",
+      "region": [
+        1,
+        44,
+        1,
+        44
+      ],
+      "message": [
+        "I cannot parse this module declaration:\n\n1| effect module Fixture where { command = C, command = D } exposing (..)\n                                              ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nThis type of module is reserved for the @elm organization. It is used to define\ncertain effects, avoiding building them into the compiler."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "module/exposing_empty.elm": {
+    "sha256": "2338d303a5a37b8c3bd6e344d6b4e2d2f8d35b0dd5dc22f31fcb17154c0bde1d",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "PROBLEM IN EXPOSING",
+      "region": [
+        1,
+        26,
+        1,
+        26
+      ],
+      "message": [
+        "I got stuck while parsing these exposed values:\n\n1| module Fixture exposing ()\n                            ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI do not have an exact recommendation, so here are some valid examples of\n`exposing` for reference:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " Html ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "exposing"
+        },
+        " (..)\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " Basics ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "exposing"
+        },
+        " (Int, Float, Bool(..), (+), not, sqrt)\n\nThese examples show how to expose types, variants, operators, and functions.\nEverything should be some permutation of these examples, just with different\nnames."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "module/exposing_trailing_comma.elm": {
+    "sha256": "c946260d940400d2ec319af6591518f8157864260bed3b61280df522acee64f8",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "PROBLEM IN EXPOSING",
+      "region": [
+        1,
+        29,
+        1,
+        29
+      ],
+      "message": [
+        "I got stuck while parsing these exposed values:\n\n1| module Fixture exposing (x, )\n                               ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI do not have an exact recommendation, so here are some valid examples of\n`exposing` for reference:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " Html ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "exposing"
+        },
+        " (..)\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " Basics ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "exposing"
+        },
+        " (Int, Float, Bool(..), (+), not, sqrt)\n\nThese examples show how to expose types, variants, operators, and functions.\nEverything should be some permutation of these examples, just with different\nnames."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "module/import_alias_lowercase.elm": {
+    "sha256": "7b810a01e7516dab8675c3269c345c817457c9284acaa332a742fc084269eae6",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "EXPECTING IMPORT ALIAS",
+      "region": [
+        4,
+        16,
+        4,
+        16
+      ],
+      "message": [
+        "I was parsing an `import` until I got stuck here:\n\n4| import Dict as d\n                  ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see an alias next, like in these examples:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " Html.Attributes ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "as"
+        },
+        " Attr\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " WebGL.Texture ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "as"
+        },
+        " Texture\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "import"
+        },
+        " Json.Decode ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "as"
+        },
+        " D\n\nNotice that the alias always starts with a capital letter. That is required!\n\nRead <https://elm-lang.org/0.19.1/imports> to learn more."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "module/infix_declaration.elm": {
+    "sha256": "0ec592c59e073f2caaea55fc516434582bbace35ce85488cd5d33da2aa2f91bc",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED PARENTHESES",
+      "region": [
+        4,
+        15,
+        4,
+        15
+      ],
+      "message": [
+        "I just saw an open parenthesis, but I got stuck here:\n\n4| infix left 6 (+++) = add\n                 ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see a pattern next. Maybe it will end up being something like\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(x,y)"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(name, _)"
+        },
+        "?"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "module/port_in_normal_module.elm": {
+    "sha256": "3f1b8ef29d73705388d3526ebc261977edc2ca98b0ac2aaf802584c1db8f4608",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNEXPECTED PORTS",
+      "region": [
+        1,
+        1,
+        1,
+        7
+      ],
+      "message": [
+        "You are declaring ports in a normal module.\n\n1| module Fixture exposing (..)\n   ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^^^^"
+        },
+        "\nSwitch this to say ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "port module"
+        },
+        " instead, marking that this module contains port\ndeclarations.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Ports are not a traditional FFI for calling JS functions directly. They\nneed a different mindset! Read <https://elm-lang.org/0.19.1/ports> to learn the\nsyntax and how to use it effectively."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "operators/non_assoc_chain.elm": {
+    "sha256": "64011329b0b8868de2849c5e01ae6fa0a783f5c5d41c05724647a5aba5dfdde3",
+    "elm-0.19.1": {
+      "accepted": true,
+      "later_error": "INFIX PROBLEM"
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "operators/right_section.elm": {
+    "sha256": "c69c3eba56643612fc36df55720c071fa8f45de1d0da0cd642329b5e2d600206",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED OPERATOR FUNCTION",
+      "region": [
+        9,
+        7,
+        9,
+        7
+      ],
+      "message": [
+        "I was expecting a closing parenthesis here:\n\n9|     (+ 1)\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nTry adding a ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": ")"
+        },
+        " to see if that helps!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": I think I am parsing an operator function right now, so I am expecting to\nsee something like (+) or (&&) where an operator is surrounded by parentheses\nwith no extra spaces."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "operators/spaced_exposing.elm": {
+    "sha256": "aac697dc258a8d054fc09e330dacb2b953bbb73bcc4928cac64995b7d7341ce9",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "PROBLEM IN EXPOSING",
+      "region": [
+        4,
+        26,
+        4,
+        26
+      ],
+      "message": [
+        "I just saw an open parenthesis, so I was expecting an operator next:\n\n4| import Basics exposing (( + ))\n                            ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nIt is possible to expose operators, so I was expecting to see something like ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(+)"
+        },
+        "\nor ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(|=)"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(||)"
+        },
+        " after I saw that open parenthesis."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "operators/spaced_section.elm": {
+    "sha256": "b966597d47dc2860e9706fc4834ea1473fc87e75fea581ee81fb2d29fe1171f4",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "MISSING EXPRESSION",
+      "region": [
+        9,
+        7,
+        9,
+        7
+      ],
+      "message": [
+        "I am partway through parsing some parentheses, but I got stuck here:\n\n9|     ( + ) 1 2\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see an expression like ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "42"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"hello\""
+        },
+        ". Once there is something\nthere, I can probably give a more specific hint!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": This can also happen if run into reserved words like `let` or `as`\nunexpectedly. Or if I run into operators in unexpected spots. Point is, there\nare a couple ways I can get confused and give sort of weird advice!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "operators/touching_plus_minus.elm": {
+    "sha256": "fc50b89fea2d32f1c9a17b0a66f8f9ede8909cd43d11c0bd33a811a80288a9fd",
+    "elm-0.19.1": {
+      "accepted": true,
+      "later_error": "UNKNOWN OPERATOR"
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "operators/unknown_operator.elm": {
+    "sha256": "aca92cbabcaa14a4f91397e755d27c825f13ca4bb21974d0cbfd80ff1c0e7dea",
+    "elm-0.19.1": {
+      "accepted": true,
+      "later_error": "UNKNOWN OPERATOR"
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "patterns/float_pattern.elm": {
+    "sha256": "9750bcba3de5f5d261466f00710d75078dd2a5a5616af43d70072bcc154647f3",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNEXPECTED PATTERN",
+      "region": [
+        10,
+        9,
+        10,
+        12
+      ],
+      "message": [
+        "I cannot pattern match with floating point numbers:\n\n10|         1.5 ->\n            ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^^"
+        },
+        "\nEquality on floats can be unreliable, so you usually want to check that they are\nnearby with some sort of ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "(abs (actual - expected) < 0.001)"
+        },
+        " check."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "patterns/record_pattern_value.elm": {
+    "sha256": "52d04f962b6b4fb0085b948963769ec333bfb3689d02802cf8604deba976880c",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED RECORD PATTERN",
+      "region": [
+        10,
+        13,
+        10,
+        13
+      ],
+      "message": [
+        "I was partway through parsing a record pattern, but I got stuck here:\n\n10|         { a = 1 } ->\n                ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting to see a closing curly brace next. Try adding a ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "}"
+        },
+        " here?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Hint"
+        },
+        ": A record pattern looks like ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "{x,y}"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "{name,age}"
+        },
+        " where you list the field\nnames you want to access."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "types/alias_lowercase.elm": {
+    "sha256": "c4fa3ec513df225b35a45507a626d781dfeb402bcd6a05138d5047d8f48cec51",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "EXPECTING TYPE ALIAS NAME",
+      "region": [
+        8,
+        12,
+        8,
+        12
+      ],
+      "message": [
+        "I am partway through parsing a type alias, but I got stuck here:\n\n8| type alias a =\n              ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI was expecting a name like ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "Person"
+        },
+        " or ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "Point"
+        },
+        " next. Just make sure it is a name\nthat starts with a capital letter!\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example of a valid `type alias` for reference:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "type"
+        },
+        " ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "alias"
+        },
+        " Person =\n      { name : String\n      , age : Int\n      , height : Float\n      }\n\nThis would let us use `Person` as a shorthand for that record type. Using this\nshorthand makes type annotations much easier to read, and makes changing code\neasier if you decide later that there is more to a person than age and height!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "types/custom_trailing_bar.elm": {
+    "sha256": "5d767be3d826627bc0db527101a46421a423a49b9b7a3351ea2a721b7d2d40c8",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNFINISHED CUSTOM TYPE",
+      "region": [
+        11,
+        6,
+        11,
+        6
+      ],
+      "message": [
+        "I am partway through parsing a custom type, but I got stuck here:\n\n 8| type T\n 9|     = A\n10|     | B\n11|     |\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI just saw a vertical bar, so I was expecting to see another variant defined\nnext.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": Here is an example of a valid `type` declaration for reference:\n\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "CYAN",
+          "string": "type"
+        },
+        " Status\n      = Failure\n      | Waiting\n      | Success String\n\nThis defines a new `Status` type with three variants. This could be useful if we\nare waiting for an HTTP request. Maybe we start with `Waiting` and then switch\nto `Failure` or `Success \"message from server\"` depending on how things go.\nNotice that the Success variant has some associated data, allowing us to store a\nString if the request goes well!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "types/record_type_trailing_comma.elm": {
+    "sha256": "1b20cfce3289baabd29d9c27aabb44d5e21f3b374efec7b0e5d7a36954d71837",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "EXTRA COMMA",
+      "region": [
+        9,
+        16,
+        9,
+        16
+      ],
+      "message": [
+        "I am partway through parsing a record type, but I got stuck here:\n\n9|     { a : Int, }\n                  ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nTrailing commas are not allowed in record types. Try deleting the comma that\nappears before this closing curly brace.\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": If you are trying to define a record type across multiple lines, I\nrecommend using this format:\n\n    { name : String\n    , age : Int\n    , height : Float\n    }\n\nNotice that each line starts with some indentation. Usually two or four spaces.\nThis is the stylistic convention in the Elm ecosystem."
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "whitespace/lone_cr.elm": {
+    "sha256": "953fad38e18a2b21ec840f589a9e746277ec0f06c09a940d5178ebc46bac8f1b",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "whitespace/unicode_identifier.elm": {
+    "sha256": "b0cf1348db50549d4c1aab12fbcf61eb096ef651dfdaad4395f72444b0d23ef2",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  }
+}
