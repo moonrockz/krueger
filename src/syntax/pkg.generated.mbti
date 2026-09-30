@@ -8,6 +8,7 @@ import {
 }
 
 // Values
+pub fn kind_table() -> Array[(String, String, Array[String])]
 
 // Errors
 
@@ -36,6 +37,10 @@ pub(all) enum NodeRef {
   Attribute(@parser.DocAttribute)
 } derive(Eq, @debug.Debug)
 pub fn NodeRef::category(Self) -> String
+pub fn NodeRef::children(Self) -> Array[Self]
+pub fn NodeRef::field(Self, String) -> Array[Self]
+pub fn NodeRef::field_of(Self, Self) -> String?
+pub fn NodeRef::fields(Self) -> Array[String]
 pub fn NodeRef::kind(Self) -> String
 pub fn NodeRef::of_result(@parser.ParseResult) -> Self?
 pub fn NodeRef::range(Self) -> @ast.Range

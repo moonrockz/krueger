@@ -1,0 +1,170 @@
+///|
+let expression_source : String =
+  #|module M exposing (..)
+  #|
+  #|{-| M. -}
+  #|
+  #|import Dict as D exposing (Dict, empty)
+  #|
+  #|
+  #|{-| F.
+  #|
+  #|@tag one
+  #|-}
+  #|f : Int -> Int
+  #|f x =
+  #|    case x of
+  #|        ( a, _ ) ->
+  #|            [ -1, 0x1F, 1.5, 'c' ]
+  #|
+  #|        { r } ->
+  #|            (\y -> y) r.a .b
+  #|
+  #|        c :: d ->
+  #|            let
+  #|                z =
+  #|                    if True then () else ()
+  #|
+  #|                ( p, q ) =
+  #|                    ( 1, 2 )
+  #|            in
+  #|            z
+  #|
+  #|        Just (e as g) ->
+  #|            { h | i = "s" }
+  #|
+  #|        _ ->
+  #|            ( (+) 1 2, x |> identity, { j = 1 } )
+  #|
+  #|
+  #|-- a comment
+  #|type alias T a =
+  #|    { a | b : Int } -> ( Int, () ) -> List a -> { c : a }
+  #|
+  #|
+  #|type U
+  #|    = V Int
+  #|    | W
+  #|
+
+///|
+/// Every node under `root`, collected with an explicit stack.
+fn all_nodes(
+  root : @syntax.NodeRef,
+) -> Array[(@syntax.NodeRef, @syntax.NodeRef?)] {
+  let found = []
+  let stack : Array[(@syntax.NodeRef, @syntax.NodeRef?)] = [(root, None)]
+  while stack.pop() is Some((node, parent)) {
+    found.push((node, parent))
+    for c in node.children() {
+      stack.push((c, Some(node)))
+    }
+  }
+  found
+}
+
+///|
+fn before_or_at(a : @ast.Location, b : @ast.Location) -> Bool {
+  a.row < b.row || (a.row == b.row && a.column <= b.column)
+}
+
+///|
+fn table_fields(category : String, kind : String) -> Array[String]? {
+  for row in @syntax.kind_table() {
+    if row.0 == category && row.1 == kind {
+      return Some(row.2)
+    }
+  }
+  None
+}
+
+///|
+test "children lie in their parent, in source order, and match the kind table" {
+  let root = parse_root(expression_source)
+  let nodes = all_nodes(root)
+  @expect.expect(nodes.length() > 100).to_equal(true)
+  for entry in nodes {
+    let (node, _) = entry
+    guard table_fields(node.category(), node.kind()) is Some(fields) else {
+      fail("\{node.category()}/\{node.kind()} is not in the kind table")
+    }
+    @expect.expect(node.fields()).to_equal(fields)
+    let children = node.children()
+    let mut previous : @ast.Location? = None
+    for c in children {
+      if !(before_or_at(node.range().start, c.range().start) &&
+        before_or_at(c.range().end, node.range().end)) {
+        fail(
+          "\{c.category()}/\{c.kind()} is outside \{node.category()}/\{node.kind()}",
+        )
+      }
+      if previous is Some(p) && !before_or_at(p, c.range().start) {
+        fail("children of \{node.kind()} are out of order")
+      }
+      previous = Some(c.range().start)
+      guard node.field_of(c) is Some(field) else {
+        fail("no field holds a child of \{node.kind()}")
+      }
+      @expect.expect(node.field(field).contains(c)).to_equal(true)
+    }
+    let by_field = []
+    for f in node.fields() {
+      by_field.append(node.field(f))
+    }
+    @expect.expect(by_field.length()).to_equal(children.length())
+    for c in by_field {
+      @expect.expect(children.contains(c)).to_equal(true)
+    }
+  }
+}
+
+///|
+test "the kind table has one row per kind" {
+  let table = @syntax.kind_table()
+  @expect.expect(table.length()).to_equal(77)
+  let seen : Array[String] = []
+  for row in table {
+    let key = "\{row.0}/\{row.1}"
+    @expect.expect(seen.contains(key)).to_equal(false)
+    seen.push(key)
+  }
+}
+
+///|
+test "doc attributes are children of their declaration and of the file" {
+  let root = parse_root(expression_source)
+  guard root.field("declarations") is [f, ..] else { fail("no declarations") }
+  @expect.expect(f.field("attributes").map(a => a.kind())).to_equal([
+    "attribute",
+  ])
+  @expect.expect(root.field("attributes")).to_equal([])
+  let with_module = parse_root(
+    "module M exposing (..)\n\n{-| M.\n\n@owner \"bank\"\n\n-}\n\n\nx =\n    1\n",
+  )
+  @expect.expect(with_module.field("attributes").map(a => a.kind())).to_equal([
+    "attribute",
+  ])
+}
+
+///|
+test "case children are in source order although the JSON puts cases first" {
+  let root = parse_root(expression_source)
+  guard all_nodes(root).search_by(e => e.0.kind() == "case") is Some(i) else {
+    fail("no case")
+  }
+  let case_node = all_nodes(root)[i].0
+  @expect.expect(case_node.fields()).to_equal(["cases", "expression"])
+  let children = case_node.children()
+  @expect.expect(children[0].category()).to_equal("expression")
+  @expect.expect(children[1].category()).to_equal("case_branch")
+}
+
+///|
+test "an absent or unknown field is empty" {
+  let root = parse_root(expression_source)
+  @expect.expect(root.field("nope")).to_equal([])
+  guard root.field("imports") is [import_node] else { fail("no import") }
+  @expect.expect(import_node.field("moduleAlias").map(n => n.kind())).to_equal([
+    "module_name",
+  ])
+}
