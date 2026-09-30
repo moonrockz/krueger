@@ -17,9 +17,21 @@ pub fn normalize_tokens(Array[RawToken]) -> TokenStream
 
 pub fn raw_to_trivia(RawToken) -> Trivia?
 
+pub fn tab_character(Span) -> Diagnostic
+
+pub fn unexpected_character(Span) -> Diagnostic
+
+pub fn unexpected_semicolon(Span) -> Diagnostic
+
 pub fn unterminated_block_comment(Span) -> Diagnostic
 
-pub fn unterminated_literal(Span) -> Diagnostic
+pub fn unterminated_char(Span) -> Diagnostic
+
+pub fn unterminated_glsl(Span) -> Diagnostic
+
+pub fn unterminated_multiline_string(Span) -> Diagnostic
+
+pub fn unterminated_string(Span) -> Diagnostic
 
 // Errors
 

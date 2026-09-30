@@ -338,16 +338,14 @@ pub fn lex_raw(
     } else if cursor.starts_with("[glsl|") {
       cursor.advance_by(6)
       if !skip_until(cursor, "|]") {
-        diagnostics.push(
-          unterminated_literal({ start, end: cursor.position(), }),
-        )
+        diagnostics.push(unterminated_glsl({ start, end: cursor.position(), }))
       }
       Some(Significant(Glsl))
     } else if cursor.starts_with("\"\"\"") {
       cursor.advance_by(3)
       if !skip_quoted(cursor, "\"\"\"", true) {
         diagnostics.push(
-          unterminated_literal({ start, end: cursor.position(), }),
+          unterminated_multiline_string({ start, end: cursor.position(), }),
         )
       }
       Some(Significant(StringLiteral))
@@ -355,16 +353,14 @@ pub fn lex_raw(
       cursor.advance()
       if !skip_quoted(cursor, "\"", false) {
         diagnostics.push(
-          unterminated_literal({ start, end: cursor.position(), }),
+          unterminated_string({ start, end: cursor.position(), }),
         )
       }
       Some(Significant(StringLiteral))
     } else if c == '\''.to_int() {
       cursor.advance()
       if !skip_quoted(cursor, "'", false) {
-        diagnostics.push(
-          unterminated_literal({ start, end: cursor.position(), }),
-        )
+        diagnostics.push(unterminated_char({ start, end: cursor.position(), }))
       }
       Some(Significant(CharLiteral))
     } else if is_ascii_digit_code(c) {
@@ -414,7 +410,16 @@ pub fn lex_raw(
           // A character outside the BMP is two code units.
           let width = if c >= 0xD800 && c <= 0xDBFF { 2 } else { 1 }
           cursor.advance_by(width)
-          diagnostics.push(invalid_sequence({ start, end: cursor.position(), }))
+          let span = { start, end: cursor.position(), }
+          diagnostics.push(
+            match c {
+              '\t' => tab_character(span)
+              ';' => unexpected_semicolon(span)
+              '`' => unexpected_character(span)
+              _ if c < 0x80 => invalid_sequence(span)
+              _ => unexpected_character(span)
+            },
+          )
           None
         }
       }
