@@ -146,6 +146,13 @@ fn starts_argument(c : Cursor) -> Bool {
 
 ///|
 fn sub_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  c.nested(() => sub_expression_at_depth(c))
+}
+
+///|
+fn sub_expression_at_depth(
+  c : Cursor,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
   guard c.peek() is Some(t) else { raise c.fail("an expression") }
   match t.kind {
     StringLiteral => {
@@ -444,7 +451,11 @@ fn case_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let column = first.span.start.column
   let cases = c.with_indent(column, () => {
     let cases = [case_branch(c)]
-    while c.peek() is Some(t) && t.span.start.column == column {
+    // A token at the branch column that cannot start a pattern (for example
+    // an operator) ends the branches, as in elm-syntax.
+    while c.peek() is Some(t) &&
+          t.span.start.column == column &&
+          starts_pattern(c) {
       cases.push(case_branch(c))
     }
     cases

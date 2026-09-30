@@ -53,6 +53,14 @@ fn single_pattern(
   c : Cursor,
   constructor_args : Bool,
 ) -> @ast.Node[@ast.Pattern] raise SyntaxError {
+  c.nested(() => single_pattern_at_depth(c, constructor_args))
+}
+
+///|
+fn single_pattern_at_depth(
+  c : Cursor,
+  constructor_args : Bool,
+) -> @ast.Node[@ast.Pattern] raise SyntaxError {
   guard c.peek() is Some(t) else { raise c.fail("a pattern") }
   match t.kind {
     Underscore => {

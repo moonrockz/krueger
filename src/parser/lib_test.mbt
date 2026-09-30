@@ -293,3 +293,96 @@ test "empty stream has no ast and an empty cst span" {
   guard result.cst is Some(cst) else { fail("expected a CST") }
   @expect.expect(cst.span is None).to_be_true()
 }
+
+///|
+fn body_of(file : @ast.File, name : String) -> @ast.Node[@ast.Expression] raise {
+  for decl in file.declarations {
+    if decl.value is FunctionDeclaration(f) &&
+      f.declaration.value.name.value == name {
+      return f.declaration.value.expression
+    }
+  }
+  fail("no function \{name}")
+}
+
+///|
+test "unicode escapes out of range become the replacement character" {
+  let result = parse(
+    "module Main exposing (..)\n\n\na = '\\u{110000}'\n\n\nb = \"\\u{FFFFFFFFFFFF}\"\n\n\nc = '\\u{D800}'\n",
+  )
+  @expect.expect(codes(result)).to_equal([])
+  let file = ast(result)
+  @expect.expect(body_of(file, "a").value).to_equal(CharLiteral('\u{FFFD}'))
+  @expect.expect(body_of(file, "b").value).to_equal(Literal("\u{FFFD}"))
+  @expect.expect(body_of(file, "c").value).to_equal(CharLiteral('\u{FFFD}'))
+}
+
+///|
+fn nested(
+  open : String,
+  middle : String,
+  close : String,
+  depth : Int,
+) -> String {
+  let sb = StringBuilder()
+  for _ in 0..<depth {
+    sb.write_string(open)
+  }
+  sb.write_string(middle)
+  for _ in 0..<depth {
+    sb.write_string(close)
+  }
+  sb.to_string()
+}
+
+///|
+test "deep nesting is a diagnostic, not a stack overflow" {
+  let header = "module Main exposing (..)\n\n\n"
+  let deep = 5000
+  let expr = parse(header + "f = " + nested("(", "1", ")", deep) + "\n")
+  @expect.expect(codes(expr)).to_equal(["KR-PARSE-004"])
+  let unclosed = parse(header + "f = " + nested("(", "1", "", deep) + "\n")
+  @expect.expect(codes(unclosed)).to_equal(["KR-PARSE-004"])
+  let list = parse(header + "f = " + nested("[", "1", "]", deep) + "\n")
+  @expect.expect(codes(list)).to_equal(["KR-PARSE-004"])
+  let typ = parse(header + "f : " + nested("(", "Int", ")", deep) + "\nf = 1\n")
+  @expect.expect(codes(typ)).to_equal(["KR-PARSE-004"])
+  let pat = parse(header + "f " + nested("(", "x", ")", deep) + " = 1\n")
+  @expect.expect(codes(pat)).to_equal(["KR-PARSE-004"])
+  let type_alias = parse(
+    header + "type alias A = " + nested("(", "Int", ")", deep) + "\n",
+  )
+  @expect.expect(codes(type_alias)).to_equal(["KR-PARSE-003"])
+}
+
+///|
+test "moderate nesting still parses" {
+  let header = "module Main exposing (..)\n\n\n"
+  let depth = 100
+  @expect.expect(
+    codes(parse(header + "f = " + nested("(", "1", ")", depth) + "\n")),
+  ).to_equal([])
+  @expect.expect(
+    codes(parse(header + "f = " + nested("[", "1", "]", depth) + "\n")),
+  ).to_equal([])
+  @expect.expect(
+    codes(parse(header + "f : " + nested("(", "Int", ")", depth) + "\nf = 1\n")),
+  ).to_equal([])
+  @expect.expect(
+    codes(parse(header + "f " + nested("(", "x", ")", depth) + " = 1\n")),
+  ).to_equal([])
+}
+
+///|
+test "an operator at the branch column after the last branch applies to the case" {
+  let result = parse(
+    "module Main exposing (..)\n\n\nf x =\n    case x of\n        A -> 1\n        + 2\n",
+  )
+  @expect.expect(codes(result)).to_equal([])
+  let body = body_of(ast(result), "f")
+  @expect.expect(body.range).to_equal(range(5, 5, 7, 12))
+  guard body.value is OperatorApplication("+", Left, left, _) else {
+    fail("expected `+` applied to the case")
+  }
+  @expect.expect(left.range).to_equal(range(5, 5, 6, 15))
+}

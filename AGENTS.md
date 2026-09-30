@@ -53,8 +53,9 @@ moonrockz/krueger
   for `let` and `case` items) and its operator table. It reproduces elm-syntax's
   range quirks; each one is marked with a comment where it is implemented.
 - On all 363 corpus files the output is byte-identical to elm-syntax. When something
-  cannot be parsed, the declaration is left out of the AST, kept in the CST, and
-  reported:
+  cannot be parsed, the declaration is left out of the AST and the CST, and
+  reported. Nesting deeper than 150 levels (expressions, types or patterns) is a
+  syntax error, not a stack overflow:
 
 | Code | Meaning |
 |------|---------|

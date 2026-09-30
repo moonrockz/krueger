@@ -11,11 +11,12 @@ priv struct Cursor {
   tokens : Array[@scanner.Token]
   mut pos : Int
   mut indent : Int
+  mut depth : Int
 }
 
 ///|
 fn Cursor::new(tokens : Array[@scanner.Token]) -> Cursor {
-  { tokens, pos: 0, indent: 1, }
+  { tokens, pos: 0, indent: 1, depth: 0, }
 }
 
 ///|
@@ -120,6 +121,31 @@ fn[T] Cursor::with_indent(
     }
   }
   self.indent = saved
+  result
+}
+
+///|
+/// Deepest nesting of expressions, types and patterns the parser accepts.
+/// Deeper input gives a syntax error instead of a stack overflow.
+const MAX_DEPTH : Int = 150
+
+///|
+/// Run `body` one nesting level deeper; fail above `MAX_DEPTH`.
+fn[T] Cursor::nested(
+  self : Cursor,
+  body : () -> T raise SyntaxError,
+) -> T raise SyntaxError {
+  if self.depth >= MAX_DEPTH {
+    raise SyntaxError("nesting too deep", self.here())
+  }
+  self.depth += 1
+  let result = body() catch {
+    SyntaxError(message, span) => {
+      self.depth -= 1
+      raise SyntaxError(message, span)
+    }
+  }
+  self.depth -= 1
   result
 }
 

@@ -33,6 +33,14 @@ fn type_no_fn(
   c : Cursor,
   with_args : Bool,
 ) -> @ast.Node[@ast.TypeAnnotation] raise SyntaxError {
+  c.nested(() => type_no_fn_at_depth(c, with_args))
+}
+
+///|
+fn type_no_fn_at_depth(
+  c : Cursor,
+  with_args : Bool,
+) -> @ast.Node[@ast.TypeAnnotation] raise SyntaxError {
   guard c.peek() is Some(t) else { raise c.fail("a type") }
   match t.kind {
     LParen => parens_type(c)

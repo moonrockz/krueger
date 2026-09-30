@@ -29,10 +29,22 @@ fn decode_escapes(body : String) -> String raise SyntaxError {
         let mut j = i + 3
         let mut code = 0
         while j < chars.length() && chars[j] != '}' {
-          code = code * 16 + hex_value(chars[j])
+          // Stop growing past the largest code point, so long runs cannot overflow.
+          if code <= 0x10FFFF {
+            code = code * 16 + hex_value(chars[j])
+          }
           j += 1
         }
-        sb.write_char(Int::unsafe_to_char(code))
+        // A value that is not a Unicode scalar value (above U+10FFFF, or a
+        // surrogate) becomes U+FFFD.
+        let scalar = code <= 0x10FFFF && !(code >= 0xD800 && code <= 0xDFFF)
+        sb.write_char(
+          if scalar {
+            Int::unsafe_to_char(code)
+          } else {
+            '\u{FFFD}'
+          },
+        )
         i = j + 1
         continue
       }
