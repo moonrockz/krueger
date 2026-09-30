@@ -54,12 +54,14 @@ pub(all) enum Trivia {
 } derive(Eq, Debug)
 
 ///|
+/// Reserved words of Elm 0.19.1 as elm-syntax 7.3.9 treats them. `alias`,
+/// `infix` and `effect` are not reserved; they are identifiers.
 pub(all) enum KeywordKind {
   Module
   Exposing
   Import
+  As
   Type
-  Alias
   If
   Then
   Else
@@ -67,21 +69,41 @@ pub(all) enum KeywordKind {
   In
   Case
   Of
+  Port
+  Where
 } derive(Eq, Debug)
 
 ///|
 pub(all) enum TokenKind {
   Keyword(KeywordKind)
+  /// A lowercase or uppercase name; the first character tells which.
   Identifier
+  /// A decimal or hexadecimal (`0x`) integer; the sign is a separate `-`.
   IntLiteral
+  FloatLiteral
+  /// A single- or triple-quoted string, lexeme including the quotes.
+  StringLiteral
+  /// A char literal, lexeme including the quotes.
+  CharLiteral
+  /// A `[glsl| ... |]` block, lexeme including the delimiters.
+  Glsl
   LParen
   RParen
+  LBracket
+  RBracket
+  LBrace
+  RBrace
   Comma
   Equals
-  Plus
+  Dot
   DotDot
+  Colon
+  Pipe
   Arrow
-  Unknown
+  Backslash
+  Underscore
+  /// One of the 24 infix operators elm-syntax allows.
+  Operator(String)
 } derive(Eq, Debug)
 
 ///|
@@ -110,8 +132,18 @@ pub fn TokenKind::type_kw() -> TokenKind {
 }
 
 ///|
-pub fn TokenKind::alias_kw() -> TokenKind {
-  TokenKind::keyword(KeywordKind::Alias)
+pub fn TokenKind::as_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::As)
+}
+
+///|
+pub fn TokenKind::port_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Port)
+}
+
+///|
+pub fn TokenKind::where_kw() -> TokenKind {
+  TokenKind::keyword(KeywordKind::Where)
 }
 
 ///|

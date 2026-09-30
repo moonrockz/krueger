@@ -17,3 +17,10 @@ pub fn malformed_doc_comment(span : Span) -> Diagnostic {
 pub fn invalid_sequence(span : Span) -> Diagnostic {
   scanner_error("KR-SCAN-003", "Invalid or unknown character sequence", span)
 }
+
+///|
+pub fn unterminated_literal(span : Span) -> Diagnostic {
+  scanner_error(
+    "KR-SCAN-004", "Unterminated string, char or GLSL literal", span,
+  )
+}

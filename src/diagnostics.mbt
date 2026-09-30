@@ -6,6 +6,7 @@ let diagnostic_descriptions : Map[String, String] = {
   "KR-SCAN-001": "Unterminated block comment",
   "KR-SCAN-002": "Malformed doc comment",
   "KR-SCAN-003": "Invalid or unknown character sequence",
+  "KR-SCAN-004": "Unterminated string, char or GLSL literal",
   "KR-PARSE-001": "Malformed module header (no AST)",
   "KR-PARSE-002": "Malformed import declaration",
   "KR-PARSE-003": "Malformed type declaration",
