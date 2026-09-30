@@ -46,8 +46,15 @@ moonrockz/krueger
 
 - `@ast` types, field names and JSON shape follow elm-syntax 7.3.9 exactly.
   `@ast.encode_file` output must equal `Elm.Syntax.File.encode` output byte for byte.
-- The parser never produces an approximate AST node. Syntax it cannot produce
-  exactly is left out of the AST, kept in the CST, and reported:
+- The parser (`src/parser`) is a recursive-descent port of elm-syntax 7.3.9's parser
+  over tokens, one file per elm-syntax module (`module_level`, `declarations`,
+  `type_annotation`, `patterns`, `expression`), with elm-syntax's layout rules
+  (column 1 for top-level items, positively indented continuations, top indentation
+  for `let` and `case` items) and its operator table. It reproduces elm-syntax's
+  range quirks; each one is marked with a comment where it is implemented.
+- On all 363 corpus files the output is byte-identical to elm-syntax. When something
+  cannot be parsed, the declaration is left out of the AST, kept in the CST, and
+  reported:
 
 | Code | Meaning |
 |------|---------|
@@ -59,9 +66,10 @@ moonrockz/krueger
 | `KR-PARSE-002` | Malformed import declaration |
 | `KR-PARSE-003` | Malformed type declaration |
 | `KR-PARSE-004` | Malformed function declaration |
-| `KR-PARSE-005` | Unsupported syntax: the parser cannot produce this construct yet |
+| `KR-PARSE-005` | Unsupported syntax (not emitted at the moment; reserved) |
 | `KR-PARSE-006` | Missing module header (no AST) |
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
+| `KR-PARSE-008` | Syntax error in a port or infix declaration |
 
 `src/diagnostics.mbt` holds these descriptions (`diagnostic_description(code)`); the parity
 summary reads them. Keep this table and that file in step when you add a code.
