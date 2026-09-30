@@ -45,6 +45,15 @@ pub fn NodeRef::kind(Self) -> String
 pub fn NodeRef::of_result(@parser.ParseResult) -> Self?
 pub fn NodeRef::range(Self) -> @ast.Range
 
+pub struct Tree {
+  // private fields
+}
+pub fn Tree::ancestors(Self, NodeRef) -> Array[NodeRef]
+pub fn Tree::new(@parser.ParseResult) -> Self?
+pub fn Tree::parent(Self, NodeRef) -> NodeRef?
+pub fn Tree::path(Self, NodeRef) -> Array[NodeRef]
+pub fn Tree::root(Self) -> NodeRef
+
 // Type aliases
 
 // Traits
