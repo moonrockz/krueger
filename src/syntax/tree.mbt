@@ -6,6 +6,7 @@ pub struct Tree {
   priv root : NodeRef
   /// identity key → (node, parent) for every node below the root.
   priv parents : Map[String, Array[(NodeRef, NodeRef)]]
+  priv tokens : Array[@scanner.Token]
 }
 
 ///|
@@ -33,7 +34,11 @@ pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
       stack.push(child)
     }
   }
-  Some({ root, parents, })
+  let tokens = match result.cst {
+    Some(cst) => cst.tokens
+    None => []
+  }
+  Some({ root, parents, tokens, })
 }
 
 ///|
@@ -76,4 +81,66 @@ pub fn Tree::path(self : Tree, n : NodeRef) -> Array[NodeRef] {
   path.rev_in_place()
   path.push(n)
   path
+}
+
+///|
+fn at_or_before(a : @ast.Location, b : @ast.Location) -> Bool {
+  a.row < b.row || (a.row == b.row && a.column <= b.column)
+}
+
+///|
+/// Whether `r` contains `p` (`start <= p < end`; an empty range contains
+/// nothing).
+fn contains(r : @ast.Range, p : @ast.Location) -> Bool {
+  at_or_before(r.start, p) && !at_or_before(r.end, p)
+}
+
+///|
+/// Whether `a` fits inside `b`.
+fn within(a : @ast.Range, b : @ast.Range) -> Bool {
+  at_or_before(b.start, a.start) && at_or_before(a.end, b.end)
+}
+
+///|
+/// The innermost node whose range contains `p`, or `None` outside the file.
+/// At each level the smallest child containing `p` wins, so a comment inside
+/// a declaration (both children of the file) is found.
+pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
+  if !contains(self.root.range(), p) {
+    return None
+  }
+  let mut current = self.root
+  while true {
+    let mut best : NodeRef? = None
+    for child in current.children() {
+      if contains(child.range(), p) {
+        best = match best {
+          Some(b) if !within(child.range(), b.range()) => Some(b)
+          Some(b) if child.range() == b.range() => Some(b)
+          _ => Some(child)
+        }
+      }
+    }
+    match best {
+      Some(b) => current = b
+      None => break
+    }
+  }
+  Some(current)
+}
+
+///|
+/// The tokens that lie inside `r`, in source order (a new array).
+pub fn Tree::tokens_in(self : Tree, r : @ast.Range) -> Array[@scanner.Token] {
+  self.tokens.filter(t => {
+    let start : @ast.Location = {
+      row: t.span.start.line,
+      column: t.span.start.column,
+    }
+    let end : @ast.Location = {
+      row: t.span.end.line,
+      column: t.span.end.column,
+    }
+    at_or_before(r.start, start) && at_or_before(end, r.end)
+  })
 }
