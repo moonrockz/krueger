@@ -1,0 +1,10 @@
+import {
+  "moonbitlang/core/builtin",
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/parser",
+}
+
+import {
+  "moonrockz/expect",
+  "moonrockz/krueger/scanner",
+} for "test"

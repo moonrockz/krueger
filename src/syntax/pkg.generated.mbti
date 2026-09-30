@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/syntax"
+
+import {
+  "moonbitlang/core/debug",
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/parser",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) enum NodeRef {
+  File(@ast.File, Array[@parser.AttributeGroup])
+  Module(@ast.Node[@ast.Module])
+  ModuleName(@ast.Node[Array[String]])
+  Exposing(@ast.Node[@ast.Exposing])
+  Expose(@ast.Node[@ast.TopLevelExpose])
+  Import(@ast.Node[@ast.Import])
+  Declaration(@ast.Node[@ast.Declaration], Array[@parser.DocAttribute])
+  Documentation(@ast.Node[String])
+  Signature(@ast.Node[@ast.Signature])
+  Implementation(@ast.Node[@ast.FunctionImplementation])
+  Constructor(@ast.Node[@ast.ValueConstructor])
+  Expression(@ast.Node[@ast.Expression])
+  LetDeclaration(@ast.Node[@ast.LetDeclaration])
+  Case(@ast.Case)
+  RecordSetter(@ast.Node[@ast.RecordSetter])
+  Pattern(@ast.Node[@ast.Pattern])
+  TypeAnnotation(@ast.Node[@ast.TypeAnnotation])
+  RecordField(@ast.Node[@ast.RecordField])
+  Name(@ast.Node[String])
+  Comment(@ast.Node[String])
+  Attribute(@parser.DocAttribute)
+} derive(Eq, @debug.Debug)
+pub fn NodeRef::category(Self) -> String
+pub fn NodeRef::kind(Self) -> String
+pub fn NodeRef::of_result(@parser.ParseResult) -> Self?
+pub fn NodeRef::range(Self) -> @ast.Range
+
+// Type aliases
+
+// Traits
