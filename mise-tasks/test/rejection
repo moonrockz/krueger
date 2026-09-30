@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Check krueger's accept/reject verdicts against the recorded elm make and elm-syntax verdicts"
+set -euo pipefail
+
+moon test src/rejection --target js

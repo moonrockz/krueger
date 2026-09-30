@@ -1,0 +1,10 @@
+import {
+  "moonrockz/krueger",
+  "moonrockz/expect",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/crypto",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/hex",
+  "moonbitlang/core/encoding/utf8",
+} for "wbtest"

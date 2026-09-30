@@ -223,7 +223,9 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `corpus:fetch`      | Download and verify the pinned corpus into `.corpus/` |
 | `corpus:manifest`   | Rebuild `tests/corpus/manifest.json` from `packages.txt` |
 | `corpus:goldens`    | Regenerate elm-syntax goldens and `goldens.lock` (needs Elm and Node) |
-| `test`              | Run all tests (unit + bdd + e2e + scripts)     |
+| `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
+| `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
+| `test`              | Run all tests (unit + bdd + e2e + scripts + rejection) |
 | `release:version`   | Compute next version from conventional commits |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |
@@ -287,6 +289,27 @@ corpus of real packages (`tests/corpus/`).
 - To add a package: add it to `packages.txt`, run `mise run corpus:manifest`, then
   `mise run corpus:goldens`, then commit the manifest and the lock.
 - The oracle is `tools/elm-syntax-oracle/` (Elm worker plus Node runner). CI never runs it.
+
+## Rejection Parity
+
+krueger checks which Elm source it accepts and rejects against two oracles: `elm make`
+0.19.1 (dialect `elm-0.19.1`) and elm-syntax 7.3.9 (dialect `elm-syntax-7.3.9`).
+
+- `tests/rejection/<group>/<case>.elm` are small modules, each compiled as
+  `src/Fixture.elm`. A negative fixture has one syntax problem and is valid otherwise.
+- `mise run rejection:record` (needs Elm and Node; `mise x` installs them) runs `elm make
+  --report=json` and the elm-syntax oracle on every fixture and writes
+  `tests/rejection/verdicts.json`: the fixture's SHA-256, the `elm make` verdict (with
+  title, region and message when it rejects; `later_error` when only a later phase such
+  as naming or types fails, which means the parser accepted it) and the elm-syntax
+  verdict. CI never runs `elm make`.
+- `mise run test:rejection` parses each fixture in both dialects. krueger accepts a file
+  when it gives no diagnostic with severity `Error`. A changed fixture fails with "run
+  `mise run rejection:record`".
+- `tests/rejection/pending.json` lists the fixture and dialect pairs that do not match yet.
+  The list only shrinks: the check fails on a mismatch that is not listed and on a listed
+  pair that now matches (remove it). `KRUEGER_REJECTION_MODE=write-pending` rewrites the
+  list; use it only when adding fixtures.
 
 ## Tooling
 
