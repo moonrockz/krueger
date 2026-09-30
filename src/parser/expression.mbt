@@ -1,0 +1,550 @@
+///|
+/// Precedence and direction of the infix operators elm-syntax knows.
+fn operator_info(op : String) -> (Int, @ast.InfixDirection)? {
+  match op {
+    "|>" => Some((1, Left))
+    "<|" => Some((1, Right))
+    "||" => Some((2, Right))
+    "&&" => Some((3, Right))
+    "==" | "/=" | "<=" | ">=" | ">" | "<" => Some((4, Non))
+    "++" | "::" => Some((5, Right))
+    "|=" => Some((5, Left))
+    "+" | "-" | "|." => Some((6, Left))
+    "//" | "*" | "/" => Some((7, Left))
+    "</>" => Some((7, Right))
+    "<?>" => Some((8, Left))
+    "^" => Some((8, Right))
+    ">>" => Some((9, Right))
+    "<<" => Some((9, Left))
+    _ => None
+  }
+}
+
+///|
+/// `Elm.Parser.Expression.expression`.
+fn expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  expression_above(c, 0, false)
+}
+
+///|
+/// Precedence climbing as elm-syntax does it: after the left operand, take
+/// operators whose precedence is above `min` (or equal when `or_equal`).
+fn expression_above(
+  c : Cursor,
+  min : Int,
+  or_equal : Bool,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let mut left = application(c)
+  while c.positively_indented() {
+    guard c.peek() is Some({ kind: Operator(op), .. } as op_token) else {
+      break
+    }
+    guard operator_info(op) is Some((precedence, direction)) else {
+      raise SyntaxError("unknown infix operator `\{op}`", op_token.span)
+    }
+    let accepted = if or_equal { precedence >= min } else { precedence > min }
+    if !accepted {
+      break
+    }
+    ignore(c.advance())
+    let right = match direction {
+      Left => expression_above(c, precedence, false)
+      Right => expression_above(c, precedence, true)
+      Non => non_associative_right(c, precedence)
+    }
+    left = node(
+      combine(left.range, right.range),
+      OperatorApplication(op, direction, left, right),
+    )
+  }
+  left
+}
+
+///|
+/// Right operand of a non-associative operator: higher precedence only; an
+/// operator of the same precedence is an error.
+fn non_associative_right(
+  c : Cursor,
+  precedence : Int,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let right = expression_above(c, precedence, false)
+  if c.positively_indented() &&
+    c.peek() is Some({ kind: Operator(op), .. } as t) &&
+    operator_info(op) is Some((p, _)) &&
+    p == precedence {
+    raise SyntaxError(
+      "cannot mix non-associative infix operators without parentheses",
+      t.span,
+    )
+  }
+  right
+}
+
+///|
+/// A sub-expression followed by positively indented arguments.
+fn application(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let head = sub_expression(c)
+  let args = [head]
+  while c.positively_indented() && starts_argument(c) {
+    args.push(sub_expression(c))
+  }
+  if args.length() == 1 {
+    head
+  } else {
+    node(combine(head.range, args.last().unwrap().range), Application(args))
+  }
+}
+
+///|
+/// Whether a `-` at the cursor is a negation: the character before it is a
+/// space, `(`, `)`, `}` or `,` (or nothing), and the operand touches it.
+fn negation_here(c : Cursor) -> Bool {
+  guard c.peek() is Some({ kind: Operator("-"), .. } as minus) else {
+    return false
+  }
+  let before = match minus.trivia_before.last() {
+    Some(Whitespace(_, _)) => Some(' ')
+    Some(Newline(_, _)) => Some('\n')
+    Some(Comment(comment)) => comment.text.to_array().last()
+    None =>
+      match c.previous() {
+        Some(prev) => prev.lexeme.to_array().last()
+        None => None
+      }
+  }
+  let allowed = match before {
+    None | Some(' ' | '(' | ')' | '}' | ',') => true
+    _ => false
+  }
+  allowed &&
+  (match c.peek_at(1) {
+    Some(next) => touching(minus, next) && next.trivia_before.is_empty()
+    None => false
+  })
+}
+
+///|
+fn starts_argument(c : Cursor) -> Bool {
+  guard c.peek() is Some(t) else { return false }
+  match t.kind {
+    StringLiteral
+    | CharLiteral
+    | IntLiteral
+    | FloatLiteral
+    | Glsl
+    | LParen
+    | LBracket
+    | LBrace
+    | Backslash
+    | Identifier
+    | Keyword(Case | Let | If) => true
+    Dot => c.peek_at(1) is Some(n) && is_lower(n) && touching(t, n)
+    Operator("-") => negation_here(c)
+    _ => false
+  }
+}
+
+///|
+fn sub_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  guard c.peek() is Some(t) else { raise c.fail("an expression") }
+  match t.kind {
+    StringLiteral => {
+      ignore(c.advance())
+      token_node(t, Literal(string_value(t)))
+    }
+    CharLiteral => {
+      ignore(c.advance())
+      token_node(t, CharLiteral(char_value(t)))
+    }
+    IntLiteral => {
+      ignore(c.advance())
+      match int_value(t) {
+        Ok(n) => token_node(t, Integer(n))
+        Err(n) => token_node(t, Hex(n))
+      }
+    }
+    FloatLiteral => {
+      ignore(c.advance())
+      token_node(t, Floatable(float_value(t)))
+    }
+    Glsl => {
+      ignore(c.advance())
+      let text = t.lexeme
+      let source = text.unsafe_substring(start=6, end=text.length() - 2)
+      // elm-syntax keeps an elm/parser quirk: the range ends two columns late.
+      let range = range_of(t)
+      node(
+        { start: range.start, end: shift(range.end, 2), },
+        GLSLExpression(source),
+      )
+    }
+    LParen => parens_expression(c)
+    LBracket => list_expression(c)
+    LBrace => record_expression(c)
+    Keyword(Case) => case_expression(c)
+    Keyword(Let) => let_expression(c)
+    Keyword(If) => if_expression(c)
+    Backslash => lambda_expression(c)
+    Dot => {
+      let dot = c.advance()
+      if !(c.at_lower() && c.next_touches()) {
+        raise c.fail("a field name after `.`")
+      }
+      let field = c.advance()
+      node(range_from(dot, field), RecordAccessFunction("." + field.lexeme))
+    }
+    Operator("-") => {
+      if !negation_here(c) {
+        raise c.fail("an expression")
+      }
+      let minus = c.advance()
+      let operand = sub_expression(c)
+      node(
+        { start: location(minus.span.start), end: operand.range.end, },
+        Negation(operand),
+      )
+    }
+    Identifier if is_lower(t) => {
+      ignore(c.advance())
+      record_accesses(
+        c,
+        token_node(t, @ast.Expression::FunctionOrValue([], t.lexeme)),
+      )
+    }
+    Identifier => qualified_reference(c)
+    _ => raise c.fail("an expression")
+  }
+}
+
+///|
+/// `.field` accesses that touch the expression before them.
+fn record_accesses(
+  c : Cursor,
+  base : @ast.Node[@ast.Expression],
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let mut left = base
+  while c.at_kind(Dot) &&
+        c.next_touches() &&
+        (match c.peek_at(1) {
+          Some(n) => is_lower(n) && touching(c.peek().unwrap(), n)
+          None => false
+        }) {
+    ignore(c.advance())
+    let field = c.advance()
+    let field_node = token_node(field, field.lexeme)
+    left = node(
+      combine(left.range, field_node.range),
+      RecordAccess(left, field_node),
+    )
+  }
+  left
+}
+
+///|
+/// `Module.Name`, `Module.value`, `Name`, then record accesses.
+fn qualified_reference(
+  c : Cursor,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let first = c.upper("a name")
+  let modules = [first.lexeme]
+  let mut last = first
+  let mut lower_name : String? = None
+  while c.at_kind(Dot) && c.next_touches() {
+    guard c.peek_at(1) is Some(n) && touching(c.peek().unwrap(), n) else {
+      break
+    }
+    if is_upper(n) {
+      ignore(c.advance())
+      last = c.advance()
+      modules.push(last.lexeme)
+    } else if is_lower(n) {
+      ignore(c.advance())
+      last = c.advance()
+      lower_name = Some(last.lexeme)
+      break
+    } else {
+      break
+    }
+  }
+  let reference = match lower_name {
+    Some(name) =>
+      node(
+        range_from(first, last),
+        @ast.Expression::FunctionOrValue(modules, name),
+      )
+    None => {
+      let name = modules.pop().unwrap()
+      node(
+        range_from(first, last),
+        @ast.Expression::FunctionOrValue(modules, name),
+      )
+    }
+  }
+  if lower_name is Some(_) {
+    record_accesses(c, reference)
+  } else {
+    reference
+  }
+}
+
+///|
+fn parens_expression(
+  c : Cursor,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let open = c.advance()
+  if c.at_kind(RParen) && c.next_touches() {
+    let close = c.advance()
+    return node(range_from(open, close), UnitExpr)
+  }
+  if c.peek() is Some({ kind: Operator(op), .. } as op_token) &&
+    touching(open, op_token) &&
+    c.peek_at(1) is Some({ kind: RParen, .. } as close) &&
+    touching(op_token, close) {
+    ignore(c.advance())
+    ignore(c.advance())
+    return node(range_from(open, close), PrefixOperator(op))
+  }
+  let first = expression(c)
+  if c.at_kind(RParen) {
+    let close = c.advance()
+    return record_accesses(
+      c,
+      node(range_from(open, close), ParenthesizedExpression(first)),
+    )
+  }
+  ignore(c.expect(Comma, "`,` or `)`"))
+  let parts = [first, expression(c)]
+  if c.at_kind(Comma) {
+    ignore(c.advance())
+    parts.push(expression(c))
+  }
+  let close = c.expect(RParen, "`)`")
+  node(range_from(open, close), TupledExpression(parts))
+}
+
+///|
+fn list_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let open = c.advance()
+  let items = []
+  if !c.at_kind(RBracket) {
+    items.push(expression(c))
+    while c.at_kind(Comma) {
+      ignore(c.advance())
+      items.push(expression(c))
+    }
+  }
+  let close = c.expect(RBracket, "`,` or `]`")
+  node(range_from(open, close), ListExpr(items))
+}
+
+///|
+/// A record setter whose range ends where the next token starts (elm-syntax
+/// includes the trailing whitespace).
+fn record_setter(c : Cursor) -> @ast.Node[@ast.RecordSetter] raise SyntaxError {
+  let field = c.lower("a field name")
+  ignore(c.expect(Equals, "`=`"))
+  let value = expression(c)
+  let end = match c.peek() {
+    Some(next) => location(next.span.start)
+    None => value.range.end
+  }
+  node({ start: location(field.span.start), end, }, {
+    field: token_node(field, field.lexeme),
+    expression: value,
+  })
+}
+
+///|
+fn record_expression(
+  c : Cursor,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let open = c.advance()
+  if c.at_kind(RBrace) {
+    let close = c.advance()
+    return record_accesses(c, node(range_from(open, close), RecordExpr([])))
+  }
+  if c.at_lower() && c.peek_at(1) is Some({ kind: Pipe, .. }) {
+    let name = c.advance()
+    ignore(c.advance())
+    let setters = [record_setter(c)]
+    while c.at_kind(Comma) {
+      ignore(c.advance())
+      setters.push(record_setter(c))
+    }
+    let close = c.expect(RBrace, "`,` or `}`")
+    return record_accesses(
+      c,
+      node(
+        range_from(open, close),
+        RecordUpdateExpression(token_node(name, name.lexeme), setters),
+      ),
+    )
+  }
+  let first_name = c.lower("a field name")
+  ignore(c.expect(Equals, "`=` or `|`"))
+  let first_value = expression(c)
+  let setters : Array[@ast.Node[@ast.RecordSetter]] = [
+    node(combine(range_of(first_name), first_value.range), {
+      field: token_node(first_name, first_name.lexeme),
+      expression: first_value,
+    }),
+  ]
+  while c.at_kind(Comma) {
+    ignore(c.advance())
+    setters.push(record_setter(c))
+  }
+  let close = c.expect(RBrace, "`,` or `}`")
+  record_accesses(c, node(range_from(open, close), RecordExpr(setters)))
+}
+
+///|
+fn lambda_expression(
+  c : Cursor,
+) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let backslash = c.advance()
+  let args = [argument_pattern(c)]
+  while !c.at_kind(Arrow) {
+    args.push(argument_pattern(c))
+  }
+  ignore(c.expect(Arrow, "`->`"))
+  let body = expression(c)
+  node(
+    { start: location(backslash.span.start), end: body.range.end, },
+    LambdaExpression({ args, expression: body, }),
+  )
+}
+
+///|
+fn if_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let if_token = c.advance()
+  let condition = expression(c)
+  ignore(c.expect(Keyword(Then), "`then`"))
+  let then_branch = expression(c)
+  ignore(c.expect(Keyword(Else), "`else`"))
+  let else_branch = expression(c)
+  node(
+    { start: location(if_token.span.start), end: else_branch.range.end, },
+    IfBlock(condition, then_branch, else_branch),
+  )
+}
+
+///|
+fn case_branch(c : Cursor) -> @ast.Case raise SyntaxError {
+  let pat = pattern(c)
+  ignore(c.expect(Arrow, "`->`"))
+  { pattern: pat, expression: expression(c), }
+}
+
+///|
+fn case_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let case_token = c.advance()
+  let subject = expression(c)
+  ignore(c.expect(Keyword(Of), "`of`"))
+  guard c.peek() is Some(first) else { raise c.fail("a case branch") }
+  let column = first.span.start.column
+  let cases = c.with_indent(column, () => {
+    let cases = [case_branch(c)]
+    while c.peek() is Some(t) && t.span.start.column == column {
+      cases.push(case_branch(c))
+    }
+    cases
+  })
+  let end = cases.last().unwrap().expression.range.end
+  node(
+    { start: location(case_token.span.start), end, },
+    CaseExpression({ expression: subject, cases, }),
+  )
+}
+
+///|
+fn let_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
+  let let_token = c.advance()
+  guard c.peek() is Some(first) else { raise c.fail("a let declaration") }
+  let column = first.span.start.column
+  let declarations = c.with_indent(column, () => {
+    let declarations = [let_declaration(c)]
+    while !c.is_keyword(In) {
+      guard c.peek() is Some(t) && t.span.start.column == column else {
+        raise c.fail("`in` or a let declaration")
+      }
+      declarations.push(let_declaration(c))
+    }
+    declarations
+  })
+  ignore(c.expect(Keyword(In), "`in`"))
+  let body = expression(c)
+  node(
+    { start: location(let_token.span.start), end: body.range.end, },
+    LetExpression({ declarations, expression: body, }),
+  )
+}
+
+///|
+fn let_declaration(
+  c : Cursor,
+) -> @ast.Node[@ast.LetDeclaration] raise SyntaxError {
+  if c.at_lower() {
+    let f = function_parts(c, None)
+    node(f.range, LetFunction(f.value))
+  } else {
+    let pat = argument_pattern(c)
+    ignore(c.expect(Equals, "`=`"))
+    let value = expression(c)
+    node(combine(pat.range, value.range), LetDestructuring(pat, value))
+  }
+}
+
+///|
+/// A function: `name : type` on its own line (optional), then
+/// `name args = expression`. The range starts at `start` (the doc comment)
+/// or at the first name.
+fn function_parts(
+  c : Cursor,
+  documentation : @ast.Node[String]?,
+) -> @ast.Node[@ast.Function] raise SyntaxError {
+  let start_name = c.lower("a function name")
+  let mut signature : @ast.Node[@ast.Signature]? = None
+  let mut name = start_name
+  if c.at_kind(Colon) {
+    ignore(c.advance())
+    let annotation = type_annotation(c)
+    guard c.peek() is Some(impl_name) &&
+      is_lower(impl_name) &&
+      impl_name.span.start.column == c.indent else {
+      raise c.fail("the implementation of `\{start_name.lexeme}`")
+    }
+    if impl_name.lexeme != start_name.lexeme {
+      raise SyntaxError(
+        "expected to find the same name for declaration and signature",
+        impl_name.span,
+      )
+    }
+    ignore(c.advance())
+    signature = Some(
+      node(combine(range_of(start_name), annotation.range), {
+        name: token_node(start_name, start_name.lexeme),
+        type_annotation: annotation,
+      }),
+    )
+    name = impl_name
+  }
+  let arguments = []
+  while !c.at_kind(Equals) {
+    arguments.push(argument_pattern(c))
+  }
+  ignore(c.advance())
+  let body = expression(c)
+  let implementation : @ast.Node[@ast.FunctionImplementation] = node(
+    { start: location(name.span.start), end: body.range.end, },
+    { name: token_node(name, name.lexeme), arguments, expression: body, },
+  )
+  let start = match documentation {
+    Some(doc) => doc.range.start
+    None => location(start_name.span.start)
+  }
+  node({ start, end: body.range.end, }, {
+    documentation,
+    signature,
+    declaration: implementation,
+  })
+}

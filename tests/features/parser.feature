@@ -21,6 +21,22 @@ Feature: Elm parser
       | module_doc_then_type_doc |
       | comments                 |
       | spaced_exposing_all      |
+      | operators                |
+
+  Scenario Outline: Parser output matches elm-syntax for every construct
+    Given the Elm fixture "<fixture>" from the AST fixtures
+    When I parse the source
+    Then parsing succeeds without diagnostics
+    And the AST JSON equals the elm-syntax output for AST fixture "<fixture>"
+
+    Examples:
+      | fixture       |
+      | module_normal |
+      | module_port   |
+      | module_effect |
+      | declarations  |
+      | expressions   |
+      | patterns      |
 
   Scenario: Attach doc comment to following declaration
     Given Elm source:
@@ -95,18 +111,6 @@ Feature: Elm parser
       """
     When I parse the source
     Then the diagnostics include "KR-PARSE-007"
-
-  Scenario: Report declarations the parser cannot produce yet
-    Given Elm source:
-      """elm
-      module Main exposing (add)
-
-      add x = x + 1
-      """
-    When I parse the source
-    Then the diagnostics are "KR-PARSE-005"
-    And the AST has no declarations
-    And the CST has declaration "add"
 
   Scenario: Report a missing module header
     Given Elm source:

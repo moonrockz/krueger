@@ -114,25 +114,29 @@ test "imports keep their alias and exposing list" {
 }
 
 ///|
-test "function declarations are reported as unsupported and kept in the cst" {
+test "function declarations are parsed and kept in the cst" {
   let result = parse("module Main exposing (add)\nadd x = x + 1")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-005"])
-  @expect.expect(ast(result).declarations.length()).to_equal(0)
+  @expect.expect(codes(result)).to_equal([])
+  guard ast(result).declarations is [{ value: FunctionDeclaration(f), .. }] else {
+    fail("expected one function declaration")
+  }
+  @expect.expect(f.declaration.value.name.value).to_equal("add")
   guard result.cst is Some(cst) else { fail("expected a CST") }
-  guard cst.declarations is [Function(f)] else {
+  guard cst.declarations is [Function(cst_f)] else {
     fail("expected one function in the CST")
   }
-  @expect.expect(f.name).to_equal("add")
-  @expect.expect(f.args).to_equal(["x"])
-  assert_node_span_matches_tokens(f.span, f.tokens)
+  @expect.expect(cst_f.name).to_equal("add")
+  @expect.expect(cst_f.args).to_equal(["x"])
+  assert_node_span_matches_tokens(cst_f.span, cst_f.tokens)
 }
 
 ///|
-test "cst keeps every declaration while the ast keeps supported ones" {
+test "ast and cst keep every declaration" {
   let result = parse(
     "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
   )
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-005", "KR-PARSE-005"])
+  @expect.expect(codes(result)).to_equal([])
+  @expect.expect(ast(result).declarations.length()).to_equal(3)
   guard result.cst is Some(cst) else { fail("expected a CST") }
   guard cst.declarations
     is [TypeAlias(type_alias), UnionType(union), Function(f)] else {
@@ -167,10 +171,20 @@ test "custom type with one simple constructor becomes a custom type declaration"
 }
 
 ///|
-test "custom type with arguments the parser cannot type is unsupported" {
+test "custom type arguments can be any type" {
   let result = parse("module Main exposing (Box)\ntype Box = Box (Maybe Int)")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-005"])
-  @expect.expect(ast(result).declarations.length()).to_equal(0)
+  @expect.expect(codes(result)).to_equal([])
+  guard custom_type(ast(result), "Box") is Some(t) else {
+    fail("expected custom type Box")
+  }
+  guard t.constructors is [{ value: { arguments: [arg], .. }, .. }] else {
+    fail("expected one constructor with one argument")
+  }
+  // A parenthesized type is the inner type with a range over the parens.
+  @expect.expect(arg.range).to_equal(range(2, 16, 2, 27))
+  guard arg.value is Typed({ value: ([], "Maybe"), .. }, [_]) else {
+    fail("expected Maybe Int")
+  }
 }
 
 ///|
@@ -255,7 +269,8 @@ test "malformed type declaration is reported" {
 ///|
 test "malformed function declaration is reported" {
   let result = parse("module Main exposing (add)\nadd x x + 1\nok y = y")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-004", "KR-PARSE-005"])
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
+  @expect.expect(ast(result).declarations.length()).to_equal(1)
 }
 
 ///|

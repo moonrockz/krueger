@@ -58,6 +58,21 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
   setup.given1("the Elm fixture {string}", fn(name : String) raise {
     self.source = @fs.read_file_to_string("tests/fixtures/parser/\{name}.elm")
   })
+  setup.given1("the Elm fixture {string} from the AST fixtures", fn(
+    name : String,
+  ) raise {
+    self.source = @fs.read_file_to_string("tests/fixtures/ast/\{name}.elm")
+  })
+  setup.then1(
+    "the AST JSON equals the elm-syntax output for AST fixture {string}",
+    fn(name : String) raise {
+      guard self.parsed().ast is Some(file) else { fail("expected an AST") }
+      let expected = @fs.read_file_to_string("tests/fixtures/ast/\{name}.json")
+        .trim_end(chars="\n")
+        .to_owned()
+      @expect.expect(@ast.encode_file(file).stringify()).to_equal(expected)
+    },
+  )
   setup.when0("I parse the source", fn() {
     let source = @krueger.SourceText::{ module_name: None, text: self.source, }
     self.result = Some(@krueger.parse_module(source))
