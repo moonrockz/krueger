@@ -59,3 +59,58 @@ test "fixtures on disk and recorded verdicts must agree" {
     "a.elm removed: run `mise run rejection:record`",
   ])
 }
+
+///|
+test "title parity only compares fixtures that both reject" {
+  let accepted_text = "module Fixture exposing (..)\n\n\nf = 1\n"
+  let rejected_text = "module Fixture exposing (..)\n\n\nf =\n    case x of\n"
+  let elm : Json = { "accepted": false, "title": "UNFINISHED CASE" }
+  @expect.expect(title_mismatch("a.elm", accepted_text, elm)).to_equal(None)
+  @expect.expect(title_mismatch("a.elm", rejected_text, elm)).to_equal(None)
+  @expect.expect(
+    title_mismatch("a.elm", rejected_text, {
+      "accepted": false,
+      "title": "UNFINISHED LET",
+    }),
+  ).to_equal(Some({ fixture: "a.elm", dialect: "elm-0.19.1", check: "title", }))
+  @expect.expect(title_mismatch("a.elm", rejected_text, { "accepted": true })).to_equal(
+    None,
+  )
+}
+
+///|
+test "snapshots live next to the fixtures under messages/" {
+  @expect.expect(snapshot_path("layout/in_col1.elm")).to_equal(
+    "tests/rejection/messages/layout/in_col1.txt",
+  )
+}
+
+///|
+test "elm make messages render as plain text" {
+  let message : Json = [
+    "I got stuck:\n\n1| x\n   ",
+    { "bold": false, "underline": false, "color": "RED", "string": "^" },
+    "\nTry again.",
+  ]
+  @expect.expect(elm_message_text(message)).to_equal(
+    "I got stuck:\n\n1| x\n   ^\nTry again.",
+  )
+}
+
+///|
+test "the side-by-side report escapes HTML" {
+  let html = report_html([
+    {
+      fixture: "a/b.elm",
+      elm_title: "UNFINISHED LIST",
+      elm_message: "x <y> & z",
+      krueger_title: "UNFINISHED LIST",
+      krueger_message: "-- UNFINISHED LIST\n[ 1 <",
+      elm_accepted: false,
+      krueger_accepted: false,
+    },
+  ])
+  @expect.expect(html).to_contain("x &lt;y&gt; &amp; z")
+  @expect.expect(html).to_contain("[ 1 &lt;")
+  @expect.expect(html).to_contain("a/b.elm")
+}

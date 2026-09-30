@@ -1,0 +1,7 @@
+-- UNFINISHED OPERATOR FUNCTION -------------------------------- src/Fixture.elm
+
+I was parsing an operator function like (+), but I got stuck here:
+
+9|     (+ 1)
+          ^
+I was expecting a closing parenthesis right after the operator.

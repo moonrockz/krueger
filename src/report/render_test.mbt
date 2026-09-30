@@ -196,3 +196,11 @@ test "encode_diagnostics keeps codes, severities and titles" {
   @expect.expect(json.stringify()).to_contain("\"title\":\"UNFINISHED LET\"")
   @expect.expect(json.stringify()).to_contain("\"severity\":\"error\"")
 }
+
+///|
+test "blank lines in examples have no trailing spaces" {
+  let d = { ..let_diagnostic(), report: [Example("a\n\nb")], }
+  @expect.expect(@report.render_plain(d, let_source(), "x.elm")).to_contain(
+    "    a\n\n    b\n",
+  )
+}

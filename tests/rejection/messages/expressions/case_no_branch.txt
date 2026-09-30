@@ -1,0 +1,16 @@
+-- UNFINISHED CASE --------------------------------------------- src/Fixture.elm
+
+I was partway through parsing a case expression, but I got stuck here:
+
+9|     case x of
+                ^
+I was expecting to see a case branch next.
+
+Note: Here is an example of a valid `case` expression for reference:
+
+    case maybeWidth of
+      Just width ->
+        width + 10
+
+      Nothing ->
+        0

@@ -64,6 +64,14 @@ jobs:
       - name: Check rejection parity
         run: mise run test:rejection
 
+      - name: Upload rejection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rejection-report
+          path: _build/reports/rejection
+          if-no-files-found: ignore
+
   targets:
     runs-on: ubuntu-latest
     steps:

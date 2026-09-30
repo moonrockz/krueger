@@ -1,0 +1,8 @@
+-- RESERVED WORD ----------------------------------------------- src/Fixture.elm
+
+It looks like you are using in as a name or an expression, but it is a reserved
+word:
+
+9|     let in 1
+           ^
+Try a different name, or check the lines above for a missing part.

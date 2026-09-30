@@ -1,0 +1,8 @@
+-- UNEXPECTED EQUALS ------------------------------------------- src/Fixture.elm
+
+I was not expecting to see this equals sign:
+
+8|  y =
+      ^
+Maybe this is part of a definition that does not start in the first column?
+Top-level definitions must start at the very beginning of a line.

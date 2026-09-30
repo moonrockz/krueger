@@ -1,0 +1,9 @@
+-- UNKNOWN OPERATOR -------------------------------------------- src/Fixture.elm
+
+I do not recognize the <=> operator:
+
+8| f =
+9|     x <=> 1
+           ^
+Elm has a fixed set of operators; this is not one of them. Is there a typo, or a
+missing space between two operators?

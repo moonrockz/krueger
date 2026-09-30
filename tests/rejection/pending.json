@@ -230,6 +230,11 @@
     "check": "verdict"
   },
   {
+    "fixture": "module/infix_declaration.elm",
+    "dialect": "elm-0.19.1",
+    "check": "title"
+  },
+  {
     "fixture": "module/port_in_normal_module.elm",
     "dialect": "elm-0.19.1",
     "check": "verdict"

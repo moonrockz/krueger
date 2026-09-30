@@ -135,7 +135,8 @@ fn body(
       }
       Example(code) =>
         for line in code.split("\n") {
-          out.push(Plain("    " + line.to_owned() + "\n"))
+          let line = line.to_owned()
+          out.push(Plain(if line == "" { "\n" } else { "    " + line + "\n" }))
         }
       Excerpt(context~, highlight~) => {
         let (chunks, caret) = excerpt_chunks(source, context, highlight)

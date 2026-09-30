@@ -1,0 +1,8 @@
+-- BAD UNICODE ESCAPE ------------------------------------------ src/Fixture.elm
+
+I ran into an invalid Unicode escape:
+
+9|     "\u{}"
+       ^
+A Unicode escape looks like \u{1F600}, with 4 to 6 hex digits between the curly
+braces.

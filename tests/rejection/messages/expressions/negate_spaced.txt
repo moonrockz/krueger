@@ -1,0 +1,7 @@
+-- MISSING EXPRESSION ------------------------------------------ src/Fixture.elm
+
+I am partway through parsing an expression, but I got stuck here:
+
+8| f =
+      ^
+I was expecting to see an expression like 42 or "hello" here.

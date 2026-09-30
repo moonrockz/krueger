@@ -1,0 +1,7 @@
+-- ENDLESS STRING ---------------------------------------------- src/Fixture.elm
+
+I cannot find the end of this multi-line string:
+
+9|     """abc
+       ^^^
+Add a """ somewhere after this to end the string.

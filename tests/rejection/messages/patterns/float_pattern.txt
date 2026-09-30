@@ -1,0 +1,8 @@
+-- UNEXPECTED PATTERN ------------------------------------------ src/Fixture.elm
+
+I cannot pattern match on floating point numbers:
+
+9|     case 1.5 of
+                  ^
+Patterns can match integers, characters, strings and other exact values, but not
+floats. Try an `if` expression with a comparison instead?

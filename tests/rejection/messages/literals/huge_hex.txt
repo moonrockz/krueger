@@ -1,0 +1,6 @@
+-- WEIRD HEXIDECIMAL ------------------------------------------- src/Fixture.elm
+
+I ran into a problem with this number:
+
+9|     0xFFFFFFFFFFFFFFFFFF
+       ^

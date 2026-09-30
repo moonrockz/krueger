@@ -1,0 +1,8 @@
+-- EXPECTING IMPORT ALIAS -------------------------------------- src/Fixture.elm
+
+I was parsing an import, but I got stuck here:
+
+4| import Dict as d
+                  ^
+I was expecting an alias like D in import Dict as D. Aliases must start with a
+capital letter.
