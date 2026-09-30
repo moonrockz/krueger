@@ -395,6 +395,68 @@ Visitor and AST design will aim for **flexibility** similar to moonrockz/gherkin
   single-quoted string (`'a"b\c'`) to pass `"` or `\`.
 - Run `mise run test:unit` for tests; `moon test --update` to refresh snapshots.
 
+### Property-Based Testing (Laws)
+
+Property-based tests are a supplemental strategy. They do not replace the
+example tests and features above; they add evidence of correctness by stating
+**laws**: rules that hold for every input, checked against many generated
+inputs.
+
+- **When to write laws.** For every new type, feature or capability, ask which
+  laws it must obey, and write them down in the plan next to the example tests.
+  Typical laws:
+  - invariants (every child's range lies inside its parent's range);
+  - round trips (decode after encode gives the value back);
+  - equivalences (two APIs give the same result: `walk`, `fold` and `accept`
+    visit the same nodes);
+  - algebraic rules (identity, idempotence, associativity, order preservation);
+  - a model (a small, obviously correct reference implementation agrees with
+    the real one).
+- **Tooling.** Use `moonbitlang/core/quickcheck` (part of core; import it and
+  `moonbitlang/core/quickcheck/splitmix` for `"test"` only). Check a law with
+  `@quickcheck.check(law, count=…, max_size=…, seed=…)`. Always set `seed`, so
+  a run is repeatable and CI failures reproduce locally.
+- **Generators.** For domain inputs, wrap the value in a test-only newtype and
+  implement `@quickcheck.Arbitrary` (and `@quickcheck.Shrink`, the default
+  impl is fine to start):
+
+  ```moonbit
+  struct ElmExpr(String) derive(Debug)
+
+  impl @quickcheck.Arbitrary for ElmExpr with fn arbitrary(size, rs) {
+    ElmExpr(gen_expr(size, rs)) // gen_expr halves `size` at each level
+  }
+
+  impl @quickcheck.Shrink for ElmExpr
+
+  test "law: every child's parent is the node it came from" {
+    @quickcheck.check(
+      (e : ElmExpr) => {
+        let ElmExpr(text) = e
+        let tree = tree_of("module M exposing (..)\n\n\nf =\n    " + text + "\n")
+        all_nodes(tree.root()).iter().all(entry => {
+          entry.1 is None || tree.parent(entry.0) == entry.1
+        })
+      },
+      count=100,
+      max_size=16,
+      seed=2026,
+    )
+  }
+  ```
+
+  Keep generated depth bounded by `size`, so generators do not overflow the
+  stack on wasm. Generate valid input for laws about valid input; generate
+  arbitrary text only for laws that must hold for any text (the parser never
+  crashes; a diagnostic is reported instead).
+- **Name laws as laws.** Test names start with `law:` and state the rule, for
+  example `law: fold counts the nodes walk visits`.
+- **Corpus as a law check.** A law that holds for generated input should also
+  hold for the pinned corpus; add it to the corpus check where it is cheap.
+- **Run on every target.** Laws run in `mise run test:unit` and
+  `mise run test:targets` like other tests. Keep `count` and `max_size` small
+  enough that a package's tests stay fast (a few seconds).
+
 ## Coding Convention
 
 - MoonBit block style: blocks separated by `///|`; block order irrelevant.
