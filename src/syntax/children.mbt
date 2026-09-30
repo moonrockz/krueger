@@ -316,7 +316,7 @@ pub fn NodeRef::children(self : NodeRef) -> Array[NodeRef] {
 /// The field of this node that holds `child`, if any.
 pub fn NodeRef::field_of(self : NodeRef, child : NodeRef) -> String? {
   for e in self.entries() {
-    if e.1.contains(child) {
+    if e.1.any(c => same(c, child)) {
       return Some(e.0)
     }
   }

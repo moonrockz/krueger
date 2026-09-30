@@ -35,7 +35,7 @@ pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
     }
   }
   let tokens = match result.cst {
-    Some(cst) => cst.tokens
+    Some(cst) => cst.tokens.copy()
     None => []
   }
   Some({ root, parents, tokens, })
@@ -52,10 +52,10 @@ pub fn Tree::root(self : Tree) -> NodeRef {
 pub fn Tree::parent(self : Tree, n : NodeRef) -> NodeRef? {
   guard self.parents.get(identity(n)) is Some(bucket) else { return None }
   if bucket.length() == 1 {
-    return if bucket[0].0 == n { Some(bucket[0].1) } else { None }
+    return if same(bucket[0].0, n) { Some(bucket[0].1) } else { None }
   }
   for entry in bucket {
-    if entry.0 == n {
+    if same(entry.0, n) {
       return Some(entry.1)
     }
   }
@@ -103,30 +103,29 @@ fn within(a : @ast.Range, b : @ast.Range) -> Bool {
 
 ///|
 /// The innermost node whose range contains `p`, or `None` outside the file.
-/// At each level the smallest child containing `p` wins, so a comment inside
-/// a declaration (both children of the file) is found.
+/// Every branch that contains `p` is searched, because siblings can overlap: a
+/// comment (a child of the file) lies inside a declaration, and a port's doc
+/// comment holds the port's attributes. The smallest range wins; for equal
+/// ranges the deeper node wins, then the first in source order.
 pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
   if !contains(self.root.range(), p) {
     return None
   }
-  let mut current = self.root
-  while true {
-    let mut best : NodeRef? = None
-    for child in current.children() {
-      if contains(child.range(), p) {
-        best = match best {
-          Some(b) if !within(child.range(), b.range()) => Some(b)
-          Some(b) if child.range() == b.range() => Some(b)
-          _ => Some(child)
-        }
-      }
+  let mut best = self.root
+  let mut best_depth = 0
+  // An explicit stack, visited in source order.
+  let stack = [(self.root, 0)]
+  while stack.pop() is Some((node, depth)) {
+    let r = node.range()
+    let b = best.range()
+    if (within(r, b) && r != b) || (r == b && depth > best_depth) {
+      best = node
+      best_depth = depth
     }
-    match best {
-      Some(b) => current = b
-      None => break
-    }
+    let inside = node.children().filter(c => contains(c.range(), p))
+    inside.rev_each(c => stack.push((c, depth + 1)))
   }
-  Some(current)
+  Some(best)
 }
 
 ///|

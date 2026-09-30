@@ -31,10 +31,50 @@ pub(all) enum NodeRef {
 } derive(Eq, Debug)
 
 ///|
+fn[T : Eq] same_value(x : T, y : T) -> Bool {
+  physical_equal(x, y) || x == y
+}
+
+///|
+/// `a == b`, but fast for nodes taken from the same tree: nodes wrap the AST
+/// values themselves, so the same node is usually the same object and the
+/// structural comparison of whole subtrees is not needed.
+fn same(a : NodeRef, b : NodeRef) -> Bool {
+  match (a, b) {
+    (File(x, g), File(y, h)) => same_value(x, y) && same_value(g, h)
+    (Module(x), Module(y)) => same_value(x, y)
+    (ModuleName(x), ModuleName(y)) => same_value(x, y)
+    (Exposing(x), Exposing(y)) => same_value(x, y)
+    (Expose(x), Expose(y)) => same_value(x, y)
+    (Import(x), Import(y)) => same_value(x, y)
+    (Declaration(x, g), Declaration(y, h)) =>
+      same_value(x, y) && same_value(g, h)
+    (Documentation(x), Documentation(y)) => same_value(x, y)
+    (Signature(x), Signature(y)) => same_value(x, y)
+    (Implementation(x), Implementation(y)) => same_value(x, y)
+    (Constructor(x), Constructor(y)) => same_value(x, y)
+    (Expression(x), Expression(y)) => same_value(x, y)
+    (LetDeclaration(x), LetDeclaration(y)) => same_value(x, y)
+    (Case(x), Case(y)) => same_value(x, y)
+    (RecordSetter(x), RecordSetter(y)) => same_value(x, y)
+    (Pattern(x), Pattern(y)) => same_value(x, y)
+    (TypeAnnotation(x), TypeAnnotation(y)) => same_value(x, y)
+    (RecordField(x), RecordField(y)) => same_value(x, y)
+    (Name(x), Name(y)) => same_value(x, y)
+    (Comment(x), Comment(y)) => same_value(x, y)
+    (Attribute(x), Attribute(y)) => same_value(x, y)
+    _ => false
+  }
+}
+
+///|
 /// The root node of `result`: its file with the doc attributes, or `None`
 /// when the parse produced no AST.
+///
+/// The attribute groups are copied; the AST is shared with `result`, so
+/// neither may be changed while nodes are in use.
 pub fn NodeRef::of_result(result : @parser.ParseResult) -> NodeRef? {
-  result.ast.map(file => File(file, result.attributes))
+  result.ast.map(file => File(file, result.attributes.copy()))
 }
 
 ///|
@@ -186,8 +226,19 @@ fn later(a : @ast.Location, b : @ast.Location) -> @ast.Location {
 }
 
 ///|
+fn earlier(a : @ast.Location, b : @ast.Location) -> @ast.Location {
+  if later(a, b) == a {
+    b
+  } else {
+    a
+  }
+}
+
+///|
 /// The node's range. A case branch runs from its pattern to its expression;
-/// the file from line 1, column 1 to the end of its last node.
+/// the file from line 1, column 1 to the end of its last node. A declaration
+/// with doc attributes starts no later than its first attribute (a port's doc
+/// comment is not part of its elm-syntax range).
 pub fn NodeRef::range(self : NodeRef) -> @ast.Range {
   match self {
     File(file, _) => {
@@ -208,7 +259,13 @@ pub fn NodeRef::range(self : NodeRef) -> @ast.Range {
     Exposing(x) => x.range
     Expose(x) => x.range
     Import(x) => x.range
-    Declaration(x, _) => x.range
+    Declaration(x, attributes) => {
+      let mut start = x.range.start
+      for a in attributes {
+        start = earlier(start, Attribute(a).range().start)
+      }
+      { start, end: x.range.end, }
+    }
     Documentation(x) => x.range
     Signature(x) => x.range
     Implementation(x) => x.range

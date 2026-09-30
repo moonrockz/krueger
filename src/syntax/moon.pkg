@@ -7,4 +7,5 @@ import {
 
 import {
   "moonrockz/expect",
+  "moonbitlang/core/env",
 } for "test"

@@ -171,10 +171,16 @@ result. It is the base for the traversal APIs and queries.
 - `Tree::new(result)` builds a parent index once. `parent`, `ancestors`
   (nearest first), `path` (root first), `node_at(location)` (the innermost node
   that contains it) and `tokens_in(range)`.
-- No code in `src/syntax` recurses over the tree: it uses explicit stacks, because
-  wasm overflows at a few hundred frames and trees can be 400 levels deep.
-- No shared mutable state: every returned array is new, and `Tree` never changes
-  after `new`.
+- The walks in `src/syntax` use explicit stacks, not recursion, because wasm
+  overflows at a few hundred frames and trees can be 400 levels deep. Nodes from
+  the tree compare by identity first (`same`), so `parent` and `ancestors` do not
+  compare whole subtrees.
+- No shared mutable state: every returned array is new, and `Tree` keeps its own
+  copies of the tokens and attribute groups. The AST itself is shared with the
+  `ParseResult` (nodes point into it, nothing is copied), so do not change a
+  parse result's AST after you build a tree or take nodes from it.
+- A declaration's range starts at its first doc attribute when that comes
+  first (a port's doc comment is not part of its elm-syntax range).
 
 The kind table below is checked against `kind_table()` by
 `tests/features/syntax.feature`. When you add a kind or a field, update it.
