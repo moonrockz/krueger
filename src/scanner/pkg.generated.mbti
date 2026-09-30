@@ -17,13 +17,60 @@ pub fn normalize_tokens(Array[RawToken]) -> TokenStream
 
 pub fn raw_to_trivia(RawToken) -> Trivia?
 
+pub fn tab_character(Span) -> Diagnostic
+
+pub fn unexpected_character(Span) -> Diagnostic
+
+pub fn unexpected_semicolon(Span) -> Diagnostic
+
 pub fn unterminated_block_comment(Span) -> Diagnostic
 
-pub fn unterminated_literal(Span) -> Diagnostic
+pub fn unterminated_char(Span) -> Diagnostic
+
+pub fn unterminated_glsl(Span) -> Diagnostic
+
+pub fn unterminated_multiline_string(Span) -> Diagnostic
+
+pub fn unterminated_string(Span) -> Diagnostic
 
 // Errors
 
 // Types and methods
+pub(all) enum Block {
+  Text(Array[Chunk])
+  Excerpt(context~ : Span, highlight~ : Span)
+  Hint(Array[Chunk])
+  Note(Array[Chunk])
+  Example(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Chunk {
+  Plain(String)
+  Styled(text~ : String, color~ : Color?, bold~ : Bool, underline~ : Bool)
+} derive(Eq, @debug.Debug)
+pub fn Chunk::code(String) -> Self
+pub fn Chunk::keyword(String) -> Self
+
+pub(all) enum Color {
+  Red
+  Yellow
+  Green
+  Cyan
+  Magenta
+  Blue
+  Black
+  White
+  VividRed
+  VividYellow
+  VividGreen
+  VividCyan
+  VividMagenta
+  VividBlue
+  VividBlack
+  VividWhite
+} derive(Eq, @debug.Debug)
+pub fn Color::json_name(Self) -> String
+
 pub(all) struct Comment {
   kind : CommentKind
   text : String
@@ -48,6 +95,8 @@ pub(all) struct Diagnostic {
   severity : Severity
   message : String
   span : Span
+  title : String
+  report : Array[Block]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum KeywordKind {

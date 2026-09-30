@@ -55,6 +55,11 @@ fn exposable(c : Cursor) -> @ast.Node[@ast.TopLevelExpose] raise SyntaxError {
 /// `exposing (..)` or `exposing (a, B, C(..), (+))`; the range runs from
 /// `exposing` to `)`.
 fn exposing_list(c : Cursor) -> @ast.Node[@ast.Exposing] raise SyntaxError {
+  c.within(Exposing, () => exposing_list_body(c))
+}
+
+///|
+fn exposing_list_body(c : Cursor) -> @ast.Node[@ast.Exposing] raise SyntaxError {
   let keyword = c.expect(Keyword(Exposing), "`exposing`")
   ignore(c.expect(LParen, "`(`"))
   if c.at_kind(DotDot) {
@@ -77,6 +82,11 @@ fn exposing_list(c : Cursor) -> @ast.Node[@ast.Exposing] raise SyntaxError {
 ///|
 /// `module`, `port module` or `effect module ... where { ... }` header.
 fn module_header(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
+  c.within(ModuleHeader, () => module_header_body(c))
+}
+
+///|
+fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
   guard c.peek() is Some(first) else { raise c.fail("a module header") }
   if first.kind == Keyword(Port) {
     ignore(c.advance())
@@ -135,12 +145,35 @@ fn module_header(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
 ///|
 /// `import A.B as C exposing (...)`; the range ends at the last part.
 fn import_declaration(c : Cursor) -> @ast.Node[@ast.Import] raise SyntaxError {
+  c.within(Import, () => import_declaration_body(c))
+}
+
+///|
+fn import_declaration_body(
+  c : Cursor,
+) -> @ast.Node[@ast.Import] raise SyntaxError {
   let keyword = c.expect(Keyword(Import), "`import`")
   let name = module_name(c)
   let mut end = name.range.end
   let mut module_alias : @ast.Node[Array[String]]? = None
   if c.is_keyword(As) {
     ignore(c.advance())
+    if c.at_lower() {
+      raise c.fail_titled(
+        "expected a module alias",
+        "EXPECTING IMPORT ALIAS",
+        [Plain("I was parsing an import, but I got stuck here:")],
+        [
+          Text([
+            Plain("I was expecting an alias like "),
+            @scanner.Chunk::code("D"),
+            Plain(" in "),
+            @scanner.Chunk::code("import Dict as D"),
+            Plain(". Aliases must start with a capital letter."),
+          ]),
+        ],
+      )
+    }
     let alias_token = c.upper("a module alias")
     let alias_node = token_node(alias_token, [alias_token.lexeme])
     end = alias_node.range.end

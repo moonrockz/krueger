@@ -1,7 +1,8 @@
 ///|
-/// A syntax error inside a declaration: what was expected, and where.
+/// A syntax error inside a declaration: a one-line message, where, and the
+/// Elm-style title and report.
 priv suberror SyntaxError {
-  SyntaxError(String, @scanner.Span)
+  SyntaxError(String, @scanner.Span, Problem)
 }
 
 ///|
@@ -13,6 +14,7 @@ priv struct Cursor {
   mut indent : Int
   mut depth : Int
   dialect : @dialect.Dialect
+  contexts : Array[Frame]
 }
 
 ///|
@@ -20,7 +22,7 @@ fn Cursor::new(
   tokens : Array[@scanner.Token],
   dialect : @dialect.Dialect,
 ) -> Cursor {
-  { tokens, pos: 0, indent: 1, depth: 0, dialect, }
+  { tokens, pos: 0, indent: 1, depth: 0, dialect, contexts: [], }
 }
 
 ///|
@@ -70,7 +72,304 @@ fn Cursor::fail(self : Cursor, expected : String) -> SyntaxError {
     Some(t) => "`\{t.lexeme}`"
     None => "end of input"
   }
-  SyntaxError("expected \{expected}, found \{found}", self.here())
+  SyntaxError(
+    "expected \{expected}, found \{found}",
+    self.here(),
+    self.problem(expected),
+  )
+}
+
+///|
+/// Where `elm make` marks a failure: right after the previous token when the
+/// input ends, or when the next token is on a later line and too little
+/// indented to continue (the construct was cut short); else at the next token.
+fn Cursor::error_point(self : Cursor) -> @scanner.Span {
+  match (self.previous(), self.peek()) {
+    // Outside any construct (a top-level item's first token), mark the token.
+    (_, Some(t)) if self.contexts.is_empty() => point(t.span.start)
+    (Some(p), Some(t)) if t.span.start.line > p.span.end.line &&
+      (t.span.start.column == 1 || t.span.start.column < self.indent) =>
+      point(p.span.end)
+    (Some(p), None) => point(p.span.end)
+    (_, Some(t)) => point(t.span.start)
+    (None, None) => self.here()
+  }
+}
+
+///|
+/// The excerpt context for a failure at `highlight`: from the start of the
+/// innermost construct, at most four lines.
+fn Cursor::excerpt_context(
+  self : Cursor,
+  highlight : @scanner.Span,
+) -> @scanner.Span {
+  let start = match self.contexts.last() {
+    Some(frame) if frame.start.start.line <= highlight.start.line =>
+      if highlight.start.line - frame.start.start.line > 3 {
+        { ..highlight.start, line: highlight.start.line - 3, }
+      } else {
+        frame.start.start
+      }
+    _ => highlight.start
+  }
+  { start, end: highlight.end, }
+}
+
+///|
+/// A problem with an explicit title, marked at the failure point.
+fn Cursor::titled(
+  self : Cursor,
+  title : String,
+  opening : Array[@scanner.Chunk],
+  after : Array[@scanner.Block],
+) -> Problem {
+  let highlight = self.error_point()
+  make_problem(
+    title,
+    opening,
+    self.excerpt_context(highlight),
+    highlight,
+    after,
+  )
+}
+
+///|
+/// A syntax error with an explicit title.
+fn Cursor::fail_titled(
+  self : Cursor,
+  message : String,
+  title : String,
+  opening : Array[@scanner.Chunk],
+  after : Array[@scanner.Block],
+) -> SyntaxError {
+  SyntaxError(message, self.here(), self.titled(title, opening, after))
+}
+
+///|
+/// The Elm-style problem for a failure that expected `expected`. Rules on the
+/// token found come first, then the innermost context.
+fn Cursor::problem(self : Cursor, expected : String) -> Problem {
+  let found = self.peek()
+  let previous = self.previous()
+  let context = self.contexts.last().map(f => f.context)
+  let stuck : Array[@scanner.Chunk] = [Plain("I got stuck here:")]
+  match (found, context) {
+    (Some({ kind: Keyword(_), .. }), _) if expected == "an expression" &&
+      previous is Some({ kind: Keyword(Then | Case), .. }) =>
+      self.titled(
+        "MISSING EXPRESSION",
+        [
+          Plain(
+            "I am partway through parsing an expression, but I got stuck here:",
+          ),
+        ],
+        [
+          plain(
+            "I was expecting to see an expression here, before this keyword.",
+          ),
+        ],
+      )
+    (Some({ kind: Keyword(k), lexeme, .. }), _) if !(k is Custom(_)) &&
+      !expected.has_prefix("`") &&
+      expected != "an expression" =>
+      self.titled(
+        "RESERVED WORD",
+        [
+          Plain("It looks like you are using "),
+          @scanner.Chunk::keyword(lexeme),
+          Plain(" as a name or an expression, but it is a reserved word:"),
+        ],
+        [
+          plain(
+            "Try a different name, or check the lines above for a missing part.",
+          ),
+        ],
+      )
+    (Some({ kind: RBrace, .. }), Some(Record | RecordType)) if previous
+      is Some({ kind: Comma, .. }) =>
+      self.titled(
+        "EXTRA COMMA",
+        [
+          Plain(
+            "I am partway through parsing a record, but I got stuck after that last comma:",
+          ),
+        ],
+        [
+          plain(
+            "Trailing commas are not allowed in records. Try deleting the comma?",
+          ),
+        ],
+      )
+    (Some({ kind: Operator(second), .. } as t), _) if previous
+      is Some({ kind: Operator(first), .. } as p) &&
+      touching(p, t) =>
+      self.titled(
+        "UNKNOWN OPERATOR",
+        [
+          Plain("I do not recognize the "),
+          @scanner.Chunk::code(first + second),
+          Plain(" operator:"),
+        ],
+        [
+          plain(
+            "Elm has a fixed set of operators; this is not one of them. Is there a typo, or a missing space between two operators?",
+          ),
+        ],
+      )
+    (Some(t), _) if expected == "an expression" &&
+      !(t.kind is Keyword(_)) &&
+      previous is Some({ kind: Equals | Arrow | LParen, .. }) =>
+      self.titled(
+        "MISSING EXPRESSION",
+        [
+          Plain(
+            "I am partway through parsing an expression, but I got stuck here:",
+          ),
+        ],
+        [
+          Text([
+            Plain("I was expecting to see an expression like "),
+            @scanner.Chunk::code("42"),
+            Plain(" or "),
+            @scanner.Chunk::code("\"hello\""),
+            Plain(" here."),
+          ]),
+        ],
+      )
+    (Some(t), None) if is_upper(t) && expected.contains("function name") =>
+      self.titled(
+        "UNEXPECTED CAPITAL LETTER",
+        [
+          Plain(
+            "Declarations always start with a lower-case letter, so I am getting stuck here:",
+          ),
+        ],
+        [
+          Text([
+            Plain("Try a name like "),
+            @scanner.Chunk::code("view"),
+            Plain(" or "),
+            @scanner.Chunk::code("update"),
+            Plain(" instead. Type declarations start with "),
+            @scanner.Chunk::keyword("type"),
+            Plain("."),
+          ]),
+        ],
+      )
+    (Some({ kind: Operator(_), .. }), _) if expected == "an expression" =>
+      self.titled(
+        "MISSING EXPRESSION",
+        [
+          Plain(
+            "I am partway through parsing an expression, but I got stuck here:",
+          ),
+        ],
+        [
+          Text([
+            Plain("I was expecting to see an expression like "),
+            @scanner.Chunk::code("42"),
+            Plain(" or "),
+            @scanner.Chunk::code("\"hello\""),
+            Plain(" here."),
+          ]),
+        ],
+      )
+    (None, _) if expected == "an expression" &&
+      previous is Some({ kind: Operator(_), .. }) =>
+      self.titled(
+        "MISSING EXPRESSION",
+        [Plain("I just saw an operator, so I am getting stuck here:")],
+        [plain("I was expecting to see an expression next.")],
+      )
+    (Some(t), Some(Record)) if is_upper(t) && expected.contains("field name") =>
+      self.titled(
+        "PROBLEM IN RECORD",
+        [Plain("I am partway through parsing a record, but I got stuck here:")],
+        [
+          Text([
+            Plain("I was expecting to see a field name like "),
+            @scanner.Chunk::code("name"),
+            Plain(". A record update like "),
+            @scanner.Chunk::code("{ person | age = 42 }"),
+            Plain(" needs a plain lowercase name before the "),
+            @scanner.Chunk::code("|"),
+            Plain("."),
+          ]),
+        ],
+      )
+    (Some({ kind: FloatLiteral, .. }), _) if expected == "a pattern" =>
+      self.titled(
+        "UNEXPECTED PATTERN",
+        [Plain("I cannot pattern match on floating point numbers:")],
+        [
+          plain(
+            "Patterns can match integers, characters, strings and other exact values, but not floats. Try an `if` expression with a comparison instead?",
+          ),
+        ],
+      )
+    (_, Some(ctx)) => {
+      let after = [expecting(expected)]
+      if ctx.example() is Some((what, code)) {
+        after.push(
+          Note([Plain("Here is an example of \{what} for reference:")]),
+        )
+        after.push(Example(code))
+      }
+      self.titled(
+        ctx.title(),
+        [
+          Plain("I was partway through parsing "),
+          ..ctx.construct(),
+          Plain(", but I got stuck here:"),
+        ],
+        after,
+      )
+    }
+    (_, None) => self.titled("SYNTAX PROBLEM", stuck, [expecting(expected)])
+  }
+}
+
+///|
+/// A syntax error at `span` with an explicit title; the excerpt marks `span`.
+fn Cursor::error_at(
+  self : Cursor,
+  message : String,
+  span : @scanner.Span,
+  title : String,
+  opening : String,
+  after : Array[@scanner.Block],
+) -> SyntaxError {
+  let highlight = point(span.start)
+  SyntaxError(
+    message,
+    span,
+    make_problem(
+      title,
+      [Plain(opening)],
+      self.excerpt_context(highlight),
+      highlight,
+      after,
+    ),
+  )
+}
+
+///|
+/// Run `body` inside `context` (for error titles). The context starts at the
+/// next token.
+fn[T] Cursor::within(
+  self : Cursor,
+  context : Context,
+  body : () -> T raise SyntaxError,
+) -> T raise SyntaxError {
+  self.contexts.push({ context, start: self.here(), })
+  let result = body() catch {
+    SyntaxError(message, span, problem) => {
+      ignore(self.contexts.pop())
+      raise SyntaxError(message, span, problem)
+    }
+  }
+  ignore(self.contexts.pop())
+  result
 }
 
 ///|
@@ -119,9 +418,9 @@ fn[T] Cursor::with_indent(
   let saved = self.indent
   self.indent = column
   let result = body() catch {
-    SyntaxError(message, span) => {
+    SyntaxError(message, span, problem) => {
       self.indent = saved
-      raise SyntaxError(message, span)
+      raise SyntaxError(message, span, problem)
     }
   }
   self.indent = saved
@@ -140,13 +439,18 @@ fn[T] Cursor::nested(
   body : () -> T raise SyntaxError,
 ) -> T raise SyntaxError {
   if self.depth >= MAX_DEPTH {
-    raise SyntaxError("nesting too deep", self.here())
+    raise self.fail_titled(
+      "nesting too deep",
+      "TOO MUCH NESTING",
+      [Plain("This expression, type or pattern is nested too deeply for me:")],
+      [plain("Try moving part of it into a separate definition.")],
+    )
   }
   self.depth += 1
   let result = body() catch {
-    SyntaxError(message, span) => {
+    SyntaxError(message, span, problem) => {
       self.depth -= 1
-      raise SyntaxError(message, span)
+      raise SyntaxError(message, span, problem)
     }
   }
   self.depth -= 1

@@ -1,0 +1,6 @@
+-- WEIRD NUMBER ------------------------------------------------ src/Fixture.elm
+
+I ran into a problem with this number:
+
+9|     99999999999999999999
+       ^

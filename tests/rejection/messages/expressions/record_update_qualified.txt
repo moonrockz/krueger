@@ -1,0 +1,8 @@
+-- PROBLEM IN RECORD ------------------------------------------- src/Fixture.elm
+
+I am partway through parsing a record, but I got stuck here:
+
+9|     { Fixture.r | a = 2 }
+         ^
+I was expecting to see a field name like name. A record update like
+{ person | age = 42 } needs a plain lowercase name before the |.

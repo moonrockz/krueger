@@ -1,0 +1,7 @@
+-- EXTRA COMMA ------------------------------------------------- src/Fixture.elm
+
+I am partway through parsing a record, but I got stuck after that last comma:
+
+9|     { a = 1, }
+                ^
+Trailing commas are not allowed in records. Try deleting the comma?

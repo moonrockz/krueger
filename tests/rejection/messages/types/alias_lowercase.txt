@@ -1,0 +1,8 @@
+-- EXPECTING TYPE ALIAS NAME ----------------------------------- src/Fixture.elm
+
+I am partway through parsing a type alias, but I got stuck here:
+
+8| type alias a =
+              ^
+I was expecting a name like Person or Point next. Type alias names must start
+with a capital letter.

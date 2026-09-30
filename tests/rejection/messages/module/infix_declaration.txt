@@ -1,0 +1,8 @@
+-- UNKNOWN OPERATOR -------------------------------------------- src/Fixture.elm
+
+I do not recognize the +++ operator:
+
+4| infix left 6 (+++) = add
+                   ^
+Elm has a fixed set of operators; this is not one of them. Is there a typo, or a
+missing space between two operators?

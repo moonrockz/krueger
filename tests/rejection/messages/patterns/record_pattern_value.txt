@@ -1,0 +1,7 @@
+-- UNFINISHED RECORD PATTERN ----------------------------------- src/Fixture.elm
+
+I was partway through parsing a record pattern, but I got stuck here:
+
+10|         { a = 1 } ->
+                ^
+I was expecting to see `}` next.

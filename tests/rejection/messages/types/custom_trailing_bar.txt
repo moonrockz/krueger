@@ -1,0 +1,10 @@
+-- UNFINISHED CUSTOM TYPE -------------------------------------- src/Fixture.elm
+
+I was partway through parsing a custom type, but I got stuck here:
+
+ 8| type T
+ 9|     = A
+10|     | B
+11|     |
+         ^
+I was expecting to see a constructor name next.

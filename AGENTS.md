@@ -29,6 +29,7 @@ moonrockz/krueger
 │   ├── dialect/          # Dialect: rejection rules, operator table, extension hooks
 │   ├── scanner/          # Hand-written Elm 0.19.1 lexer, trivia, diagnostics
 │   ├── parser/           # Parser: tokens → AST + CST + diagnostics
+│   ├── report/           # Renders diagnostics like elm make (terminal, plain, JSON)
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
 │   ├── bdd/              # MoonSpec step definitions (test-only)
@@ -87,6 +88,24 @@ summary reads them. Keep this table and that file in step when you add a code.
     file) is an error (`KR-PARSE-007`); elm-syntax rejects such files.
 - `File.comments` holds every regular comment and the module documentation, in
   source order.
+
+### Diagnostics
+
+Every `Diagnostic` has a `code` (`KR-SCAN-*`, `KR-PARSE-*`), a `severity`, a one-line
+`message`, a `span`, a `title` and a `report`:
+
+- `title` is the `elm make` title for the same problem (`UNFINISHED LET`, `NO TABS`, …).
+  The parser keeps a stack of the constructs it is inside; a failure takes its title
+  from the innermost one, or from a rule on the token it found (`RESERVED WORD`,
+  `EXTRA COMMA`, `MISSING EXPRESSION`, `UNKNOWN OPERATOR`, …).
+- `report` is the long message as blocks: `Text`, `Excerpt(context, highlight)`,
+  `Hint`, `Note` and `Example`, with styled chunks (`Chunk::code`, `Chunk::keyword`).
+  Write report text in Elm's voice: first person, plain words, what was seen and what
+  was expected.
+- `src/report` renders diagnostics: `render_plain` and `render_terminal` (the `elm make`
+  layout: `-- TITLE ---- path` header, reflow to 80 columns, source excerpt with `^`
+  markers) and `render_elm_json` (the `elm make --report=json` shape). All are
+  re-exported from the root package, with `encode_diagnostics` for krueger's own JSON.
 
 ### Dialects
 
@@ -306,6 +325,16 @@ krueger checks which Elm source it accepts and rejects against two oracles: `elm
 - `mise run test:rejection` parses each fixture in both dialects. krueger accepts a file
   when it gives no diagnostic with severity `Error`. A changed fixture fails with "run
   `mise run rejection:record`".
+- Title parity: for a fixture that both `elm make` and krueger (in `elm-0.19.1`) reject,
+  krueger's first error must have the same title as `elm make`'s. A mismatch is a
+  `pending.json` entry with `"check": "title"`.
+- `tests/rejection/messages/<fixture>.txt` holds krueger's rendered message
+  (`render_plain`) for every fixture it rejects in `elm-0.19.1`. A changed, missing or
+  stale message fails the check. Review the messages, then run
+  `KRUEGER_REJECTION_MODE=approve mise run test:rejection`; the PR diff is the review.
+- `test:rejection` writes `_build/reports/rejection/index.html`: per fixture, `elm make`'s
+  and krueger's verdicts, titles and messages side by side. CI uploads it as the
+  `rejection-report` artifact.
 - `tests/rejection/pending.json` lists the fixture and dialect pairs that do not match yet.
   The list only shrinks: the check fails on a mismatch that is not listed and on a listed
   pair that now matches (remove it). `KRUEGER_REJECTION_MODE=write-pending` rewrites the

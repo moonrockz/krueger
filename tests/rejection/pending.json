@@ -220,44 +220,19 @@
     "check": "verdict"
   },
   {
-    "fixture": "literals/unicode_escape_empty.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_empty.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_non_hex.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_non_hex.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
     "fixture": "literals/unicode_escape_too_big.elm",
     "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_unclosed.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_unclosed.elm",
-    "dialect": "elm-syntax-7.3.9",
     "check": "verdict"
   },
   {
     "fixture": "module/effect_duplicate_key.elm",
     "dialect": "elm-0.19.1",
     "check": "verdict"
+  },
+  {
+    "fixture": "module/infix_declaration.elm",
+    "dialect": "elm-0.19.1",
+    "check": "title"
   },
   {
     "fixture": "module/port_in_normal_module.elm",

@@ -3,8 +3,10 @@ fn parser_error(
   code : String,
   message : String,
   span : @scanner.Span,
+  title~ : String,
+  report~ : Array[@scanner.Block],
 ) -> @scanner.Diagnostic {
-  { code, severity: Error, message, span, }
+  { code, severity: Error, message, span, title, report, }
 }
 
 ///|
@@ -25,6 +27,39 @@ fn skip_to_top_level(c : Cursor) -> Unit {
   }
   while c.peek() is Some(t) && t.span.start.column != 1 {
     c.pos += 1
+  }
+}
+
+///|
+/// The problem for a token `t` that is not at column 1 where a top-level
+/// declaration must start.
+fn not_at_module_level(c : Cursor, t : @scanner.Token) -> Problem {
+  ignore(c)
+  let highlight = point(t.span.start)
+  if t.kind is Equals {
+    make_problem(
+      "UNEXPECTED EQUALS",
+      [Plain("I was not expecting to see this equals sign:")],
+      highlight,
+      highlight,
+      [
+        plain(
+          "Maybe this is part of a definition that does not start in the first column? Top-level definitions must start at the very beginning of a line.",
+        ),
+      ],
+    )
+  } else {
+    make_problem(
+      "SYNTAX PROBLEM",
+      [Plain("I got stuck here:")],
+      highlight,
+      highlight,
+      [
+        plain(
+          "I was expecting a new declaration at the start of a line. Is something indented too little or too much above?",
+        ),
+      ],
+    )
   }
 }
 
@@ -201,12 +236,14 @@ pub fn parse_tokens(
   if starts_header {
     let start = c.pos
     try module_header(c) catch {
-      SyntaxError(message, span) => {
+      SyntaxError(message, span, problem) => {
         diagnostics.push(
           parser_error(
             "KR-PARSE-001",
             "Malformed module header: \{message}",
             span,
+            title=problem.title,
+            report=problem.report,
           ),
         )
         skip_to_top_level(c)
@@ -229,18 +266,34 @@ pub fn parse_tokens(
     }
   } else {
     diagnostics.push(
-      parser_error("KR-PARSE-006", "Missing module header", c.here()),
+      parser_error(
+        "KR-PARSE-006",
+        "Missing module header",
+        c.here(),
+        title="MODULE NAME MISSING",
+        report=[
+          Text([
+            Plain(
+              "I need the module name to be declared at the top of this file, like this:",
+            ),
+          ]),
+          Example("module Fixture exposing (..)"),
+          plain("Try adding that as the first line of your file!"),
+        ],
+      ),
     )
   }
   while c.is_keyword(Import) {
     let start = c.pos
     try import_declaration(c) catch {
-      SyntaxError(message, span) => {
+      SyntaxError(message, span, problem) => {
         diagnostics.push(
           parser_error(
             "KR-PARSE-002",
             "Malformed import declaration: \{message}",
             span,
+            title=problem.title,
+            report=problem.report,
           ),
         )
         skip_to_top_level(c)
@@ -260,12 +313,15 @@ pub fn parse_tokens(
   while c.peek() is Some(t) {
     if t.span.start.column != 1 {
       let start = c.pos
+      let problem = not_at_module_level(c, t)
       skip_to_top_level(c)
       diagnostics.push(
         parser_error(
           "KR-PARSE-007",
           "Unexpected syntax: token not at module level",
           span_since(c, start),
+          title=problem.title,
+          report=problem.report,
         ),
       )
       continue
@@ -295,9 +351,17 @@ pub fn parse_tokens(
     })
     let start = c.pos
     try declaration(c, documentation) catch {
-      SyntaxError(message, span) => {
+      SyntaxError(message, span, problem) => {
         let (code, what) = declaration_error_code(kind)
-        diagnostics.push(parser_error(code, "\{what}: \{message}", span))
+        diagnostics.push(
+          parser_error(
+            code,
+            "\{what}: \{message}",
+            span,
+            title=problem.title,
+            report=problem.report,
+          ),
+        )
         skip_to_top_level(c)
       }
     } noraise {
@@ -318,8 +382,21 @@ pub fn parse_tokens(
   for span in stray {
     diagnostics.push(
       parser_error(
-        "KR-PARSE-007", "Unexpected syntax: doc comment not attached to a declaration",
+        "KR-PARSE-007",
+        "Unexpected syntax: doc comment not attached to a declaration",
         span,
+        title="WEIRD DECLARATION",
+        report=[
+          plain("I was not expecting this documentation comment here:"),
+          Excerpt(context=point(span.start), highlight=point(span.start)),
+          Text([
+            Plain("A documentation comment ("),
+            @scanner.Chunk::code("{-| ... -}"),
+            Plain(
+              ") must come right before the declaration it documents, or right after the module header.",
+            ),
+          ]),
+        ],
       ),
     )
   }

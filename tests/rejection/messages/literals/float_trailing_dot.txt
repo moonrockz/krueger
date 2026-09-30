@@ -1,0 +1,8 @@
+-- WEIRD NUMBER ------------------------------------------------ src/Fixture.elm
+
+I thought I was reading a number, but I ran into some weird stuff here:
+
+8| f =
+9|     1.
+        ^
+Floats need digits after the dot, like 1.0.

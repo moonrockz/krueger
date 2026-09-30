@@ -31,13 +31,13 @@ test "char literals decode escapes" {
 ///|
 test "unknown escapes and empty chars are syntax errors" {
   let unknown = try string_value(lit(StringLiteral, "\"\\q\"")) catch {
-    SyntaxError(message, _) => message
+    SyntaxError(message, _, _) => message
   } noraise {
     _ => "no error"
   }
   @expect.expect(unknown).to_equal("unknown escape `\\q`")
   let empty = try char_value(lit(CharLiteral, "''")) catch {
-    SyntaxError(message, _) => message
+    SyntaxError(message, _, _) => message
   } noraise {
     _ => "no error"
   }

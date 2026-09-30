@@ -48,6 +48,9 @@ pub using @scanner {
   type Span,
   type SourceText,
   type Diagnostic,
+  type Block,
+  type Chunk,
+  type Color,
   type CommentKind,
   type KeywordKind,
   type Comment,
@@ -71,6 +74,14 @@ pub using @cst {
 
 ///|
 pub using @parser {type ParseResult}
+
+///|
+pub using @report {
+  render_plain,
+  render_terminal,
+  render_elm_json,
+  encode_diagnostics,
+}
 
 ///|
 pub using @dialect {

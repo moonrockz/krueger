@@ -98,6 +98,10 @@ fn mismatches(
         found.push({ fixture, dialect: dialect.name, check: "verdict", })
       }
     }
+    if e.get("elm-0.19.1") is Some(elm) &&
+      title_mismatch(fixture, text, elm) is Some(p) {
+      found.push(p)
+    }
   }
   found.sort_by(compare_pending)
   found
@@ -196,7 +200,14 @@ test "rejection fixtures" {
     Object(o) => o.length()
     _ => 0
   }
-  if @env.get_env_var("KRUEGER_REJECTION_MODE") is Some("write-pending") {
+  let mode = @env.get_env_var("KRUEGER_REJECTION_MODE")
+  let (rows, messages) = report_rows(verdicts, fixture => {
+    @fs.read_file_to_string("\{fixtures_dir}/\{fixture}")
+  })
+  ensure_dir(reports_dir)
+  @fs.write_string_to_file("\{reports_dir}/index.html", report_html(rows))
+  let snapshot_problems = check_snapshots(messages, mode is Some("approve"))
+  if mode is Some("write-pending") {
     @fs.write_string_to_file(pending_path, format_pending(current))
     println("rejection: wrote \{current.length()} entries to \{pending_path}")
     return
@@ -216,6 +227,7 @@ test "rejection fixtures" {
   for p in fixed {
     problems.push("now matches, remove from \{pending_path}: \{describe(p)}")
   }
+  problems.append(snapshot_problems)
   if !problems.is_empty() {
     fail(problems.join("\n"))
   }

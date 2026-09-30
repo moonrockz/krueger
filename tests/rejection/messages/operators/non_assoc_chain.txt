@@ -1,0 +1,9 @@
+-- INFIX PROBLEM ----------------------------------------------- src/Fixture.elm
+
+You cannot mix these two operators without parentheses:
+
+8| f =
+9|     x == 1 == True
+              ^
+They do not associate, so I cannot tell which one goes first. Add parentheses to
+say what you mean.

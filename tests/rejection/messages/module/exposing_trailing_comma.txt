@@ -1,0 +1,7 @@
+-- PROBLEM IN EXPOSING ----------------------------------------- src/Fixture.elm
+
+I was partway through parsing an exposing list, but I got stuck here:
+
+1| module Fixture exposing (x, )
+                               ^
+I was expecting to see an exposed name next.

@@ -13,7 +13,7 @@ fn decode_escapes(body : String) -> String raise SyntaxError {
       continue
     }
     guard chars.get(i + 1) is Some(e) else {
-      raise SyntaxError("unfinished escape", dummy_span)
+      raise literal_error("UNKNOWN ESCAPE", "unfinished escape")
     }
     match e {
       'n' => sb.write_char('\n')
@@ -24,16 +24,28 @@ fn decode_escapes(body : String) -> String raise SyntaxError {
       '\\' => sb.write_char('\\')
       'u' => {
         guard chars.get(i + 2) is Some('{') else {
-          raise SyntaxError("expected `{` in unicode escape", dummy_span)
+          raise literal_error(
+            "BAD UNICODE ESCAPE", "expected `{` in unicode escape",
+          )
         }
         let mut j = i + 3
         let mut code = 0
         while j < chars.length() && chars[j] != '}' {
+          guard hex_value(chars[j]) is Some(digit) else {
+            raise literal_error(
+              "BAD UNICODE ESCAPE", "expected a hex digit in unicode escape",
+            )
+          }
           // Stop growing past the largest code point, so long runs cannot overflow.
           if code <= 0x10FFFF {
-            code = code * 16 + hex_value(chars[j])
+            code = code * 16 + digit
           }
           j += 1
+        }
+        if j >= chars.length() || j == i + 3 {
+          raise literal_error(
+            "BAD UNICODE ESCAPE", "expected hex digits and `}` in unicode escape",
+          )
         }
         // A value that is not a Unicode scalar value (above U+10FFFF, or a
         // surrogate) becomes U+FFFD.
@@ -48,7 +60,7 @@ fn decode_escapes(body : String) -> String raise SyntaxError {
         i = j + 1
         continue
       }
-      _ => raise SyntaxError("unknown escape `\\\{e}`", dummy_span)
+      _ => raise literal_error("UNKNOWN ESCAPE", "unknown escape `\\\{e}`")
     }
     i += 2
   }
@@ -62,13 +74,82 @@ let dummy_span : @scanner.Span = {
 }
 
 ///|
-fn hex_value(c : Char) -> Int {
+fn hex_value(c : Char) -> Int? {
   match c {
-    '0'..='9' => c.to_int() - '0'.to_int()
-    'a'..='f' => c.to_int() - 'a'.to_int() + 10
-    'A'..='F' => c.to_int() - 'A'.to_int() + 10
-    _ => 0
+    '0'..='9' => Some(c.to_int() - '0'.to_int())
+    'a'..='f' => Some(c.to_int() - 'a'.to_int() + 10)
+    'A'..='F' => Some(c.to_int() - 'A'.to_int() + 10)
+    _ => None
   }
+}
+
+///|
+/// A literal error before its token is known; `with_span` places it.
+fn literal_error(title : String, message : String) -> SyntaxError {
+  SyntaxError(message, dummy_span, { title, report: [], })
+}
+
+///|
+/// A literal error at `span`, with the report for its title.
+fn literal_problem(
+  title : String,
+  message : String,
+  span : @scanner.Span,
+) -> SyntaxError {
+  let highlight = point(span.start)
+  let problem = match title {
+    "UNKNOWN ESCAPE" =>
+      span_problem(
+        title,
+        "Backslashes always start escaped characters, but I do not recognize this one:",
+        highlight,
+        [
+          Text([
+            Plain("Valid escape characters include "),
+            @scanner.Chunk::code("\\n"),
+            Plain(", "),
+            @scanner.Chunk::code("\\t"),
+            Plain(", "),
+            @scanner.Chunk::code("\\\""),
+            Plain(", "),
+            @scanner.Chunk::code("\\'"),
+            Plain(", "),
+            @scanner.Chunk::code("\\\\"),
+            Plain(" and "),
+            @scanner.Chunk::code("\\u{1F600}"),
+            Plain("."),
+          ]),
+        ],
+      )
+    "BAD UNICODE ESCAPE" =>
+      span_problem(title, "I ran into an invalid Unicode escape:", highlight, [
+        Text([
+          Plain("A Unicode escape looks like "),
+          @scanner.Chunk::code("\\u{1F600}"),
+          Plain(", with 4 to 6 hex digits between the curly braces."),
+        ]),
+      ])
+    "NEEDS DOUBLE QUOTES" =>
+      span_problem(
+        title,
+        "The following string uses single quotes:",
+        highlight,
+        [
+          Text([
+            Plain("Please switch to double quotes instead: "),
+            @scanner.Chunk::code("'this'"),
+            Plain(" becomes "),
+            @scanner.Chunk::code("\"this\""),
+            Plain(". Elm uses single quotes only for one character, like "),
+            @scanner.Chunk::code("'a'"),
+            Plain("."),
+          ]),
+        ],
+      )
+    _ =>
+      span_problem(title, "I ran into a problem with this number:", highlight, [])
+  }
+  SyntaxError(message, span, problem)
 }
 
 ///|
@@ -78,7 +159,8 @@ fn string_value(token : @scanner.Token) -> String raise SyntaxError {
   let quote = if text.has_prefix("\"\"\"") { 3 } else { 1 }
   let body = text.unsafe_substring(start=quote, end=text.length() - quote)
   decode_escapes(body) catch {
-    SyntaxError(message, _) => raise SyntaxError(message, token.span)
+    SyntaxError(message, _, problem) =>
+      raise literal_problem(problem.title, message, token.span)
   }
 }
 
@@ -89,11 +171,17 @@ fn char_value(token : @scanner.Token) -> Char raise SyntaxError {
   let value = decode_escapes(
     text.unsafe_substring(start=1, end=text.length() - 1),
   ) catch {
-    SyntaxError(message, _) => raise SyntaxError(message, token.span)
+    SyntaxError(message, _, problem) =>
+      raise literal_problem(problem.title, message, token.span)
   }
   match value.get_char(0) {
     Some(c) => c
-    None => raise SyntaxError("empty char literal", token.span)
+    None =>
+      raise literal_problem(
+        "NEEDS DOUBLE QUOTES",
+        "empty char literal",
+        token.span,
+      )
   }
 }
 
@@ -105,13 +193,23 @@ fn int_value(token : @scanner.Token) -> Result[Int64, Int64] raise SyntaxError {
     let digits = text.unsafe_substring(start=2, end=text.length())
     Err(
       @string.parse_int64(digits, base=16) catch {
-        _ => raise SyntaxError("hex literal out of range", token.span)
+        _ =>
+          raise literal_problem(
+            "WEIRD HEXIDECIMAL",
+            "hex literal out of range",
+            token.span,
+          )
       },
     )
   } else {
     Ok(
       @string.parse_int64(text) catch {
-        _ => raise SyntaxError("integer literal out of range", token.span)
+        _ =>
+          raise literal_problem(
+            "WEIRD NUMBER",
+            "integer literal out of range",
+            token.span,
+          )
       },
     )
   }
@@ -120,6 +218,7 @@ fn int_value(token : @scanner.Token) -> Result[Int64, Int64] raise SyntaxError {
 ///|
 fn float_value(token : @scanner.Token) -> Double raise SyntaxError {
   @string.parse_double(token.lexeme) catch {
-    _ => raise SyntaxError("invalid float literal", token.span)
+    _ =>
+      raise literal_problem("WEIRD NUMBER", "invalid float literal", token.span)
   }
 }

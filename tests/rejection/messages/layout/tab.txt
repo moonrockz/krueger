@@ -1,0 +1,7 @@
+-- NO TABS ----------------------------------------------------- src/Fixture.elm
+
+I ran into a tab, but tabs are not allowed in Elm files.
+
+9| 	x
+   ^
+Replace the tab with spaces.
