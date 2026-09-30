@@ -43,6 +43,27 @@ fn Cursor::at(self : Cursor, ahead? : Int = 0) -> Int {
 }
 
 ///|
+/// The code point at the cursor and its width in code units (a surrogate pair
+/// is one code point, two units), or `(-1, 0)` at the end.
+fn Cursor::code_point(self : Cursor) -> (Int, Int) {
+  let c = self.at()
+  if c >= 0xD800 && c <= 0xDBFF {
+    let low = self.at(ahead=1)
+    if low >= 0xDC00 && low <= 0xDFFF {
+      return (0x10000 + ((c - 0xD800) << 10) + (low - 0xDC00), 2)
+    }
+  }
+  (c, if c < 0 { 0 } else { 1 })
+}
+
+///|
+/// Whether the code point at the cursor satisfies `test`.
+fn Cursor::code_point_is(self : Cursor, predicate : (Char) -> Bool) -> Bool {
+  let (cp, width) = self.code_point()
+  width > 0 && predicate(Int::unsafe_to_char(cp))
+}
+
+///|
 fn Cursor::done(self : Cursor) -> Bool {
   self.pos >= self.text.length()
 }
@@ -92,12 +113,6 @@ fn Cursor::slice(self : Cursor, start : Int) -> String {
 }
 
 ///|
-fn is_ascii_letter(c : Int) -> Bool {
-  (c >= 'a'.to_int() && c <= 'z'.to_int()) ||
-  (c >= 'A'.to_int() && c <= 'Z'.to_int())
-}
-
-///|
 fn is_ascii_digit_code(c : Int) -> Bool {
   c >= '0'.to_int() && c <= '9'.to_int()
 }
@@ -107,11 +122,6 @@ fn is_hex_digit_code(c : Int) -> Bool {
   is_ascii_digit_code(c) ||
   (c >= 'a'.to_int() && c <= 'f'.to_int()) ||
   (c >= 'A'.to_int() && c <= 'F'.to_int())
-}
-
-///|
-fn is_name_char(c : Int) -> Bool {
-  is_ascii_letter(c) || is_ascii_digit_code(c) || c == '_'.to_int()
 }
 
 ///|
@@ -311,6 +321,10 @@ pub fn lex_raw(
         cursor.advance()
       }
       Some(Whitespace)
+    } else if c == '\r'.to_int() && cursor.at(ahead=1) != '\n'.to_int() {
+      // A lone carriage return is whitespace, as in elm make and elm-syntax.
+      cursor.advance()
+      Some(Whitespace)
     } else if c == '\n'.to_int() || cursor.starts_with("\r\n") {
       cursor.advance_by(if c == '\n'.to_int() { 1 } else { 2 })
       Some(Newline)
@@ -367,9 +381,10 @@ pub fn lex_raw(
       Some(
         Significant(if skip_number(cursor) { FloatLiteral } else { IntLiteral }),
       )
-    } else if is_ascii_letter(c) {
-      while is_name_char(cursor.at()) {
-        cursor.advance()
+    } else if cursor.code_point_is(is_lower_start) ||
+      cursor.code_point_is(is_upper_start) {
+      while cursor.code_point_is(is_name_part) {
+        cursor.advance_by(cursor.code_point().1)
       }
       match keyword_of(cursor.slice(start.offset), dialect) {
         Some(k) => Some(Significant(Keyword(k)))

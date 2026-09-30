@@ -1,7 +1,0 @@
--- UNEXPECTED SYMBOL ------------------------------------------- src/Fixture.elm
-
-I got stuck on this symbol:
-
-9|     x+ 1
-        ^
-It is not used for anything in Elm syntax. Try removing it?

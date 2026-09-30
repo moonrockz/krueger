@@ -161,7 +161,7 @@ fn sub_expression_at_depth(
     IntLiteral => {
       ignore(c.advance())
       weird_number_check(c, t)
-      match int_value(t) {
+      match int_value(c, t) {
         Ok(n) => token_node(t, Integer(n))
         Err(n) => token_node(t, Hex(n))
       }
@@ -169,7 +169,7 @@ fn sub_expression_at_depth(
     FloatLiteral => {
       ignore(c.advance())
       weird_number_check(c, t)
-      token_node(t, Floatable(float_value(t)))
+      token_node(t, Floatable(float_value(c, t)))
     }
     Glsl => {
       ignore(c.advance())

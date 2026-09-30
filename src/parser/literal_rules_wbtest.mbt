@@ -83,3 +83,46 @@ test "a code point above 10FFFF has its own report" {
     .join(" ")
   @expect.expect(words).to_contain("between 0 and 10FFFF")
 }
+
+///|
+fn parse_number(body : String) -> (Array[String], @ast.Expression?) {
+  let text = "module Fixture exposing (..)\n\n\nf =\n    " + body + "\n"
+  let source = @scanner.SourceText::{ module_name: Some("Fixture"), text, }
+  guard @scanner.DefaultScanner::new().tokenize(source) is Ok(tokens) else {
+    return (["scan error"], None)
+  }
+  let result = parse_tokens(tokens)
+  let value = match result.ast {
+    Some(file) =>
+      match file.declarations.get(0) {
+        Some({ value: FunctionDeclaration(f), .. }) =>
+          Some(f.declaration.value.expression.value)
+        _ => None
+      }
+    None => None
+  }
+  (result.diagnostics.map(d => "\{d.code} \{severity_word(d.severity)}"), value)
+}
+
+///|
+test "out-of-range numbers are accepted with a warning" {
+  @expect.expect(parse_number("99999999999999999999")).to_equal(
+    (["KR-PARSE-009 Warning"], Some(Integer(9223372036854775807L))),
+  )
+  @expect.expect(parse_number("0xFFFFFFFFFFFFFFFFFF")).to_equal(
+    (["KR-PARSE-009 Warning"], Some(Hex(9223372036854775807L))),
+  )
+  let (codes, value) = parse_number("1.0e400")
+  @expect.expect(codes).to_equal(["KR-PARSE-009 Warning"])
+  guard value is Some(Floatable(x)) else { fail("expected a float") }
+  @expect.expect(x > 1.0e308).to_equal(true)
+}
+
+///|
+fn severity_word(s : @scanner.Severity) -> String {
+  match s {
+    Error => "Error"
+    Warning => "Warning"
+    Info => "Info"
+  }
+}

@@ -210,39 +210,64 @@ fn char_value(
 }
 
 ///|
-/// An integer token: `Ok(n)` for decimal, `Err(n)` for hexadecimal.
-fn int_value(token : @scanner.Token) -> Result[Int64, Int64] raise SyntaxError {
+/// A warning for a number too big to store exactly: krueger keeps the
+/// nearest value it can (`Int64` max, or infinity), as elm make accepts it.
+fn out_of_range(c : Cursor, token : @scanner.Token, kept : String) -> Unit {
+  c.warnings.push({
+    code: "KR-PARSE-009",
+    severity: Warning,
+    message: "Number literal out of range",
+    span: token.span,
+    title: "NUMBER OUT OF RANGE",
+    report: [
+      plain("This number is too big for me to store exactly:"),
+      Excerpt(
+        context=point(token.span.start),
+        highlight=point(token.span.start),
+      ),
+      plain(
+        "I will use \{kept} instead. Elm compiles it, but the value may not be what you expect.",
+      ),
+    ],
+  })
+}
+
+///|
+/// An integer token: `Ok(n)` for decimal, `Err(n)` for hexadecimal. A value
+/// above the `Int64` range becomes `Int64` max, with a warning.
+fn int_value(c : Cursor, token : @scanner.Token) -> Result[Int64, Int64] {
   let text = token.lexeme
+  let max = 9223372036854775807L
   if text.has_prefix("0x") {
     let digits = text.unsafe_substring(start=2, end=text.length())
     Err(
       @string.parse_int64(digits, base=16) catch {
-        _ =>
-          raise literal_problem(
-            "WEIRD HEXIDECIMAL",
-            "hex literal out of range",
-            token.span,
-          )
+        _ => {
+          out_of_range(c, token, "the largest 64-bit integer")
+          max
+        }
       },
     )
   } else {
     Ok(
       @string.parse_int64(text) catch {
-        _ =>
-          raise literal_problem(
-            "WEIRD NUMBER",
-            "integer literal out of range",
-            token.span,
-          )
+        _ => {
+          out_of_range(c, token, "the largest 64-bit integer")
+          max
+        }
       },
     )
   }
 }
 
 ///|
-fn float_value(token : @scanner.Token) -> Double raise SyntaxError {
+/// A float token. A value beyond the `Double` range becomes infinity, with a
+/// warning.
+fn float_value(c : Cursor, token : @scanner.Token) -> Double {
   @string.parse_double(token.lexeme) catch {
-    _ =>
-      raise literal_problem("WEIRD NUMBER", "invalid float literal", token.span)
+    _ => {
+      out_of_range(c, token, "infinity")
+      1.0 / 0.0
+    }
   }
 }

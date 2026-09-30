@@ -14,6 +14,12 @@ pub fn diagnostic_description(String) -> String?
 
 pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
 
+pub fn is_lower_start(Char) -> Bool
+
+pub fn is_name_part(Char) -> Bool
+
+pub fn is_upper_start(Char) -> Bool
+
 pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult

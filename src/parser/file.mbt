@@ -412,6 +412,7 @@ pub fn parse_tokens(
       }
     }
   }
+  diagnostics.append(c.warnings)
   let (comments, stray) = collect_comments(stream, attached, listed)
   for span in stray {
     diagnostics.push(

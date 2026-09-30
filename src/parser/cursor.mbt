@@ -21,6 +21,8 @@ priv struct Cursor {
   /// Set while building a layout failure: the problem is marked right after
   /// the previous token, as elm make does.
   mut layout_failure : Bool
+  /// Warnings found while parsing (for example `KR-PARSE-009`).
+  warnings : Array[@scanner.Diagnostic]
   /// Whether the module header says `port module`.
   mut port_module : Bool
 }
@@ -39,6 +41,7 @@ fn Cursor::new(
     contexts: [],
     item_start: 0,
     layout_failure: false,
+    warnings: [],
     port_module: false,
   }
 }
@@ -554,7 +557,7 @@ fn Cursor::next_touches(self : Cursor) -> Bool {
 fn is_lower(token : @scanner.Token) -> Bool {
   token.kind == Identifier &&
   (match token.lexeme.get_char(0) {
-    Some(c) => c.is_ascii_lowercase()
+    Some(c) => @scanner.is_lower_start(c)
     None => false
   })
 }
@@ -563,7 +566,7 @@ fn is_lower(token : @scanner.Token) -> Bool {
 fn is_upper(token : @scanner.Token) -> Bool {
   token.kind == Identifier &&
   (match token.lexeme.get_char(0) {
-    Some(c) => c.is_ascii_uppercase()
+    Some(c) => @scanner.is_upper_start(c)
     None => false
   })
 }

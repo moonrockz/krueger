@@ -26,6 +26,17 @@ Feature: Elm lexer
       kw:type lower:alias upper:Model = lower:infix lower:effect
       """
 
+  Scenario: Names can use Unicode letters and numbers
+    Given Elm source:
+      """elm
+      naïve = Ωmega x₁
+      """
+    When I tokenize the source
+    Then the tokens are:
+      """
+      lower:naïve = upper:Ωmega lower:x₁
+      """
+
   Scenario: Every operator elm-syntax allows
     Given Elm source:
       """elm
@@ -150,7 +161,7 @@ Feature: Elm lexer
     Examples:
       | source           | code        |
       | x = @            | KR-SCAN-003 |
-      | naïve = 1        | KR-SCAN-003 |
+      | x = y · 1        | KR-SCAN-003 |
       | s = "unfinished  | KR-SCAN-004 |
       | c = 'x           | KR-SCAN-004 |
 

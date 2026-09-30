@@ -169,7 +169,7 @@ fn infix_declaration(
       )
   }
   let precedence_token = c.expect(IntLiteral, "a precedence")
-  let precedence = match int_value(precedence_token) {
+  let precedence = match int_value(c, precedence_token) {
     Ok(n) => n.to_int()
     Err(_) =>
       raise c.error_at(

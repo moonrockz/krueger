@@ -84,7 +84,7 @@ fn single_pattern_at_depth(
         !t.lexeme.has_prefix("0x") {
         raise c.fail("`->` after the pattern")
       }
-      match int_value(t) {
+      match int_value(c, t) {
         Ok(n) => token_node(t, IntPattern(n))
         Err(n) => token_node(t, HexPattern(n))
       }

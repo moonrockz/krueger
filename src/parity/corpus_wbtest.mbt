@@ -190,7 +190,7 @@ fn score() -> Array[FileReport] raise {
       default_errors.push(e)
     }
     let actual = result.ast.map(@ast.encode_file)
-    let parsed = actual is Some(_) && result.diagnostics.is_empty()
+    let parsed = actual is Some(_) && !has_errors(result.diagnostics)
     // A hash match counts even when krueger also reported diagnostics.
     let matched = match (entry.golden, actual) {
       (Hash(h), Some(json)) => sha256_hex(canonical(json)) == h
@@ -237,6 +237,12 @@ fn score() -> Array[FileReport] raise {
     )
   }
   files
+}
+
+///|
+/// Whether any diagnostic is an error (warnings do not count).
+fn has_errors(diagnostics : Array[@krueger.Diagnostic]) -> Bool {
+  diagnostics.iter().any(d => d.severity is Error)
 }
 
 ///|
@@ -357,4 +363,22 @@ test "dialect_errors names the first error" {
   @expect.expect(
     dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }),
   ).to_equal(Some("a/B.elm:3:1 KR-PARSE-004 boom"))
+}
+
+///|
+test "warnings do not stop a file counting as parsed" {
+  let span : @krueger.Span = {
+    start: { offset: 0, line: 1, column: 1, },
+    end: { offset: 1, line: 1, column: 2, },
+  }
+  let warning : @krueger.Diagnostic = {
+    code: "KR-PARSE-009",
+    severity: Warning,
+    message: "big",
+    span,
+    title: "NUMBER OUT OF RANGE",
+    report: [],
+  }
+  @expect.expect(has_errors([warning])).to_equal(false)
+  @expect.expect(has_errors([{ ..warning, severity: Error, }])).to_equal(true)
 }
