@@ -20,8 +20,9 @@ import {
 /// Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json>
 ///
 /// Each fixture is compiled as `src/Fixture.elm` in a fresh Elm application
-/// in `<project-dir>`. A fixture that elm make rejects with an error that is
-/// not a syntax error is a bad fixture: the script fails.
+/// in `<project-dir>`. When elm make fails with an error that is not a syntax
+/// error (naming, types), its parser accepted the file: the verdict is
+/// `accepted` with `later_error` set to that title.
 
 ///|
 let usage : String = "Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json>"
@@ -73,7 +74,12 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
   if code == 0 {
     return { "accepted": true }
   }
-  let report = @json.parse(stderr) catch {
+  // elm make writes tabs and carriage returns from the source into its JSON
+  // strings without escaping them; escape them so the report parses.
+  let escaped = stderr
+    .replace_all(old="\t", new="\\t")
+    .replace_all(old="\r", new="\\r")
+  let report = @json.parse(escaped) catch {
     _ => fail("elm make: " + excerpt(stderr))
   }
   guard report is Object(root) &&
@@ -86,7 +92,8 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
     fail("elm make: " + excerpt(stderr))
   }
   if !is_syntax_title(title) {
-    fail("not a syntax error: \{title}")
+    // The parser accepted the file; a later phase (naming, types) failed.
+    return { "accepted": true, "later_error": title.to_json() }
   }
   guard region.get("start") is Some(Object(start)) &&
     region.get("end") is Some(Object(end)) &&
@@ -123,7 +130,9 @@ fn oracle_verdicts(stdout : String, prefix : String) -> Map[String, Bool] raise 
     if line == "" {
       continue
     }
-    guard @json.parse(line) is Object(o) &&
+    // Only `name` and `ok` matter. They come first, so parse just that head:
+    // the rest can hold escapes (lone surrogates) that @json rejects.
+    guard @json.parse(result_head(line)) is Object(o) &&
       o.get("name") is Some(String(name)) &&
       o.get("ok") is Some(ok) else {
       fail("oracle: unexpected line")
@@ -136,6 +145,17 @@ fn oracle_verdicts(stdout : String, prefix : String) -> Map[String, Bool] raise 
     verdicts[key] = ok is True
   }
   verdicts
+}
+
+///|
+/// `{"name":…,"ok":…}` from an oracle line `{"name":…,"ok":…,"file"|"error":…}`.
+fn result_head(line : String) -> String {
+  for key in [",\"file\":", ",\"error\":"] {
+    if line.find(key) is Some(i) {
+      return line.unsafe_substring(start=0, end=i) + "}"
+    }
+  }
+  line
 }
 
 ///|
@@ -159,7 +179,21 @@ async fn elm_files(dir : String) -> Array[String] {
     }
   }
   go("")
+  found.sort_by(compare_lexical)
   found
+}
+
+///|
+/// Compare strings by code unit (`String::compare` compares length first).
+fn compare_lexical(a : String, b : String) -> Int {
+  let n = if a.length() < b.length() { a.length() } else { b.length() }
+  for i in 0..<n {
+    let c = a.code_unit_at(i).compare(b.code_unit_at(i))
+    if c != 0 {
+      return c
+    }
+  }
+  a.length().compare(b.length())
 }
 
 ///|
@@ -272,6 +306,8 @@ async fn record(
 fn summary(verdict : Json) -> String {
   match verdict {
     Object(o) if o.get("title") is Some(String(title)) => "rejects (\{title})"
+    Object(o) if o.get("later_error") is Some(String(title)) =>
+      "accepts the syntax (later error: \{title})"
     _ => "accepts"
   }
 }
@@ -313,6 +349,13 @@ impl @moonspec.World for RejectionWorld with fn configure(self, setup) {
   ) {
     self.code = code
     self.stderr = doc.content
+  })
+  setup.when2("elm make exits with {int} and stderr containing a tab:", fn(
+    code : Int,
+    doc : @moonspec.DocString,
+  ) {
+    self.code = code
+    self.stderr = doc.content.replace_all(old="<TAB>", new="\t")
   })
   setup.then1("the elm make verdict is:", fn(doc : @moonspec.DocString) raise {
     @expect.expect(elm_make_verdict(self.code, self.stderr)).to_equal(

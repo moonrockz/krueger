@@ -33,12 +33,25 @@ Feature: Rejection oracle
       {"accepted":false,"title":"LEADING ZEROS","region":[6,5,6,8],"message":["Numbers cannot start with zeros."]}
       """
 
-  Scenario: A non-syntax error is a bad fixture
+  Scenario: Raw tabs and carriage returns in the elm make report
+    When elm make exits with 1 and stderr containing a tab:
+      """
+      {"type":"compile-errors","errors":[{"path":"src/Fixture.elm","name":"Fixture","problems":[{"title":"NO TABS","region":{"start":{"line":9,"column":1},"end":{"line":9,"column":1}},"message":["9| <TAB>x"]}]}]}
+      """
+    Then the elm make verdict is:
+      """
+      {"accepted":false,"title":"NO TABS","region":[9,1,9,1],"message":["9| \tx"]}
+      """
+
+  Scenario: A later-phase error means the parser accepted the fixture
     When elm make exits with 1 and stderr:
       """
       {"type":"compile-errors","errors":[{"path":"src/Fixture.elm","name":"Fixture","problems":[{"title":"NAMING ERROR","region":{"start":{"line":6,"column":5},"end":{"line":6,"column":8}},"message":["x"]}]}]}
       """
-    Then reading the verdict fails with "not a syntax error: NAMING ERROR"
+    Then the elm make verdict is:
+      """
+      {"accepted":true,"later_error":"NAMING ERROR"}
+      """
 
   Scenario: Other elm make failures are reported
     When elm make exits with 1 and stderr:
@@ -54,3 +67,10 @@ Feature: Rejection oracle
       {"name":"tests/rejection/a/c.elm","ok":false,"error":"x"}
       """
     Then the oracle verdicts with prefix "tests/rejection/" are "a/b.elm=true, a/c.elm=false"
+
+  Scenario: elm-syntax output with a lone surrogate
+    Given the oracle output:
+      """
+      {"name":"tests/rejection/a/s.elm","ok":true,"file":{"value":"\ud800"}}
+      """
+    Then the oracle verdicts with prefix "tests/rejection/" are "a/s.elm=true"
