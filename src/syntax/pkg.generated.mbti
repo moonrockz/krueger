@@ -1,0 +1,62 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/syntax"
+
+import {
+  "moonbitlang/core/debug",
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/parser",
+  "moonrockz/krueger/scanner",
+}
+
+// Values
+pub fn kind_table() -> Array[(String, String, Array[String])]
+
+// Errors
+
+// Types and methods
+pub(all) enum NodeRef {
+  File(@ast.File, Array[@parser.AttributeGroup])
+  Module(@ast.Node[@ast.Module])
+  ModuleName(@ast.Node[Array[String]])
+  Exposing(@ast.Node[@ast.Exposing])
+  Expose(@ast.Node[@ast.TopLevelExpose])
+  Import(@ast.Node[@ast.Import])
+  Declaration(@ast.Node[@ast.Declaration], Array[@parser.DocAttribute])
+  Documentation(@ast.Node[String])
+  Signature(@ast.Node[@ast.Signature])
+  Implementation(@ast.Node[@ast.FunctionImplementation])
+  Constructor(@ast.Node[@ast.ValueConstructor])
+  Expression(@ast.Node[@ast.Expression])
+  LetDeclaration(@ast.Node[@ast.LetDeclaration])
+  Case(@ast.Case)
+  RecordSetter(@ast.Node[@ast.RecordSetter])
+  Pattern(@ast.Node[@ast.Pattern])
+  TypeAnnotation(@ast.Node[@ast.TypeAnnotation])
+  RecordField(@ast.Node[@ast.RecordField])
+  Name(@ast.Node[String])
+  Comment(@ast.Node[String])
+  Attribute(@parser.DocAttribute)
+} derive(Eq, @debug.Debug)
+pub fn NodeRef::category(Self) -> String
+pub fn NodeRef::children(Self) -> Array[Self]
+pub fn NodeRef::field(Self, String) -> Array[Self]
+pub fn NodeRef::field_of(Self, Self) -> String?
+pub fn NodeRef::fields(Self) -> Array[String]
+pub fn NodeRef::kind(Self) -> String
+pub fn NodeRef::of_result(@parser.ParseResult) -> Self?
+pub fn NodeRef::range(Self) -> @ast.Range
+
+pub struct Tree {
+  // private fields
+}
+pub fn Tree::ancestors(Self, NodeRef) -> Array[NodeRef]
+pub fn Tree::new(@parser.ParseResult) -> Self?
+pub fn Tree::node_at(Self, @ast.Location) -> NodeRef?
+pub fn Tree::parent(Self, NodeRef) -> NodeRef?
+pub fn Tree::path(Self, NodeRef) -> Array[NodeRef]
+pub fn Tree::root(Self) -> NodeRef
+pub fn Tree::tokens_in(Self, @ast.Range) -> Array[@scanner.Token]
+
+// Type aliases
+
+// Traits

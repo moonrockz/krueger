@@ -32,9 +32,10 @@ moonrockz/krueger
 │   ├── report/           # Renders diagnostics like elm make (terminal, plain, JSON)
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
+│   ├── syntax/           # Node model over the AST: NodeRef, Tree, kind_table
 │   ├── bdd/              # MoonSpec step definitions (test-only)
 │   ├── e2e/              # End-to-end tests (test-only)
-│   └── (visitor/)        # Visitor / fold / SAX APIs — planned
+│   └── (traversal)       # walk / fold / Visitor / events / cursor in syntax/ — planned
 ├── tests/features/       # Gherkin features
 ├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
 ├── scripts/              # MoonBit tooling scripts (.mbtx)
@@ -152,6 +153,119 @@ code blocks byte for byte. So there are three forms:
 - `Dialect.attributes` (`DocComment` or `Off`) switches them on or off.
 - `mise run rejection:record` also checks `tests/attributes/compat/*.elm`: `elm make`
   must accept each file and `elm-format --validate` must pass.
+
+### Syntax Tree
+
+`src/syntax` (re-exported from the root) is a read-only node model over a parse
+result. It is the base for the traversal APIs and queries.
+
+- `NodeRef` points into the typed AST; nothing is copied. `category()`,
+  `kind()`, `range()`, `fields()`, `field(name)`, `children()` (source order)
+  and `field_of(child)` give generic access; typed code matches the cases.
+- Kinds and field names are the elm-syntax JSON vocabulary. elm-syntax reuses
+  tags (`record`, `list`, `unit`, …), so `(category, kind)` identifies a node
+  type. Values that are not nodes (operator symbols, literal values, name
+  qualifiers) are properties of their node, not children.
+- Doc attributes of a declaration are children of that declaration (field
+  `attributes`); module attributes and all comments are children of the file.
+- `Tree::new(result)` builds a parent index once. `parent`, `ancestors`
+  (nearest first), `path` (root first), `node_at(location)` (the innermost node
+  that contains it) and `tokens_in(range)`.
+- The walks in `src/syntax` use explicit stacks, not recursion, because wasm
+  overflows at a few hundred frames and trees can be 400 levels deep. Nodes from
+  the tree compare by identity first (`same`), so `parent` and `ancestors` do not
+  compare whole subtrees.
+- No shared mutable state: every returned array is new, and `Tree` keeps its own
+  copies of the tokens and attribute groups. The AST itself is shared with the
+  `ParseResult` (nodes point into it, nothing is copied), so do not change a
+  parse result's AST after you build a tree or take nodes from it.
+- A declaration's range starts at its first doc attribute when that comes
+  first (a port's doc comment is not part of its elm-syntax range).
+
+The kind table below is checked against `kind_table()` by
+`tests/features/syntax.feature`. When you add a kind or a field, update it.
+
+<!-- kinds:start -->
+| Category | Kind | Fields |
+|---|---|---|
+| `file` | `file` | moduleDefinition, imports, declarations, comments, attributes |
+| `module` | `normal` | moduleName, exposingList |
+| `module` | `port` | moduleName, exposingList |
+| `module` | `effect` | moduleName, exposingList, command, subscription |
+| `module_name` | `module_name` | — |
+| `exposing` | `all` | — |
+| `exposing` | `explicit` | explicit |
+| `expose` | `infix` | — |
+| `expose` | `function` | — |
+| `expose` | `typeOrAlias` | — |
+| `expose` | `typeexpose` | — |
+| `import` | `import` | moduleName, moduleAlias, exposingList |
+| `declaration` | `function` | documentation, signature, declaration, attributes |
+| `declaration` | `typeAlias` | documentation, name, generics, typeAnnotation, attributes |
+| `declaration` | `typedecl` | documentation, name, generics, constructors, attributes |
+| `declaration` | `port` | name, typeAnnotation, attributes |
+| `declaration` | `infix` | operator, function |
+| `declaration` | `destructuring` | pattern, expression |
+| `documentation` | `documentation` | — |
+| `signature` | `signature` | name, typeAnnotation |
+| `implementation` | `implementation` | name, arguments, expression |
+| `constructor` | `constructor` | name, arguments |
+| `let_declaration` | `function` | documentation, signature, declaration |
+| `let_declaration` | `destructuring` | pattern, expression |
+| `case_branch` | `case_branch` | pattern, expression |
+| `record_setter` | `record_setter` | field, expression |
+| `record_field` | `record_field` | name, typeAnnotation |
+| `name` | `name` | — |
+| `comment` | `comment` | — |
+| `attribute` | `attribute` | name, arguments |
+| `attribute` | `docs` | names |
+| `expression` | `unit` | — |
+| `expression` | `application` | application |
+| `expression` | `operatorapplication` | left, right |
+| `expression` | `functionOrValue` | — |
+| `expression` | `ifBlock` | clause, then, else |
+| `expression` | `prefixoperator` | — |
+| `expression` | `operator` | — |
+| `expression` | `hex` | — |
+| `expression` | `integer` | — |
+| `expression` | `float` | — |
+| `expression` | `negation` | negation |
+| `expression` | `literal` | — |
+| `expression` | `charLiteral` | — |
+| `expression` | `tupled` | tupled |
+| `expression` | `list` | list |
+| `expression` | `parenthesized` | parenthesized |
+| `expression` | `let` | declarations, expression |
+| `expression` | `case` | cases, expression |
+| `expression` | `lambda` | patterns, expression |
+| `expression` | `recordAccess` | expression, name |
+| `expression` | `recordAccessFunction` | — |
+| `expression` | `record` | record |
+| `expression` | `recordUpdate` | name, updates |
+| `expression` | `glsl` | — |
+| `pattern` | `all` | — |
+| `pattern` | `unit` | — |
+| `pattern` | `char` | — |
+| `pattern` | `string` | — |
+| `pattern` | `hex` | — |
+| `pattern` | `int` | — |
+| `pattern` | `float` | — |
+| `pattern` | `tuple` | value |
+| `pattern` | `record` | value |
+| `pattern` | `uncons` | left, right |
+| `pattern` | `list` | value |
+| `pattern` | `var` | — |
+| `pattern` | `named` | patterns |
+| `pattern` | `as` | name, pattern |
+| `pattern` | `parentisized` | value |
+| `type` | `generic` | — |
+| `type` | `typed` | args |
+| `type` | `unit` | — |
+| `type` | `tupled` | values |
+| `type` | `function` | left, right |
+| `type` | `record` | value |
+| `type` | `genericRecord` | name, values |
+<!-- kinds:end -->
 
 ### Dialects
 

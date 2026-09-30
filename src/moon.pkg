@@ -6,6 +6,7 @@ import {
   "moonrockz/krueger/scanner",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/report",
+  "moonrockz/krueger/syntax",
 }
 
 import {

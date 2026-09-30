@@ -71,7 +71,7 @@ fn children(item : Item) -> Array[Item] {
         TuplePattern(xs) | ListPattern(xs) | NamedPattern(_, xs) =>
           xs.map(x => P(x.value))
         UnConsPattern(a, b) => [P(a.value), P(b.value)]
-        AsPattern(x, _) => [P(x.value)]
+        AsPattern(x, _) | ParenthesizedPattern(x) => [P(x.value)]
         _ => []
       }
     T(t) =>

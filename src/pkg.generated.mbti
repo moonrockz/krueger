@@ -7,6 +7,7 @@ import {
   "moonrockz/krueger/dialect",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/scanner",
+  "moonrockz/krueger/syntax",
 }
 
 // Values
@@ -21,6 +22,8 @@ pub fn is_lower_start(Char) -> Bool
 pub fn is_name_part(Char) -> Bool
 
 pub fn is_upper_start(Char) -> Bool
+
+pub fn kind_table() -> Array[(String, String, Array[String])]
 
 pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
@@ -125,6 +128,8 @@ pub type ModuleName = Array[String]
 
 pub using @ast {type Node}
 
+pub using @syntax {type NodeRef}
+
 pub using @dialect {type OperatorDef}
 
 pub using @parser {type ParseResult}
@@ -162,6 +167,8 @@ pub using @scanner {type TokenKind}
 pub using @scanner {type TokenStream}
 
 pub using @ast {type TopLevelExpose}
+
+pub using @syntax {type Tree}
 
 pub using @scanner {type Trivia}
 
