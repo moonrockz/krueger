@@ -131,7 +131,15 @@ test "identifiers follow Unicode letters" {
     IntLiteral,
   ])
   @expect.expect(kinds_in("Ωmega", d)).to_equal([Identifier])
-  @expect.expect(kinds_in("x₁", d)).to_equal([Identifier])
+  // elm make allows only ASCII digits in names; elm-syntax allows any number.
+  let syntax = @dialect.Dialect::elm_syntax_7_3_9()
+  @expect.expect(kinds_in("x₁", syntax)).to_equal([Identifier])
+  @expect.expect(kinds_in("x₁", d)).to_equal([Identifier, Identifier])
+  // elm-syntax does not let a title-case letter start a name; elm make does.
+  @expect.expect(kinds_in("ǅx", d)).to_equal([Identifier])
+  @expect.expect(
+    lex_raw({ module_name: None, text: "ǅx", }, dialect=syntax) is Err(_),
+  ).to_equal(true)
   @expect.expect(kinds_in("\u{1D4B3}", d)).to_equal([Identifier])
   @expect.expect(kinds_in("\"é\"", d)).to_equal([StringLiteral])
   @expect.expect(is_lower_start('é')).to_equal(true)

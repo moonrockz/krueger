@@ -14,9 +14,11 @@ import {
 ///
 /// Usage: unicode_table.mbtx <UnicodeData.txt> <version> <out.mbt>
 ///
-/// Classes (as the Elm compiler reads names): a lower-case name starts with
-/// Ll; an upper-case name starts with Lu or Lt; later characters are any
-/// letter (L*) or number (N*).
+/// Classes: a lower-case name starts with Ll; an upper-case name starts with
+/// Lu or Lt; later characters are any letter (L*) or number (N*). The lexer
+/// narrows these per dialect with the `titlecase` (Lt) and `number`
+/// (non-ASCII N*) tables: elm make allows only ASCII digits in names, and
+/// elm-syntax does not let Lt start a name.
 
 ///|
 let usage : String = "Usage: unicode_table.mbtx <UnicodeData.txt> <version> <out.mbt>"
@@ -28,6 +30,8 @@ struct Classes {
   lower_start : Array[(Int, Int)]
   upper_start : Array[(Int, Int)]
   inner : Array[(Int, Int)]
+  titlecase : Array[(Int, Int)]
+  number : Array[(Int, Int)]
 }
 
 ///|
@@ -45,6 +49,8 @@ fn classes(data : String) -> Classes raise {
   let lower_start = []
   let upper_start = []
   let inner = []
+  let titlecase = []
+  let number = []
   let mut range_start : Int? = None
   for raw in data.split("\n") {
     let line = raw.trim().to_owned()
@@ -74,8 +80,14 @@ fn classes(data : String) -> Classes raise {
     if category.has_prefix("L") || category.has_prefix("N") {
       add(inner, start, code)
     }
+    if category == "Lt" {
+      add(titlecase, start, code)
+    }
+    if category.has_prefix("N") && start >= 0x80 {
+      add(number, start, code)
+    }
   }
-  { lower_start, upper_start, inner, }
+  { lower_start, upper_start, inner, titlecase, number, }
 }
 
 ///|
@@ -114,7 +126,11 @@ fn source(c : Classes, version : String) -> String {
   "\n" +
   table("upper_start_ranges", c.upper_start) +
   "\n" +
-  table("inner_ranges", c.inner)
+  table("inner_ranges", c.inner) +
+  "\n" +
+  table("titlecase_ranges", c.titlecase) +
+  "\n" +
+  table("number_ranges", c.number)
 }
 
 ///|
@@ -153,6 +169,16 @@ impl @moonspec.World for UnicodeWorld with fn configure(self, setup) {
   })
   setup.then1("the inner ranges are {string}", fn(expected : String) raise {
     @expect.expect(describe(classes(self.data).inner)).to_equal(expected)
+  })
+  setup.then1("the title-case ranges are {string}", fn(
+    expected : String,
+  ) raise {
+    @expect.expect(describe(classes(self.data).titlecase)).to_equal(expected)
+  })
+  setup.then1("the non-ASCII number ranges are {string}", fn(
+    expected : String,
+  ) raise {
+    @expect.expect(describe(classes(self.data).number)).to_equal(expected)
   })
 }
 

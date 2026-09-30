@@ -4,5 +4,5 @@ I was not expecting an infix declaration here:
 
 4| infix left 6 (+++) = add
                  ^
-Only elm/* packages can declare infix operators. Define a normal function
-instead.
+Only elm/* and elm-explorations/* packages can declare infix operators. Define a
+normal function instead.

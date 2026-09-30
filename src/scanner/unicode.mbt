@@ -52,3 +52,15 @@ pub fn is_name_part(c : Char) -> Bool {
     in_ranges(inner_ranges, cp)
   }
 }
+
+///|
+/// Whether `c` is a title-case letter (Lt), such as `ǅ`.
+fn is_titlecase(c : Char) -> Bool {
+  c.to_int() >= 0x80 && in_ranges(titlecase_ranges, c.to_int())
+}
+
+///|
+/// Whether `c` is a number outside ASCII (Nd, Nl, No), such as `₁` or `٣`.
+fn is_non_ascii_number(c : Char) -> Bool {
+  c.to_int() >= 0x80 && in_ranges(number_ranges, c.to_int())
+}

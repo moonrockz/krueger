@@ -439,7 +439,16 @@ pub fn encode_expression(e : Expression) -> Json {
     Operator(x) => encode_typed("operator", encode_string(x))
     Hex(h) => encode_typed("hex", encode_int64(h))
     Integer(x) => encode_typed("integer", encode_int64(x))
-    Floatable(x) => encode_typed("float", Json::number(x))
+    // JSON has no infinity or NaN; elm-syntax writes null.
+    Floatable(x) =>
+      encode_typed(
+        "float",
+        if x.is_inf() || x.is_nan() {
+          Json::null()
+        } else {
+          Json::number(x)
+        },
+      )
     Negation(x) => encode_typed("negation", encode_nested(x))
     Literal(x) => encode_typed("literal", encode_string(x))
     CharLiteral(c) => encode_typed("charLiteral", encode_char(c))

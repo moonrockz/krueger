@@ -29,12 +29,12 @@ Feature: Elm lexer
   Scenario: Names can use Unicode letters and numbers
     Given Elm source:
       """elm
-      naïve = Ωmega x₁
+      naïve = Ωmega x1
       """
     When I tokenize the source
     Then the tokens are:
       """
-      lower:naïve = upper:Ωmega lower:x₁
+      lower:naïve = upper:Ωmega lower:x1
       """
 
   Scenario: Every operator elm-syntax allows

@@ -13,6 +13,7 @@ priv struct Cursor {
   mut pos : Int
   mut indent : Int
   mut depth : Int
+  mut chain_depth : Int
   dialect : @dialect.Dialect
   contexts : Array[Frame]
   /// Position of the token that starts the current item (declaration, let
@@ -37,6 +38,7 @@ fn Cursor::new(
     pos: 0,
     indent: 1,
     depth: 0,
+    chain_depth: 0,
     dialect,
     contexts: [],
     item_start: 0,
@@ -258,6 +260,17 @@ fn Cursor::problem(self : Cursor, expected : String) -> Problem {
             @scanner.Chunk::code("\"hello\""),
             Plain(" here."),
           ]),
+        ],
+      )
+    (Some({ kind: Identifier, .. } as t), Some(Definition(_))) if !is_lower(t) &&
+      !is_upper(t) =>
+      self.titled(
+        "PROBLEM IN DEFINITION",
+        [Plain("I got stuck while parsing this definition:")],
+        [
+          plain(
+            "Names can use letters, ASCII digits and underscores, but not other kinds of numbers.",
+          ),
         ],
       )
     (Some(t), None) if is_upper(t) && expected.contains("function name") =>
@@ -514,8 +527,31 @@ fn[T] Cursor::with_indent(
 const MAX_DEPTH : Int = 150
 
 ///|
-/// Most operators in one left-associative chain (`a + b + c ...`).
-const MAX_CHAIN : Int = 400
+/// Run `body` one step deeper in a right-recursive chain (`a :: b :: ...`,
+/// `Int -> Int -> ...`, `a ++ b ++ ...`); fail above `MAX_AST_DEPTH`, whose
+/// tree could not be encoded anyway.
+fn[T] Cursor::chain(
+  self : Cursor,
+  body : () -> T raise SyntaxError,
+) -> T raise SyntaxError {
+  if self.chain_depth >= MAX_AST_DEPTH {
+    raise self.fail_titled(
+      "chain too long",
+      "TOO MUCH NESTING",
+      [Plain("This chain is too long for me:")],
+      [plain("Try splitting it into smaller definitions.")],
+    )
+  }
+  self.chain_depth += 1
+  let result = body() catch {
+    SyntaxError(message, span, problem) => {
+      self.chain_depth -= 1
+      raise SyntaxError(message, span, problem)
+    }
+  }
+  self.chain_depth -= 1
+  result
+}
 
 ///|
 /// Run `body` one nesting level deeper; fail above `MAX_DEPTH`.
@@ -549,7 +585,6 @@ fn touching(a : @scanner.Token, b : @scanner.Token) -> Bool {
 }
 
 ///|
-/// Whether the next token touches the previous one.
 /// The name after a `.` at the cursor, when the dot touches the token before
 /// it and the name (`List.map`, `record.field`) and `wanted` accepts it.
 fn Cursor::dotted_name(
@@ -568,6 +603,7 @@ fn Cursor::dotted_name(
 }
 
 ///|
+/// Whether the next token touches the previous one.
 fn Cursor::next_touches(self : Cursor) -> Bool {
   match (self.previous(), self.peek()) {
     (Some(a), Some(b)) => touching(a, b)

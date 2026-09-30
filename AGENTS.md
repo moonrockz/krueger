@@ -56,10 +56,10 @@ moonrockz/krueger
   range quirks; each one is marked with a comment where it is implemented.
 - On all 363 corpus files the output is byte-identical to elm-syntax. When something
   cannot be parsed, the declaration is left out of the AST and the CST, and
-  reported. Nesting deeper than 150 levels (expressions, types, patterns, or a chain of
-  right-associative operators such as `::` and `++`), or a left-associative chain
-  of more than 400 operators, is a syntax error (`TOO MUCH NESTING`), not a stack
-  overflow:
+  reported. Nesting deeper than 150 levels (parentheses, lists, records,
+  `let`, `case` and so on), or a declaration whose AST is more than 400 levels deep
+  (for example a very long operator chain, record access chain or type arrow
+  chain), is a syntax error (`TOO MUCH NESTING`), not a stack overflow:
 
 | Code | Meaning |
 |------|---------|
@@ -138,13 +138,14 @@ extension data for Elm-like languages:
 | `uppercase-hex-prefix` | on | off | `0X1F` |
 | `exponent-without-digits` | on | off | `1e` |
 | `bad-unicode-escape` | on | off | a code point above `10FFFF` |
-| `effect-module` | on | off | an effect module outside an `elm/*` package |
-| `infix-declaration` | on | off | an infix declaration outside an `elm/*` package |
+| `effect-module` | on | off | an effect module outside an `elm/*` or `elm-explorations/*` package |
+| `infix-declaration` | on | off | an infix declaration outside an `elm/*` or `elm-explorations/*` package |
 | `duplicate-effect-key` | on | off | a repeated `command` or `subscription` in an effect module |
 | `port-in-normal-module` | on | off | a `port` in a module that is not a `port module` |
 
-  `Dialect.core_package` marks a file of an `elm/*` package (`elm make` lets only those
-  declare infix operators and effect modules); the parity harness sets it for `elm/*`
+  `Dialect.core_package` marks a file of an `elm/*` or `elm-explorations/*` package
+  (`elm make` lets only those declare infix operators and effect modules); the parity
+  harness sets it for those
   corpus files.
 - Names follow Unicode: a lower-case name starts with a lower-case letter, an upper-case
   name with an upper-case or title-case letter, and later characters are letters,

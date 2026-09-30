@@ -13,7 +13,6 @@ fn expression_above(
   or_equal : Bool,
 ) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let mut left = application(c)
-  let mut terms = 0
   while c.positively_indented() {
     guard c.peek() is Some({ kind: Operator(op), .. } as op_token) else {
       break
@@ -35,22 +34,10 @@ fn expression_above(
     if !accepted {
       break
     }
-    // A left-associative chain is a loop here, but its tree is as deep as it
-    // is long: limit it so that encoding it cannot overflow the stack.
-    terms += 1
-    if terms > MAX_CHAIN {
-      raise c.fail_titled(
-        "operator chain too long",
-        "TOO MUCH NESTING",
-        [Plain("This chain of operators is too long for me:")],
-        [plain("Try splitting it into smaller definitions.")],
-      )
-    }
     ignore(c.advance())
     let right = match direction {
       Left => expression_above(c, precedence, false)
-      // A right-associative chain recurses: it counts as nesting.
-      Right => c.nested(() => expression_above(c, precedence, true))
+      Right => c.chain(() => expression_above(c, precedence, true))
       Non => non_associative_right(c, precedence)
     }
     left = node(

@@ -139,3 +139,11 @@ test "tags absent from the oracle corpus round-trip byte-exact" {
   }
   @expect.expect(@ast.encode_file(file).stringify()).to_equal(src)
 }
+
+///|
+test "a non-finite float encodes as null, as elm-syntax does" {
+  let e : @ast.Expression = Floatable(1.0 / 0.0)
+  @expect.expect(@ast.encode_expression(e).stringify()).to_contain(
+    "\"float\":null",
+  )
+}

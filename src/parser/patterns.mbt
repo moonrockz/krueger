@@ -35,7 +35,7 @@ fn pattern(c : Cursor) -> @ast.Node[@ast.Pattern] raise SyntaxError {
   }
   if c.at_kind(Operator("::")) {
     ignore(c.advance())
-    let right = pattern(c)
+    let right = c.chain(() => pattern(c))
     return node(combine(left.range, right.range), UnConsPattern(left, right))
   }
   left

@@ -489,3 +489,56 @@ test "long operator chains still parse and encode" {
     @expect.expect(json.length() > 0).to_equal(true)
   }
 }
+
+///|
+fn repeated(unit : String, n : Int) -> String {
+  let sb = StringBuilder()
+  for _ in 0..<n {
+    sb.write_string(unit)
+  }
+  sb.to_string()
+}
+
+///|
+test "deep trees of any shape are a diagnostic, not a stack overflow" {
+  let header = "module Main exposing (..)\n\n\n"
+  let chain = "1" + repeated(" + 1", 399)
+  let inputs = [
+    // Left chains nested as first operands.
+    header + "f =\n    ((" + chain + ") + " + chain + ") + " + chain + "\n",
+    // Record access.
+    header + "f r =\n    r" + repeated(".a", 1000) + "\n",
+    // Type arrows.
+    header + "f : Int" + repeated(" -> Int", 1000) + "\nf =\n    1\n",
+    // Cons patterns.
+    header +
+    "f x =\n    case x of\n        a" +
+    repeated(" :: a", 1000) +
+    " ->\n            1\n\n        _ ->\n            2\n",
+    // Right-associative operators.
+    header + "f =\n    \"a\"" + repeated(" ++ \"a\"", 1000) + "\n",
+  ]
+  for text in inputs {
+    let result = parse(text)
+    @expect.expect(result.diagnostics.map(d => d.title)).to_contain_element(
+      "TOO MUCH NESTING",
+    )
+    if result.ast is Some(file) {
+      ignore(@ast.encode_file(file).stringify())
+    }
+  }
+}
+
+///|
+test "realistic long chains still parse" {
+  let header = "module Main exposing (..)\n\n\n"
+  for
+    text in [
+      header + "f =\n    \"a\"" + repeated(" ++ \"a\"", 300) + "\n",
+      header + "f x =\n    x" + repeated(" |> g", 300) + "\n",
+    ] {
+    let result = parse(text)
+    @expect.expect(codes(result)).to_equal([])
+    ignore(@ast.encode_file(ast(result)).stringify())
+  }
+}

@@ -7,7 +7,7 @@ fn type_annotation(
   let input = type_no_fn(c, true)
   if c.at_kind(Arrow) && c.positively_indented() {
     ignore(c.advance())
-    let output = type_annotation(c)
+    let output = c.chain(() => type_annotation(c))
     node(
       combine(input.range, output.range),
       FunctionTypeAnnotation(input, output),

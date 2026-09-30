@@ -1,0 +1,8 @@
+-- PROBLEM IN DEFINITION --------------------------------------- src/Fixture.elm
+
+I got stuck while parsing this definition:
+
+4| x₁ =
+    ^
+Names can use letters, ASCII digits and underscores, but not other kinds of
+numbers.

@@ -160,6 +160,8 @@ fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
           Text([
             Plain("Effect modules are only allowed in "),
             @scanner.Chunk::code("elm/*"),
+            Plain(" and "),
+            @scanner.Chunk::code("elm-explorations/*"),
             Plain(" packages. Use "),
             @scanner.Chunk::code("module"),
             Plain(" or "),

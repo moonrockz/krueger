@@ -51,6 +51,8 @@ pub(all) enum Rule {
   UppercaseHexPrefix
   ExponentWithoutDigits
   ImportColumn
+  NonAsciiDigitInName
+  TitlecaseNameStart
   EffectModule
   InfixDeclaration
   DuplicateEffectKey

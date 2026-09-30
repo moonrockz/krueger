@@ -13,6 +13,8 @@ pub(all) enum Rule {
   UppercaseHexPrefix
   ExponentWithoutDigits
   ImportColumn
+  NonAsciiDigitInName
+  TitlecaseNameStart
   EffectModule
   InfixDeclaration
   DuplicateEffectKey
@@ -34,6 +36,8 @@ pub fn Rule::name(self : Rule) -> String {
     UppercaseHexPrefix => "uppercase-hex-prefix"
     ExponentWithoutDigits => "exponent-without-digits"
     ImportColumn => "import-column"
+    NonAsciiDigitInName => "non-ascii-digit-in-name"
+    TitlecaseNameStart => "titlecase-name-start"
     EffectModule => "effect-module"
     InfixDeclaration => "infix-declaration"
     DuplicateEffectKey => "duplicate-effect-key"
@@ -75,7 +79,8 @@ pub(all) struct Dialect {
   reserved_words : Array[String]
   operator_symbols : Array[String]
   attributes : AttributeSyntax
-  /// Whether the file belongs to an `elm/*` package. `elm make` lets only
+  /// Whether the file belongs to an `elm/*` or `elm-explorations/*` package.
+  /// `elm make` lets only
   /// those declare infix operators and effect modules.
   core_package : Bool
 }
@@ -155,6 +160,7 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
       ExponentWithoutDigits,
       BadUnicodeEscape,
       ImportColumn,
+      NonAsciiDigitInName,
       EffectModule,
       InfixDeclaration,
       DuplicateEffectKey,
@@ -166,7 +172,7 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
 ///|
 /// Rejects exactly what elm-syntax 7.3.9 rejects.
 pub fn Dialect::elm_syntax_7_3_9() -> Dialect {
-  standard("elm-syntax-7.3.9", shared_rules())
+  standard("elm-syntax-7.3.9", [..shared_rules(), TitlecaseNameStart])
 }
 
 ///|

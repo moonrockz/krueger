@@ -57,7 +57,7 @@ fn Cursor::code_point(self : Cursor) -> (Int, Int) {
 }
 
 ///|
-/// Whether the code point at the cursor satisfies `test`.
+/// Whether the code point at the cursor satisfies `predicate`.
 fn Cursor::code_point_is(self : Cursor, predicate : (Char) -> Bool) -> Bool {
   let (cp, width) = self.code_point()
   width > 0 && predicate(Int::unsafe_to_char(cp))
@@ -382,9 +382,23 @@ pub fn lex_raw(
         Significant(if skip_number(cursor) { FloatLiteral } else { IntLiteral }),
       )
     } else if cursor.code_point_is(is_lower_start) ||
-      cursor.code_point_is(is_upper_start) {
-      while cursor.code_point_is(is_name_part) {
+      (
+        cursor.code_point_is(is_upper_start) &&
+        !(dialect.has(TitlecaseNameStart) && cursor.code_point_is(is_titlecase))
+      ) ||
+      (
+        dialect.has(NonAsciiDigitInName) &&
+        cursor.code_point_is(is_non_ascii_number)
+      ) {
+      // With non-ascii-digit-in-name, a name stops before a non-ASCII number,
+      // and the rest lexes as a separate name that the parser rejects, as
+      // elm make does.
+      let digits_end = dialect.has(NonAsciiDigitInName)
+      let mut first = true
+      while cursor.code_point_is(is_name_part) &&
+            !(digits_end && !first && cursor.code_point_is(is_non_ascii_number)) {
         cursor.advance_by(cursor.code_point().1)
+        first = false
       }
       match keyword_of(cursor.slice(start.offset), dialect) {
         Some(k) => Some(Significant(Keyword(k)))

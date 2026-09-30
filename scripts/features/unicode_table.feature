@@ -18,3 +18,5 @@ Feature: Unicode identifier table
     Then the lower-start ranges are "0061-0062"
     And the upper-start ranges are "0041-0042, 01C5-01C5"
     And the inner ranges are "0041-0042, 0061-0062, 01C5-01C5, 0660-0660, 2081-2081, 3400-4DBF"
+    And the title-case ranges are "01C5-01C5"
+    And the non-ASCII number ranges are "0660-0660, 2081-2081"

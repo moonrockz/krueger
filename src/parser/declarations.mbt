@@ -192,6 +192,8 @@ fn infix_declaration(
           Text([
             Plain("Only "),
             @scanner.Chunk::code("elm/*"),
+            Plain(" and "),
+            @scanner.Chunk::code("elm-explorations/*"),
             Plain(
               " packages can declare infix operators. Define a normal function instead.",
             ),

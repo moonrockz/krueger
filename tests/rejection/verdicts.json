@@ -2151,6 +2151,55 @@
       "accepted": true
     }
   },
+  "names/digit_in_name.elm": {
+    "sha256": "28965d458d31899c682ddbdb0010faa13c4488a25e2b8a729a410000bf99aa16",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "PROBLEM IN DEFINITION",
+      "region": [
+        4,
+        2,
+        4,
+        2
+      ],
+      "message": [
+        "I got stuck while parsing the `x` definition:\n\n4| x₁ =\n    ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^"
+        },
+        "\nI am not sure what is going wrong exactly, so here is a valid definition (with\nan optional type annotation) for reference:\n\n    greet : String -> String\n    greet name =\n      ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"Hello \""
+        },
+        " ++ name ++ ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "\"!\""
+        },
+        "\n\nTry to use that format!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": true
+    }
+  },
+  "names/titlecase_start.elm": {
+    "sha256": "2fac6caf686a7db4a460e4be510b5ad12d48ed7def6e6fb5fabb4a5cff69c752",
+    "elm-0.19.1": {
+      "accepted": true
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
   "operators/non_assoc_chain.elm": {
     "sha256": "64011329b0b8868de2849c5e01ae6fa0a783f5c5d41c05724647a5aba5dfdde3",
     "elm-0.19.1": {
