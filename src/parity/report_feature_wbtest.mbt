@@ -190,6 +190,16 @@ impl @moonspec.World for ReportWorld with fn configure(self, setup) {
   setup.then1("the summary contains {string}", fn(text : String) raise {
     @expect.expect(self.output).to_contain(text)
   })
+  setup.then2("the summary lists {string} before {string}", fn(
+    first : String,
+    second : String,
+  ) raise {
+    guard self.output.find("| \{first} |") is Some(a) &&
+      self.output.find("| \{second} |") is Some(b) else {
+      fail("expected both codes in the summary")
+    }
+    @expect.expect(a < b).to_be_true()
+  })
 }
 
 ///|

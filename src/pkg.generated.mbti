@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn diagnostic_description(String) -> String?
+
 pub fn parse_module(@scanner.SourceText) -> @parser.ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream) -> @parser.ParseResult

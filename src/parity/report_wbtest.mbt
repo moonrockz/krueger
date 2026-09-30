@@ -133,11 +133,12 @@ fn counts_delta(now : Counts, before : Counts) -> Counts {
 }
 
 ///|
-/// Diagnostic codes by number of files, most common first.
-fn top_diagnostics(files : Array[FileReport]) -> Array[(String, Int)] {
+/// Diagnostic codes of files that do not match, by number of files, most
+/// common first.
+fn failure_codes(files : Array[FileReport]) -> Array[(String, Int)] {
   let counts : Map[String, Int] = Map([])
   for f in files {
-    if f.diagnostic is Some(d) {
+    if !f.matched && f.diagnostic is Some(d) {
       counts[d.code] = counts.get(d.code).unwrap_or(0) + 1
     }
   }
@@ -306,16 +307,17 @@ fn report_markdown(r : ParityReport) -> String {
   if !r.regressions.is_empty() {
     sb.write_string("\n**Regressions:** \{r.regressions.join("; ")}\n")
   }
-  let top = top_diagnostics(r.files)
-  if !top.is_empty() {
+  let codes = failure_codes(r.files)
+  if !codes.is_empty() {
     sb.write_string(
-      "\n### Most common diagnostics\n\n| Code | Files |\n|---|---:|\n",
+      "\n### Failure codes\n\n| Code | Description | Files |\n|---|---|---:|\n",
     )
-    for i, entry in top {
-      if i >= 10 {
-        break
-      }
-      sb.write_string("| \{entry.0} | \{entry.1} |\n")
+    for entry in codes {
+      let (code, files) = entry
+      let description = @krueger.diagnostic_description(code).unwrap_or(
+        "(no description)",
+      )
+      sb.write_string("| \{code} | \{description} | \{files} |\n")
     }
   }
   sb.write_string(

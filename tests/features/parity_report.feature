@@ -40,4 +40,12 @@ Feature: Parity reports
   Scenario: Markdown summary compares counts with the baseline
     When I render the Markdown summary
     Then the summary contains "| Matched | 1 | 0 | +1 |"
-    And the summary contains "| KR-SCAN-003 | 1 |"
+    And the summary contains "| Code | Description | Files |"
+    And the summary contains "| KR-SCAN-003 | Invalid or unknown character sequence | 1 |"
+
+  Scenario: Failure codes table covers every failure code, most frequent first
+    Given the file "elm/core@1.0.5/src/Maybe.elm" failed with "KR-PARSE-005" at "3:1" "Unsupported syntax: function declaration"
+    And the file "elm/core@1.0.5/src/Result.elm" failed with "KR-PARSE-005" at "4:1" "Unsupported syntax: type alias"
+    When I render the Markdown summary
+    Then the summary contains "| KR-PARSE-005 | Unsupported syntax: the parser cannot produce this construct yet | 2 |"
+    And the summary lists "KR-PARSE-005" before "KR-SCAN-003"

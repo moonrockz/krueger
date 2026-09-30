@@ -62,6 +62,9 @@ moonrockz/krueger
 | `KR-PARSE-006` | Missing module header (no AST) |
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 
+`src/diagnostics.mbt` holds these descriptions (`diagnostic_description(code)`); the parity
+summary reads them. Keep this table and that file in step when you add a code.
+
 - Fixture JSON in `tests/fixtures/` comes from elm-syntax 7.3.9. Regenerate it with the
   oracle, never by hand.
 - Doc comments follow elm-syntax:
