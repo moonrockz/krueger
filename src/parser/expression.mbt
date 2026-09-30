@@ -569,7 +569,10 @@ fn let_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let column = first.span.start.column
   if c.dialect.has(LetDeclarationColumn) &&
     column <= let_token.span.start.column {
-    raise c.fail("a let declaration indented more than `let`")
+    c.layout_failure = true
+    let error = c.fail("a let declaration indented more than `let`")
+    c.layout_failure = false
+    raise error
   }
   let declarations = c.with_indent(column, () => {
     let declarations = [let_declaration(c)]

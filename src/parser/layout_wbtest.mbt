@@ -85,3 +85,23 @@ test "layout rules can be switched off" {
     first_in("module Fixture exposing (..)\n\n\nf =\n    [ 1\n, 2 ]\n", d),
   ).to_equal("no error")
 }
+
+///|
+test "layout failures are marked right after the previous token" {
+  let text = "module Fixture exposing (..)\n\n\nf =\n    let\n    y = 1\n    in\n    y\n"
+  let source = @scanner.SourceText::{ module_name: Some("Fixture"), text, }
+  guard @scanner.DefaultScanner::new().tokenize(source) is Ok(tokens) else {
+    fail("scan error")
+  }
+  guard parse_tokens(tokens).diagnostics.get(0) is Some(d) else {
+    fail("expected an error")
+  }
+  guard d.report.iter().find_first(b => b is Excerpt(_))
+    is Some(Excerpt(highlight~, ..)) else {
+    fail("expected an excerpt")
+  }
+  // After `let` (line 5, columns 5-7), as elm make marks it.
+  @expect.expect((highlight.start.line, highlight.start.column)).to_equal(
+    (5, 8),
+  )
+}

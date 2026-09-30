@@ -18,6 +18,9 @@ priv struct Cursor {
   /// Position of the token that starts the current item (declaration, let
   /// declaration, case branch): it may sit at the indent column.
   mut item_start : Int
+  /// Set while building a layout failure: the problem is marked right after
+  /// the previous token, as elm make does.
+  mut layout_failure : Bool
 }
 
 ///|
@@ -25,7 +28,16 @@ fn Cursor::new(
   tokens : Array[@scanner.Token],
   dialect : @dialect.Dialect,
 ) -> Cursor {
-  { tokens, pos: 0, indent: 1, depth: 0, dialect, contexts: [], item_start: 0, }
+  {
+    tokens,
+    pos: 0,
+    indent: 1,
+    depth: 0,
+    dialect,
+    contexts: [],
+    item_start: 0,
+    layout_failure: false,
+  }
 }
 
 ///|
@@ -87,6 +99,9 @@ fn Cursor::fail(self : Cursor, expected : String) -> SyntaxError {
 /// input ends, or when the next token is on a later line and too little
 /// indented to continue (the construct was cut short); else at the next token.
 fn Cursor::error_point(self : Cursor) -> @scanner.Span {
+  if self.layout_failure && self.previous() is Some(p) {
+    return point(p.span.end)
+  }
   match (self.previous(), self.peek()) {
     // Outside any construct (a top-level item's first token), mark the token.
     (_, Some(t)) if self.contexts.is_empty() => point(t.span.start)
@@ -420,7 +435,9 @@ fn Cursor::layout_fail(self : Cursor, t : @scanner.Token) -> SyntaxError {
       ),
     )
   }
+  self.layout_failure = true
   let problem = self.problem("`\{t.lexeme}` indented more")
+  self.layout_failure = false
   let report = problem.report.map(b => {
     match b {
       Text([Plain(s)]) if s.has_prefix("I was expecting to see") =>
