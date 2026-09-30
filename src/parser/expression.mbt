@@ -531,8 +531,8 @@ fn let_expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
 fn let_declaration(
   c : Cursor,
 ) -> @ast.Node[@ast.LetDeclaration] raise SyntaxError {
-  if c.at_lower() {
-    let f = function_parts(c, None)
+  if c.peek() is Some(t) && is_lower(t) {
+    let f = c.within(Definition(t.lexeme), () => function_parts(c, None))
     node(f.range, LetFunction(f.value))
   } else {
     let pat = argument_pattern(c)

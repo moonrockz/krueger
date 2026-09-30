@@ -3,5 +3,6 @@
 I am partway through parsing an expression, but I got stuck here:
 
 8| f =
-      ^
+9|     - x
+       ^
 I was expecting to see an expression like 42 or "hello" here.

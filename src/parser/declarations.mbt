@@ -204,11 +204,11 @@ fn declaration(
     PortKind => c.within(Port, () => port_declaration(c))
     InfixKind => c.within(Infix, () => infix_declaration(c))
     FunctionKind => {
-      let name = match c.peek() {
-        Some(t) => t.lexeme
-        None => ""
+      let f = match c.peek() {
+        Some(t) if is_lower(t) =>
+          c.within(Definition(t.lexeme), () => function_parts(c, documentation))
+        _ => function_parts(c, documentation)
       }
-      let f = c.within(Definition(name), () => function_parts(c, documentation))
       node(f.range, FunctionDeclaration(f.value))
     }
   }

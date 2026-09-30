@@ -50,6 +50,18 @@ fn message_json(
 }
 
 ///|
+/// Where the problem is: the highlight of the report's first excerpt, as
+/// `elm make` reports it, else the diagnostic's span.
+fn region(d : @scanner.Diagnostic) -> @scanner.Span {
+  for block in d.report {
+    if block is Excerpt(highlight~, ..) {
+      return highlight
+    }
+  }
+  d.span
+}
+
+///|
 /// Errors in `diags` in the shape of `elm make --report=json` output.
 /// Warnings are left out: `elm make` has none.
 pub fn render_elm_json(
@@ -61,7 +73,7 @@ pub fn render_elm_json(
     .filter(d => d.severity is Error)
     .map(d => {
       "title": d.title.to_json(),
-      "region": span_json(d.span),
+      "region": span_json(region(d)),
       "message": message_json(d, source),
     })
   let errors : Array[Json] = if problems.is_empty() {

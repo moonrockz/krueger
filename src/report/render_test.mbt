@@ -204,3 +204,19 @@ test "blank lines in examples have no trailing spaces" {
     "    a\n\n    b\n",
   )
 }
+
+///|
+test "the elm json region is where the excerpt marks the problem" {
+  let d = { ..let_diagnostic(), span: sp(7, 1, 7, 3), }
+  guard @report.render_elm_json([d], let_source(), "x.elm") is Object(o) &&
+    o.get("errors") is Some(Array([Object(e)])) &&
+    e.get("problems") is Some(Array([Object(p)])) else {
+    fail("bad shape")
+  }
+  @expect.expect(p.get("region")).to_equal(
+    Some({
+      "start": { "line": 6, "column": 14 },
+      "end": { "line": 6, "column": 14 },
+    }),
+  )
+}

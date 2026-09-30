@@ -2,7 +2,7 @@
 
 I got stuck here:
 
-11|             1
-                 ^
+13|           _ ->
+              ^
 I was expecting a new declaration at the start of a line. Is something indented
 too little or too much above?

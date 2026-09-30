@@ -125,3 +125,119 @@ test "the excerpt ends where elm make marks the error" {
   )
   @expect.expect(context.start.line).to_equal(5)
 }
+
+///|
+fn first_diagnostic(text : String) -> @scanner.Diagnostic? {
+  let source = @scanner.SourceText::{ module_name: Some("Fixture"), text, }
+  guard @scanner.DefaultScanner::new().tokenize(source) is Ok(tokens) else {
+    return None
+  }
+  parse_tokens(tokens).diagnostics.get(0)
+}
+
+///|
+fn highlight_of(d : @scanner.Diagnostic) -> (Int, Int) {
+  match d.report.iter().find_first(b => b is Excerpt(_)) {
+    Some(Excerpt(highlight~, ..)) =>
+      (highlight.start.line, highlight.start.column)
+    _ => (0, 0)
+  }
+}
+
+///|
+fn report_text(d : @scanner.Diagnostic) -> String {
+  let sb = StringBuilder()
+  for b in d.report {
+    match b {
+      Text(chunks) | Hint(chunks) | Note(chunks) =>
+        for c in chunks {
+          match c {
+            Plain(s) => sb.write_string(s)
+            Styled(text~, ..) => sb.write_string(text)
+          }
+        }
+      _ => ()
+    }
+  }
+  sb.to_string()
+}
+
+///|
+let header : String = "module Fixture exposing (..)\n\n\n"
+
+///|
+test "the caret marks a wrong token on its own line" {
+  guard first_diagnostic(
+      header + "f =\n    case 1.5 of\n        1.5 -> 1\n        _ -> 2\n",
+    )
+    is Some(d) else {
+    fail("expected an error")
+  }
+  @expect.expect(highlight_of(d)).to_equal((6, 9))
+  guard first_diagnostic(
+      header +
+      "f =\n    case x of\n        1 ->\n            1\n\n          _ ->\n            2\n",
+    )
+    is Some(m) else {
+    fail("expected an error")
+  }
+  @expect.expect(highlight_of(m)).to_equal((9, 11))
+}
+
+///|
+test "a missing expression is not a reserved word" {
+  @expect.expect(first_title("f =\n    if a then else b\n")).to_equal(
+    "MISSING EXPRESSION",
+  )
+  @expect.expect(first_title("f =\n    case of\n")).to_equal(
+    "MISSING EXPRESSION",
+  )
+  @expect.expect(first_title("f =\n    if a then 1 else then\n")).to_equal(
+    "UNFINISHED IF",
+  )
+  @expect.expect(first_title("f =\n    let\n        y = (\n    in\n    y\n")).to_equal(
+    "UNFINISHED PARENTHESES",
+  )
+  @expect.expect(first_title("f =\n    let\n        y =\n    in\n    y\n")).to_equal(
+    "UNFINISHED DEFINITION",
+  )
+}
+
+///|
+test "an expression is missing after =, -> and (" {
+  @expect.expect(first_title("z = )\n")).to_equal("MISSING EXPRESSION")
+  @expect.expect(
+    first_title("f =\n    case x of\n        1 -> )\n        _ -> 2\n"),
+  ).to_equal("MISSING EXPRESSION")
+}
+
+///|
+test "every error has a report" {
+  guard first_diagnostic("x = 1\n") is Some(missing) else {
+    fail("expected an error")
+  }
+  @expect.expect(missing.title).to_equal("MODULE NAME MISSING")
+  @expect.expect(missing.report.is_empty()).to_equal(false)
+  guard first_diagnostic(header + "x =\n    1\n\n\n{-| stray -}\n")
+    is Some(stray) else {
+    fail("expected an error")
+  }
+  @expect.expect(stray.title).to_equal("WEIRD DECLARATION")
+  @expect.expect(stray.report.is_empty()).to_equal(false)
+}
+
+///|
+test "a stray token is not named as a definition" {
+  guard first_diagnostic(header + "X = 1\n") is Some(upper) else {
+    fail("expected an error")
+  }
+  @expect.expect(upper.title).to_equal("UNEXPECTED CAPITAL LETTER")
+  @expect.expect(highlight_of(upper)).to_equal((4, 1))
+  guard first_diagnostic(header + ")\n") is Some(paren) else {
+    fail("expected an error")
+  }
+  @expect.expect(report_text(paren).contains("the ) definition")).to_equal(
+    false,
+  )
+  @expect.expect(highlight_of(paren)).to_equal((4, 1))
+}

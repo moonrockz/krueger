@@ -81,10 +81,14 @@ fn Cursor::fail(self : Cursor, expected : String) -> SyntaxError {
 
 ///|
 /// Where `elm make` marks a failure: right after the previous token when the
-/// next token is on a later line (or there is none), else at the next token.
+/// input ends, or when the next token is on a later line and too little
+/// indented to continue (the construct was cut short); else at the next token.
 fn Cursor::error_point(self : Cursor) -> @scanner.Span {
   match (self.previous(), self.peek()) {
-    (Some(p), Some(t)) if t.span.start.line > p.span.end.line =>
+    // Outside any construct (a top-level item's first token), mark the token.
+    (_, Some(t)) if self.contexts.is_empty() => point(t.span.start)
+    (Some(p), Some(t)) if t.span.start.line > p.span.end.line &&
+      (t.span.start.column == 1 || t.span.start.column < self.indent) =>
       point(p.span.end)
     (Some(p), None) => point(p.span.end)
     (_, Some(t)) => point(t.span.start)
@@ -150,8 +154,24 @@ fn Cursor::problem(self : Cursor, expected : String) -> Problem {
   let context = self.contexts.last().map(f => f.context)
   let stuck : Array[@scanner.Chunk] = [Plain("I got stuck here:")]
   match (found, context) {
+    (Some({ kind: Keyword(_), .. }), _) if expected == "an expression" &&
+      previous is Some({ kind: Keyword(Then | Case), .. }) =>
+      self.titled(
+        "MISSING EXPRESSION",
+        [
+          Plain(
+            "I am partway through parsing an expression, but I got stuck here:",
+          ),
+        ],
+        [
+          plain(
+            "I was expecting to see an expression here, before this keyword.",
+          ),
+        ],
+      )
     (Some({ kind: Keyword(k), lexeme, .. }), _) if !(k is Custom(_)) &&
-      !expected.has_prefix("`") =>
+      !expected.has_prefix("`") &&
+      expected != "an expression" =>
       self.titled(
         "RESERVED WORD",
         [
@@ -194,6 +214,46 @@ fn Cursor::problem(self : Cursor, expected : String) -> Problem {
           plain(
             "Elm has a fixed set of operators; this is not one of them. Is there a typo, or a missing space between two operators?",
           ),
+        ],
+      )
+    (Some(t), _) if expected == "an expression" &&
+      !(t.kind is Keyword(_)) &&
+      previous is Some({ kind: Equals | Arrow | LParen, .. }) =>
+      self.titled(
+        "MISSING EXPRESSION",
+        [
+          Plain(
+            "I am partway through parsing an expression, but I got stuck here:",
+          ),
+        ],
+        [
+          Text([
+            Plain("I was expecting to see an expression like "),
+            @scanner.Chunk::code("42"),
+            Plain(" or "),
+            @scanner.Chunk::code("\"hello\""),
+            Plain(" here."),
+          ]),
+        ],
+      )
+    (Some(t), None) if is_upper(t) && expected.contains("function name") =>
+      self.titled(
+        "UNEXPECTED CAPITAL LETTER",
+        [
+          Plain(
+            "Declarations always start with a lower-case letter, so I am getting stuck here:",
+          ),
+        ],
+        [
+          Text([
+            Plain("Try a name like "),
+            @scanner.Chunk::code("view"),
+            Plain(" or "),
+            @scanner.Chunk::code("update"),
+            Plain(" instead. Type declarations start with "),
+            @scanner.Chunk::keyword("type"),
+            Plain("."),
+          ]),
         ],
       )
     (Some({ kind: Operator(_), .. }), _) if expected == "an expression" =>
