@@ -9,6 +9,12 @@ import {
 // Values
 pub fn invalid_sequence(Span) -> Diagnostic
 
+pub fn is_lower_start(Char) -> Bool
+
+pub fn is_name_part(Char) -> Bool
+
+pub fn is_upper_start(Char) -> Bool
+
 pub fn lex_raw(SourceText, dialect? : @dialect.Dialect) -> Result[Array[RawToken], ScanErrorList]
 
 pub fn malformed_doc_comment(Span) -> Diagnostic

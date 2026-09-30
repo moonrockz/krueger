@@ -37,7 +37,7 @@ fn expression_above(
     ignore(c.advance())
     let right = match direction {
       Left => expression_above(c, precedence, false)
-      Right => expression_above(c, precedence, true)
+      Right => c.chain(() => expression_above(c, precedence, true))
       Non => non_associative_right(c, precedence)
     }
     left = node(
@@ -161,7 +161,7 @@ fn sub_expression_at_depth(
     IntLiteral => {
       ignore(c.advance())
       weird_number_check(c, t)
-      match int_value(t) {
+      match int_value(c, t) {
         Ok(n) => token_node(t, Integer(n))
         Err(n) => token_node(t, Hex(n))
       }
@@ -169,7 +169,7 @@ fn sub_expression_at_depth(
     FloatLiteral => {
       ignore(c.advance())
       weird_number_check(c, t)
-      token_node(t, Floatable(float_value(t)))
+      token_node(t, Floatable(float_value(c, t)))
     }
     Glsl => {
       ignore(c.advance())
@@ -326,12 +326,7 @@ fn record_accesses(
   base : @ast.Node[@ast.Expression],
 ) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let mut left = base
-  while c.at_kind(Dot) &&
-        c.next_touches() &&
-        (match c.peek_at(1) {
-          Some(n) => is_lower(n) && touching(c.peek().unwrap(), n)
-          None => false
-        }) {
+  while c.dotted_name(is_lower) is Some(_) {
     ignore(c.advance())
     let field = c.advance()
     let field_node = token_node(field, field.lexeme)
@@ -352,20 +347,15 @@ fn qualified_reference(
   let modules = [first.lexeme]
   let mut last = first
   let mut lower_name : String? = None
-  while c.at_kind(Dot) && c.next_touches() {
-    guard c.peek_at(1) is Some(n) && touching(c.peek().unwrap(), n) else {
-      break
-    }
+  while c.dotted_name(n => is_upper(n) || is_lower(n)) is Some(n) {
     if is_upper(n) {
       ignore(c.advance())
       last = c.advance()
       modules.push(last.lexeme)
-    } else if is_lower(n) {
+    } else {
       ignore(c.advance())
       last = c.advance()
       lower_name = Some(last.lexeme)
-      break
-    } else {
       break
     }
   }
@@ -501,6 +491,8 @@ fn record_expression(
   let first_name = c.lower("a field name")
   ignore(c.expect(Equals, "`=` or `|`"))
   let first_value = expression(c)
+  // elm-syntax quirk: the first setter ends at its value; later setters end
+  // where the next token starts (see record_setter).
   let setters : Array[@ast.Node[@ast.RecordSetter]] = [
     node(combine(range_of(first_name), first_value.range), {
       field: token_node(first_name, first_name.lexeme),
@@ -524,7 +516,8 @@ fn lambda_expression(
   while !c.at_kind(Arrow) {
     args.push(argument_pattern(c))
   }
-  ignore(c.expect(Arrow, "`->`"))
+  // The loop stopped at `->`.
+  ignore(c.advance())
   let body = expression(c)
   node(
     { start: location(backslash.span.start), end: body.range.end, },

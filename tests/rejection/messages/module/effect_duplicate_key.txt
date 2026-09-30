@@ -1,0 +1,8 @@
+-- BAD MODULE DECLARATION -------------------------------------- src/Fixture.elm
+
+I was parsing the `where` part of an effect module and got stuck on this
+repeated key:
+
+1| effect module Fixture where { command = C, command = D } exposing (..)
+                                              ^
+An effect module names its command and subscription types at most once each.

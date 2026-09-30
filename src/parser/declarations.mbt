@@ -115,7 +115,24 @@ fn type_declaration(
 fn port_declaration(
   c : Cursor,
 ) -> @ast.Node[@ast.Declaration] raise SyntaxError {
-  ignore(c.expect(Keyword(Port), "`port`"))
+  let port_token = c.expect(Keyword(Port), "`port`")
+  if c.dialect.has(PortInNormalModule) && !c.port_module {
+    raise c.error_at(
+      "ports need a port module [rule: port-in-normal-module]",
+      port_token.span,
+      "UNEXPECTED PORTS",
+      "You are declaring ports in a normal module:",
+      [
+        Hint([
+          Plain("Start the file with "),
+          @scanner.Chunk::code("port module"),
+          Plain(" instead of "),
+          @scanner.Chunk::code("module"),
+          Plain(" to declare ports."),
+        ]),
+      ],
+    )
+  }
   let name = c.lower("a port name")
   ignore(c.expect(Colon, "`:`"))
   let annotation = type_annotation(c)
@@ -152,7 +169,7 @@ fn infix_declaration(
       )
   }
   let precedence_token = c.expect(IntLiteral, "a precedence")
-  let precedence = match int_value(precedence_token) {
+  let precedence = match int_value(c, precedence_token) {
     Ok(n) => n.to_int()
     Err(_) =>
       raise c.error_at(
@@ -165,6 +182,25 @@ fn infix_declaration(
   }
   let (open, op, close) = c.within(Parens, () => {
     let open = c.expect(LParen, "`(`")
+    if c.dialect.has(InfixDeclaration) && !c.dialect.core_package {
+      raise c.error_at(
+        "infix declarations are only allowed in elm packages [rule: infix-declaration]",
+        { start: open.span.end, end: open.span.end, },
+        "UNFINISHED PARENTHESES",
+        "I was not expecting an infix declaration here:",
+        [
+          Text([
+            Plain("Only "),
+            @scanner.Chunk::code("elm/*"),
+            Plain(" and "),
+            @scanner.Chunk::code("elm-explorations/*"),
+            Plain(
+              " packages can declare infix operators. Define a normal function instead.",
+            ),
+          ]),
+        ],
+      )
+    }
     guard c.peek() is Some({ kind: Operator(op), .. }) else {
       raise c.fail("an operator")
     }

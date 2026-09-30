@@ -37,11 +37,13 @@ fn cst_declaration_name(decl : @krueger.DeclarationCst) -> String {
 struct ParserWorld {
   mut source : String
   mut result : @krueger.ParseResult?
+  /// Fixtures are compared with elm-syntax output, so they parse in its dialect.
+  mut dialect : @krueger.Dialect
 }
 
 ///|
 fn ParserWorld::new() -> ParserWorld {
-  { source: "", result: None, }
+  { source: "", result: None, dialect: @krueger.Dialect::elm_0_19_1(), }
 }
 
 ///|
@@ -57,11 +59,13 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
   })
   setup.given1("the Elm fixture {string}", fn(name : String) raise {
     self.source = @fs.read_file_to_string("tests/fixtures/parser/\{name}.elm")
+    self.dialect = @krueger.Dialect::elm_syntax_7_3_9()
   })
   setup.given1("the Elm fixture {string} from the AST fixtures", fn(
     name : String,
   ) raise {
     self.source = @fs.read_file_to_string("tests/fixtures/ast/\{name}.elm")
+    self.dialect = @krueger.Dialect::elm_syntax_7_3_9()
   })
   setup.then1(
     "the AST JSON equals the elm-syntax output for AST fixture {string}",
@@ -75,7 +79,7 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
   )
   setup.when0("I parse the source", fn() {
     let source = @krueger.SourceText::{ module_name: None, text: self.source, }
-    self.result = Some(@krueger.parse_module(source))
+    self.result = Some(@krueger.parse_module(source, dialect=self.dialect))
   })
   setup.then0("parsing succeeds without diagnostics", fn() raise {
     let result = self.parsed()

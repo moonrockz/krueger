@@ -279,6 +279,7 @@ pub fn parse_tokens(
     } noraise {
       header => {
         module_definition = Some(header)
+        c.port_module = header.value is PortModule(_)
         let header_tokens = stream[start:c.pos].to_owned()
         cst_header = Some({
           module_name: Some(header_module_name(header.value).join(".")),
@@ -398,6 +399,25 @@ pub fn parse_tokens(
         skip_to_top_level(c, start)
       }
     } noraise {
+      decl if declaration_depth(decl.value) > MAX_AST_DEPTH => {
+        let (code, what) = declaration_error_code(kind)
+        let at = point(stream[start].span.start)
+        diagnostics.push(
+          parser_error(
+            code,
+            "\{what}: nested too deeply",
+            stream[start].span,
+            title="TOO MUCH NESTING",
+            report=[
+              plain("This declaration is nested too deeply for me:"),
+              Excerpt(context=at, highlight=at),
+              plain(
+                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep. Try splitting it into smaller definitions.",
+              ),
+            ],
+          ),
+        )
+      }
       decl => {
         if doc is Some(d) {
           attached.push(d.span)
@@ -411,6 +431,7 @@ pub fn parse_tokens(
       }
     }
   }
+  diagnostics.append(c.warnings)
   let (comments, stray) = collect_comments(stream, attached, listed)
   for span in stray {
     diagnostics.push(

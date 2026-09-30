@@ -66,9 +66,22 @@ test "unknown escapes and empty chars are syntax errors" {
 
 ///|
 test "numbers: decimal, hex, float" {
-  @expect.expect(int_value(lit(IntLiteral, "31536000000"))).to_equal(
-    Ok(31536000000L),
-  )
-  @expect.expect(int_value(lit(IntLiteral, "0xFF"))).to_equal(Err(255L))
-  @expect.expect(float_value(lit(FloatLiteral, "2.5e-3"))).to_equal(0.0025)
+  @expect.expect(
+    int_value(
+      Cursor::new([], @dialect.Dialect::elm_0_19_1()),
+      lit(IntLiteral, "31536000000"),
+    ),
+  ).to_equal(Ok(31536000000L))
+  @expect.expect(
+    int_value(
+      Cursor::new([], @dialect.Dialect::elm_0_19_1()),
+      lit(IntLiteral, "0xFF"),
+    ),
+  ).to_equal(Err(255L))
+  @expect.expect(
+    float_value(
+      Cursor::new([], @dialect.Dialect::elm_0_19_1()),
+      lit(FloatLiteral, "2.5e-3"),
+    ),
+  ).to_equal(0.0025)
 }

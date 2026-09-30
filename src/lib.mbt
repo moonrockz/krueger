@@ -59,6 +59,9 @@ pub using @scanner {
   type Token,
   type TokenStream,
   type ScanErrorList,
+  is_lower_start,
+  is_upper_start,
+  is_name_part,
 }
 
 ///|

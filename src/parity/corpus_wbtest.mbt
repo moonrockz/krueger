@@ -156,7 +156,9 @@ fn mismatch_report(key : String, actual : Json?) -> String {
 
 ///|
 /// Score every corpus file in the lock and return one result per file.
-fn score() -> Array[FileReport] raise {
+/// Score every corpus file; also returns the files with errors in the
+/// default dialect (`elm-0.19.1`).
+fn score() -> (Array[FileReport], Array[String]) raise {
   let entries = parse_lock(@fs.read_file_to_string(lock_path))
   let problems = source_problems(entries, manifest_sources())
   if !problems.is_empty() {
@@ -176,11 +178,23 @@ fn score() -> Array[FileReport] raise {
     let source = @krueger.SourceText::{ module_name: None, text, }
     let tokenized = @krueger.tokenize(source, dialect=scoring) is Ok(_)
     let result = @krueger.parse_module(source, dialect=scoring)
-    if dialect_errors(entry.key, @krueger.parse_module(source)) is Some(e) {
+    // elm make lets only elm/* and elm-explorations/* packages declare infix
+    // operators and effect
+    // modules.
+    let default_dialect = {
+      ..@krueger.Dialect::elm_0_19_1(),
+      core_package: entry.key.has_prefix("elm/") ||
+      entry.key.has_prefix("elm-explorations/"),
+    }
+    if dialect_errors(
+        entry.key,
+        @krueger.parse_module(source, dialect=default_dialect),
+      )
+      is Some(e) {
       default_errors.push(e)
     }
     let actual = result.ast.map(@ast.encode_file)
-    let parsed = actual is Some(_) && result.diagnostics.is_empty()
+    let parsed = actual is Some(_) && !has_errors(result.diagnostics)
     // A hash match counts even when krueger also reported diagnostics.
     let matched = match (entry.golden, actual) {
       (Hash(h), Some(json)) => sha256_hex(canonical(json)) == h
@@ -220,13 +234,13 @@ fn score() -> Array[FileReport] raise {
   println(
     "\{@krueger.Dialect::elm_0_19_1().name}: \{default_errors.length()} corpus files with errors",
   )
-  if !default_errors.is_empty() {
-    fail(
-      "corpus files with errors in the default dialect:\n" +
-      default_errors.iter().take(10).collect().join("\n"),
-    )
-  }
-  files
+  (files, default_errors)
+}
+
+///|
+/// Whether any diagnostic is an error (warnings do not count).
+fn has_errors(diagnostics : Array[@krueger.Diagnostic]) -> Bool {
+  diagnostics.iter().any(d => d.severity is Error)
 }
 
 ///|
@@ -287,12 +301,20 @@ test "parity corpus" {
     Some(WriteLock) => write_lock()
     Some(mode) => {
       let baseline = read_baseline()
+      let (files, default_errors) = score()
       let report = parity_report(
-        score(),
+        files,
         baseline,
         commit=@env.get_env_var("GITHUB_SHA"),
       )
       write_reports(report)
+      // Reports are written first, so CI keeps them when this fails.
+      if !default_errors.is_empty() {
+        fail(
+          "corpus files with errors in the default dialect:\n" +
+          default_errors.iter().take(10).collect().join("\n"),
+        )
+      }
       match mode {
         Check => {
           if baseline is None {
@@ -347,4 +369,22 @@ test "dialect_errors names the first error" {
   @expect.expect(
     dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }),
   ).to_equal(Some("a/B.elm:3:1 KR-PARSE-004 boom"))
+}
+
+///|
+test "warnings do not stop a file counting as parsed" {
+  let span : @krueger.Span = {
+    start: { offset: 0, line: 1, column: 1, },
+    end: { offset: 1, line: 1, column: 2, },
+  }
+  let warning : @krueger.Diagnostic = {
+    code: "KR-PARSE-009",
+    severity: Warning,
+    message: "big",
+    span,
+    title: "NUMBER OUT OF RANGE",
+    report: [],
+  }
+  @expect.expect(has_errors([warning])).to_equal(false)
+  @expect.expect(has_errors([{ ..warning, severity: Error, }])).to_equal(true)
 }

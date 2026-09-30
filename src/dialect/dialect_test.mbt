@@ -32,3 +32,25 @@ test "rules are off unless the dialect enables them" {
     "indented-continuation",
   )
 }
+
+///|
+test "validate reports a bad operator table" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  @expect.expect(d.validate()).to_equal([])
+  let bad = {
+    ..d,
+    operators: [
+      ..d.operators,
+      { symbol: "+", precedence: 9, direction: Left, },
+      { symbol: "<=>", precedence: 0, direction: Non, },
+      { symbol: "", precedence: 4, direction: Non, },
+    ],
+    operator_symbols: ["", "~>"],
+    reserved_words: ["alias", "forall"],
+  }
+  @expect.expect(bad.validate()).to_equal([
+    "operator `+` is defined twice", "operator `<=>` has precedence 0; precedences are 1 to 9",
+    "an operator has an empty symbol", "operator symbol `` is empty", "operator symbol `~>` does not start with a symbol character",
+    "reserved word `alias` is a name the parser reads by its text",
+  ])
+}

@@ -13,6 +13,12 @@ pub(all) enum Rule {
   UppercaseHexPrefix
   ExponentWithoutDigits
   ImportColumn
+  NonAsciiDigitInName
+  TitlecaseNameStart
+  EffectModule
+  InfixDeclaration
+  DuplicateEffectKey
+  PortInNormalModule
 } derive(Eq, Hash, Debug)
 
 ///|
@@ -30,6 +36,12 @@ pub fn Rule::name(self : Rule) -> String {
     UppercaseHexPrefix => "uppercase-hex-prefix"
     ExponentWithoutDigits => "exponent-without-digits"
     ImportColumn => "import-column"
+    NonAsciiDigitInName => "non-ascii-digit-in-name"
+    TitlecaseNameStart => "titlecase-name-start"
+    EffectModule => "effect-module"
+    InfixDeclaration => "infix-declaration"
+    DuplicateEffectKey => "duplicate-effect-key"
+    PortInNormalModule => "port-in-normal-module"
   }
 }
 
@@ -67,6 +79,10 @@ pub(all) struct Dialect {
   reserved_words : Array[String]
   operator_symbols : Array[String]
   attributes : AttributeSyntax
+  /// Whether the file belongs to an `elm/*` or `elm-explorations/*` package.
+  /// `elm make` lets only
+  /// those declare infix operators and effect modules.
+  core_package : Bool
 }
 
 ///|
@@ -128,6 +144,7 @@ fn standard(name : String, rules : Array[Rule]) -> Dialect {
     reserved_words: [],
     operator_symbols: [],
     attributes: DocComment,
+    core_package: false,
   }
 }
 
@@ -143,6 +160,11 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
       ExponentWithoutDigits,
       BadUnicodeEscape,
       ImportColumn,
+      NonAsciiDigitInName,
+      EffectModule,
+      InfixDeclaration,
+      DuplicateEffectKey,
+      PortInNormalModule,
     ],
   )
 }
@@ -150,7 +172,7 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
 ///|
 /// Rejects exactly what elm-syntax 7.3.9 rejects.
 pub fn Dialect::elm_syntax_7_3_9() -> Dialect {
-  standard("elm-syntax-7.3.9", shared_rules())
+  standard("elm-syntax-7.3.9", [..shared_rules(), TitlecaseNameStart])
 }
 
 ///|
@@ -168,4 +190,49 @@ pub fn Dialect::operator(self : Dialect, symbol : String) -> OperatorDef? {
     }
   }
   None
+}
+
+///|
+/// Problems with the dialect's extension data, as messages (empty when it is
+/// valid). The scanner and parser do not check these; call this when a
+/// dialect comes from outside (a config file, a CLI flag).
+pub fn Dialect::validate(self : Dialect) -> Array[String] {
+  let problems = []
+  let seen : Array[String] = []
+  for op in self.operators {
+    if op.symbol == "" {
+      problems.push("an operator has an empty symbol")
+      continue
+    }
+    if seen.contains(op.symbol) {
+      problems.push("operator `\{op.symbol}` is defined twice")
+    }
+    seen.push(op.symbol)
+    if op.precedence < 1 || op.precedence > 9 {
+      problems.push(
+        "operator `\{op.symbol}` has precedence \{op.precedence}; precedences are 1 to 9",
+      )
+    }
+  }
+  for symbol in self.operator_symbols {
+    match symbol.get_char(0) {
+      None => problems.push("operator symbol `` is empty")
+      Some(c) =>
+        if !"+-/*=.<>:&|^?".contains_char(c) {
+          problems.push(
+            "operator symbol `\{symbol}` does not start with a symbol character",
+          )
+        } else if symbol.has_prefix("--") {
+          problems.push("operator symbol `\{symbol}` starts a line comment")
+        }
+    }
+  }
+  for word in self.reserved_words {
+    if ["alias", "infix", "effect"].contains(word) {
+      problems.push(
+        "reserved word `\{word}` is a name the parser reads by its text",
+      )
+    }
+  }
+  problems
 }

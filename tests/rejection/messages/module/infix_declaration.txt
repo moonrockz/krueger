@@ -1,8 +1,8 @@
--- UNKNOWN OPERATOR -------------------------------------------- src/Fixture.elm
+-- UNFINISHED PARENTHESES -------------------------------------- src/Fixture.elm
 
-I do not recognize the +++ operator:
+I was not expecting an infix declaration here:
 
 4| infix left 6 (+++) = add
-                   ^
-Elm has a fixed set of operators; this is not one of them. Is there a typo, or a
-missing space between two operators?
+                 ^
+Only elm/* and elm-explorations/* packages can declare infix operators. Define a
+normal function instead.

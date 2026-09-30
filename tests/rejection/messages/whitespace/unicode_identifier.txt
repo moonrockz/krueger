@@ -1,7 +1,0 @@
--- UNEXPECTED CHARACTER ---------------------------------------- src/Fixture.elm
-
-I got stuck on this character:
-
-8| café =
-      ^
-It is not used for anything in Elm syntax. Try removing it?

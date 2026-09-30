@@ -25,11 +25,13 @@ pub(all) struct Dialect {
   reserved_words : Array[String]
   operator_symbols : Array[String]
   attributes : AttributeSyntax
+  core_package : Bool
 }
 pub fn Dialect::elm_0_19_1() -> Self
 pub fn Dialect::elm_syntax_7_3_9() -> Self
 pub fn Dialect::has(Self, Rule) -> Bool
 pub fn Dialect::operator(Self, String) -> OperatorDef?
+pub fn Dialect::validate(Self) -> Array[String]
 
 pub(all) struct OperatorDef {
   symbol : String
@@ -49,6 +51,12 @@ pub(all) enum Rule {
   UppercaseHexPrefix
   ExponentWithoutDigits
   ImportColumn
+  NonAsciiDigitInName
+  TitlecaseNameStart
+  EffectModule
+  InfixDeclaration
+  DuplicateEffectKey
+  PortInNormalModule
 } derive(Eq, Hash, @debug.Debug)
 pub fn Rule::name(Self) -> String
 

@@ -13,6 +13,7 @@ priv struct Cursor {
   mut pos : Int
   mut indent : Int
   mut depth : Int
+  mut chain_depth : Int
   dialect : @dialect.Dialect
   contexts : Array[Frame]
   /// Position of the token that starts the current item (declaration, let
@@ -21,6 +22,10 @@ priv struct Cursor {
   /// Set while building a layout failure: the problem is marked right after
   /// the previous token, as elm make does.
   mut layout_failure : Bool
+  /// Warnings found while parsing (for example `KR-PARSE-009`).
+  warnings : Array[@scanner.Diagnostic]
+  /// Whether the module header says `port module`.
+  mut port_module : Bool
 }
 
 ///|
@@ -33,10 +38,13 @@ fn Cursor::new(
     pos: 0,
     indent: 1,
     depth: 0,
+    chain_depth: 0,
     dialect,
     contexts: [],
     item_start: 0,
     layout_failure: false,
+    warnings: [],
+    port_module: false,
   }
 }
 
@@ -252,6 +260,17 @@ fn Cursor::problem(self : Cursor, expected : String) -> Problem {
             @scanner.Chunk::code("\"hello\""),
             Plain(" here."),
           ]),
+        ],
+      )
+    (Some({ kind: Identifier, .. } as t), Some(Definition(_))) if !is_lower(t) &&
+      !is_upper(t) =>
+      self.titled(
+        "PROBLEM IN DEFINITION",
+        [Plain("I got stuck while parsing this definition:")],
+        [
+          plain(
+            "Names can use letters, ASCII digits and underscores, but not other kinds of numbers.",
+          ),
         ],
       )
     (Some(t), None) if is_upper(t) && expected.contains("function name") =>
@@ -508,6 +527,33 @@ fn[T] Cursor::with_indent(
 const MAX_DEPTH : Int = 150
 
 ///|
+/// Run `body` one step deeper in a right-recursive chain (`a :: b :: ...`,
+/// `Int -> Int -> ...`, `a ++ b ++ ...`); fail above `MAX_AST_DEPTH`, whose
+/// tree could not be encoded anyway.
+fn[T] Cursor::chain(
+  self : Cursor,
+  body : () -> T raise SyntaxError,
+) -> T raise SyntaxError {
+  if self.chain_depth >= MAX_AST_DEPTH {
+    raise self.fail_titled(
+      "chain too long",
+      "TOO MUCH NESTING",
+      [Plain("This chain is too long for me:")],
+      [plain("Try splitting it into smaller definitions.")],
+    )
+  }
+  self.chain_depth += 1
+  let result = body() catch {
+    SyntaxError(message, span, problem) => {
+      self.chain_depth -= 1
+      raise SyntaxError(message, span, problem)
+    }
+  }
+  self.chain_depth -= 1
+  result
+}
+
+///|
 /// Run `body` one nesting level deeper; fail above `MAX_DEPTH`.
 fn[T] Cursor::nested(
   self : Cursor,
@@ -539,6 +585,24 @@ fn touching(a : @scanner.Token, b : @scanner.Token) -> Bool {
 }
 
 ///|
+/// The name after a `.` at the cursor, when the dot touches the token before
+/// it and the name (`List.map`, `record.field`) and `wanted` accepts it.
+fn Cursor::dotted_name(
+  self : Cursor,
+  wanted : (@scanner.Token) -> Bool,
+) -> @scanner.Token? {
+  if self.at_kind(Dot) &&
+    self.next_touches() &&
+    self.peek_at(1) is Some(n) &&
+    touching(self.peek().unwrap(), n) &&
+    wanted(n) {
+    Some(n)
+  } else {
+    None
+  }
+}
+
+///|
 /// Whether the next token touches the previous one.
 fn Cursor::next_touches(self : Cursor) -> Bool {
   match (self.previous(), self.peek()) {
@@ -551,7 +615,7 @@ fn Cursor::next_touches(self : Cursor) -> Bool {
 fn is_lower(token : @scanner.Token) -> Bool {
   token.kind == Identifier &&
   (match token.lexeme.get_char(0) {
-    Some(c) => c.is_ascii_lowercase()
+    Some(c) => @scanner.is_lower_start(c)
     None => false
   })
 }
@@ -560,7 +624,7 @@ fn is_lower(token : @scanner.Token) -> Bool {
 fn is_upper(token : @scanner.Token) -> Bool {
   token.kind == Identifier &&
   (match token.lexeme.get_char(0) {
-    Some(c) => c.is_ascii_uppercase()
+    Some(c) => @scanner.is_upper_start(c)
     None => false
   })
 }

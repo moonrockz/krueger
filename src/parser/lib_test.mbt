@@ -451,3 +451,94 @@ test "a dialect operator entry makes a new operator usable" {
     fail("expected <=>")
   }
 }
+
+///|
+test "a doc comment on a failing declaration is not also reported as stray" {
+  let result = parse(
+    "module Main exposing (..)\n\n\n{-| The answer. -}\nf =\n    (\n\n\ng =\n    1\n",
+  )
+  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
+}
+
+///|
+fn chain(op : String, terms : Int, tail : String) -> String {
+  let sb = StringBuilder()
+  sb.write_string("module Main exposing (..)\n\n\nf =\n    1")
+  for _ in 0..<terms {
+    sb.write_string(op + "1")
+  }
+  sb.to_string() + tail + "\n"
+}
+
+///|
+test "very long operator chains are a diagnostic, not a stack overflow" {
+  for text in [chain(" + ", 5000, ""), chain(" :: ", 5000, " :: []")] {
+    let result = parse(text)
+    @expect.expect(result.diagnostics.map(d => d.title)).to_equal([
+      "TOO MUCH NESTING",
+    ])
+  }
+}
+
+///|
+test "long operator chains still parse and encode" {
+  for text in [chain(" + ", 300, ""), chain(" :: ", 100, " :: []")] {
+    let result = parse(text)
+    @expect.expect(codes(result)).to_equal([])
+    let json = @ast.encode_file(ast(result)).stringify()
+    @expect.expect(json.length() > 0).to_equal(true)
+  }
+}
+
+///|
+fn repeated(unit : String, n : Int) -> String {
+  let sb = StringBuilder()
+  for _ in 0..<n {
+    sb.write_string(unit)
+  }
+  sb.to_string()
+}
+
+///|
+test "deep trees of any shape are a diagnostic, not a stack overflow" {
+  let header = "module Main exposing (..)\n\n\n"
+  let chain = "1" + repeated(" + 1", 399)
+  let inputs = [
+    // Left chains nested as first operands.
+    header + "f =\n    ((" + chain + ") + " + chain + ") + " + chain + "\n",
+    // Record access.
+    header + "f r =\n    r" + repeated(".a", 1000) + "\n",
+    // Type arrows.
+    header + "f : Int" + repeated(" -> Int", 1000) + "\nf =\n    1\n",
+    // Cons patterns.
+    header +
+    "f x =\n    case x of\n        a" +
+    repeated(" :: a", 1000) +
+    " ->\n            1\n\n        _ ->\n            2\n",
+    // Right-associative operators.
+    header + "f =\n    \"a\"" + repeated(" ++ \"a\"", 1000) + "\n",
+  ]
+  for text in inputs {
+    let result = parse(text)
+    @expect.expect(result.diagnostics.map(d => d.title)).to_contain_element(
+      "TOO MUCH NESTING",
+    )
+    if result.ast is Some(file) {
+      ignore(@ast.encode_file(file).stringify())
+    }
+  }
+}
+
+///|
+test "realistic long chains still parse" {
+  let header = "module Main exposing (..)\n\n\n"
+  for
+    text in [
+      header + "f =\n    \"a\"" + repeated(" ++ \"a\"", 300) + "\n",
+      header + "f x =\n    x" + repeated(" |> g", 300) + "\n",
+    ] {
+    let result = parse(text)
+    @expect.expect(codes(result)).to_equal([])
+    ignore(@ast.encode_file(ast(result)).stringify())
+  }
+}

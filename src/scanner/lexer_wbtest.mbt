@@ -121,3 +121,44 @@ test "an exponent needs a digit" {
   @expect.expect(kinds_in("1ex", d)).to_equal([IntLiteral, Identifier])
   @expect.expect(kinds_in("0x1F", d)).to_equal([IntLiteral])
 }
+
+///|
+test "identifiers follow Unicode letters" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  @expect.expect(kinds_in("café = 1", d)).to_equal([
+    Identifier,
+    Equals,
+    IntLiteral,
+  ])
+  @expect.expect(kinds_in("Ωmega", d)).to_equal([Identifier])
+  // elm make allows only ASCII digits in names; elm-syntax allows any number.
+  let syntax = @dialect.Dialect::elm_syntax_7_3_9()
+  @expect.expect(kinds_in("x₁", syntax)).to_equal([Identifier])
+  @expect.expect(kinds_in("x₁", d)).to_equal([Identifier, Identifier])
+  // elm-syntax does not let a title-case letter start a name; elm make does.
+  @expect.expect(kinds_in("ǅx", d)).to_equal([Identifier])
+  @expect.expect(
+    lex_raw({ module_name: None, text: "ǅx", }, dialect=syntax) is Err(_),
+  ).to_equal(true)
+  @expect.expect(kinds_in("\u{1D4B3}", d)).to_equal([Identifier])
+  @expect.expect(kinds_in("\"é\"", d)).to_equal([StringLiteral])
+  @expect.expect(is_lower_start('é')).to_equal(true)
+  @expect.expect(is_upper_start('Ω')).to_equal(true)
+  @expect.expect(is_upper_start('\u{1D4B3}')).to_equal(true)
+  @expect.expect(is_lower_start('₁')).to_equal(false)
+}
+
+///|
+test "a lone carriage return is whitespace" {
+  guard lex_raw({ module_name: None, text: "x\r+ 1", }) is Ok(raw) else {
+    fail("lex failed")
+  }
+  let significant = raw.filter(r => r.kind is Significant(_))
+  @expect.expect(significant.map(r => r.kind)).to_equal([
+    Significant(Identifier),
+    Significant(Operator("+")),
+    Significant(IntLiteral),
+  ])
+  @expect.expect(significant[1].span.start.column).to_equal(3)
+  @expect.expect(significant[1].span.start.line).to_equal(1)
+}

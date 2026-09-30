@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+#MISE description="Regenerate the lexer's Unicode identifier table (src/scanner/unicode_table.mbt)"
+set -euo pipefail
+
+version=15.1.0
+data=".dev/out/UnicodeData-${version}.txt"
+if [ ! -f "$data" ]; then
+  mkdir -p .dev/out
+  curl -fsSL -o "$data" "https://www.unicode.org/Public/${version}/ucd/UnicodeData.txt"
+fi
+moon run -q --target wasm scripts/unicode_table.mbtx -- "$data" "$version" src/scanner/unicode_table.mbt
+moon fmt src/scanner/unicode_table.mbt

@@ -6,7 +6,7 @@ fn render_token(token : @krueger.Token) -> String {
     Keyword(_) => "kw:\{text}"
     Identifier =>
       match text.get_char(0) {
-        Some(c) if c.is_ascii_uppercase() => "upper:\{text}"
+        Some(c) if @krueger.is_upper_start(c) => "upper:\{text}"
         _ => "lower:\{text}"
       }
     IntLiteral => "int:\{text}"
