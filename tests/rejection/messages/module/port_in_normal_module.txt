@@ -1,0 +1,7 @@
+-- UNEXPECTED PORTS -------------------------------------------- src/Fixture.elm
+
+You are declaring ports in a normal module:
+
+8| port out : String -> Cmd msg
+   ^
+Hint: Start the file with port module instead of module to declare ports.

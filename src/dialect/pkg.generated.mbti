@@ -25,6 +25,7 @@ pub(all) struct Dialect {
   reserved_words : Array[String]
   operator_symbols : Array[String]
   attributes : AttributeSyntax
+  core_package : Bool
 }
 pub fn Dialect::elm_0_19_1() -> Self
 pub fn Dialect::elm_syntax_7_3_9() -> Self
@@ -49,6 +50,10 @@ pub(all) enum Rule {
   UppercaseHexPrefix
   ExponentWithoutDigits
   ImportColumn
+  EffectModule
+  InfixDeclaration
+  DuplicateEffectKey
+  PortInNormalModule
 } derive(Eq, Hash, @debug.Debug)
 pub fn Rule::name(Self) -> String
 

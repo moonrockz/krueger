@@ -279,6 +279,7 @@ pub fn parse_tokens(
     } noraise {
       header => {
         module_definition = Some(header)
+        c.port_module = header.value is PortModule(_)
         let header_tokens = stream[start:c.pos].to_owned()
         cst_header = Some({
           module_name: Some(header_module_name(header.value).join(".")),

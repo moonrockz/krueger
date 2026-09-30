@@ -115,11 +115,36 @@ fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
     let mut subscription : @ast.Node[String]? = None
     while true {
       let key = c.lower("`command` or `subscription`")
+      let repeated = match key.lexeme {
+        "command" => command is Some(_)
+        "subscription" => subscription is Some(_)
+        _ => false
+      }
+      if repeated && c.dialect.has(DuplicateEffectKey) {
+        raise c.error_at(
+          "repeated effect key `\{key.lexeme}` [rule: duplicate-effect-key]",
+          key.span,
+          "BAD MODULE DECLARATION",
+          "I was parsing the `where` part of an effect module and got stuck on this repeated key:",
+          [
+            Text([
+              Plain("An effect module names its "),
+              @scanner.Chunk::code("command"),
+              Plain(" and "),
+              @scanner.Chunk::code("subscription"),
+              Plain(" types at most once each."),
+            ]),
+          ],
+        )
+      }
       ignore(c.expect(Equals, "`=`"))
       let value = c.upper("a type name")
+      // elm-syntax keeps the first value of a repeated key.
       match key.lexeme {
-        "command" => command = Some(token_node(value, value.lexeme))
-        "subscription" => subscription = Some(token_node(value, value.lexeme))
+        "command" if command is None =>
+          command = Some(token_node(value, value.lexeme))
+        "subscription" if subscription is None =>
+          subscription = Some(token_node(value, value.lexeme))
         _ => ()
       }
       if c.at_kind(Comma) {
@@ -130,6 +155,25 @@ fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
     }
     ignore(c.expect(RBrace, "`}`"))
     let exposing = exposing_list(c)
+    if c.dialect.has(EffectModule) && !c.dialect.core_package {
+      raise c.error_at(
+        "effect modules are only allowed in elm packages [rule: effect-module]",
+        first.span,
+        "INVALID EFFECT MODULE",
+        "This module is declared as an effect module:",
+        [
+          Text([
+            Plain("Effect modules are only allowed in "),
+            @scanner.Chunk::code("elm/*"),
+            Plain(" packages. Use "),
+            @scanner.Chunk::code("module"),
+            Plain(" or "),
+            @scanner.Chunk::code("port module"),
+            Plain(" instead."),
+          ]),
+        ],
+      )
+    }
     return node(
       { start: location(first.span.start), end: exposing.range.end, },
       EffectModule({

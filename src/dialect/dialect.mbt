@@ -13,6 +13,10 @@ pub(all) enum Rule {
   UppercaseHexPrefix
   ExponentWithoutDigits
   ImportColumn
+  EffectModule
+  InfixDeclaration
+  DuplicateEffectKey
+  PortInNormalModule
 } derive(Eq, Hash, Debug)
 
 ///|
@@ -30,6 +34,10 @@ pub fn Rule::name(self : Rule) -> String {
     UppercaseHexPrefix => "uppercase-hex-prefix"
     ExponentWithoutDigits => "exponent-without-digits"
     ImportColumn => "import-column"
+    EffectModule => "effect-module"
+    InfixDeclaration => "infix-declaration"
+    DuplicateEffectKey => "duplicate-effect-key"
+    PortInNormalModule => "port-in-normal-module"
   }
 }
 
@@ -67,6 +75,9 @@ pub(all) struct Dialect {
   reserved_words : Array[String]
   operator_symbols : Array[String]
   attributes : AttributeSyntax
+  /// Whether the file belongs to an `elm/*` package. `elm make` lets only
+  /// those declare infix operators and effect modules.
+  core_package : Bool
 }
 
 ///|
@@ -128,6 +139,7 @@ fn standard(name : String, rules : Array[Rule]) -> Dialect {
     reserved_words: [],
     operator_symbols: [],
     attributes: DocComment,
+    core_package: false,
   }
 }
 
@@ -143,6 +155,10 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
       ExponentWithoutDigits,
       BadUnicodeEscape,
       ImportColumn,
+      EffectModule,
+      InfixDeclaration,
+      DuplicateEffectKey,
+      PortInNormalModule,
     ],
   )
 }

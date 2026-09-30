@@ -21,6 +21,8 @@ priv struct Cursor {
   /// Set while building a layout failure: the problem is marked right after
   /// the previous token, as elm make does.
   mut layout_failure : Bool
+  /// Whether the module header says `port module`.
+  mut port_module : Bool
 }
 
 ///|
@@ -37,6 +39,7 @@ fn Cursor::new(
     contexts: [],
     item_start: 0,
     layout_failure: false,
+    port_module: false,
   }
 }
 

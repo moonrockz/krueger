@@ -176,7 +176,17 @@ fn score() -> Array[FileReport] raise {
     let source = @krueger.SourceText::{ module_name: None, text, }
     let tokenized = @krueger.tokenize(source, dialect=scoring) is Ok(_)
     let result = @krueger.parse_module(source, dialect=scoring)
-    if dialect_errors(entry.key, @krueger.parse_module(source)) is Some(e) {
+    // elm make lets only elm/* packages declare infix operators and effect
+    // modules.
+    let default_dialect = {
+      ..@krueger.Dialect::elm_0_19_1(),
+      core_package: entry.key.has_prefix("elm/"),
+    }
+    if dialect_errors(
+        entry.key,
+        @krueger.parse_module(source, dialect=default_dialect),
+      )
+      is Some(e) {
       default_errors.push(e)
     }
     let actual = result.ast.map(@ast.encode_file)
