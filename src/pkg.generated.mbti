@@ -29,11 +29,17 @@ pub fn version() -> String
 // Type aliases
 pub using @dialect {type AttributeSyntax}
 
+pub using @scanner {type Block}
+
 pub using @ast {type Case}
 
 pub using @ast {type CaseBlock}
 
 pub type Cases = Array[@ast.Case]
+
+pub using @scanner {type Chunk}
+
+pub using @scanner {type Color}
 
 pub using @scanner {type Comment}
 

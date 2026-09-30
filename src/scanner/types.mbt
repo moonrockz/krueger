@@ -28,8 +28,13 @@ pub(all) struct SourceText {
 pub(all) struct Diagnostic {
   code : String
   severity : Severity
+  /// One-line summary.
   message : String
   span : Span
+  /// The `elm make` title for the same problem, for example `UNFINISHED LET`.
+  title : String
+  /// The long message, as `elm make` shows it (render with `@report`).
+  report : Array[Block]
 } derive(Eq, Debug)
 
 ///|

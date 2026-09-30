@@ -3,8 +3,10 @@ fn parser_error(
   code : String,
   message : String,
   span : @scanner.Span,
+  title? : String = "SYNTAX PROBLEM",
+  report? : Array[@scanner.Block] = [],
 ) -> @scanner.Diagnostic {
-  { code, severity: Error, message, span, }
+  { code, severity: Error, message, span, title, report, }
 }
 
 ///|

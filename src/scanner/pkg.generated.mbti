@@ -24,6 +24,41 @@ pub fn unterminated_literal(Span) -> Diagnostic
 // Errors
 
 // Types and methods
+pub(all) enum Block {
+  Text(Array[Chunk])
+  Excerpt(context~ : Span, highlight~ : Span)
+  Hint(Array[Chunk])
+  Note(Array[Chunk])
+  Example(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Chunk {
+  Plain(String)
+  Styled(text~ : String, color~ : Color?, bold~ : Bool, underline~ : Bool)
+} derive(Eq, @debug.Debug)
+pub fn Chunk::code(String) -> Self
+pub fn Chunk::keyword(String) -> Self
+
+pub(all) enum Color {
+  Red
+  Yellow
+  Green
+  Cyan
+  Magenta
+  Blue
+  Black
+  White
+  VividRed
+  VividYellow
+  VividGreen
+  VividCyan
+  VividMagenta
+  VividBlue
+  VividBlack
+  VividWhite
+} derive(Eq, @debug.Debug)
+pub fn Color::json_name(Self) -> String
+
 pub(all) struct Comment {
   kind : CommentKind
   text : String
@@ -48,6 +83,8 @@ pub(all) struct Diagnostic {
   severity : Severity
   message : String
   span : Span
+  title : String
+  report : Array[Block]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum KeywordKind {

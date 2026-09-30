@@ -330,6 +330,8 @@ test "dialect_errors names the first error" {
     severity: Warning,
     message: "big",
     span,
+    title: "",
+    report: [],
   }
   @expect.expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning], })).to_equal(
     None,
@@ -339,6 +341,8 @@ test "dialect_errors names the first error" {
     severity: Error,
     message: "boom",
     span,
+    title: "",
+    report: [],
   }
   @expect.expect(
     dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }),
