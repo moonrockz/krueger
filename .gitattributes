@@ -1,0 +1,2 @@
+# Rejection fixtures are hashed byte for byte; never convert their line endings.
+tests/rejection/**/*.elm -text
