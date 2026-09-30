@@ -110,3 +110,14 @@ test "an empty operator symbol in a dialect is ignored" {
   }
   @expect.expect(errs.diagnostics.map(e => e.code)).to_equal(["KR-SCAN-003"])
 }
+
+///|
+test "an exponent needs a digit" {
+  let d = @dialect.Dialect::elm_0_19_1()
+  @expect.expect(kinds_in("1e5", d)).to_equal([FloatLiteral])
+  @expect.expect(kinds_in("1.5e-3", d)).to_equal([FloatLiteral])
+  @expect.expect(kinds_in("2E+10", d)).to_equal([FloatLiteral])
+  @expect.expect(kinds_in("1e", d)).to_equal([IntLiteral, Identifier])
+  @expect.expect(kinds_in("1ex", d)).to_equal([IntLiteral, Identifier])
+  @expect.expect(kinds_in("0x1F", d)).to_equal([IntLiteral])
+}

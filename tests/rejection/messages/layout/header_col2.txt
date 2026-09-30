@@ -1,0 +1,7 @@
+-- TOO MUCH INDENTATION ---------------------------------------- src/Fixture.elm
+
+This `module` should not have any spaces before it:
+
+1|  module Fixture exposing (..)
+    ^
+Delete the spaces before `module` until there are none left!

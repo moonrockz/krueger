@@ -41,10 +41,16 @@ fn exposable(c : Cursor) -> @ast.Node[@ast.TopLevelExpose] raise SyntaxError {
   }
   if t.kind == LParen {
     let open = c.advance()
-    guard c.peek() is Some({ kind: Operator(op), .. }) else {
-      raise c.fail("an operator")
+    guard c.peek() is Some({ kind: Operator(op), .. } as op_token) &&
+      (!c.dialect.has(SpacedOperatorName) || touching(open, op_token)) else {
+      raise c.fail("an operator like `(+)`")
     }
     ignore(c.advance())
+    if c.dialect.has(SpacedOperatorName) &&
+      c.peek() is Some(close) &&
+      !touching(op_token, close) {
+      raise c.fail("`)` right after the operator")
+    }
     let close = c.expect(RParen, "`)`")
     return node(range_from(open, close), InfixExpose(op))
   }
@@ -87,6 +93,7 @@ fn module_header(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
 
 ///|
 fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
+  module_level_column(c, "module")
   guard c.peek() is Some(first) else { raise c.fail("a module header") }
   if first.kind == Keyword(Port) {
     ignore(c.advance())
@@ -144,14 +151,37 @@ fn module_header_body(c : Cursor) -> @ast.Node[@ast.Module] raise SyntaxError {
 
 ///|
 /// `import A.B as C exposing (...)`; the range ends at the last part.
-fn import_declaration(c : Cursor) -> @ast.Node[@ast.Import] raise SyntaxError {
-  c.within(Import, () => import_declaration_body(c))
+fn import_declaration(
+  c : Cursor,
+  first : Bool,
+) -> @ast.Node[@ast.Import] raise SyntaxError {
+  c.within(Import, () => import_declaration_body(c, first))
 }
 
 ///|
 fn import_declaration_body(
   c : Cursor,
+  first : Bool,
 ) -> @ast.Node[@ast.Import] raise SyntaxError {
+  // elm-syntax checks the column of the first import only; elm make reads an
+  // indented import as part of the one before.
+  if first {
+    module_level_column(c, "import")
+  } else if c.dialect.has(ImportColumn) &&
+    c.peek() is Some(t) &&
+    t.span.start.column != 1 {
+    raise c.error_at(
+      "an import must start in column 1 [rule: import-column]",
+      t.span,
+      "UNFINISHED IMPORT",
+      "I am partway through parsing an import, but I got stuck here:",
+      [
+        plain(
+          "Each import starts at the beginning of its own line. Delete the spaces before `import`.",
+        ),
+      ],
+    )
+  }
   let keyword = c.expect(Keyword(Import), "`import`")
   let name = module_name(c)
   let mut end = name.range.end
@@ -190,4 +220,28 @@ fn import_declaration_body(
     module_alias,
     exposing_list: exposing,
   })
+}
+
+///|
+/// A module header or import must start in column 1.
+fn module_level_column(c : Cursor, keyword : String) -> Unit raise SyntaxError {
+  guard c.dialect.has(ModuleLevelColumn) &&
+    c.peek() is Some(t) &&
+    t.span.start.column != 1 else {
+    return
+  }
+  raise SyntaxError(
+    "`\{keyword}` must start in column 1 [rule: \{@dialect.Rule::ModuleLevelColumn.name()}]",
+    t.span,
+    span_problem(
+      "TOO MUCH INDENTATION",
+      "This `\{keyword}` should not have any spaces before it:",
+      point(t.span.start),
+      [
+        plain(
+          "Delete the spaces before `\{keyword}` until there are none left!",
+        ),
+      ],
+    ),
+  )
 }

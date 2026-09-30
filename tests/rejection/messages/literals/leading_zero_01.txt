@@ -1,0 +1,7 @@
+-- LEADING ZEROS ----------------------------------------------- src/Fixture.elm
+
+I do not accept numbers with leading zeros:
+
+9|     01
+        ^
+Just delete the leading zeros and it should work!

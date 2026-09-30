@@ -1,0 +1,17 @@
+-- UNFINISHED CASE --------------------------------------------- src/Fixture.elm
+
+I was partway through parsing a case expression, but I got stuck here:
+
+ 9|     case x of
+10|         1 ->
+                ^
+I was expecting 2 to be indented more. Try adding some spaces before it?
+
+Note: Here is an example of a valid `case` expression for reference:
+
+    case maybeWidth of
+      Just width ->
+        width + 10
+
+      Nothing ->
+        0

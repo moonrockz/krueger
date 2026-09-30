@@ -1,0 +1,7 @@
+-- PROBLEM IN EXPOSING ----------------------------------------- src/Fixture.elm
+
+I was partway through parsing an exposing list, but I got stuck here:
+
+4| import Basics exposing (( + ))
+                             ^
+I was expecting to see an operator like `(+)` next.

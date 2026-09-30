@@ -1,0 +1,7 @@
+-- BAD UNICODE ESCAPE ------------------------------------------ src/Fixture.elm
+
+This is not a valid code point:
+
+9|     '\u{110000}'
+       ^
+The valid code points are between 0 and 10FFFF inclusive.

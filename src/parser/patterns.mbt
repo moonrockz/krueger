@@ -69,14 +69,21 @@ fn single_pattern_at_depth(
     }
     StringLiteral => {
       ignore(c.advance())
-      token_node(t, StringPattern(string_value(t)))
+      token_node(t, StringPattern(string_value(t, c.dialect)))
     }
     CharLiteral => {
       ignore(c.advance())
-      token_node(t, CharPattern(char_value(t)))
+      token_node(t, CharPattern(char_value(t, c.dialect)))
     }
     IntLiteral => {
       ignore(c.advance())
+      weird_number_check(c, t)
+      // elm-syntax reads `01` as `0` then `1`, which cannot be a pattern.
+      if t.lexeme.length() > 1 &&
+        t.lexeme.has_prefix("0") &&
+        !t.lexeme.has_prefix("0x") {
+        raise c.fail("`->` after the pattern")
+      }
       match int_value(t) {
         Ok(n) => token_node(t, IntPattern(n))
         Err(n) => token_node(t, HexPattern(n))

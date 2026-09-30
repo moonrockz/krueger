@@ -1,0 +1,8 @@
+-- NEEDS DOUBLE QUOTES ----------------------------------------- src/Fixture.elm
+
+The following string uses single quotes:
+
+9|     'abc'
+       ^
+Please switch to double quotes instead: 'this' becomes "this". Elm uses single
+quotes only for one character, like 'a'.

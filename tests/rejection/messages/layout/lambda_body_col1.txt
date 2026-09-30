@@ -1,0 +1,11 @@
+-- UNFINISHED ANONYMOUS FUNCTION ------------------------------- src/Fixture.elm
+
+I was partway through parsing an anonymous function, but I got stuck here:
+
+9|     \a ->
+            ^
+I was expecting a to be indented more. Try adding some spaces before it?
+
+Note: Here is an example of a valid anonymous function for reference:
+
+    \x -> x + 1

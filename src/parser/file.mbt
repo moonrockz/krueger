@@ -19,14 +19,41 @@ fn declaration_error_code(kind : DeclarationKind) -> (String, String) {
 }
 
 ///|
-/// Skip to the next token on column 1 (the next top-level item), moving at
-/// least one token.
-fn skip_to_top_level(c : Cursor) -> Unit {
-  if !c.at_end() {
+/// Skip to the next token on column 1 (the next top-level item). The item
+/// started at `start`; the cursor moves past it at least one token, so a
+/// failure on the item's last token does not skip the next item.
+fn skip_to_top_level(c : Cursor, start : Int) -> Unit {
+  if !c.at_end() && c.pos <= start {
+    c.pos = start + 1
+  }
+  // A token in column 1 that cannot start a declaration (a badly indented
+  // `in`, `else`, `,` or type) belongs to the failed item: skip it too, so it
+  // is not reported a second time.
+  while c.peek() is Some(t) &&
+        (t.span.start.column != 1 || !starts_declaration(c)) {
     c.pos += 1
   }
-  while c.peek() is Some(t) && t.span.start.column != 1 {
-    c.pos += 1
+}
+
+///|
+/// Whether the token at the cursor can start a top-level declaration: `type`,
+/// `port`, `infix`, or a lower-case name with `=` or `:` later on its line.
+fn starts_declaration(c : Cursor) -> Bool {
+  guard c.peek() is Some(t) else { return false }
+  match t.kind {
+    Keyword(Type | Port | Import | Module) => true
+    Identifier if t.lexeme == "infix" => true
+    Identifier if is_lower(t) => {
+      let mut i = 1
+      while c.peek_at(i) is Some(n) && n.span.start.line == t.span.start.line {
+        if n.kind is (Equals | Colon) {
+          return true
+        }
+        i += 1
+      }
+      false
+    }
+    _ => false
   }
 }
 
@@ -234,6 +261,7 @@ pub fn parse_tokens(
     _ => false
   }
   if starts_header {
+    c.start_item()
     let start = c.pos
     try module_header(c) catch {
       SyntaxError(message, span, problem) => {
@@ -246,7 +274,7 @@ pub fn parse_tokens(
             report=problem.report,
           ),
         )
-        skip_to_top_level(c)
+        skip_to_top_level(c, start)
       }
     } noraise {
       header => {
@@ -283,9 +311,13 @@ pub fn parse_tokens(
       ),
     )
   }
+  let mut first_import = true
   while c.is_keyword(Import) {
+    c.start_item()
     let start = c.pos
-    try import_declaration(c) catch {
+    let first = first_import
+    first_import = false
+    try import_declaration(c, first) catch {
       SyntaxError(message, span, problem) => {
         diagnostics.push(
           parser_error(
@@ -296,7 +328,7 @@ pub fn parse_tokens(
             report=problem.report,
           ),
         )
-        skip_to_top_level(c)
+        skip_to_top_level(c, start)
       }
     } noraise {
       imp => {
@@ -314,7 +346,7 @@ pub fn parse_tokens(
     if t.span.start.column != 1 {
       let start = c.pos
       let problem = not_at_module_level(c, t)
-      skip_to_top_level(c)
+      skip_to_top_level(c, start)
       diagnostics.push(
         parser_error(
           "KR-PARSE-007",
@@ -350,6 +382,7 @@ pub fn parse_tokens(
       )
     })
     let start = c.pos
+    c.start_item()
     try declaration(c, documentation) catch {
       SyntaxError(message, span, problem) => {
         let (code, what) = declaration_error_code(kind)
@@ -362,7 +395,7 @@ pub fn parse_tokens(
             report=problem.report,
           ),
         )
-        skip_to_top_level(c)
+        skip_to_top_level(c, start)
       }
     } noraise {
       decl => {

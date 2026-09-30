@@ -44,10 +44,11 @@ pub(all) enum Rule {
   CharLength
   IndentedContinuation
   LetDeclarationColumn
-  CaseBodyColumn
   ModuleLevelColumn
-  TouchingOperators
   SpacedOperatorName
+  UppercaseHexPrefix
+  ExponentWithoutDigits
+  ImportColumn
 } derive(Eq, Hash, @debug.Debug)
 pub fn Rule::name(Self) -> String
 

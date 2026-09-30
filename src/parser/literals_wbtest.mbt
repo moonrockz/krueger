@@ -5,38 +5,58 @@ fn lit(kind : @scanner.TokenKind, lexeme : String) -> @scanner.Token {
 
 ///|
 test "string escapes decode like elm-syntax" {
-  @expect.expect(string_value(lit(StringLiteral, "\"a\\nb\\rc\\td\""))).to_equal(
-    "a\nb\rc\td",
-  )
-  @expect.expect(string_value(lit(StringLiteral, "\"q\\\"s\\'b\\\\\""))).to_equal(
-    "q\"s'b\\",
-  )
-  @expect.expect(string_value(lit(StringLiteral, "\"\\u{1F308}\\u{41}\""))).to_equal(
-    "\u{1F308}A",
-  )
-  @expect.expect(string_value(lit(StringLiteral, "\"\"\"line\none \\\"\"\"\""))).to_equal(
-    "line\none \"",
-  )
+  @expect.expect(
+    string_value(
+      lit(StringLiteral, "\"a\\nb\\rc\\td\""),
+      @dialect.Dialect::elm_0_19_1(),
+    ),
+  ).to_equal("a\nb\rc\td")
+  @expect.expect(
+    string_value(
+      lit(StringLiteral, "\"q\\\"s\\'b\\\\\""),
+      @dialect.Dialect::elm_0_19_1(),
+    ),
+  ).to_equal("q\"s'b\\")
+  @expect.expect(
+    string_value(
+      lit(StringLiteral, "\"\\u{1F308}\\u{41}\""),
+      @dialect.Dialect::elm_0_19_1(),
+    ),
+  ).to_equal("\u{1F308}A")
+  @expect.expect(
+    string_value(
+      lit(StringLiteral, "\"\"\"line\none \\\"\"\"\""),
+      @dialect.Dialect::elm_0_19_1(),
+    ),
+  ).to_equal("line\none \"")
 }
 
 ///|
 test "char literals decode escapes" {
-  @expect.expect(char_value(lit(CharLiteral, "'a'"))).to_equal('a')
-  @expect.expect(char_value(lit(CharLiteral, "'\\n'"))).to_equal('\n')
-  @expect.expect(char_value(lit(CharLiteral, "'\\u{1F308}'"))).to_equal(
-    '\u{1F308}',
-  )
+  @expect.expect(
+    char_value(lit(CharLiteral, "'a'"), @dialect.Dialect::elm_0_19_1()),
+  ).to_equal('a')
+  @expect.expect(
+    char_value(lit(CharLiteral, "'\\n'"), @dialect.Dialect::elm_0_19_1()),
+  ).to_equal('\n')
+  @expect.expect(
+    char_value(lit(CharLiteral, "'\\u{1F308}'"), @dialect.Dialect::elm_0_19_1()),
+  ).to_equal('\u{1F308}')
 }
 
 ///|
 test "unknown escapes and empty chars are syntax errors" {
-  let unknown = try string_value(lit(StringLiteral, "\"\\q\"")) catch {
+  let unknown = try
+    string_value(lit(StringLiteral, "\"\\q\""), @dialect.Dialect::elm_0_19_1())
+  catch {
     SyntaxError(message, _, _) => message
   } noraise {
     _ => "no error"
   }
   @expect.expect(unknown).to_equal("unknown escape `\\q`")
-  let empty = try char_value(lit(CharLiteral, "''")) catch {
+  let empty = try
+    char_value(lit(CharLiteral, "''"), @dialect.Dialect::elm_0_19_1())
+  catch {
     SyntaxError(message, _, _) => message
   } noraise {
     _ => "no error"

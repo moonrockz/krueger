@@ -1,7 +1,10 @@
 ///|
 /// Decode the escapes elm-syntax accepts: `\n` `\r` `\t` `\"` `\'` `\\` and
 /// `\u{HEX}`. `body` is the literal without its quotes.
-fn decode_escapes(body : String) -> String raise SyntaxError {
+fn decode_escapes(
+  body : String,
+  code_point_limit? : Bool = false,
+) -> String raise SyntaxError {
   let sb = StringBuilder()
   let chars = body.to_array()
   let mut i = 0
@@ -46,6 +49,9 @@ fn decode_escapes(body : String) -> String raise SyntaxError {
           raise literal_error(
             "BAD UNICODE ESCAPE", "expected hex digits and `}` in unicode escape",
           )
+        }
+        if code_point_limit && code > 0x10FFFF {
+          raise literal_error("BAD UNICODE ESCAPE", "code point above 10FFFF")
         }
         // A value that is not a Unicode scalar value (above U+10FFFF, or a
         // surrogate) becomes U+FFFD.
@@ -121,6 +127,10 @@ fn literal_problem(
           ]),
         ],
       )
+    "BAD UNICODE ESCAPE" if message.has_prefix("code point") =>
+      span_problem(title, "This is not a valid code point:", highlight, [
+        plain("The valid code points are between 0 and 10FFFF inclusive."),
+      ])
     "BAD UNICODE ESCAPE" =>
       span_problem(title, "I ran into an invalid Unicode escape:", highlight, [
         Text([
@@ -154,11 +164,14 @@ fn literal_problem(
 
 ///|
 /// Value of a single- or triple-quoted string token.
-fn string_value(token : @scanner.Token) -> String raise SyntaxError {
+fn string_value(
+  token : @scanner.Token,
+  dialect : @dialect.Dialect,
+) -> String raise SyntaxError {
   let text = token.lexeme
   let quote = if text.has_prefix("\"\"\"") { 3 } else { 1 }
   let body = text.unsafe_substring(start=quote, end=text.length() - quote)
-  decode_escapes(body) catch {
+  decode_escapes(body, code_point_limit=dialect.has(BadUnicodeEscape)) catch {
     SyntaxError(message, _, problem) =>
       raise literal_problem(problem.title, message, token.span)
   }
@@ -166,13 +179,24 @@ fn string_value(token : @scanner.Token) -> String raise SyntaxError {
 
 ///|
 /// Value of a char token.
-fn char_value(token : @scanner.Token) -> Char raise SyntaxError {
+fn char_value(
+  token : @scanner.Token,
+  dialect : @dialect.Dialect,
+) -> Char raise SyntaxError {
   let text = token.lexeme
   let value = decode_escapes(
     text.unsafe_substring(start=1, end=text.length() - 1),
+    code_point_limit=dialect.has(BadUnicodeEscape),
   ) catch {
     SyntaxError(message, _, problem) =>
       raise literal_problem(problem.title, message, token.span)
+  }
+  if dialect.has(CharLength) && value.char_length() > 1 {
+    raise literal_problem(
+      "NEEDS DOUBLE QUOTES",
+      "a char literal holds one character [rule: char-length]",
+      token.span,
+    )
   }
   match value.get_char(0) {
     Some(c) => c

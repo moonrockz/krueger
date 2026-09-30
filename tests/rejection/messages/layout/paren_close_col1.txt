@@ -1,0 +1,8 @@
+-- UNFINISHED PARENTHESES -------------------------------------- src/Fixture.elm
+
+I was partway through parsing an expression in parentheses, but I got stuck
+here:
+
+9|     (1
+         ^
+I was expecting ) to be indented more. Try adding some spaces before it?

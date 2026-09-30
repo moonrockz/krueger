@@ -162,3 +162,9 @@ fn span_problem(
 fn point(p : @scanner.Position) -> @scanner.Span {
   { start: p, end: p, }
 }
+
+///|
+/// `p` moved `columns` code units to the right on the same line.
+fn shift_position(p : @scanner.Position, columns : Int) -> @scanner.Position {
+  { offset: p.offset + columns, line: p.line, column: p.column + columns, }
+}

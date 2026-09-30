@@ -1,0 +1,7 @@
+-- UNFINISHED PARENTHESES -------------------------------------- src/Fixture.elm
+
+I was partway through parsing a pattern in parentheses, but I got stuck here:
+
+10|         ( 1
+               ^
+I was expecting , to be indented more. Try adding some spaces before it?

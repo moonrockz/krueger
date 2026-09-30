@@ -1,0 +1,17 @@
+-- UNFINISHED LET ---------------------------------------------- src/Fixture.elm
+
+I was partway through parsing a let expression, but I got stuck here:
+
+ 9|     let
+10|         y = 1
+                 ^
+I was expecting in to be indented more. Try adding some spaces before it?
+
+Note: Here is an example of a valid `let` expression for reference:
+
+    viewPerson person =
+      let
+        fullName =
+          person.firstName ++ " " ++ person.lastName
+      in
+      div [] [ text fullName ]

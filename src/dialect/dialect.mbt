@@ -8,10 +8,11 @@ pub(all) enum Rule {
   CharLength
   IndentedContinuation
   LetDeclarationColumn
-  CaseBodyColumn
   ModuleLevelColumn
-  TouchingOperators
   SpacedOperatorName
+  UppercaseHexPrefix
+  ExponentWithoutDigits
+  ImportColumn
 } derive(Eq, Hash, Debug)
 
 ///|
@@ -24,10 +25,11 @@ pub fn Rule::name(self : Rule) -> String {
     CharLength => "char-length"
     IndentedContinuation => "indented-continuation"
     LetDeclarationColumn => "let-declaration-column"
-    CaseBodyColumn => "case-body-column"
     ModuleLevelColumn => "module-level-column"
-    TouchingOperators => "touching-operators"
     SpacedOperatorName => "spaced-operator-name"
+    UppercaseHexPrefix => "uppercase-hex-prefix"
+    ExponentWithoutDigits => "exponent-without-digits"
+    ImportColumn => "import-column"
   }
 }
 
@@ -104,10 +106,24 @@ pub fn standard_operators() -> Array[OperatorDef] {
 }
 
 ///|
-fn standard(name : String) -> Dialect {
+/// Rules both built-in dialects enable: `elm make` and elm-syntax reject
+/// these.
+fn shared_rules() -> Array[Rule] {
+  [
+    IndentedContinuation,
+    LetDeclarationColumn,
+    ModuleLevelColumn,
+    CharLength,
+    EmptyHex,
+    SpacedOperatorName,
+  ]
+}
+
+///|
+fn standard(name : String, rules : Array[Rule]) -> Dialect {
   {
     name,
-    rules: @hashset.HashSet([]),
+    rules: @hashset.HashSet(rules),
     operators: standard_operators(),
     reserved_words: [],
     operator_symbols: [],
@@ -118,13 +134,23 @@ fn standard(name : String) -> Dialect {
 ///|
 /// The default dialect: rejects what `elm make` 0.19.1 rejects as syntax.
 pub fn Dialect::elm_0_19_1() -> Dialect {
-  standard("elm-0.19.1")
+  standard(
+    "elm-0.19.1",
+    [
+      ..shared_rules(),
+      LeadingZero,
+      UppercaseHexPrefix,
+      ExponentWithoutDigits,
+      BadUnicodeEscape,
+      ImportColumn,
+    ],
+  )
 }
 
 ///|
 /// Rejects exactly what elm-syntax 7.3.9 rejects.
 pub fn Dialect::elm_syntax_7_3_9() -> Dialect {
-  standard("elm-syntax-7.3.9")
+  standard("elm-syntax-7.3.9", shared_rules())
 }
 
 ///|
