@@ -61,8 +61,8 @@ fn is_blank(text : String) -> Bool {
 }
 
 ///|
-/// The line marker of an attributes block.
-let block_marker : String = "-attributes:"
+/// The fence info string of an attributes block: ```` ```attributes ````.
+let block_info : String = "attributes"
 
 ///|
 /// Brackets opened minus closed in `text`, skipping string and char
@@ -118,32 +118,19 @@ fn fence_of(text : String) -> (String, String)? {
 }
 
 ///|
-/// `line` without its first `n` characters (an indented block's indent).
-fn dedent(line : DocLine, n : Int) -> DocLine {
-  {
-    text: line.text.unsafe_substring(start=n, end=line.text.length()),
-    line: line.line,
-    column: line.column + n,
-    offset: line.offset + n,
-  }
-}
-
-///|
 /// The code-block state of the line walk.
 priv enum Mode {
   Prose
-  /// Inside a fenced block: its fence, whether it holds attributes, and
-  /// whether its first line (a possible marker) is still to come.
-  Fenced(String, Bool, Bool)
-  /// Inside an indented block, and whether it holds attributes.
-  Indented(Bool)
+  /// Inside a fenced block: its fence, and whether it is an attributes block.
+  Fenced(String, Bool)
+  /// Inside an indented code block.
+  Indented
 }
 
 ///|
 /// Attributes of a doc comment, in three forms:
-/// - an attributes block: a code block whose fence info string is
-///   `-attributes:`, or a fenced or indented block whose first line is
-///   `-attributes:` (read verbatim; an attribute runs until the next `@` line
+/// - an attributes block: a fenced code block with the info string
+///   `attributes` (read verbatim; an attribute runs until the next `@` line
 ///   or a blank line);
 /// - `@name` with one code span holding its values;
 /// - `@name values` in prose, continuing only while brackets are open or
@@ -155,55 +142,42 @@ fn raw_attributes(lines : Array[DocLine]) -> Array[RawAttribute] {
   let mut current : RawAttribute? = None
   let mut mode : Mode = Prose
   let mut previous_blank = false
-  fn block_line(line : DocLine) {
-    if is_blank(line.text) {
-      current = None
-    } else if line.text.has_prefix("@") {
-      let attribute = { lines: [line], open: 0, has_value: true, block: true, }
-      found.push(attribute)
-      current = Some(attribute)
-    } else if current is Some(attribute) {
-      attribute.lines.push(line)
-    }
-  }
-
   for i, line in lines {
     let text = line.text
     match mode {
-      Fenced(fence, attributes, awaiting_marker) => {
+      Fenced(fence, attributes) => {
         if fence_of(text) is Some((f, _)) && f == fence {
           mode = Prose
           current = None
           previous_blank = false
-          continue
-        }
-        if awaiting_marker {
-          let marker = text.trim() == block_marker
-          mode = Fenced(fence, marker, false)
-          continue
-        }
-        if attributes {
-          block_line(line)
+        } else if !attributes {
+          ()
+        } else if is_blank(text) {
+          current = None
+        } else if text.has_prefix("@") {
+          let attribute = {
+            lines: [line],
+            open: 0,
+            has_value: true,
+            block: true,
+          }
+          found.push(attribute)
+          current = Some(attribute)
+        } else if current is Some(attribute) {
+          attribute.lines.push(line)
         }
         continue
       }
-      Indented(attributes) =>
-        if is_blank(text) {
-          current = None
-          continue
-        } else if text.has_prefix("    ") {
-          if attributes {
-            block_line(dedent(line, 4))
-          }
+      Indented =>
+        if is_blank(text) || text.has_prefix("    ") {
           continue
         } else {
           mode = Prose
-          current = None
         }
       Prose => ()
     }
     if fence_of(text) is Some((fence, info)) {
-      mode = Fenced(fence, info == block_marker, info == "")
+      mode = Fenced(fence, info == block_info)
       current = None
       continue
     }
@@ -213,7 +187,7 @@ fn raw_attributes(lines : Array[DocLine]) -> Array[RawAttribute] {
       continue
     }
     if text.has_prefix("    ") && previous_blank && current is None {
-      mode = Indented(text.trim() == block_marker)
+      mode = Indented
       previous_blank = false
       continue
     }
@@ -329,7 +303,6 @@ fn shift_token(
     {
       offset: p.offset + base.offset + column_shift,
       line: p.line + base.line - 1,
-      // Lines of an indented attributes block start at `base.column`.
       column: if p.line == 1 {
         p.column + column_shift + base.column - 1
       } else {

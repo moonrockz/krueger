@@ -120,16 +120,14 @@ elm-format treats doc comments as Markdown and rewrites plain text (it escapes `
 turns `*a*` into `_a_`, doubles backslashes and wraps URLs), but keeps code spans and
 code blocks byte for byte. So there are three forms:
 
-1. An attributes block (use it for anything non-trivial): a code block whose fence
-   info string is `-attributes:`, or a fenced or indented code block whose first
-   line is `-attributes:` (elm-format turns a plain fence into an indented block).
-   Content is read verbatim; an attribute runs until the next `@` line or a blank
-   line.
+1. An attributes block (use it for anything non-trivial): a fenced code block with
+   the info string `attributes`. Content is read verbatim; an attribute runs until
+   the next `@` line or a blank line. Other code blocks are not attributes blocks.
 
    ````elm
    {-| A customer account.
 
-   ```-attributes:
+   ```attributes
    @derive [ Json.encoder, Json.decoder ]
    @morphir
        { kind = "entity"

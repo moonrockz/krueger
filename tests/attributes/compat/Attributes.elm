@@ -11,7 +11,7 @@ module Fixture exposing (Account, balance, rate, tag)
 
 {-| A customer account.
 
-```-attributes:
+```attributes
 @deprecated "Use Account.V2"
 @derive [ Json.encoder, Json.decoder ]
 @morphir
@@ -28,9 +28,10 @@ type alias Account =
 
 {-| The balance.
 
-    -attributes:
-    @pure
-    @morphir { kind = "function", url = "http://x.org/a_b" }
+```attributes
+@pure
+@morphir { kind = "function", url = "http://x.org/a_b" }
+```
 
 -}
 balance : Account -> Float
