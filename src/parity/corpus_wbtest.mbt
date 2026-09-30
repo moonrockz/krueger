@@ -167,11 +167,18 @@ fn score() -> Array[FileReport] raise {
   }
   let files = []
   let mismatches = []
+  // Scored against elm-syntax, so parsed in its dialect; every file must also
+  // parse without errors in the default dialect (elm make accepts the corpus).
+  let scoring = @krueger.Dialect::elm_syntax_7_3_9()
+  let default_errors = []
   for entry in entries {
     let text = verified_source(entry.key, entry.source_sha256)
     let source = @krueger.SourceText::{ module_name: None, text, }
-    let tokenized = @krueger.tokenize(source) is Ok(_)
-    let result = @krueger.parse_module(source)
+    let tokenized = @krueger.tokenize(source, dialect=scoring) is Ok(_)
+    let result = @krueger.parse_module(source, dialect=scoring)
+    if dialect_errors(entry.key, @krueger.parse_module(source)) is Some(e) {
+      default_errors.push(e)
+    }
     let actual = result.ast.map(@ast.encode_file)
     let parsed = actual is Some(_) && result.diagnostics.is_empty()
     // A hash match counts even when krueger also reported diagnostics.
@@ -210,7 +217,29 @@ fn score() -> Array[FileReport] raise {
   for m in mismatches {
     println(m)
   }
+  println(
+    "\{@krueger.Dialect::elm_0_19_1().name}: \{default_errors.length()} corpus files with errors",
+  )
+  if !default_errors.is_empty() {
+    fail(
+      "corpus files with errors in the default dialect:\n" +
+      default_errors.iter().take(10).collect().join("\n"),
+    )
+  }
   files
+}
+
+///|
+/// `key:line:column code message` for the first error in `result`, if any.
+fn dialect_errors(key : String, result : @krueger.ParseResult) -> String? {
+  for d in result.diagnostics {
+    if d.severity is Error {
+      return Some(
+        "\{key}:\{d.span.start.line}:\{d.span.start.column} \{d.code} \{d.message}",
+      )
+    }
+  }
+  None
 }
 
 ///|
@@ -286,4 +315,32 @@ test "parity corpus" {
       }
     }
   }
+}
+
+///|
+test "dialect_errors names the first error" {
+  let ok : @krueger.ParseResult = { ast: None, cst: None, diagnostics: [], }
+  @expect.expect(dialect_errors("a/B.elm", ok)).to_equal(None)
+  let span : @krueger.Span = {
+    start: { offset: 0, line: 3, column: 1, },
+    end: { offset: 1, line: 3, column: 2, },
+  }
+  let warning : @krueger.Diagnostic = {
+    code: "KR-PARSE-009",
+    severity: Warning,
+    message: "big",
+    span,
+  }
+  @expect.expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning], })).to_equal(
+    None,
+  )
+  let bad : @krueger.Diagnostic = {
+    code: "KR-PARSE-004",
+    severity: Error,
+    message: "boom",
+    span,
+  }
+  @expect.expect(
+    dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }),
+  ).to_equal(Some("a/B.elm:3:1 KR-PARSE-004 boom"))
 }

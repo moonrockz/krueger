@@ -2,6 +2,7 @@ import {
   "moonbitlang/core/builtin",
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
+  "moonrockz/krueger/dialect",
   "moonrockz/krueger/scanner",
   "moonrockz/krueger/parser",
 }

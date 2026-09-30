@@ -4,6 +4,7 @@ package "moonrockz/krueger"
 import {
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
+  "moonrockz/krueger/dialect",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/scanner",
 }
@@ -11,11 +12,13 @@ import {
 // Values
 pub fn diagnostic_description(String) -> String?
 
-pub fn parse_module(@scanner.SourceText) -> @parser.ParseResult
+pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
-pub fn parse_tokens(@scanner.TokenStream) -> @parser.ParseResult
+pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
-pub fn tokenize(@scanner.SourceText) -> Result[@scanner.TokenStream, @scanner.ScanErrorList]
+pub fn standard_operators() -> Array[@dialect.OperatorDef]
+
+pub fn tokenize(@scanner.SourceText, dialect? : @dialect.Dialect) -> Result[@scanner.TokenStream, @scanner.ScanErrorList]
 
 pub fn version() -> String
 
@@ -24,6 +27,8 @@ pub fn version() -> String
 // Types and methods
 
 // Type aliases
+pub using @dialect {type AttributeSyntax}
+
 pub using @ast {type Case}
 
 pub using @ast {type CaseBlock}
@@ -43,6 +48,8 @@ pub using @ast {type DecodeError}
 pub using @ast {type DefaultModuleData}
 
 pub using @scanner {type Diagnostic}
+
+pub using @dialect {type Dialect}
 
 pub type Documentation = String
 
@@ -90,6 +97,8 @@ pub type ModuleName = Array[String]
 
 pub using @ast {type Node}
 
+pub using @dialect {type OperatorDef}
+
 pub using @parser {type ParseResult}
 
 pub using @ast {type Pattern}
@@ -105,6 +114,8 @@ pub type RecordDefinition = Array[@ast.Node[@ast.RecordField]]
 pub using @ast {type RecordField}
 
 pub using @ast {type RecordSetter}
+
+pub using @dialect {type Rule}
 
 pub using @scanner {type ScanErrorList}
 

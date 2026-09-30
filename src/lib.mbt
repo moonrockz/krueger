@@ -73,6 +73,15 @@ pub using @cst {
 pub using @parser {type ParseResult}
 
 ///|
+pub using @dialect {
+  type Dialect,
+  type OperatorDef,
+  type AttributeSyntax,
+  type Rule,
+  standard_operators,
+}
+
+///|
 /// Krueger — Parser and parsing utilities for Elm and Elm-like dialects (e.g. Morphir).
 ///
 /// This module will provide scanner, parser, AST, and visitor interfaces
@@ -83,16 +92,28 @@ pub fn version() -> String {
 }
 
 ///|
-pub fn tokenize(source : SourceText) -> Result[TokenStream, ScanErrorList] {
-  @scanner.DefaultScanner::new().tokenize(source)
+/// Tokenize `source` in `dialect` (default: Elm 0.19.1).
+pub fn tokenize(
+  source : SourceText,
+  dialect? : Dialect = Dialect::elm_0_19_1(),
+) -> Result[TokenStream, ScanErrorList] {
+  @scanner.DefaultScanner::new(dialect~).tokenize(source)
 }
 
 ///|
-pub fn parse_module(source : SourceText) -> ParseResult {
-  @parser.parse_module(source, @scanner.DefaultScanner::new())
+/// Tokenize and parse `source` in `dialect` (default: Elm 0.19.1).
+pub fn parse_module(
+  source : SourceText,
+  dialect? : Dialect = Dialect::elm_0_19_1(),
+) -> ParseResult {
+  @parser.parse_module(source, @scanner.DefaultScanner::new(dialect~), dialect~)
 }
 
 ///|
-pub fn parse_tokens(tokens : TokenStream) -> ParseResult {
-  @parser.parse_tokens(tokens)
+/// Parse a token stream in `dialect` (default: Elm 0.19.1).
+pub fn parse_tokens(
+  tokens : TokenStream,
+  dialect? : Dialect = Dialect::elm_0_19_1(),
+) -> ParseResult {
+  @parser.parse_tokens(tokens, dialect~)
 }
