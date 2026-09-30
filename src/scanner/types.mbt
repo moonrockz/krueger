@@ -71,6 +71,8 @@ pub(all) enum KeywordKind {
   Of
   Port
   Where
+  /// An extra reserved word from the dialect.
+  Custom(String)
 } derive(Eq, Debug)
 
 ///|

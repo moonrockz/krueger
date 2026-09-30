@@ -3,12 +3,13 @@ package "moonrockz/krueger/scanner"
 
 import {
   "moonbitlang/core/debug",
+  "moonrockz/krueger/dialect",
 }
 
 // Values
 pub fn invalid_sequence(Span) -> Diagnostic
 
-pub fn lex_raw(SourceText) -> Result[Array[RawToken], ScanErrorList]
+pub fn lex_raw(SourceText, dialect? : @dialect.Dialect) -> Result[Array[RawToken], ScanErrorList]
 
 pub fn malformed_doc_comment(Span) -> Diagnostic
 
@@ -36,8 +37,9 @@ pub(all) enum CommentKind {
 } derive(Eq, @debug.Debug)
 
 pub struct DefaultScanner {
+  dialect : @dialect.Dialect
 }
-pub fn DefaultScanner::new() -> Self
+pub fn DefaultScanner::new(dialect? : @dialect.Dialect) -> Self
 pub fn DefaultScanner::tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
 pub impl Scanner for DefaultScanner
 
@@ -63,6 +65,7 @@ pub(all) enum KeywordKind {
   Of
   Port
   Where
+  Custom(String)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Position {
