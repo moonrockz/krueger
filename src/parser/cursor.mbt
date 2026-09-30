@@ -546,6 +546,24 @@ fn touching(a : @scanner.Token, b : @scanner.Token) -> Bool {
 
 ///|
 /// Whether the next token touches the previous one.
+/// The name after a `.` at the cursor, when the dot touches the token before
+/// it and the name (`List.map`, `record.field`) and `wanted` accepts it.
+fn Cursor::dotted_name(
+  self : Cursor,
+  wanted : (@scanner.Token) -> Bool,
+) -> @scanner.Token? {
+  if self.at_kind(Dot) &&
+    self.next_touches() &&
+    self.peek_at(1) is Some(n) &&
+    touching(self.peek().unwrap(), n) &&
+    wanted(n) {
+    Some(n)
+  } else {
+    None
+  }
+}
+
+///|
 fn Cursor::next_touches(self : Cursor) -> Bool {
   match (self.previous(), self.peek()) {
     (Some(a), Some(b)) => touching(a, b)

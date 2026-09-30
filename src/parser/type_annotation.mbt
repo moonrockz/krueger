@@ -76,12 +76,7 @@ fn qualified_type_name(
   let first = c.upper("a type name")
   let parts = [first.lexeme]
   let mut last = first
-  while c.at_kind(Dot) &&
-        c.next_touches() &&
-        (match c.peek_at(1) {
-          Some(n) => is_upper(n) && touching(c.peek().unwrap(), n)
-          None => false
-        }) {
+  while c.dotted_name(is_upper) is Some(_) {
     ignore(c.advance())
     last = c.advance()
     parts.push(last.lexeme)
@@ -158,6 +153,8 @@ fn record_type(c : Cursor) -> @ast.Node[@ast.TypeAnnotation] raise SyntaxError {
   }
   ignore(c.expect(Colon, "`:` or `|`"))
   let first_value = type_annotation(c)
+  // elm-syntax quirk: the first field ends at its type; later fields end
+  // where the next token starts (see record_field).
   let fields : Array[@ast.Node[@ast.RecordField]] = [
     node(combine(range_of(first_name), first_value.range), {
       name: token_node(first_name, first_name.lexeme),

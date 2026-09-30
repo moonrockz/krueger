@@ -4,12 +4,7 @@ fn module_name(c : Cursor) -> @ast.Node[Array[String]] raise SyntaxError {
   let first = c.upper("a module name")
   let parts = [first.lexeme]
   let mut last = first
-  while c.at_kind(Dot) &&
-        c.next_touches() &&
-        (match c.peek_at(1) {
-          Some(n) => is_upper(n) && touching(c.peek().unwrap(), n)
-          None => false
-        }) {
+  while c.dotted_name(is_upper) is Some(_) {
     ignore(c.advance())
     last = c.advance()
     parts.push(last.lexeme)
