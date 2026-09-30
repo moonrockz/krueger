@@ -26,7 +26,7 @@ The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax outp
 moonrockz/krueger
 ├── src/                  # The library (sole artifact for now)
 │   ├── lib.mbt           # Package entry point; re-exports the public types
-│   ├── scanner/          # Tokenizer (bobzhang/lexer adapter, trivia, diagnostics)
+│   ├── scanner/          # Hand-written Elm 0.19.1 lexer, trivia, diagnostics
 │   ├── parser/           # Parser: tokens → AST + CST + diagnostics
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
@@ -54,6 +54,7 @@ moonrockz/krueger
 | `KR-SCAN-001` | Unterminated block comment |
 | `KR-SCAN-002` | Malformed doc comment |
 | `KR-SCAN-003` | Invalid or unknown character sequence |
+| `KR-SCAN-004` | Unterminated string, char or GLSL literal |
 | `KR-PARSE-001` | Malformed module header (no AST) |
 | `KR-PARSE-002` | Malformed import declaration |
 | `KR-PARSE-003` | Malformed type declaration |
@@ -97,7 +98,6 @@ versioned on mooncakes.io, so keep them on the latest release when you bump the 
 
 | Module | Purpose |
 |--------|---------|
-| [bobzhang/lexer](https://mooncakes.io/docs/bobzhang/lexer) | Lexer library (scanner/tokenization) |
 | [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`src/bdd`, test-only) |
 | [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect) | Fluent test assertions (scripts; new tests) |
 
@@ -106,6 +106,14 @@ what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"
 test-only dependencies.
 
 ### Toolchain
+
+- Supported targets: wasm, wasm-gc, js and native. Library packages (`src`, `scanner`,
+  `parser`, `ast`, `cst`) must build and pass their tests on all four
+  (`mise run test:targets`, CI job `targets`). llvm is left out because the toolchain does
+  not ship `moonbitlang/core` for it.
+- `moonbitlang/x` and `moonbitlang/async` count as core, but library code uses only
+  `moonbitlang/core`; platform-specific packages (for example `async/fs`, which has no js
+  implementation) belong in test-only or tooling code.
 
 - The MoonBit toolchain version is pinned in `.github/workflows/*.yml` (`MOONBIT_VERSION`).
   Keep your local toolchain on the same version (`moon version --all`, `moon upgrade`).
@@ -184,6 +192,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:bdd`          | Run MoonSpec BDD tests                         |
 | `test:e2e`          | Run end-to-end tests                           |
 | `test:scripts`      | Run MoonBit script tests (`scripts/*.mbtx`)    |
+| `test:targets`      | Check and test the library on wasm, wasm-gc, js and native |
 | `test:parity`       | Score Elm parity against the golden lock (needs `corpus:fetch`) |
 | `parity:ratchet`    | Raise `tests/corpus/baseline.json` to the current counts |
 | `corpus:fetch`      | Download and verify the pinned corpus into `.corpus/` |
