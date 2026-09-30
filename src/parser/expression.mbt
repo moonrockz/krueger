@@ -152,11 +152,11 @@ fn sub_expression_at_depth(
   match t.kind {
     StringLiteral => {
       ignore(c.advance())
-      token_node(t, Literal(string_value(t)))
+      token_node(t, Literal(string_value(t, c.dialect)))
     }
     CharLiteral => {
       ignore(c.advance())
-      token_node(t, CharLiteral(char_value(t)))
+      token_node(t, CharLiteral(char_value(t, c.dialect)))
     }
     IntLiteral => {
       ignore(c.advance())
@@ -226,6 +226,63 @@ fn weird_number_check(
   c : Cursor,
   number : @scanner.Token,
 ) -> Unit raise SyntaxError {
+  let text = number.lexeme
+  let is_decimal = !text.has_prefix("0x")
+  if c.dialect.has(LeadingZero) &&
+    is_decimal &&
+    text.length() > 1 &&
+    text.has_prefix("0") &&
+    !text.has_prefix("0.") &&
+    !text.has_prefix("0e") &&
+    !text.has_prefix("0E") {
+    raise c.error_at(
+      "numbers cannot start with zeros [rule: leading-zero]",
+      {
+        start: shift_position(number.span.start, 1),
+        end: shift_position(number.span.start, 1),
+      },
+      "LEADING ZEROS",
+      "I do not accept numbers with leading zeros:",
+      [plain("Just delete the leading zeros and it should work!")],
+    )
+  }
+  if c.peek() is Some({ kind: Identifier, lexeme: name, .. } as next) &&
+    touching(number, next) {
+    let first = name.get_char(0).unwrap_or(' ')
+    if c.dialect.has(EmptyHex) && text == "0" && first == 'x' {
+      raise c.error_at(
+        "expected hex digits after `0x` [rule: empty-hex]",
+        { start: next.span.start, end: next.span.start, },
+        "WEIRD HEXIDECIMAL",
+        "I thought I was reading a hexidecimal number until I got here:",
+        [
+          Text([
+            Plain(
+              "Valid hexidecimal digits include 0123456789abcdefABCDEF, so I can only recognize things like this:",
+            ),
+          ]),
+          Example("0x2B\n0x002B\n0x00ffb3"),
+        ],
+      )
+    }
+    let weird = (
+        c.dialect.has(UppercaseHexPrefix) && text == "0" && first == 'X'
+      ) ||
+      (c.dialect.has(ExponentWithoutDigits) && (first == 'e' || first == 'E'))
+    if weird {
+      raise c.error_at(
+        "unexpected characters after a number",
+        { start: next.span.start, end: next.span.start, },
+        "WEIRD NUMBER",
+        "I thought I was reading a number, but I ran into some weird stuff here:",
+        [
+          plain("I recognize numbers in the following formats:"),
+          Example("42\n3.14\n6.022e23\n0x002B"),
+          plain("So is there a way to write it like one of those?"),
+        ],
+      )
+    }
+  }
   if c.peek() is Some({ kind: Dot, .. } as dot) &&
     touching(number, dot) &&
     !(c.peek_at(1) is Some(n) && touching(dot, n) && is_lower(n)) {

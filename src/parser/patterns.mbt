@@ -69,11 +69,11 @@ fn single_pattern_at_depth(
     }
     StringLiteral => {
       ignore(c.advance())
-      token_node(t, StringPattern(string_value(t)))
+      token_node(t, StringPattern(string_value(t, c.dialect)))
     }
     CharLiteral => {
       ignore(c.advance())
-      token_node(t, CharPattern(char_value(t)))
+      token_node(t, CharPattern(char_value(t, c.dialect)))
     }
     IntLiteral => {
       ignore(c.advance())

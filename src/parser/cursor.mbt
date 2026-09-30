@@ -342,17 +342,13 @@ fn Cursor::error_at(
   opening : String,
   after : Array[@scanner.Block],
 ) -> SyntaxError {
+  // A token-level problem: the excerpt is the token's line, as elm make shows.
+  ignore(self)
   let highlight = point(span.start)
   SyntaxError(
     message,
     span,
-    make_problem(
-      title,
-      [Plain(opening)],
-      self.excerpt_context(highlight),
-      highlight,
-      after,
-    ),
+    make_problem(title, [Plain(opening)], highlight, highlight, after),
   )
 }
 

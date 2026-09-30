@@ -19,11 +19,12 @@ fn declaration_error_code(kind : DeclarationKind) -> (String, String) {
 }
 
 ///|
-/// Skip to the next token on column 1 (the next top-level item), moving at
-/// least one token.
-fn skip_to_top_level(c : Cursor) -> Unit {
-  if !c.at_end() {
-    c.pos += 1
+/// Skip to the next token on column 1 (the next top-level item). The item
+/// started at `start`; the cursor moves past it at least one token, so a
+/// failure on the item's last token does not skip the next item.
+fn skip_to_top_level(c : Cursor, start : Int) -> Unit {
+  if !c.at_end() && c.pos <= start {
+    c.pos = start + 1
   }
   while c.peek() is Some(t) && t.span.start.column != 1 {
     c.pos += 1
@@ -247,7 +248,7 @@ pub fn parse_tokens(
             report=problem.report,
           ),
         )
-        skip_to_top_level(c)
+        skip_to_top_level(c, start)
       }
     } noraise {
       header => {
@@ -298,7 +299,7 @@ pub fn parse_tokens(
             report=problem.report,
           ),
         )
-        skip_to_top_level(c)
+        skip_to_top_level(c, start)
       }
     } noraise {
       imp => {
@@ -316,7 +317,7 @@ pub fn parse_tokens(
     if t.span.start.column != 1 {
       let start = c.pos
       let problem = not_at_module_level(c, t)
-      skip_to_top_level(c)
+      skip_to_top_level(c, start)
       diagnostics.push(
         parser_error(
           "KR-PARSE-007",
@@ -365,7 +366,7 @@ pub fn parse_tokens(
             report=problem.report,
           ),
         )
-        skip_to_top_level(c)
+        skip_to_top_level(c, start)
       }
     } noraise {
       decl => {

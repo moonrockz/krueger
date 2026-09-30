@@ -1,35 +1,5 @@
 [
   {
-    "fixture": "literals/char_two.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/char_two.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/empty_hex.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/empty_hex.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/float_exponent_no_digits.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/hex_upper_x.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
     "fixture": "literals/huge_float.elm",
     "dialect": "elm-0.19.1",
     "check": "verdict"
@@ -57,31 +27,6 @@
   {
     "fixture": "literals/huge_int.elm",
     "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/leading_zero.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/leading_zero_01.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/single_quoted_string.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/single_quoted_string.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_too_big.elm",
-    "dialect": "elm-0.19.1",
     "check": "verdict"
   },
   {
@@ -97,16 +42,6 @@
   {
     "fixture": "module/port_in_normal_module.elm",
     "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "operators/spaced_exposing.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "operators/spaced_exposing.elm",
-    "dialect": "elm-syntax-7.3.9",
     "check": "verdict"
   },
   {

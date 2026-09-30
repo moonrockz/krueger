@@ -41,10 +41,16 @@ fn exposable(c : Cursor) -> @ast.Node[@ast.TopLevelExpose] raise SyntaxError {
   }
   if t.kind == LParen {
     let open = c.advance()
-    guard c.peek() is Some({ kind: Operator(op), .. }) else {
-      raise c.fail("an operator")
+    guard c.peek() is Some({ kind: Operator(op), .. } as op_token) &&
+      (!c.dialect.has(SpacedOperatorName) || touching(open, op_token)) else {
+      raise c.fail("an operator like `(+)`")
     }
     ignore(c.advance())
+    if c.dialect.has(SpacedOperatorName) &&
+      c.peek() is Some(close) &&
+      !touching(op_token, close) {
+      raise c.fail("`)` right after the operator")
+    }
     let close = c.expect(RParen, "`)`")
     return node(range_from(open, close), InfixExpose(op))
   }

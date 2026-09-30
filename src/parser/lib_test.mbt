@@ -307,9 +307,10 @@ fn body_of(file : @ast.File, name : String) -> @ast.Node[@ast.Expression] raise 
 
 ///|
 test "unicode escapes out of range become the replacement character" {
-  let result = parse(
-    "module Main exposing (..)\n\n\na = '\\u{110000}'\n\n\nb = \"\\u{FFFFFFFFFFFF}\"\n\n\nc = '\\u{D800}'\n",
-  )
+  // elm-syntax accepts code points above 10FFFF; elm make does not.
+  let text = "module Main exposing (..)\n\n\na = '\\u{110000}'\n\n\nb = \"\\u{FFFFFFFFFFFF}\"\n\n\nc = '\\u{D800}'\n"
+  @expect.expect(codes(parse(text))).to_equal(["KR-PARSE-004", "KR-PARSE-004"])
+  let result = parse_with(text, @dialect.Dialect::elm_syntax_7_3_9())
   @expect.expect(codes(result)).to_equal([])
   let file = ast(result)
   @expect.expect(body_of(file, "a").value).to_equal(CharLiteral('\u{FFFD}'))
