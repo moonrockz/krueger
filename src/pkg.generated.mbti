@@ -12,9 +12,17 @@ import {
 // Values
 pub fn diagnostic_description(String) -> String?
 
+pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
+
 pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult
+
+pub fn render_elm_json(Array[@scanner.Diagnostic], @scanner.SourceText, String) -> Json
+
+pub fn render_plain(@scanner.Diagnostic, @scanner.SourceText, String) -> String
+
+pub fn render_terminal(@scanner.Diagnostic, @scanner.SourceText, String) -> String
 
 pub fn standard_operators() -> Array[@dialect.OperatorDef]
 

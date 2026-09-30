@@ -76,6 +76,14 @@ pub using @cst {
 pub using @parser {type ParseResult}
 
 ///|
+pub using @report {
+  render_plain,
+  render_terminal,
+  render_elm_json,
+  encode_diagnostics,
+}
+
+///|
 pub using @dialect {
   type Dialect,
   type OperatorDef,

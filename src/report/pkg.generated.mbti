@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/report"
+
+import {
+  "moonrockz/krueger/scanner",
+}
+
+// Values
+pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
+
+pub fn render_elm_json(Array[@scanner.Diagnostic], @scanner.SourceText, String) -> Json
+
+pub fn render_plain(@scanner.Diagnostic, @scanner.SourceText, String) -> String
+
+pub fn render_terminal(@scanner.Diagnostic, @scanner.SourceText, String) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
