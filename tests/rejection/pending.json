@@ -220,38 +220,8 @@
     "check": "verdict"
   },
   {
-    "fixture": "literals/unicode_escape_empty.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_empty.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_non_hex.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_non_hex.elm",
-    "dialect": "elm-syntax-7.3.9",
-    "check": "verdict"
-  },
-  {
     "fixture": "literals/unicode_escape_too_big.elm",
     "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_unclosed.elm",
-    "dialect": "elm-0.19.1",
-    "check": "verdict"
-  },
-  {
-    "fixture": "literals/unicode_escape_unclosed.elm",
-    "dialect": "elm-syntax-7.3.9",
     "check": "verdict"
   },
   {

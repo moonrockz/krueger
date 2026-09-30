@@ -58,6 +58,26 @@ fn type_declaration(
   }
   if c.peek() is Some({ kind: Identifier, lexeme: "alias", .. }) {
     ignore(c.advance())
+    if c.at_lower() {
+      raise c.fail_titled(
+        "expected a type name",
+        "EXPECTING TYPE ALIAS NAME",
+        [
+          Plain(
+            "I am partway through parsing a type alias, but I got stuck here:",
+          ),
+        ],
+        [
+          Text([
+            Plain("I was expecting a name like "),
+            @scanner.Chunk::code("Person"),
+            Plain(" or "),
+            @scanner.Chunk::code("Point"),
+            Plain(" next. Type alias names must start with a capital letter."),
+          ]),
+        ],
+      )
+    }
     let name = c.upper("a type name")
     let generics = type_parameters(c)
     let annotation = type_annotation(c)
@@ -123,23 +143,35 @@ fn infix_declaration(
     "right" => Right
     "non" => Non
     _ =>
-      raise SyntaxError(
+      raise c.error_at(
         "expected `left`, `right` or `non`",
         direction_token.span,
+        "SYNTAX PROBLEM",
+        "I was expecting `left`, `right` or `non` here:",
+        [],
       )
   }
   let precedence_token = c.expect(IntLiteral, "a precedence")
   let precedence = match int_value(precedence_token) {
     Ok(n) => n.to_int()
     Err(_) =>
-      raise SyntaxError("expected a decimal precedence", precedence_token.span)
+      raise c.error_at(
+        "expected a decimal precedence",
+        precedence_token.span,
+        "SYNTAX PROBLEM",
+        "I was expecting a decimal precedence here:",
+        [],
+      )
   }
-  let open = c.expect(LParen, "`(`")
-  guard c.peek() is Some({ kind: Operator(op), .. }) else {
-    raise c.fail("an operator")
-  }
-  ignore(c.advance())
-  let close = c.expect(RParen, "`)`")
+  let (open, op, close) = c.within(Parens, () => {
+    let open = c.expect(LParen, "`(`")
+    guard c.peek() is Some({ kind: Operator(op), .. }) else {
+      raise c.fail("an operator")
+    }
+    ignore(c.advance())
+    let close = c.expect(RParen, "`)`")
+    (open, op, close)
+  })
   ignore(c.expect(Equals, "`=`"))
   let function = c.lower("a function name")
   node(
@@ -161,11 +193,22 @@ fn declaration(
   documentation : @ast.Node[String]?,
 ) -> @ast.Node[@ast.Declaration] raise SyntaxError {
   match declaration_kind(c) {
-    TypeKind => type_declaration(c, documentation)
-    PortKind => port_declaration(c)
-    InfixKind => infix_declaration(c)
+    TypeKind => {
+      let context = if c.peek_at(1) is Some({ lexeme: "alias", .. }) {
+        TypeAlias
+      } else {
+        CustomType
+      }
+      c.within(context, () => type_declaration(c, documentation))
+    }
+    PortKind => c.within(Port, () => port_declaration(c))
+    InfixKind => c.within(Infix, () => infix_declaration(c))
     FunctionKind => {
-      let f = function_parts(c, documentation)
+      let name = match c.peek() {
+        Some(t) => t.lexeme
+        None => ""
+      }
+      let f = c.within(Definition(name), () => function_parts(c, documentation))
       node(f.range, FunctionDeclaration(f.value))
     }
   }

@@ -31,6 +31,29 @@ fn skip_to_top_level(c : Cursor) -> Unit {
 }
 
 ///|
+/// The problem for a token `t` that is not at column 1 where a top-level
+/// declaration must start.
+fn not_at_module_level(c : Cursor, t : @scanner.Token) -> Problem {
+  if t.kind is Equals {
+    c.titled(
+      "UNEXPECTED EQUALS",
+      [Plain("I was not expecting to see this equals sign:")],
+      [
+        plain(
+          "Maybe this is part of a definition that does not start in the first column? Top-level definitions must start at the very beginning of a line.",
+        ),
+      ],
+    )
+  } else {
+    c.titled("SYNTAX PROBLEM", [Plain("I got stuck here:")], [
+      plain(
+        "I was expecting a new declaration at the start of a line. Is something indented too little or too much above?",
+      ),
+    ])
+  }
+}
+
+///|
 /// Span of the tokens from `start` up to the cursor.
 fn span_since(c : Cursor, start : Int) -> @scanner.Span {
   let first = c.tokens[start]
@@ -203,12 +226,14 @@ pub fn parse_tokens(
   if starts_header {
     let start = c.pos
     try module_header(c) catch {
-      SyntaxError(message, span) => {
+      SyntaxError(message, span, problem) => {
         diagnostics.push(
           parser_error(
             "KR-PARSE-001",
             "Malformed module header: \{message}",
             span,
+            title=problem.title,
+            report=problem.report,
           ),
         )
         skip_to_top_level(c)
@@ -237,12 +262,14 @@ pub fn parse_tokens(
   while c.is_keyword(Import) {
     let start = c.pos
     try import_declaration(c) catch {
-      SyntaxError(message, span) => {
+      SyntaxError(message, span, problem) => {
         diagnostics.push(
           parser_error(
             "KR-PARSE-002",
             "Malformed import declaration: \{message}",
             span,
+            title=problem.title,
+            report=problem.report,
           ),
         )
         skip_to_top_level(c)
@@ -262,12 +289,15 @@ pub fn parse_tokens(
   while c.peek() is Some(t) {
     if t.span.start.column != 1 {
       let start = c.pos
+      let problem = not_at_module_level(c, t)
       skip_to_top_level(c)
       diagnostics.push(
         parser_error(
           "KR-PARSE-007",
           "Unexpected syntax: token not at module level",
           span_since(c, start),
+          title=problem.title,
+          report=problem.report,
         ),
       )
       continue
@@ -297,9 +327,17 @@ pub fn parse_tokens(
     })
     let start = c.pos
     try declaration(c, documentation) catch {
-      SyntaxError(message, span) => {
+      SyntaxError(message, span, problem) => {
         let (code, what) = declaration_error_code(kind)
-        diagnostics.push(parser_error(code, "\{what}: \{message}", span))
+        diagnostics.push(
+          parser_error(
+            code,
+            "\{what}: \{message}",
+            span,
+            title=problem.title,
+            report=problem.report,
+          ),
+        )
         skip_to_top_level(c)
       }
     } noraise {

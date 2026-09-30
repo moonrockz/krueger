@@ -82,9 +82,9 @@ fn single_pattern_at_depth(
         Err(n) => token_node(t, HexPattern(n))
       }
     }
-    LParen => parens_pattern(c)
-    LBracket => list_pattern(c)
-    LBrace => record_pattern(c)
+    LParen => c.within(ParensPattern, () => parens_pattern(c))
+    LBracket => c.within(ListPattern, () => list_pattern(c))
+    LBrace => c.within(RecordPattern, () => record_pattern(c))
     Identifier if is_lower(t) => {
       ignore(c.advance())
       token_node(t, VarPattern(t.lexeme))

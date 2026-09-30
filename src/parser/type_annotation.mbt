@@ -43,8 +43,8 @@ fn type_no_fn_at_depth(
 ) -> @ast.Node[@ast.TypeAnnotation] raise SyntaxError {
   guard c.peek() is Some(t) else { raise c.fail("a type") }
   match t.kind {
-    LParen => parens_type(c)
-    LBrace => record_type(c)
+    LParen => c.within(ParensType, () => parens_type(c))
+    LBrace => c.within(RecordType, () => record_type(c))
     Identifier if is_lower(t) => {
       ignore(c.advance())
       token_node(t, GenericType(t.lexeme))

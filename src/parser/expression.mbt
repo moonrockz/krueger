@@ -18,7 +18,17 @@ fn expression_above(
       break
     }
     guard c.dialect.operator(op) is Some({ precedence, direction, .. }) else {
-      raise SyntaxError("unknown infix operator `\{op}`", op_token.span)
+      raise c.error_at(
+        "unknown infix operator `\{op}`",
+        op_token.span,
+        "UNKNOWN OPERATOR",
+        "I do not recognize this operator:",
+        [
+          plain(
+            "Elm has a fixed set of operators; this is not one of them. Is there a typo?",
+          ),
+        ],
+      )
     }
     let accepted = if or_equal { precedence >= min } else { precedence > min }
     if !accepted {
@@ -50,9 +60,16 @@ fn non_associative_right(
     c.peek() is Some({ kind: Operator(op), .. } as t) &&
     c.dialect.operator(op) is Some({ precedence: p, .. }) &&
     p == precedence {
-    raise SyntaxError(
+    raise c.error_at(
       "cannot mix non-associative infix operators without parentheses",
       t.span,
+      "INFIX PROBLEM",
+      "You cannot mix these two operators without parentheses:",
+      [
+        plain(
+          "They do not associate, so I cannot tell which one goes first. Add parentheses to say what you mean.",
+        ),
+      ],
     )
   }
   right
@@ -143,6 +160,7 @@ fn sub_expression_at_depth(
     }
     IntLiteral => {
       ignore(c.advance())
+      weird_number_check(c, t)
       match int_value(t) {
         Ok(n) => token_node(t, Integer(n))
         Err(n) => token_node(t, Hex(n))
@@ -150,6 +168,7 @@ fn sub_expression_at_depth(
     }
     FloatLiteral => {
       ignore(c.advance())
+      weird_number_check(c, t)
       token_node(t, Floatable(float_value(t)))
     }
     Glsl => {
@@ -163,13 +182,13 @@ fn sub_expression_at_depth(
         GLSLExpression(source),
       )
     }
-    LParen => parens_expression(c)
-    LBracket => list_expression(c)
-    LBrace => record_expression(c)
-    Keyword(Case) => case_expression(c)
-    Keyword(Let) => let_expression(c)
-    Keyword(If) => if_expression(c)
-    Backslash => lambda_expression(c)
+    LParen => c.within(Parens, () => parens_expression(c))
+    LBracket => c.within(List, () => list_expression(c))
+    LBrace => c.within(Record, () => record_expression(c))
+    Keyword(Case) => c.within(Case, () => case_expression(c))
+    Keyword(Let) => c.within(Let, () => let_expression(c))
+    Keyword(If) => c.within(If, () => if_expression(c))
+    Backslash => c.within(Lambda, () => lambda_expression(c))
     Dot => {
       let dot = c.advance()
       if !(c.at_lower() && c.next_touches()) {
@@ -198,6 +217,31 @@ fn sub_expression_at_depth(
     }
     Identifier => qualified_reference(c)
     _ => raise c.fail("an expression")
+  }
+}
+
+///|
+/// A number followed by a touching `.` with nothing after it, like `1.`.
+fn weird_number_check(
+  c : Cursor,
+  number : @scanner.Token,
+) -> Unit raise SyntaxError {
+  if c.peek() is Some({ kind: Dot, .. } as dot) &&
+    touching(number, dot) &&
+    !(c.peek_at(1) is Some(n) && touching(dot, n) && is_lower(n)) {
+    raise c.error_at(
+      "a number cannot end with a dot",
+      dot.span,
+      "WEIRD NUMBER",
+      "I thought I was reading a number, but I ran into some weird stuff here:",
+      [
+        Text([
+          Plain("Floats need digits after the dot, like "),
+          @scanner.Chunk::code("1.0"),
+          Plain("."),
+        ]),
+      ],
+    )
   }
 }
 
@@ -288,6 +332,21 @@ fn parens_expression(
     ignore(c.advance())
     ignore(c.advance())
     return node(range_from(open, close), PrefixOperator(op))
+  }
+  if c.peek() is Some({ kind: Operator(_), .. } as op_token) &&
+    touching(open, op_token) &&
+    !negation_here(c) {
+    ignore(c.advance())
+    raise c.fail_titled(
+      "expected `)` after the operator",
+      "UNFINISHED OPERATOR FUNCTION",
+      [
+        Plain("I was parsing an operator function like "),
+        @scanner.Chunk::code("(+)"),
+        Plain(", but I got stuck here:"),
+      ],
+      [plain("I was expecting a closing parenthesis right after the operator.")],
+    )
   }
   let first = expression(c)
   if c.at_kind(RParen) {
@@ -503,9 +562,12 @@ fn function_parts(
       raise c.fail("the implementation of `\{start_name.lexeme}`")
     }
     if impl_name.lexeme != start_name.lexeme {
-      raise SyntaxError(
+      raise c.error_at(
         "expected to find the same name for declaration and signature",
         impl_name.span,
+        "NAME MISMATCH",
+        "I just saw a type annotation for `\{start_name.lexeme}`, but it is followed by a definition for `\{impl_name.lexeme}`:",
+        [plain("These names do not match! Is there a typo?")],
       )
     }
     ignore(c.advance())
