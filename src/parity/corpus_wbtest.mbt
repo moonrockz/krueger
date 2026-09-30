@@ -341,7 +341,12 @@ test "parity corpus" {
 
 ///|
 test "dialect_errors names the first error" {
-  let ok : @krueger.ParseResult = { ast: None, cst: None, diagnostics: [], }
+  let ok : @krueger.ParseResult = {
+    ast: None,
+    cst: None,
+    diagnostics: [],
+    attributes: [],
+  }
   @expect.expect(dialect_errors("a/B.elm", ok)).to_equal(None)
   let span : @krueger.Span = {
     start: { offset: 0, line: 3, column: 1, },

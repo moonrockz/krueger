@@ -16,6 +16,7 @@ let diagnostic_descriptions : Map[String, String] = {
   "KR-PARSE-007": "Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments)",
   "KR-PARSE-008": "Syntax error in a port or infix declaration",
   "KR-PARSE-009": "Number literal out of range (warning)",
+  "KR-ATTR-001": "Malformed doc attribute (warning)",
 }
 
 ///|

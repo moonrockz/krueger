@@ -12,6 +12,8 @@ import {
 // Values
 pub fn diagnostic_description(String) -> String?
 
+pub fn encode_attributes(Array[@parser.AttributeGroup]) -> Json
+
 pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
 
 pub fn is_lower_start(Char) -> Bool
@@ -41,7 +43,11 @@ pub fn version() -> String
 // Types and methods
 
 // Type aliases
+pub using @parser {type AttributeGroup}
+
 pub using @dialect {type AttributeSyntax}
+
+pub using @parser {type AttributeTarget}
 
 pub using @scanner {type Block}
 
@@ -70,6 +76,8 @@ pub using @ast {type DefaultModuleData}
 pub using @scanner {type Diagnostic}
 
 pub using @dialect {type Dialect}
+
+pub using @parser {type DocAttribute}
 
 pub type Documentation = String
 

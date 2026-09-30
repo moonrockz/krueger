@@ -76,6 +76,7 @@ moonrockz/krueger
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 | `KR-PARSE-008` | Syntax error in a port or infix declaration |
 | `KR-PARSE-009` | Number literal out of range (warning; the value is clamped) |
+| `KR-ATTR-001` | Malformed doc attribute (warning; the attribute is skipped) |
 
 `src/diagnostics.mbt` holds these descriptions (`diagnostic_description(code)`); the parity
 summary reads them. Keep this table and that file in step when you add a code.

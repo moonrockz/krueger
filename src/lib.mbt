@@ -76,7 +76,13 @@ pub using @cst {
 }
 
 ///|
-pub using @parser {type ParseResult}
+pub using @parser {
+  type ParseResult,
+  type AttributeTarget,
+  type DocAttribute,
+  type AttributeGroup,
+  encode_attributes,
+}
 
 ///|
 pub using @report {
