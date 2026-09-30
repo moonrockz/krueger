@@ -75,6 +75,9 @@ impl @moonspec.World for AttributesWorld with fn configure(self, setup) {
   setup.given1("Elm source:", fn(doc : @moonspec.DocString) {
     self.source = doc.content
   })
+  setup.given1("the Elm file {string}", fn(path : String) raise {
+    self.source = @fs.read_file_to_string(path)
+  })
   setup.given0("the attribute syntax is off", fn() {
     self.dialect = { ..@krueger.Dialect::elm_0_19_1(), attributes: Off, }
   })

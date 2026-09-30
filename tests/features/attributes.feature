@@ -196,3 +196,150 @@ Feature: Attributes in doc comments
     And the attribute syntax is off
     When I parse the source
     Then there are no attributes
+
+  Scenario: An attributes block with the marker as the fence info string
+    Given Elm source:
+      """elm
+      module Bank exposing (..)
+
+      {-| Bank. -}
+
+
+      {-| An account.
+
+      ```-attributes:
+      @morphir { key = "account_id", note = "a*b*c" }
+      @multi
+          { kind = "entity"
+          , key = "id"
+          }
+      ```
+
+      -}
+      account =
+          1
+      """
+    When I parse the source
+    Then the attributes are:
+      """
+      account @morphir({ key = "account_id", note = "a*b*c" }) 9:1
+      account @multi({ kind = "entity"\n    , key = "id"\n    }) 10:1
+      """
+    And there are no warnings
+
+  Scenario: An attributes block as elm-format leaves it
+    Given Elm source:
+      """elm
+      module Bank exposing (..)
+
+      {-| Bank. -}
+
+
+      {-| An account.
+
+          -attributes:
+          @morphir { key = "account_id" }
+          @unit "EUR"
+
+      -}
+      account =
+          1
+      """
+    When I parse the source
+    Then the attributes are:
+      """
+      account @morphir({ key = "account_id" }) 9:5
+      account @unit("EUR") 10:5
+      """
+
+  Scenario: An attributes block with the marker on its first line
+    Given Elm source:
+      """elm
+      module Bank exposing (..)
+
+      {-| Bank. -}
+
+
+      {-| An account.
+
+      ```
+      -attributes:
+      @unit "EUR"
+      ```
+
+      -}
+      account =
+          1
+      """
+    When I parse the source
+    Then the attributes are:
+      """
+      account @unit("EUR") 10:1
+      """
+
+  Scenario: A value in a code span
+    Given Elm source:
+      """elm
+      module Bank exposing (..)
+
+      {-| Bank. -}
+
+
+      {-| An account.
+
+      @morphir `{ key = "account_id" }`
+      @tag `one two`
+
+      -}
+      account =
+          1
+      """
+    When I parse the source
+    Then the attributes are:
+      """
+      account @morphir({ key = "account_id" }) 8:1
+      account @tag(one | two) 9:1
+      """
+    And there are no warnings
+
+  Scenario: Prose right after a plain attribute is not read as values
+    Given Elm source:
+      """elm
+      module Bank exposing (..)
+
+      {-| Bank. -}
+
+
+      {-| An account.
+
+      @deprecated "x"
+      This is fine now.
+
+      -}
+      account =
+          1
+      """
+    When I parse the source
+    Then the attributes are:
+      """
+      account @deprecated("x") 8:1
+      """
+    And there are no warnings
+
+  Scenario: The compatibility example that elm make and elm-format accept
+    Given the Elm file "tests/attributes/compat/Attributes.elm"
+    When I parse the source
+    Then the attributes are:
+      """
+      module @morphir({ package = "Bank" }) 5:1
+      module @docs(Account, balance, rate, tag) 7:1
+      Account @deprecated("Use Account.V2") 15:1
+      Account @derive([ Json.encoder, Json.decoder ]) 16:1
+      Account @morphir({ kind = "entity"\n    , key = "account_id"\n    , note = "a*b*c"\n    }) 17:1
+      balance @pure() 32:5
+      balance @morphir({ kind = "function", url = "http://x.org/a_b" }) 33:5
+      rate @unit("EUR") 43:1
+      rate @tag(one | two) 44:1
+      tag @tag(one | two) 54:1
+      """
+    And there are no warnings

@@ -113,26 +113,44 @@ Every `Diagnostic` has a `code` (`KR-SCAN-*`, `KR-PARSE-*`), a `severity`, a one
 
 ### Doc-Comment Attributes
 
-A doc-comment line that starts with `@name` is an attribute. krueger reads them into
+A doc comment can carry attributes. krueger reads them into
 `ParseResult.attributes` (per module and declaration, with file ranges);
 `encode_attributes` gives JSON. Their meaning belongs to the tools that read them.
+elm-format treats doc comments as Markdown and rewrites plain text (it escapes `_`,
+turns `*a*` into `_a_`, doubles backslashes and wraps URLs), but keeps code spans and
+code blocks byte for byte. So there are three forms:
 
-```elm
-{-| A customer account.
+1. An attributes block (use it for anything non-trivial): a code block whose fence
+   info string is `-attributes:`, or a fenced or indented code block whose first
+   line is `-attributes:` (elm-format turns a plain fence into an indented block).
+   Content is read verbatim; an attribute runs until the next `@` line or a blank
+   line.
 
-@deprecated "Use Account.V2"
-@derive [ Json.encoder, Json.decoder ]
-@morphir { kind = "entity", key = "id" }
--}
-```
+   ````elm
+   {-| A customer account.
 
-- The name is `lower ("." lower)*`. Arguments are Elm data in application form:
+   ```-attributes:
+   @derive [ Json.encoder, Json.decoder ]
+   @morphir
+       { kind = "entity"
+       , key = "account_id"
+       }
+   ```
+
+   -}
+   ````
+
+2. A value in a code span: ``@morphir `{ key = "account_id" }` ``.
+3. A plain value, `@unit "EUR"` — only safe when the value has no `_`, `*`, `\`
+   or URL. It continues on the next lines only while brackets are open or while the
+   `@` line has no value yet.
+
+- The name is `lower ("." lower)*`. Values are Elm data in application form:
   literals, lists, records, tuples, names and constructor applications.
-- An attribute runs until a blank line or the next `@` line; continuation lines may
-  have any indentation (elm-format may remove it). Leave a blank line between
-  attributes and prose, and before `@docs` (elm-format joins lines after `@docs`).
-- `@docs a, b` is the built-in list form. Code blocks and `@` in prose are not
-  attributes. A malformed attribute is warning `KR-ATTR-001` and is skipped.
+- `@docs a, b` is the built-in list form. Other code blocks, prose and `@` in the
+  middle of a line are not attributes. A malformed attribute is warning `KR-ATTR-001`
+  and is skipped. Leave a blank line before `@docs` (elm-format joins the lines after
+  `@docs`).
 - `Dialect.attributes` (`DocComment` or `Off`) switches them on or off.
 - `mise run rejection:record` also checks `tests/attributes/compat/*.elm`: `elm make`
   must accept each file and `elm-format --validate` must pass.

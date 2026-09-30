@@ -47,6 +47,12 @@ fn doc_lines(comment : @scanner.Comment) -> Array[DocLine] {
 /// An attribute found in the line walk: its `@` line and continuation lines.
 priv struct RawAttribute {
   lines : Array[DocLine]
+  /// Open brackets after the lines so far (plain attributes only).
+  mut open : Int
+  /// Whether the lines so far hold a value (plain attributes only).
+  mut has_value : Bool
+  /// From an attributes block, where continuation lines are verbatim.
+  block : Bool
 }
 
 ///|
@@ -55,31 +61,150 @@ fn is_blank(text : String) -> Bool {
 }
 
 ///|
-/// Attribute lines of a doc comment. An attribute starts with a line that
-/// begins with `@` and runs until a blank line or the next `@` line. Skips
-/// the first line, fenced code blocks and indented code blocks (4 spaces
-/// after a blank line).
+/// The line marker of an attributes block.
+let block_marker : String = "-attributes:"
+
+///|
+/// Brackets opened minus closed in `text`, skipping string and char
+/// literals.
+fn bracket_balance(text : String) -> Int {
+  let mut balance = 0
+  let mut quote : Char? = None
+  let mut escaped = false
+  for c in text {
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if c == '\\' {
+          escaped = true
+        } else if c == q {
+          quote = None
+        }
+      None =>
+        match c {
+          '"' | '\'' => quote = Some(c)
+          '(' | '[' | '{' => balance += 1
+          ')' | ']' | '}' => balance -= 1
+          _ => ()
+        }
+    }
+  }
+  balance
+}
+
+///|
+/// The fence of a fenced code block line (```` ``` ```` or `~~~`, after up to
+/// three spaces) and its info string.
+fn fence_of(text : String) -> (String, String)? {
+  let trimmed = text.trim_start().to_owned()
+  if text.length() - trimmed.length() > 3 {
+    return None
+  }
+  for fence in ["```", "~~~"] {
+    if trimmed.has_prefix(fence) {
+      return Some(
+        (
+          fence,
+          trimmed
+          .unsafe_substring(start=3, end=trimmed.length())
+          .trim()
+          .to_owned(),
+        ),
+      )
+    }
+  }
+  None
+}
+
+///|
+/// `line` without its first `n` characters (an indented block's indent).
+fn dedent(line : DocLine, n : Int) -> DocLine {
+  {
+    text: line.text.unsafe_substring(start=n, end=line.text.length()),
+    line: line.line,
+    column: line.column + n,
+    offset: line.offset + n,
+  }
+}
+
+///|
+/// The code-block state of the line walk.
+priv enum Mode {
+  Prose
+  /// Inside a fenced block: its fence, whether it holds attributes, and
+  /// whether its first line (a possible marker) is still to come.
+  Fenced(String, Bool, Bool)
+  /// Inside an indented block, and whether it holds attributes.
+  Indented(Bool)
+}
+
+///|
+/// Attributes of a doc comment, in three forms:
+/// - an attributes block: a code block whose fence info string is
+///   `-attributes:`, or a fenced or indented block whose first line is
+///   `-attributes:` (read verbatim; an attribute runs until the next `@` line
+///   or a blank line);
+/// - `@name` with one code span holding its values;
+/// - `@name values` in prose, continuing only while brackets are open or
+///   while the `@` line has no value yet.
+///
+/// Other code blocks, prose and the comment's first line hold no attributes.
 fn raw_attributes(lines : Array[DocLine]) -> Array[RawAttribute] {
   let found : Array[RawAttribute] = []
   let mut current : RawAttribute? = None
-  let mut in_fence = false
-  let mut in_code = false
+  let mut mode : Mode = Prose
   let mut previous_blank = false
+  fn block_line(line : DocLine) {
+    if is_blank(line.text) {
+      current = None
+    } else if line.text.has_prefix("@") {
+      let attribute = { lines: [line], open: 0, has_value: true, block: true, }
+      found.push(attribute)
+      current = Some(attribute)
+    } else if current is Some(attribute) {
+      attribute.lines.push(line)
+    }
+  }
+
   for i, line in lines {
     let text = line.text
-    if i == 0 {
-      previous_blank = is_blank(text)
-      continue
-    }
-    if in_fence {
-      if text.has_prefix("```") {
-        in_fence = false
+    match mode {
+      Fenced(fence, attributes, awaiting_marker) => {
+        if fence_of(text) is Some((f, _)) && f == fence {
+          mode = Prose
+          current = None
+          previous_blank = false
+          continue
+        }
+        if awaiting_marker {
+          let marker = text.trim() == block_marker
+          mode = Fenced(fence, marker, false)
+          continue
+        }
+        if attributes {
+          block_line(line)
+        }
+        continue
       }
-      continue
+      Indented(attributes) =>
+        if is_blank(text) {
+          current = None
+          continue
+        } else if text.has_prefix("    ") {
+          if attributes {
+            block_line(dedent(line, 4))
+          }
+          continue
+        } else {
+          mode = Prose
+          current = None
+        }
+      Prose => ()
     }
-    if text.has_prefix("```") {
+    if fence_of(text) is Some((fence, info)) {
+      mode = Fenced(fence, info == block_marker, info == "")
       current = None
-      in_fence = true
       continue
     }
     if is_blank(text) {
@@ -87,22 +212,38 @@ fn raw_attributes(lines : Array[DocLine]) -> Array[RawAttribute] {
       previous_blank = true
       continue
     }
-    if text.has_prefix("    ") && (previous_blank || in_code) && current is None {
-      in_code = true
+    if text.has_prefix("    ") && previous_blank && current is None {
+      mode = Indented(text.trim() == block_marker)
       previous_blank = false
       continue
     }
-    in_code = false
     previous_blank = false
-    if text.has_prefix("@") {
-      let attribute = { lines: [line], }
+    if i > 0 && text.has_prefix("@") {
+      let value = text.unsafe_substring(start=1, end=text.length())
+      let after_name = match value.find(" ") {
+        Some(k) => value.unsafe_substring(start=k, end=value.length()).trim()
+        None => ""
+      }
+      let span = after_name.has_prefix("`")
+      let attribute = {
+        lines: [line],
+        open: if span {
+          0
+        } else {
+          bracket_balance(after_name.to_owned())
+        },
+        has_value: after_name != "",
+        block: false,
+      }
       found.push(attribute)
       current = Some(attribute)
-    } else if current is Some(attribute) {
-      // An attribute runs until a blank line or the next `@` line.
-      // elm-format may remove the indentation of these lines, so it does not
-      // matter.
+    } else if current is Some(attribute) &&
+      (attribute.open > 0 || !attribute.has_value) {
       attribute.lines.push(line)
+      attribute.open += bracket_balance(text)
+      attribute.has_value = true
+    } else {
+      current = None
     }
   }
   found
@@ -188,10 +329,11 @@ fn shift_token(
     {
       offset: p.offset + base.offset + column_shift,
       line: p.line + base.line - 1,
+      // Lines of an indented attributes block start at `base.column`.
       column: if p.line == 1 {
-        p.column + column_shift
+        p.column + column_shift + base.column - 1
       } else {
-        p.column
+        p.column + base.column - 1
       },
     }
   }
@@ -199,16 +341,20 @@ fn shift_token(
 }
 
 ///|
-fn malformed(line : DocLine, reason : String) -> @scanner.Diagnostic {
+fn malformed(raw : RawAttribute, reason : String) -> @scanner.Diagnostic {
+  let first = raw.lines[0]
+  let last = raw.lines[raw.lines.length() - 1]
   let start : @scanner.Position = {
-    offset: line.offset,
-    line: line.line,
-    column: line.column,
+    offset: first.offset,
+    line: first.line,
+    column: first.column,
   }
-  let span : @scanner.Span = {
-    start,
-    end: { ..start, column: start.column + 1, offset: start.offset + 1, },
+  let end : @scanner.Position = {
+    offset: last.offset + last.text.length(),
+    line: last.line,
+    column: last.column + code_points(last.text),
   }
+  let span : @scanner.Span = { start, end, }
   {
     code: "KR-ATTR-001",
     severity: Warning,
@@ -217,7 +363,7 @@ fn malformed(line : DocLine, reason : String) -> @scanner.Diagnostic {
     title: "MALFORMED ATTRIBUTE",
     report: [
       plain("I could not read this attribute:"),
-      Excerpt(context=point(start), highlight=point(start)),
+      Excerpt(context=span, highlight=point(start)),
       plain(reason),
       Hint([
         Plain("Attribute names are lower case, like "),
@@ -237,6 +383,7 @@ fn malformed(line : DocLine, reason : String) -> @scanner.Diagnostic {
 fn parse_attribute(
   raw : RawAttribute,
   dialect : @dialect.Dialect,
+  warnings : Array[@scanner.Diagnostic],
 ) -> Result[DocAttribute, @scanner.Diagnostic] {
   let first = raw.lines[0]
   let text = first.text
@@ -248,7 +395,7 @@ fn parse_attribute(
   }
   let name = text.unsafe_substring(start=1, end=name_end)
   if !valid_attribute_name(name) {
-    return Err(malformed(first, "`@\{name}` is not a valid attribute name."))
+    return Err(malformed(raw, "`@\{name}` is not a valid attribute name."))
   }
   let name_node : @ast.Node[String] = {
     range: range_at(first.line, first.column + 1, name.length()),
@@ -257,9 +404,32 @@ fn parse_attribute(
   let last = raw.lines[raw.lines.length() - 1]
   let range : @ast.Range = {
     start: { row: first.line, column: first.column, },
-    end: { row: last.line, column: last.column + last.text.length(), },
+    end: { row: last.line, column: last.column + code_points(last.text), },
   }
-  let rest = [text.unsafe_substring(start=name_end, end=text.length())]
+  let after_name = text.unsafe_substring(start=name_end, end=text.length())
+  let trimmed = after_name.trim_start().to_owned()
+  if !raw.block && trimmed.has_prefix("`") {
+    // `@name `values``: the values are the code span's content.
+    let lead = after_name.length() - trimmed.length()
+    guard trimmed.unsafe_substring(start=1, end=trimmed.length()).find("`")
+      is Some(close) else {
+      return Err(
+        malformed(raw, "The code span after `@\{name}` is not closed."),
+      )
+    }
+    let content = trimmed.unsafe_substring(start=1, end=close + 1)
+    return parse_values(
+      raw,
+      name,
+      name_node,
+      range,
+      content,
+      name_end + lead + 1,
+      dialect,
+      warnings,
+    )
+  }
+  let rest = [after_name]
   for line in raw.lines[1:] {
     rest.push(line.text)
   }
@@ -285,12 +455,38 @@ fn parse_attribute(
     }
     return Ok(Docs(names~, range~))
   }
+  parse_values(raw, name, name_node, range, body, name_end, dialect, warnings)
+}
+
+///|
+fn code_points(text : String) -> Int {
+  let mut n = 0
+  for _ in text {
+    n += 1
+  }
+  n
+}
+
+///|
+/// Parse `body`, the values of an attribute, which start `shift` code units
+/// into its first line.
+fn parse_values(
+  raw : RawAttribute,
+  name : String,
+  name_node : @ast.Node[String],
+  range : @ast.Range,
+  body : String,
+  shift : Int,
+  dialect : @dialect.Dialect,
+  warnings : Array[@scanner.Diagnostic],
+) -> Result[DocAttribute, @scanner.Diagnostic] {
+  let first = raw.lines[0]
   let source = @scanner.SourceText::{ module_name: None, text: body, }
   guard @scanner.lex_raw(source, dialect~) is Ok(raw_tokens) else {
-    return Err(malformed(first, "I could not read the values of `@\{name}`."))
+    return Err(malformed(raw, "I could not read the values of `@\{name}`."))
   }
   let tokens = @scanner.normalize_tokens(raw_tokens).tokens.map(t => {
-    shift_token(t, first, name_end)
+    shift_token(t, first, shift)
   })
   let c = Cursor::new(tokens, dialect)
   // Attribute values are not laid out like Elm code: elm-format may move
@@ -300,17 +496,16 @@ fn parse_attribute(
   while !c.at_end() {
     let argument = sub_expression(c) catch {
       SyntaxError(_, _, _) =>
-        return Err(
-          malformed(first, "I could not read the values of `@\{name}`."),
-        )
+        return Err(malformed(raw, "I could not read the values of `@\{name}`."))
     }
     if !is_data(argument.value) {
       return Err(
-        malformed(first, "The values of `@\{name}` must be Elm data, not code."),
+        malformed(raw, "The values of `@\{name}` must be Elm data, not code."),
       )
     }
     arguments.push(argument)
   }
+  warnings.append(c.warnings)
   Ok(Attribute(name=name_node, arguments~, range~))
 }
 
@@ -323,7 +518,7 @@ fn doc_attributes(
   let attributes = []
   let warnings = []
   for raw in raw_attributes(doc_lines(comment)) {
-    match parse_attribute(raw, dialect) {
+    match parse_attribute(raw, dialect, warnings) {
       Ok(a) => attributes.push(a)
       Err(w) => warnings.push(w)
     }
