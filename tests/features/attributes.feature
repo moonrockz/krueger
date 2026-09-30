@@ -197,7 +197,7 @@ Feature: Attributes in doc comments
     When I parse the source
     Then there are no attributes
 
-  Scenario: An attributes block with the marker as the fence info string
+  Scenario: An attributes block
     Given Elm source:
       """elm
       module Bank exposing (..)
@@ -207,7 +207,7 @@ Feature: Attributes in doc comments
 
       {-| An account.
 
-      ```-attributes:
+      ```attributes
       @morphir { key = "account_id", note = "a*b*c" }
       @multi
           { kind = "entity"
@@ -227,32 +227,7 @@ Feature: Attributes in doc comments
       """
     And there are no warnings
 
-  Scenario: An attributes block as elm-format leaves it
-    Given Elm source:
-      """elm
-      module Bank exposing (..)
-
-      {-| Bank. -}
-
-
-      {-| An account.
-
-          -attributes:
-          @morphir { key = "account_id" }
-          @unit "EUR"
-
-      -}
-      account =
-          1
-      """
-    When I parse the source
-    Then the attributes are:
-      """
-      account @morphir({ key = "account_id" }) 9:5
-      account @unit("EUR") 10:5
-      """
-
-  Scenario: An attributes block with the marker on its first line
+  Scenario: Other code blocks are not attributes blocks
     Given Elm source:
       """elm
       module Bank exposing (..)
@@ -267,15 +242,20 @@ Feature: Attributes in doc comments
       @unit "EUR"
       ```
 
+          -attributes:
+          @unit "EUR"
+
+      ```elm
+      @unit "EUR"
+      ```
+
       -}
       account =
           1
       """
     When I parse the source
-    Then the attributes are:
-      """
-      account @unit("EUR") 10:1
-      """
+    Then there are no attributes
+    And there are no warnings
 
   Scenario: A value in a code span
     Given Elm source:
@@ -336,10 +316,10 @@ Feature: Attributes in doc comments
       Account @deprecated("Use Account.V2") 15:1
       Account @derive([ Json.encoder, Json.decoder ]) 16:1
       Account @morphir({ kind = "entity"\n    , key = "account_id"\n    , note = "a*b*c"\n    }) 17:1
-      balance @pure() 32:5
-      balance @morphir({ kind = "function", url = "http://x.org/a_b" }) 33:5
-      rate @unit("EUR") 43:1
-      rate @tag(one | two) 44:1
-      tag @tag(one | two) 54:1
+      balance @pure() 32:1
+      balance @morphir({ kind = "function", url = "http://x.org/a_b" }) 33:1
+      rate @unit("EUR") 44:1
+      rate @tag(one | two) 45:1
+      tag @tag(one | two) 55:1
       """
     And there are no warnings
