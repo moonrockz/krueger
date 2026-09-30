@@ -1,0 +1,357 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/x@0.5.5/crypto",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/hex",
+  "moonbitlang/core/encoding/utf8",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.2.0",
+}
+
+///|
+/// Record elm make 0.19.1 and elm-syntax 7.3.9 verdicts for the rejection
+/// fixtures.
+///
+/// Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json>
+///
+/// Each fixture is compiled as `src/Fixture.elm` in a fresh Elm application
+/// in `<project-dir>`. A fixture that elm make rejects with an error that is
+/// not a syntax error is a bad fixture: the script fails.
+
+///|
+let usage : String = "Usage: rejection.mbtx record <fixtures-dir> <oracle-dir> <project-dir> <verdicts.json>"
+
+///|
+/// Fixed titles of the syntax errors in the Elm compiler
+/// (compiler/src/Reporting/Error/Syntax.hs at tag 0.19.1).
+let syntax_titles : Array[String] = [
+  "BAD INFIX", "BAD MODULE DECLARATION", "BAD UNICODE ESCAPE", "ENDLESS COMMENT",
+  "ENDLESS SHADER", "ENDLESS STRING", "EXPECTING DECLARATION", "EXPECTING DEFINITION",
+  "EXPECTING IMPORT ALIAS", "EXPECTING IMPORT NAME", "EXPECTING MODULE NAME", "EXPECTING RECORD ACCESSOR",
+  "EXPECTING TYPE ALIAS NAME", "EXPECTING TYPE NAME", "EXTRA COMMA", "INVALID EFFECT MODULE",
+  "LEADING ZEROS", "LET PROBLEM", "MISSING ARGUMENT", "MISSING ARROW", "MISSING EXPRESSION",
+  "MISSING SINGLE QUOTE", "MODULE NAME MISMATCH", "MODULE NAME MISSING", "NAME MISMATCH",
+  "NEED MORE INDENTATION", "NEEDS DOUBLE QUOTES", "NO PORTS", "NO TABS", "PACKAGES CANNOT HAVE PORTS",
+  "PORT PROBLEM", "PROBLEM EXPOSING CUSTOM TYPE VARIANTS", "PROBLEM IN CUSTOM TYPE",
+  "PROBLEM IN DEFINITION", "PROBLEM IN EXPOSING", "PROBLEM IN PATTERN", "PROBLEM IN RECORD",
+  "PROBLEM IN RECORD TYPE", "PROBLEM IN TYPE ALIAS", "RESERVED SYMBOL", "RESERVED WORD",
+  "SHADER PROBLEM", "SYNTAX PROBLEM", "TOO MUCH INDENTATION", "UNEXPECTED ARROW",
+  "UNEXPECTED CAPITAL LETTER", "UNEXPECTED CHARACTER", "UNEXPECTED COMMA", "UNEXPECTED EQUALS",
+  "UNEXPECTED NAME", "UNEXPECTED OPERATOR", "UNEXPECTED PATTERN", "UNEXPECTED PORTS",
+  "UNEXPECTED SEMICOLON", "UNEXPECTED SYMBOL", "UNFINISHED ANONYMOUS FUNCTION", "UNFINISHED CASE",
+  "UNFINISHED CUSTOM TYPE", "UNFINISHED DEFINITION", "UNFINISHED EXPOSING", "UNFINISHED IF",
+  "UNFINISHED IMPORT", "UNFINISHED LET", "UNFINISHED LIST", "UNFINISHED LIST PATTERN",
+  "UNFINISHED MODULE DECLARATION", "UNFINISHED OPERATOR FUNCTION", "UNFINISHED PARENTHESES",
+  "UNFINISHED PATTERN", "UNFINISHED PORT", "UNFINISHED PORT MODULE DECLARATION",
+  "UNFINISHED RECORD", "UNFINISHED RECORD PATTERN", "UNFINISHED RECORD TYPE", "UNFINISHED TUPLE",
+  "UNFINISHED TUPLE PATTERN", "UNFINISHED TUPLE TYPE", "UNFINISHED TYPE ALIAS", "UNKNOWN ESCAPE",
+  "WEIRD DECLARATION", "WEIRD ELSE BRANCH", "WEIRD HEXIDECIMAL", "WEIRD NUMBER",
+]
+
+///|
+/// Prefixes of the syntax error titles that the compiler builds at runtime,
+/// for example `UNFINISHED LET` or `PROBLEM IN RECORD`.
+let syntax_title_prefixes : Array[String] = [
+  "UNFINISHED ", "PROBLEM IN ", "UNEXPECTED ", "STRAY ",
+]
+
+///|
+fn is_syntax_title(title : String) -> Bool {
+  syntax_titles.contains(title) ||
+  syntax_title_prefixes.any(p => title.has_prefix(p))
+}
+
+///|
+/// The elm make verdict for one fixture from its exit code and stderr (the
+/// `--report=json` output).
+fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
+  if code == 0 {
+    return { "accepted": true }
+  }
+  let report = @json.parse(stderr) catch {
+    _ => fail("elm make: " + excerpt(stderr))
+  }
+  guard report is Object(root) &&
+    root.get("type") is Some(String("compile-errors")) &&
+    root.get("errors") is Some(Array([Object(error), ..])) &&
+    error.get("problems") is Some(Array([Object(problem), ..])) &&
+    problem.get("title") is Some(String(title)) &&
+    problem.get("region") is Some(Object(region)) &&
+    problem.get("message") is Some(message) else {
+    fail("elm make: " + excerpt(stderr))
+  }
+  if !is_syntax_title(title) {
+    fail("not a syntax error: \{title}")
+  }
+  guard region.get("start") is Some(Object(start)) &&
+    region.get("end") is Some(Object(end)) &&
+    start.get("line") is Some(sl) &&
+    start.get("column") is Some(sc) &&
+    end.get("line") is Some(el) &&
+    end.get("column") is Some(ec) else {
+    fail("elm make: malformed region")
+  }
+  {
+    "accepted": false,
+    "title": title.to_json(),
+    "region": [sl, sc, el, ec],
+    "message": message,
+  }
+}
+
+///|
+fn excerpt(text : String) -> String {
+  if text.length() <= 200 {
+    text
+  } else {
+    text.unsafe_substring(start=0, end=200)
+  }
+}
+
+///|
+/// elm-syntax verdicts from the oracle output (one JSON line per file), keyed
+/// by the file name without `prefix`.
+fn oracle_verdicts(stdout : String, prefix : String) -> Map[String, Bool] raise {
+  let verdicts : Map[String, Bool] = Map([])
+  for line in stdout.split("\n") {
+    let line = line.trim().to_owned()
+    if line == "" {
+      continue
+    }
+    guard @json.parse(line) is Object(o) &&
+      o.get("name") is Some(String(name)) &&
+      o.get("ok") is Some(ok) else {
+      fail("oracle: unexpected line")
+    }
+    let key = if name.has_prefix(prefix) {
+      name.unsafe_substring(start=prefix.length(), end=name.length())
+    } else {
+      name
+    }
+    verdicts[key] = ok is True
+  }
+  verdicts
+}
+
+///|
+fn sha256_hex(text : String) -> String {
+  @hex.encode(Bytes::from_array(@crypto.sha256(@utf8.encode(text))))
+}
+
+///|
+/// Recursively list `.elm` files under `dir`, as paths relative to `dir`, sorted.
+async fn elm_files(dir : String) -> Array[String] {
+  let found = []
+  async fn go(rel : String) -> Unit {
+    let full = if rel == "" { dir } else { "\{dir}/\{rel}" }
+    for entry in @fs.readdir(full, sort=true) {
+      let child = if rel == "" { entry } else { "\{rel}/\{entry}" }
+      match @fs.kind("\{dir}/\{child}") {
+        Directory => go(child)
+        Regular => if child.has_suffix(".elm") { found.push(child) }
+        _ => ()
+      }
+    }
+  }
+  go("")
+  found
+}
+
+///|
+async fn run_or_exit(
+  cmd : String,
+  args : Array[String],
+  cwd? : String = ".",
+) -> Unit {
+  let code = @process.run(cmd, args, cwd~)
+  if code != 0 {
+    eprintln("\{cmd} failed with exit code \{code}")
+    @sys.exit(code)
+  }
+}
+
+///|
+let project_elm_json : String =
+  #|{
+  #|    "type": "application",
+  #|    "source-directories": ["src"],
+  #|    "elm-version": "0.19.1",
+  #|    "dependencies": {
+  #|        "direct": { "elm/core": "1.0.5", "elm/json": "1.1.3" },
+  #|        "indirect": {}
+  #|    },
+  #|    "test-dependencies": { "direct": {}, "indirect": {} }
+  #|}
+  #|
+
+///|
+async fn record(
+  fixtures : String,
+  oracle : String,
+  project : String,
+  out : String,
+) -> Unit {
+  run_or_exit(
+    "mise",
+    [
+      "x", "elm@0.19.1", "--", "elm", "make", "src/Oracle.elm", "--optimize", "--output",
+      "oracle.js",
+    ],
+    cwd=oracle,
+  )
+  if @fs.exists(project) {
+    @fs.rmdir(project, recursive=true)
+  }
+  @fs.mkdir("\{project}/src", recursive=true)
+  @fs.write_file("\{project}/elm.json", project_elm_json)
+  let files = elm_files(fixtures)
+  let hashes : Map[String, String] = Map([])
+  let elm_make : Map[String, Json] = Map([])
+  for file in files {
+    let text = @fs.read_file("\{fixtures}/\{file}").text()
+    @fs.write_file("\{project}/src/Fixture.elm", text)
+    let (code, _, stderr) = @process.collect_output(
+      "mise",
+      [
+        "x", "elm@0.19.1", "--", "elm", "make", "src/Fixture.elm", "--report=json",
+        "--output=/dev/null",
+      ],
+      cwd=project,
+    )
+    let verdict = elm_make_verdict(code, stderr.text()) catch {
+      err => {
+        eprintln("\{file}: \{err}")
+        @sys.exit(1)
+        return
+      }
+    }
+    hashes[file] = sha256_hex(text)
+    elm_make[file] = verdict
+    println("\{file}: elm make \{summary(verdict)}")
+  }
+  let (code, stdout) = @process.collect_stdout(
+    "mise",
+    [
+      "x",
+      "node@24",
+      "--",
+      "node",
+      "\{oracle}/run.js",
+      ..files.map(f => "\{fixtures}/\{f}"),
+    ],
+  )
+  if code != 0 {
+    eprintln("oracle failed with exit code \{code}")
+    @sys.exit(code)
+    return
+  }
+  let syntax = oracle_verdicts(stdout.text(), "\{fixtures}/")
+  let recorded : Map[String, Json] = Map([])
+  for file in files {
+    guard syntax.get(file) is Some(accepted) else {
+      eprintln("oracle: no result for \{file}")
+      @sys.exit(1)
+      return
+    }
+    recorded[file] = {
+      "sha256": hashes[file].to_json(),
+      "elm-0.19.1": elm_make[file],
+      "elm-syntax-7.3.9": { "accepted": accepted.to_json() },
+    }
+  }
+  @fs.write_file(out, Json::object(recorded).stringify(indent=2) + "\n")
+  println("rejection: recorded \{files.length()} fixtures in \{out}")
+}
+
+///|
+fn summary(verdict : Json) -> String {
+  match verdict {
+    Object(o) if o.get("title") is Some(String(title)) => "rejects (\{title})"
+    _ => "accepts"
+  }
+}
+
+///|
+async fn main {
+  guard @env.args()[1:] is ["record", fixtures, oracle, project, out] else {
+    eprintln(usage)
+    @sys.exit(2)
+    return
+  }
+  record(fixtures, oracle, project, out)
+}
+
+///|
+/// Scenario state for `features/rejection.feature`.
+struct RejectionWorld {
+  mut code : Int
+  mut stderr : String
+  mut oracle : String
+}
+
+///|
+fn RejectionWorld::new() -> RejectionWorld {
+  { code: 0, stderr: "", oracle: "", }
+}
+
+///|
+impl @moonspec.World for RejectionWorld with fn configure(self, setup) {
+  setup.then2("{string} is a syntax error title {string}", fn(
+    title : String,
+    expected : String,
+  ) raise {
+    @expect.expect(is_syntax_title(title)).to_equal(expected == "yes")
+  })
+  setup.when2("elm make exits with {int} and stderr:", fn(
+    code : Int,
+    doc : @moonspec.DocString,
+  ) {
+    self.code = code
+    self.stderr = doc.content
+  })
+  setup.then1("the elm make verdict is:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(elm_make_verdict(self.code, self.stderr)).to_equal(
+      @json.parse(doc.content),
+    )
+  })
+  setup.then1("reading the verdict fails with {string}", fn(
+    expected : String,
+  ) raise {
+    let message = try elm_make_verdict(self.code, self.stderr) catch {
+      err => err.to_string()
+    } noraise {
+      _ => "no error"
+    }
+    @expect.expect(message).to_contain(expected)
+  })
+  setup.given1("the oracle output:", fn(doc : @moonspec.DocString) {
+    self.oracle = doc.content
+  })
+  setup.then2("the oracle verdicts with prefix {string} are {string}", fn(
+    prefix : String,
+    expected : String,
+  ) raise {
+    let verdicts = oracle_verdicts(self.oracle, prefix)
+    let keys = verdicts.keys().collect()
+    keys.sort()
+    @expect.expect(keys.map(k => "\{k}=\{verdicts.get(k).unwrap()}").join(", ")).to_equal(
+      expected,
+    )
+  })
+}
+
+///|
+async test "rejection feature" {
+  @moonspec.run_or_fail(
+    RejectionWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/rejection.feature"),
+    ]),
+  )
+  |> ignore
+}

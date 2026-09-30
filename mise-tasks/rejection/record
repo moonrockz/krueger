@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Record elm make and elm-syntax verdicts for tests/rejection (needs Elm and Node via mise)"
+set -euo pipefail
+
+moon run -q --target wasm scripts/rejection.mbtx -- record tests/rejection tools/elm-syntax-oracle .dev/out/rejection/project tests/rejection/verdicts.json
