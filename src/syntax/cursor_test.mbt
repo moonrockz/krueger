@@ -236,3 +236,26 @@ test "goto_first_child_for takes the innermost of overlapping children" {
     .to_equal(Some("attribute/docs@5:1-5:8"))
   })
 }
+
+///|
+test "goto_node_at moves below the current node only, and stays when the node does not contain p" {
+  let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+  let tree = @syntax.Tree::new(parse_result(src)).unwrap()
+  let cursor = @syntax.TreeCursor::new(tree.root())
+  @expect.expect_all(s => {
+    // The `+` in `x + y`.
+    s.expect(cursor.goto_node_at({ row: 4, column: 7, })).to_be_true()
+    s.expect(cursor.node().kind()).to_equal("operatorapplication")
+    s
+    .expect(cursor.path().to_string())
+    .to_equal("declarations[0].declaration[0].expression[0]")
+    // From there, `add` is outside: the cursor stays.
+    s.expect(cursor.goto_node_at({ row: 3, column: 1, })).to_be_false()
+    s.expect(cursor.node().kind()).to_equal("operatorapplication")
+    // `y` is inside: the cursor goes down, and goto_parent goes back up.
+    s.expect(cursor.goto_node_at({ row: 4, column: 9, })).to_be_true()
+    s.expect(cursor.field_name()).to_equal(Some("right"))
+    s.expect(cursor.goto_parent()).to_be_true()
+    s.expect(cursor.node().kind()).to_equal("operatorapplication")
+  })
+}

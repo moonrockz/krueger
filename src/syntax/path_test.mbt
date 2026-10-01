@@ -87,3 +87,46 @@ test "a tree gives the path of a node, or None for a node not in it" {
     s.expect(tree.node_path(made_up)).to_equal(None)
   })
 }
+
+///|
+test "a path's debug form lists its steps from the start node" {
+  let path = @syntax.NodePath::root()
+    .child("declarations", 0)
+    .child("declaration", 0)
+  debug_inspect(
+    path,
+    content=(
+      #|{
+      #|  steps: [
+      #|    { field: "declarations", index: 0 },
+      #|    { field: "declaration", index: 0 },
+      #|  ],
+      #|}
+    ),
+  )
+  debug_inspect(@syntax.NodePath::root(), content="{ steps: [] }")
+}
+
+///|
+test "an appended path resolves from the node where the first part ends" {
+  let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+  let root = @syntax.NodeRef::of_result(parse_result(src)).unwrap()
+  let to_expression = @syntax.NodePath::from_steps([
+    { field: "declarations", index: 0, },
+    { field: "declaration", index: 0, },
+    { field: "expression", index: 0, },
+  ])
+  let to_right = @syntax.NodePath::root().child("right", 0)
+  let whole = to_expression.append(to_right)
+  @expect.expect_all(s => {
+    s
+    .expect(whole.to_string())
+    .to_equal("declarations[0].declaration[0].expression[0].right[0]")
+    s
+    .expect(whole.resolve(root))
+    .to_equal(to_expression.resolve(root).bind(n => to_right.resolve(n)))
+    s
+    .expect(whole.resolve(root).map(n => n.kind()))
+    .to_equal(Some("functionOrValue"))
+  })
+}

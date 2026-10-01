@@ -221,6 +221,32 @@ test "law: children are in start order, and in list order among equal starts" {
 }
 
 ///|
+test "law: children_with_fields sorts like children, and each step keeps its list index" {
+  // Edges: no, one and many elements; already in order (no sort needed),
+  // reversed, and equal starts.
+  @quickcheck.check(
+    (rows : Array[UInt]) => {
+      let elements : Array[@ast.Node[@ast.Expression]] = rows.mapi((i, r) => {
+        let row = (r % 3).reinterpret_as_int() + 1
+        {
+          range: { start: { row, column: 1, }, end: { row, column: 2, }, },
+          value: Integer(i.to_int64()),
+        }
+      })
+      let node = e(ListExpr(elements))
+      let with_fields = node.children_with_fields()
+      with_fields.map(x => x.1) == node.children() &&
+      with_fields
+      .iter()
+      .all(x => x.0.field == "list" && x.1 == Expression(elements[x.0.index]))
+    },
+    count=100,
+    max_size=64,
+    seed=227,
+  )
+}
+
+///|
 test "declaration attributes come from the first group for the range, in any group order" {
   let src =
     #|module M exposing (..)

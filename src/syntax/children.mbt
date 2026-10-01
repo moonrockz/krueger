@@ -334,6 +334,34 @@ fn start_before(a : NodeRef, b : NodeRef) -> Int {
 }
 
 ///|
+/// `xs` in the start order of `node(x)`; among equal starts, in their order
+/// in `xs`. Most nodes list their fields in source order, so `xs` comes back
+/// as it is when it is in order already, and is sorted only otherwise.
+fn[T] in_source_order(xs : Array[T], node : (T) -> NodeRef) -> Array[T] {
+  let mut sorted = true
+  for i in 1..<xs.length() {
+    if start_before(node(xs[i - 1]), node(xs[i])) > 0 {
+      sorted = false
+      break
+    }
+  }
+  if sorted {
+    return xs
+  }
+  // Array::sort_by is not stable, so the original position breaks ties.
+  let keyed = xs.mapi((i, x) => (i, x))
+  keyed.sort_by((a, b) => {
+    let c = start_before(node(a.1), node(b.1))
+    if c != 0 {
+      c
+    } else {
+      a.0.compare(b.0)
+    }
+  })
+  keyed.map(x => x.1)
+}
+
+///|
 /// All child nodes in source order (a new array), each with its step: its
 /// field and its index in that field. Children that start at the same place
 /// keep their field order. The nodes are the ones that `children` gives.
@@ -363,22 +391,13 @@ fn start_before(a : NodeRef, b : NodeRef) -> Int {
 pub fn NodeRef::children_with_fields(
   self : NodeRef,
 ) -> Array[(PathStep, NodeRef)] {
-  let all : Array[(Int, PathStep, NodeRef)] = []
+  let all : Array[(PathStep, NodeRef)] = []
   for e in self.entries() {
     for i, c in e.1 {
-      all.push((all.length(), { field: e.0, index: i, }, c))
+      all.push(({ field: e.0, index: i, }, c))
     }
   }
-  // Array::sort_by is not stable, so the original position breaks ties.
-  all.sort_by((a, b) => {
-    let c = start_before(a.2, b.2)
-    if c != 0 {
-      c
-    } else {
-      a.0.compare(b.0)
-    }
-  })
-  all.map(x => (x.1, x.2))
+  in_source_order(all, x => x.1)
 }
 
 ///|
@@ -405,7 +424,11 @@ pub fn NodeRef::children_with_fields(
 /// }
 /// ```
 pub fn NodeRef::children(self : NodeRef) -> Array[NodeRef] {
-  self.children_with_fields().map(x => x.1)
+  let all = []
+  for e in self.entries() {
+    all.append(e.1)
+  }
+  in_source_order(all, x => x)
 }
 
 ///|

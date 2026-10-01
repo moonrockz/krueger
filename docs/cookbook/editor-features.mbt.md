@@ -215,12 +215,14 @@ test "a cursor moves to children and siblings" {
 
 ### Put the cursor at a position
 
-`goto_first_child_for(location)` moves to the innermost child that contains
-the location, or else to the first child after it. To reach the node of
-`node_at`, descend while the new node contains the location. When a new node
-does not contain it, step back with `goto_parent` and stop. A plain loop of
-`goto_first_child_for` goes one node too far when that node has children
-after the location.
+`goto_node_at(location)` moves the cursor to the node of `node_at`: the
+innermost node below the cursor that contains the location. It returns
+`false` and does not move when the cursor's node does not contain the
+location. After it, `goto_parent` goes back up the way it came.
+
+`goto_first_child_for(location)` moves one level only: to the innermost child
+that contains the location, or else to the first child after it. Use it when
+you want to stop on the way down.
 
 ```mbt check
 ///|
@@ -230,17 +232,12 @@ fn ef_cursor_at(
   p : @ast.Location,
 ) -> @syntax.TreeCursor {
   let c = @syntax.TreeCursor::new(root)
-  while c.goto_first_child_for(p) {
-    if !ef_contains(c.node().range(), p) {
-      ignore(c.goto_parent())
-      break
-    }
-  }
+  ignore(c.goto_node_at(p))
   c
 }
 
 ///|
-test "the cursor recipe reaches the node of node_at" {
+test "goto_node_at reaches the node of node_at" {
   @expect.expect_all(s => {
     let tree = ef_tree(ef_source)
     for

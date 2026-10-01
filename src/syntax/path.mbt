@@ -43,7 +43,7 @@ pub struct NodePath {
   /// The steps, innermost first.
   priv reversed : @list.List[PathStep]
   priv length : Int
-} derive(Eq, Hash, Debug)
+} derive(Eq, Hash)
 
 ///|
 /// The path of the start node: no steps, depth 0.
@@ -59,6 +59,45 @@ pub fn NodePath::child(
   index : Int,
 ) -> NodePath {
   { reversed: self.reversed.add({ field, index, }), length: self.length + 1, }
+}
+
+///|
+/// The path with these steps, from the start node down. `from_steps(p.steps())`
+/// equals `p`.
+pub fn NodePath::from_steps(steps : ArrayView[PathStep]) -> NodePath {
+  let mut path = NodePath::root()
+  for step in steps {
+    path = path.child(step.field, step.index)
+  }
+  path
+}
+
+///|
+/// This path followed by `rest`: when this path leads from `start` to `n`
+/// and `rest` leads from `n` on, the result leads from `start` through `n`.
+/// The empty path is the identity on both sides. It takes time linear in
+/// `rest.depth()` and shares this path's steps.
+///
+/// ```mbt check
+/// test {
+///   let to_expression = @syntax.NodePath::from_steps([
+///     { field: "declarations", index: 0, },
+///     { field: "declaration", index: 0, },
+///     { field: "expression", index: 0, },
+///   ])
+///   let below = @syntax.NodePath::root().child("right", 0)
+///   inspect(
+///     to_expression.append(below),
+///     content="declarations[0].declaration[0].expression[0].right[0]",
+///   )
+/// }
+/// ```
+pub fn NodePath::append(self : NodePath, rest : NodePath) -> NodePath {
+  let mut path = self
+  for step in rest.steps() {
+    path = path.child(step.field, step.index)
+  }
+  path
 }
 
 ///|
@@ -106,4 +145,11 @@ pub fn NodePath::resolve(self : NodePath, start : NodeRef) -> NodeRef? {
 /// `declarations[0].declaration[0].expression[0]`; empty for the start node.
 pub impl Show for NodePath with fn output(self, logger) {
   logger.write_string(self.steps().map(s => "\{s.field}[\{s.index}]").join("."))
+}
+
+///|
+/// `{ steps: [...] }`, the steps from the start node down.
+pub impl @debug.Debug for NodePath with fn to_repr(self) {
+  let steps = self.steps().map(s => @debug.Repr(s))
+  @debug.Repr::record({ "steps": @debug.Repr::array(steps) })
 }

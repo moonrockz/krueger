@@ -46,6 +46,7 @@ pub(all) enum Event {
 pub struct EventReader {
   // private fields
 }
+pub fn EventReader::iter(Self) -> Iter[Event]
 pub fn EventReader::new(NodeRef) -> Self
 pub impl EventSource for EventReader
 
@@ -58,15 +59,18 @@ pub fn LeaveEvent::new(node~ : NodeRef, path~ : NodePath) -> Self
 
 pub struct NodePath {
   // private fields
-} derive(Eq, Hash, @debug.Debug)
+} derive(Eq, Hash)
+pub fn NodePath::append(Self, Self) -> Self
 pub fn NodePath::child(Self, String, Int) -> Self
 pub fn NodePath::depth(Self) -> Int
+pub fn NodePath::from_steps(ArrayView[PathStep]) -> Self
 pub fn NodePath::last(Self) -> PathStep?
 pub fn NodePath::parent(Self) -> Self?
 pub fn NodePath::resolve(Self, NodeRef) -> NodeRef?
 pub fn NodePath::root() -> Self
 pub fn NodePath::steps(Self) -> Array[PathStep]
 pub impl Show for NodePath
+pub impl @debug.Debug for NodePath
 
 pub(all) enum NodeRef {
   File(@ast.File, ArrayView[@parser.AttributeGroup])
@@ -130,6 +134,7 @@ pub fn TreeCursor::goto_first_child(Self) -> Bool
 pub fn TreeCursor::goto_first_child_for(Self, @ast.Location) -> Bool
 pub fn TreeCursor::goto_last_child(Self) -> Bool
 pub fn TreeCursor::goto_next_sibling(Self) -> Bool
+pub fn TreeCursor::goto_node_at(Self, @ast.Location) -> Bool
 pub fn TreeCursor::goto_parent(Self) -> Bool
 pub fn TreeCursor::goto_previous_sibling(Self) -> Bool
 pub fn TreeCursor::new(NodeRef) -> Self
