@@ -32,10 +32,10 @@ moonrockz/krueger
 │   ├── report/           # Renders diagnostics like elm make (terminal, plain, JSON)
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
-│   ├── syntax/           # Node model over the AST: NodeRef, Tree, kind_table
+│   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor
 │   ├── bdd/              # MoonSpec step definitions (test-only)
 │   ├── e2e/              # End-to-end tests (test-only)
-│   └── (traversal)       # walk / fold / Visitor / events / cursor in syntax/ — planned
+│   └── (events, cursor)  # EventReader / TreeCursor in syntax/ — planned
 ├── tests/features/       # Gherkin features
 ├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
 ├── scripts/              # MoonBit tooling scripts (.mbtx)
@@ -266,6 +266,29 @@ The kind table below is checked against `kind_table()` by
 | `type` | `record` | value |
 | `type` | `genericRecord` | name, values |
 <!-- kinds:end -->
+
+#### Traversal
+
+- `walk(root, enter, leave?)` is the engine: pre-order over `children()` (source
+  order), an explicit stack, `enter` returns a `Control`. `Continue` visits the
+  children; `SkipChildren` does not (the node is still left); `Stop` ends the
+  walk with no further `leave` calls. `leave` gets the same node object as its
+  `enter`.
+- `fold(root, init, enter, leave?)` threads an accumulator through the same walk,
+  in callback order.
+- `accept(root, visitor)` calls one `Visitor` method per node: `visit_function`
+  (functions, top-level or `let`), `visit_declaration` (other declarations),
+  `visit_expression`, `visit_pattern`, `visit_type`, `visit_case` (case
+  branches), `visit_import`, `visit_comment`, `visit_attribute`, and
+  `visit_other` for the rest (doc comments included). Every method defaults to
+  `Continue`; `leave` to nothing.
+- With equivalent `Control` decisions, `walk`, `fold` and `accept` produce the
+  same enter and leave sequence. With `Continue` throughout, enters follow
+  `children()` pre-order. Traversal state is private to each call; accumulator
+  and visitor state remain the caller's and are not cloned. Nodes share the
+  parse result's AST, which must not change while nodes or traversals are in
+  use.
+- Laws: `src/syntax/*_law_test.mbt` (see "Property-Based Testing (Laws)").
 
 ### Dialects
 

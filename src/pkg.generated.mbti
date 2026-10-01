@@ -11,11 +11,15 @@ import {
 }
 
 // Values
+pub fn[V : @syntax.Visitor] accept(@syntax.NodeRef, V) -> Unit
+
 pub fn diagnostic_description(String) -> String?
 
 pub fn encode_attributes(Array[@parser.AttributeGroup]) -> Json
 
 pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
+
+pub fn[A] fold(@syntax.NodeRef, A, (A, @syntax.NodeRef) -> (A, @syntax.Control), leave? : (A, @syntax.NodeRef) -> A) -> A
 
 pub fn is_lower_start(Char) -> Bool
 
@@ -40,6 +44,8 @@ pub fn standard_operators() -> Array[@dialect.OperatorDef]
 pub fn tokenize(@scanner.SourceText, dialect? : @dialect.Dialect) -> Result[@scanner.TokenStream, @scanner.ScanErrorList]
 
 pub fn version() -> String
+
+pub fn walk(@syntax.NodeRef, (@syntax.NodeRef) -> @syntax.Control, leave? : (@syntax.NodeRef) -> Unit) -> Unit
 
 // Errors
 
@@ -67,6 +73,8 @@ pub using @scanner {type Color}
 pub using @scanner {type Comment}
 
 pub using @scanner {type CommentKind}
+
+pub using @syntax {type Control}
 
 pub using @ast {type Declaration}
 
@@ -185,5 +193,7 @@ pub using @cst {type UnionTypeCst}
 pub using @ast {type ValueConstructor}
 
 pub using @scanner {trait Scanner}
+
+pub using @syntax {trait Visitor}
 
 // Traits
