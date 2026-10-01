@@ -11,9 +11,17 @@ import {
 // Values
 pub fn kind_table() -> Array[(String, String, Array[String])]
 
+pub fn walk(NodeRef, (NodeRef) -> Control, leave? : (NodeRef) -> Unit) -> Unit
+
 // Errors
 
 // Types and methods
+pub(all) enum Control {
+  Continue
+  SkipChildren
+  Stop
+} derive(Eq, @debug.Debug)
+
 pub(all) enum NodeRef {
   File(@ast.File, Array[@parser.AttributeGroup])
   Module(@ast.Node[@ast.Module])
