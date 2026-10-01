@@ -62,3 +62,36 @@ test "law: a fold inside a walk callback gives its standalone result" {
     seed=31,
   )
 }
+
+///|
+test "law: a fold inside a fold callback leaves the outer fold unchanged" {
+  @quickcheck.check(
+    (input : (ElmModule, Policy, Policy)) => {
+      let (m, p, q) = input
+      let root = elm_root(m)
+      let mut ok = true
+      let mut k = 0
+      let outer : @list.List[String] = @syntax.fold(
+        root,
+        @list.empty().add("init"),
+        (acc, n) => {
+          if fold_events(n, q) != ["init"] + model(n, q) {
+            ok = false
+          }
+          k = k + 1
+          (acc.add("+" + tag(n)), decide(p, k - 1))
+        },
+        leave=(acc, n) => {
+          if fold_events(n, q) != ["init"] + model(n, q) {
+            ok = false
+          }
+          acc.add("-" + tag(n))
+        },
+      )
+      ok && outer.rev().to_array() == ["init"] + model(root, p)
+    },
+    count=50,
+    max_size=16,
+    seed=41,
+  )
+}

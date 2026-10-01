@@ -444,36 +444,46 @@ inputs.
   impl is fine to start):
 
   ```moonbit
-  struct ElmExpr(String) derive(Debug)
+  struct ElmModule(String) derive(Debug)
 
-  impl @quickcheck.Arbitrary for ElmExpr with fn arbitrary(size, rs) {
-    ElmExpr(gen_expr(size, rs)) // gen_expr halves `size` at each level
+  impl @quickcheck.Arbitrary for ElmModule with fn arbitrary(size, rs) {
+    ElmModule(gen_module(size, rs)) // the gen_* helpers halve `size` per level
   }
 
-  impl @quickcheck.Shrink for ElmExpr
+  impl @quickcheck.Shrink for ElmModule
 
-  test "law: every child's parent is the node it came from" {
+  test "law: every child's range lies inside its parent's range" {
     @quickcheck.check(
-      (e : ElmExpr) => {
-        let ElmExpr(text) = e
-        let tree = tree_of("module M exposing (..)\n\n\nf =\n    " + text + "\n")
-        all_nodes(tree.root()).iter().all(entry => {
-          entry.1 is None || tree.parent(entry.0) == entry.1
+      (m : ElmModule) => {
+        let root = elm_root(m) // fails the law on any parse diagnostic
+        let mut ok = true
+        @syntax.walk(root, n => {
+          let r = n.range()
+          for c in n.children() {
+            let cr = c.range()
+            ok = ok && before_or_at(r.start, cr.start) && before_or_at(cr.end, r.end)
+          }
+          Continue
         })
+        ok
       },
       count=100,
-      max_size=16,
+      max_size=24,
       seed=2026,
     )
   }
   ```
 
-  Keep generated depth bounded by `size`, so generators do not overflow the
-  stack on wasm. Generate valid input for laws about valid input; generate
-  arbitrary text only for laws that must hold for any text (the parser never
-  crashes; a diagnostic is reported instead).
+  `src/syntax/gen_elm_test.mbt` has the full generator (`ElmModule`,
+  `Policy`) and `elm_root`. Keep generated depth bounded by `size`, so
+  generators do not overflow the stack on wasm.
+- **Valid input fails loudly.** A generator of valid input must make the law
+  fail on any diagnostic (as `elm_root` does), never skip or filter the case:
+  otherwise a broken generator makes every law pass without testing anything.
+  Generate arbitrary text only for laws that must hold for any text (the
+  parser never crashes; a diagnostic is reported instead).
 - **Name laws as laws.** Test names start with `law:` and state the rule, for
-  example `law: fold counts the nodes walk visits`.
+  example `law: fold with a logging accumulator gives walk's events`.
 - **Corpus as a law check.** A law that holds for generated input should also
   hold for the pinned corpus; add it to the corpus check where it is cheap.
 - **Run on every target.** Laws run in `mise run test:unit` and

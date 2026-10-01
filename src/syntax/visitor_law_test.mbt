@@ -146,8 +146,8 @@ test "law: an accept inside a callback gives its standalone result" {
       let root = elm_root(m)
       let outer = { policy: p, events: [], k: 0, }
       let mut ok = true
-      // The outer traversal is itself an accept; each node runs a fresh inner
-      // accept with its own visitor.
+      // The outer accept runs first; then, under a walk, each node runs a
+      // fresh inner accept with its own visitor.
       @syntax.accept(root, outer)
       @syntax.walk(
         root,
@@ -168,5 +168,107 @@ test "law: an accept inside a callback gives its standalone result" {
     count=50,
     max_size=16,
     seed=37,
+  )
+}
+
+///|
+/// Runs a fresh inner accept at every node it enters and leaves, and forwards
+/// each call to an inner PolicyVisitor.
+struct NestingVisitor {
+  inner : PolicyVisitor
+  q : Policy
+  mut ok : Bool
+}
+
+///|
+fn NestingVisitor::check(self : NestingVisitor, n : @syntax.NodeRef) -> Unit {
+  if accept_events(n, self.q) != dispatch_events(n, self.q) {
+    self.ok = false
+  }
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_declaration(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_declaration(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_function(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_function(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_expression(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_expression(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_pattern(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_pattern(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_type(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_type(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_case(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_case(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_import(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_import(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_comment(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_comment(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_attribute(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_attribute(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn visit_other(self, n) {
+  self.check(n)
+  @syntax.Visitor::visit_other(self.inner, n)
+}
+
+///|
+impl @syntax.Visitor for NestingVisitor with fn leave(self, n) {
+  self.check(n)
+  @syntax.Visitor::leave(self.inner, n)
+}
+
+///|
+test "law: an accept inside an accept callback leaves the outer accept unchanged" {
+  @quickcheck.check(
+    (input : (ElmModule, Policy, Policy)) => {
+      let (m, p, q) = input
+      let root = elm_root(m)
+      let v : NestingVisitor = {
+        inner: { policy: p, events: [], k: 0, },
+        q,
+        ok: true,
+      }
+      @syntax.accept(root, v)
+      v.ok && v.inner.events == dispatch_events(root, p)
+    },
+    count=50,
+    max_size=16,
+    seed=43,
   )
 }
