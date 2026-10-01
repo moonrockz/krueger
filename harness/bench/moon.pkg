@@ -1,0 +1,12 @@
+import {
+  "moonrockz/krueger",
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/scanner",
+  "moonrockz/krueger/parser",
+  "moonrockz/krueger/syntax",
+  "moonrockz/expect",
+  "moonbitlang/x/fs",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/bench",
+} for "wbtest"
