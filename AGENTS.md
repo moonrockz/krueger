@@ -680,6 +680,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `release:version`   | Compute next version from conventional commits |
 | `release:plan`      | Decide whether a Release workflow run releases (CI) |
 | `release:notes`     | Print a version's GitHub release notes from `CHANGELOG.md` |
+| `release:status`    | Check that main, the tags, the GitHub release and mooncakes.io agree |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |
 
@@ -708,7 +709,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 |--------|------|---------|
 | `scripts/coverage.mbtx` | `coverage:ci-gate`, `coverage:ci-warn` | Coverage summary and threshold |
 | `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
-| `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes` | Release pull request, next version, release decision in CI, release notes |
+| `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes`, `release:status` | Release pull request, next version, release decision in CI, release notes, release health check |
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
@@ -799,6 +800,11 @@ design is final and meant for readers, write it up in a committed location on pu
 
 - Publishes to **mooncakes.io** and **GitHub Releases**, and records every release in
   `CHANGELOG.md`.
+- The release-manager skill (`.claude/skills/release-manager/`) walks an agent through
+  a release, troubleshooting (`TROUBLESHOOTING.md`) and improving the process after
+  each release. Agents other than Claude Code can read its `SKILL.md` directly.
+- `mise run release:status` checks that main, the tags, the GitHub release and
+  mooncakes.io agree; each problem it prints names the command that fixes it.
 - To release, run `mise run release:prepare` on a clean working tree. It fetches
   `origin/main`, computes the next version with git-cliff (pinned in `.mise.toml`,
   configured in `cliff.toml`; on 0.x a `feat` or a breaking change bumps the minor,
