@@ -672,26 +672,49 @@ design is final and meant for readers, write it up in a committed location on pu
 - Requires `MOONCAKES_USER_TOKEN` org secret for publish.
 - Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`, `mise run test:scripts`.
 
-## Landing the Plane (Session Completion)
+## Work Tracking
 
-When ending a work session:
+**bd (beads) is the primary tracker for all work.** GitHub Issues are the
+public intake for reports from outside contributors.
 
-1. File issues for remaining work.
-2. Run quality gates (tests, fmt, check) if code changed.
-3. Update issue status (e.g. bd close / bd update).
-4. **PUSH TO REMOTE** — mandatory: `bd sync`, then `git pull --rebase` and `git push`. Work is not complete until both pushes succeed.
-5. Clean up; verify all changes committed and pushed; hand off context for next session.
+- Track every task, bug, feature and epic in bd. Do NOT use markdown TODO
+  lists or other tracking methods.
+- Mirror each GitHub issue into bd with `--external-ref gh-<number>`, and keep
+  the two in step: when the bd issue closes, close the GitHub issue.
+- A pull request that resolves a GitHub issue says `Closes #<number>` in its
+  body. Name the bd issue in the body too.
+- Work lands on `main` through pull requests (squash merge). Branch first;
+  do not push to `main` unless the user says so for that change.
+- bd runs with `agent.profile: team-maintainer` (`.beads/config.yaml`):
+  commit, `bd sync` and push are routine parts of the work. An explicit
+  "do not commit" or "do not push" from the user still wins, and pushes go to
+  your branch, not to `main`.
 
+## Persistent Memory
+
+Store knowledge that must outlive the session with `bd remember`. Do not use
+`MEMORY.md` files or any agent's own memory store for this project; bd
+memories sync through `refs/dolt/data`, so every machine and agent sees them.
+
+```bash
+bd remember "insight" --key <slug>   # store, or update the memory with that key
+bd memories <keyword>                # search
+bd recall <key>                      # read one
+```
+
+`bd prime` (the SessionStart hook) injects the memories into each session.
 
 <!-- BEGIN BEADS INTEGRATION -->
 ## Issue Tracking with bd (beads)
 
-**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT use markdown TODOs, task lists, or other tracking methods.
+**IMPORTANT**: This project uses **bd (beads)** for ALL issue tracking. Do NOT
+use markdown TODOs, task lists, or other tracking methods.
 
 ### Why bd?
 
 - Dependency-aware: Track blockers and relationships between issues
-- Git-friendly: syncs through a Dolt remote on the Git origin (`refs/dolt/data`), separate from source branches
+- Git-friendly: syncs through a Dolt remote on the Git origin
+  (`refs/dolt/data`), separate from source branches
 - Agent-optimized: JSON output, ready work detection, discovered-from links
 - Prevents duplicate tracking systems and confusion
 
@@ -707,20 +730,21 @@ bd ready --json
 
 ```bash
 bd create "Issue title" --description="Detailed context" -t bug|feature|task -p 0-4 --json
-bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:bd-123 --json
+bd create "Issue title" --description="What this issue is about" -p 1 --deps discovered-from:krueger-123 --json
+bd create "Issue title" --description="..." --external-ref gh-12 --json   # mirror a GitHub issue
 ```
 
 **Claim and update:**
 
 ```bash
-bd update bd-42 --status in_progress --json
-bd update bd-42 --priority 1 --json
+bd update krueger-42 --status in_progress --json
+bd update krueger-42 --priority 1 --json
 ```
 
 **Complete work:**
 
 ```bash
-bd close bd-42 --reason "Completed" --json
+bd close krueger-42 --reason "Completed" --json
 ```
 
 ### Issue Types
@@ -750,7 +774,8 @@ bd close bd-42 --reason "Completed" --json
 
 ### Storage and Sync
 
-- bd stores issues in an embedded Dolt database at `.beads/embeddeddolt/` (not committed).
+- bd stores issues in an embedded Dolt database at `.beads/embeddeddolt/`
+  (not committed).
 - Git worktrees share the database of the main checkout. Do not create a
   database inside a worktree.
 - Cross-machine sync uses a Dolt remote on the GitHub origin. Dolt keeps issue
@@ -777,9 +802,28 @@ git config beads.role maintainer   # or contributor
 - ✅ Link discovered work with `discovered-from` dependencies
 - ✅ Check `bd ready` before asking "what should I work on?"
 - ❌ Do NOT create markdown TODO lists
-- ❌ Do NOT use external issue trackers
-- ❌ Do NOT duplicate tracking systems
-
-For more details, see README.md and docs/QUICKSTART.md.
+- ❌ Do NOT duplicate tracking systems (GitHub issues are mirrored, not tracked twice)
 
 <!-- END BEADS INTEGRATION -->
+
+## Landing the Plane (Session Completion)
+
+When you end a work session, complete ALL steps below. Work is NOT complete
+until the pushes succeed.
+
+1. **File issues for remaining work** in bd.
+2. **Run quality gates** if code changed: `mise run check`,
+   `moon info && moon fmt`.
+3. **Update issue status**: close finished work, update in-progress items.
+4. **Push** (mandatory):
+   ```bash
+   bd sync                  # publish issue changes to refs/dolt/data
+   git pull --rebase
+   git push                 # your branch; open or update its pull request
+   git status               # MUST show "up to date with origin"
+   ```
+5. **Clean up**: clear stashes, prune merged branches.
+6. **Hand off**: give context for the next session.
+
+Never stop before pushing; that leaves work stranded on one machine. If a push
+fails, resolve the cause and retry.

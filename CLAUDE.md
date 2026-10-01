@@ -1,27 +1,17 @@
-# Claude Code Project Instructions
+# Agentic Instructions
 
-## Commit Messages
+Common agentic instructions are in AGENTS.md, imported here:
 
-All commits MUST use **Conventional Commits** format:
+@AGENTS.md
 
-```
-type(scope): description
-```
+Only place claude specific agentic instructions in this file.
 
-Types: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `style`
+## Claude Code
 
-## Build & Test
-
-Use **`mise run`** for all operations:
-
-```bash
-mise run test:unit   # MoonBit unit tests
-```
-
-## Mise Tasks
-
-Tasks are **file-based scripts** in `mise-tasks/`. Never add inline `[tasks]` to `.mise.toml`.
-
-## Additional Agentic Instructions:
-
-Please see: [AGENTS.md](AGENTS.md) for additional agentic instructions.
+- Track work in bd only (see AGENTS.md > Work Tracking). Do not use the
+  TodoWrite or TaskCreate tools.
+- Store persistent knowledge with `bd remember`, not in Claude Code auto
+  memory (`MEMORY.md`). See AGENTS.md > Persistent Memory.
+- Write superpowers specs and plans under `.dev/docs/superpowers/` (see
+  AGENTS.md > The `.dev/` Working Area), not under `docs/`.
+- Use `mise run <task>` for builds and tests, not ad hoc command chains.
