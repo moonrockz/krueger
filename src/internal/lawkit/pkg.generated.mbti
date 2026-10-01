@@ -22,7 +22,13 @@ pub fn edge_chars() -> Array[String]
 
 pub fn edge_positions(String, Array[@ast.Range]) -> Array[@ast.Location]
 
+pub fn elm_json_problems(Json) -> Array[(@ast.Range?, String)]?
+
 pub fn end_of_text(String) -> @ast.Location
+
+pub fn excerpt_lines(String) -> Array[(Int, String)]
+
+pub fn line_count(String) -> Int
 
 pub fn literal_forms() -> Array[(String, String)]
 
@@ -37,6 +43,14 @@ pub fn position_of(String, Int) -> @ast.Location?
 pub fn positions_of(String, Array[Int]) -> Array[@ast.Location?]
 
 pub fn range_edges(Array[@ast.Range]) -> Array[@ast.Location]
+
+pub fn range_in_source(String, @ast.Range) -> Bool
+
+pub fn shows_source(String, String, Array[Int]) -> Bool
+
+pub fn source_lines(String) -> Array[String]
+
+pub fn strip_ansi(String) -> String
 
 pub fn units(Array[Int]) -> String
 
