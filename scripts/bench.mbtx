@@ -288,6 +288,310 @@ fn parse_cpu(text : String) -> String {
 }
 
 ///|
+let default_threshold : Double = 0.10
+
+///|
+/// Which run file is the baseline: the latest `main` run, the latest run of
+/// a commit (SHA prefix), a workflow run, or a results file on disk.
+enum Against {
+  LatestMain
+  Commit(String)
+  RunId(String)
+  File(String)
+} derive(Eq, Debug)
+
+///|
+fn parse_against(value : String?) -> Against {
+  match value {
+    None | Some("") => LatestMain
+    Some(v) =>
+      if v.has_prefix("run:") {
+        RunId(v.view(start_offset=4).to_owned())
+      } else if v.contains("/") || v.has_suffix(".json") {
+        File(v)
+      } else {
+        Commit(v)
+      }
+  }
+}
+
+///|
+fn latest(items : Array[(String, ResultsFile)]) -> (String, ResultsFile)? {
+  let mut best : (String, ResultsFile)? = None
+  for item in items {
+    match best {
+      None => best = Some(item)
+      Some(b) => if item.1.run.date > b.1.run.date { best = Some(item) }
+    }
+  }
+  best
+}
+
+///|
+/// The baseline run file in `history` for `against` (the caller reads a
+/// `File`). The current run is never its own baseline.
+fn select_baseline(
+  history : Array[(String, ResultsFile)],
+  current : ResultsFile,
+  against : Against,
+) -> (String, ResultsFile)? {
+  let others = history.filter(h => {
+    !(h.1.run.id == current.run.id && h.1.run.sha == current.run.sha)
+  })
+  match against {
+    LatestMain =>
+      latest(others.filter(h => h.1.run.git_ref == "refs/heads/main"))
+    Commit(prefix) => latest(others.filter(h => h.1.run.sha.has_prefix(prefix)))
+    RunId(id) => latest(others.filter(h => h.1.run.id == id))
+    File(_) => None
+  }
+}
+
+///|
+enum Mark {
+  Slower
+  Faster
+  Same
+  New
+  Removed
+} derive(Eq, Debug)
+
+///|
+fn mark_name(m : Mark) -> String {
+  match m {
+    Slower => "slower"
+    Faster => "faster"
+    Same => "~"
+    New => "new"
+    Removed => "removed"
+  }
+}
+
+///|
+fn mark_rank(m : Mark) -> Int {
+  match m {
+    Slower => 0
+    Faster => 1
+    Same => 2
+    New => 3
+    Removed => 4
+  }
+}
+
+///|
+/// Slower or faster only when the median ratio passes `1 + threshold` (or
+/// its inverse) and the interquartile ranges do not overlap. The ratio form
+/// is antisymmetric: swapping the runs swaps slower and faster.
+fn mark_of(
+  baseline : CaseResult,
+  current : CaseResult,
+  threshold : Double,
+) -> Mark {
+  let ratio = current.median / baseline.median
+  if ratio > 1.0 + threshold && current.q1 > baseline.q3 {
+    Slower
+  } else if ratio < 1.0 / (1.0 + threshold) && current.q3 < baseline.q1 {
+    Faster
+  } else {
+    Same
+  }
+}
+
+///|
+/// One line of the comparison: a case on a target, in one run or both.
+struct Row {
+  target : String
+  id : String
+  baseline : CaseResult?
+  current : CaseResult?
+  mark : Mark
+} derive(Eq, Debug)
+
+///|
+struct Comparison {
+  current : ResultsFile
+  baseline : (String, ResultsFile)?
+  rows : Array[Row]
+  not_run : Array[String]
+  warnings : Array[String]
+} derive(Eq, Debug)
+
+///|
+/// Rows per target in the current run's target order; within a target,
+/// slower, faster, ~, new, then removed, each in the run's case order.
+fn compare_runs(
+  current : ResultsFile,
+  baseline : (String, ResultsFile)?,
+  threshold : Double,
+) -> Comparison {
+  let base = match baseline {
+    Some((_, b)) => b
+    None => { ..current, targets: [], results: [], }
+  }
+  let rows : Array[Row] = []
+  for t in current.targets {
+    let cur = current.results.filter(r => r.target == t)
+    let old = base.results.filter(r => r.target == t)
+    for c in cur {
+      match old.search_by(b => b.id() == c.id()) {
+        Some(i) =>
+          rows.push({
+            target: t,
+            id: c.id(),
+            baseline: Some(old[i]),
+            current: Some(c),
+            mark: mark_of(old[i], c, threshold),
+          })
+        None =>
+          rows.push({
+            target: t,
+            id: c.id(),
+            baseline: None,
+            current: Some(c),
+            mark: New,
+          })
+      }
+    }
+    for b in old {
+      if !cur.iter().any(c => c.id() == b.id()) {
+        rows.push({
+          target: t,
+          id: b.id(),
+          baseline: Some(b),
+          current: None,
+          mark: Removed,
+        })
+      }
+    }
+  }
+  // Array::sort_by is not stable, so the original position breaks ties.
+  let keyed = rows.mapi((i, r) => {
+    (current.targets.search(r.target).unwrap_or(0), mark_rank(r.mark), i, r)
+  })
+  keyed.sort_by((a, b) => {
+    if a.0 != b.0 {
+      a.0.compare(b.0)
+    } else if a.1 != b.1 {
+      a.1.compare(b.1)
+    } else {
+      a.2.compare(b.2)
+    }
+  })
+  let not_run = base.targets.filter(t => !current.targets.contains(t))
+  let warnings = []
+  if baseline is Some((_, b)) {
+    if b.env.cpu != current.env.cpu {
+      warnings.push(
+        "The baseline ran on another CPU (\{b.env.cpu}; this run: \{current.env.cpu}). Compare with care.",
+      )
+    }
+    if b.env.toolchain != current.env.toolchain {
+      warnings.push(
+        "The baseline used another toolchain (\{b.env.toolchain}; this run: \{current.env.toolchain}). Compare with care.",
+      )
+    }
+  }
+  { current, baseline, rows: keyed.map(k => k.3), not_run, warnings, }
+}
+
+///|
+/// `x` rounded to `digits` decimals (0 to 3), as text.
+fn fixed(x : Double, digits : Int) -> String {
+  let scale = [1L, 10L, 100L, 1000L][digits]
+  let scaled = (x.abs() * scale.to_double()).round().to_int64()
+  let sign = if x < 0.0 && scaled != 0L { "-" } else { "" }
+  let whole = scaled / scale
+  if digits == 0 {
+    return "\{sign}\{whole}"
+  }
+  let frac = (scaled % scale).to_string()
+  "\{sign}\{whole}.\{"0".repeat(digits - frac.length())}\{frac}"
+}
+
+///|
+/// Microseconds as `12.3 µs`, `12.3 ms` or `1.23 s`.
+fn format_us(us : Double) -> String {
+  if us < 1000.0 {
+    "\{fixed(us, 1)} µs"
+  } else if us < 1000000.0 {
+    "\{fixed(us / 1000.0, 1)} ms"
+  } else {
+    "\{fixed(us / 1000000.0, 2)} s"
+  }
+}
+
+///|
+/// `+12.3%`: the change of the median from `baseline` to `current`.
+fn format_change(baseline : CaseResult, current : CaseResult) -> String {
+  let pct = (current.median / baseline.median - 1.0) * 100.0
+  let sign = if pct >= 0.0 { "+" } else { "" }
+  "\{sign}\{fixed(pct, 1)}%"
+}
+
+///|
+fn short_ref(git_ref : String) -> String {
+  if git_ref.has_prefix("refs/heads/") {
+    git_ref.view(start_offset=11).to_owned()
+  } else {
+    git_ref
+  }
+}
+
+///|
+fn run_line(r : ResultsFile) -> String {
+  let run = if r.run.url == "" {
+    "local"
+  } else {
+    "[run \{r.run.id}](\{r.run.url})"
+  }
+  "`\{short_ref(r.run.git_ref)}` @ `\{short_sha(r.run.sha)}` (\{r.run.date}, \{run}) on \{r.env.runner_os}, \{r.env.cpu}"
+}
+
+///|
+fn marks_note(threshold : Double) -> String {
+  "Marks: slower or faster when the median changes by more than \{fixed(threshold * 100.0, 0)}% and the interquartile ranges do not overlap; ~ otherwise. Benchmarks are not a gate."
+}
+
+///|
+/// The job summary (GitHub-flavored Markdown).
+fn render_summary(c : Comparison, threshold : Double) -> String {
+  let lines = ["## Benchmarks", "", "Current: \{run_line(c.current)}"]
+  match c.baseline {
+    Some((_, b)) => lines.push("Baseline: \{run_line(b)}")
+    None => lines.push("Baseline: none (no earlier run in the history)")
+  }
+  for w in c.warnings {
+    lines.push("")
+    lines.push("> Warning: \{w}")
+  }
+  if !c.not_run.is_empty() {
+    lines.push("")
+    lines.push("Not run: \{c.not_run.join(", ")}")
+  }
+  for t in c.current.targets {
+    lines.push("")
+    lines.push("### \{t}")
+    lines.push("")
+    lines.push("| Case | Baseline | Current | Change | Mark |")
+    lines.push("|---|---:|---:|---:|---|")
+    for row in c.rows.filter(r => r.target == t) {
+      let b = row.baseline.map(x => format_us(x.median)).unwrap_or("")
+      let cur = row.current.map(x => format_us(x.median)).unwrap_or("")
+      let change = match (row.baseline, row.current) {
+        (Some(x), Some(y)) => format_change(x, y)
+        _ => ""
+      }
+      lines.push(
+        "| \{row.id} | \{b} | \{cur} | \{change} | \{mark_name(row.mark)} |",
+      )
+    }
+  }
+  lines.push("")
+  lines.push(marks_note(threshold))
+  lines.join("\n")
+}
+
+///|
 async fn main {
   eprintln(usage)
   @sys.exit(2)
@@ -299,6 +603,9 @@ struct BenchWorld {
   mut targets : Result[Array[String], String]
   mut current : ResultsFile
   mut cpu : String
+  mut baseline : ResultsFile?
+  history : Array[(String, ResultsFile)]
+  mut comparison : Comparison?
 }
 
 ///|
@@ -319,7 +626,14 @@ fn empty_results() -> ResultsFile {
 
 ///|
 fn BenchWorld::new() -> BenchWorld {
-  { targets: Ok([]), current: empty_results(), cpu: "", }
+  {
+    targets: Ok([]),
+    current: empty_results(),
+    cpu: "",
+    baseline: None,
+    history: [],
+    comparison: None,
+  }
 }
 
 ///|
@@ -420,6 +734,105 @@ impl @moonspec.World for BenchWorld with fn configure(self, setup) {
   setup.then1("the CPU is {string}", fn(expected : String) raise {
     @expect.expect(self.cpu).to_equal(expected)
   })
+  setup.given4(
+    "a baseline run from {string} at commit {string} on {string} with run id {string}",
+    fn(git_ref : String, sha : String, date : String, id : String) {
+      self.baseline = Some({
+        ..empty_results(),
+        run: {
+          id,
+          url: "https://example.test/run/\{id}",
+          event: "workflow_dispatch",
+          git_ref,
+          sha,
+          date,
+        },
+      })
+    },
+  )
+  setup.given5(
+    "the baseline run has {string} {string} with median {float}, q1 {float} and q3 {float}",
+    fn(
+      target : String,
+      id : String,
+      median : Double,
+      q1 : Double,
+      q3 : Double,
+    ) raise {
+      guard self.baseline is Some(b) else { fail("no baseline run") }
+      self.baseline = Some(
+        add_result(b, case_result(target, id, median, q1, q3)),
+      )
+    },
+  )
+  setup.given2("the baseline ran on CPU {string} with toolchain {string}", fn(
+    cpu : String,
+    toolchain : String,
+  ) raise {
+    guard self.baseline is Some(b) else { fail("no baseline run") }
+    self.baseline = Some({ ..b, env: { ..b.env, cpu, toolchain, }, })
+  })
+  setup.when0("I compare the runs", fn() {
+    self.comparison = Some(
+      compare_runs(
+        self.current,
+        self.baseline.map(b => ("runs/baseline.json", b)),
+        default_threshold,
+      ),
+    )
+  })
+  setup.then1("the marks are:", fn(doc : @moonspec.DocString) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    let actual = c.rows
+      .map(r => "\{r.target} \{r.id} \{mark_name(r.mark)}")
+      .join("\n")
+    @expect.expect(actual).to_equal(doc.content)
+  })
+  setup.then1("the targets not run are {string}", fn(expected : String) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    @expect.expect(c.not_run.join(",")).to_equal(expected)
+  })
+  setup.then1("the warnings are:", fn(doc : @moonspec.DocString) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    @expect.expect(c.warnings.join("\n")).to_equal(doc.content)
+  })
+  setup.then1("the summary is:", fn(doc : @moonspec.DocString) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    @expect.expect(render_summary(c, default_threshold)).to_equal(doc.content)
+  })
+  setup.given1("the history:", fn(doc : @moonspec.DocString) raise {
+    for line in doc.content.split("\n") {
+      let f = line.split(" ").map(p => p.to_owned()).to_array()
+      guard f.length() == 5 else { fail("history line: path ref sha id date") }
+      self.history.push(
+        (
+          f[0],
+          {
+            ..empty_results(),
+            run: {
+              id: f[3],
+              url: "",
+              event: "workflow_dispatch",
+              git_ref: f[1],
+              sha: f[2],
+              date: f[4],
+            },
+          },
+        ),
+      )
+    }
+  })
+  setup.then2("the baseline for {string} is {string}", fn(
+    spec : String,
+    expected : String,
+  ) raise {
+    let found = select_baseline(
+      self.history,
+      self.current,
+      parse_against(Some(spec)),
+    )
+    @expect.expect(found.map(f => f.0).unwrap_or("none")).to_equal(expected)
+  })
 }
 
 ///|
@@ -454,6 +867,52 @@ test "law: parse_targets keeps only valid targets, each once" {
           s.expect(ts.is_empty()).to_be_false()
         }
         Err(m) => s.expect(m).to_equal("no error for \{input}")
+      }
+    }
+  })
+}
+
+///|
+test "law: a run compared with itself is ~ everywhere" {
+  // Edges: two targets, zero spread and a wide spread.
+  let r = add_result(
+    add_result(
+      empty_results(),
+      case_result("native", "a/b/c", 100.0, 90.0, 110.0),
+    ),
+    case_result("js", "a/b/c", 5.0, 5.0, 5.0),
+  )
+  let c = compare_runs(r, Some(("x", r)), default_threshold)
+  @expect.expect_all(s => {
+    s.expect(c.rows.length()).to_equal(2)
+    s.expect(c.rows.iter().all(row => row.mark == Same)).to_be_true()
+  })
+}
+
+///|
+test "law: swapping the runs swaps slower and faster" {
+  // Edges: medians just inside and outside 10% in both directions, equal
+  // medians, and zero, small and wide interquartile ranges.
+  @expect.expect_all(s => {
+    for
+      m in [
+        1.0, 50.0, 89.0, 90.9, 91.0, 100.0, 109.0, 110.0, 111.0, 112.0, 200.0,
+      ] {
+      for spread in [0.0, 1.0, 5.0] {
+        let a = case_result(
+          "native",
+          "a/b/c",
+          100.0,
+          100.0 - spread,
+          100.0 + spread,
+        )
+        let b = case_result("native", "a/b/c", m, m - spread, m + spread)
+        let swapped = match mark_of(a, b, default_threshold) {
+          Slower => Faster
+          Faster => Slower
+          other => other
+        }
+        s.expect(mark_of(b, a, default_threshold)).to_equal(swapped)
       }
     }
   })
