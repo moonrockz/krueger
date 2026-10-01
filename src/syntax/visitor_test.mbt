@@ -88,13 +88,17 @@ let case_and_let : String =
 
 ///|
 test "accept calls one method per node, by category and kind" {
-  let r = Recorder::new()
-  @syntax.accept(parse_root(case_and_let), r)
-  @expect.expect(r.calls.join(" ")).to_equal(
-    "other other other other function other other pattern expression " +
-    "expression case pattern expression function other other expression expression",
-  )
-  @expect.expect(r.left).to_equal(r.calls.length())
+  @expect.expect_all(s => {
+    let r = Recorder::new()
+    @syntax.accept(parse_root(case_and_let), r)
+    s
+    .expect(r.calls.join(" "))
+    .to_equal(
+      "other other other other function other other pattern expression " +
+      "expression case pattern expression function other other expression expression",
+    )
+    s.expect(r.left).to_equal(r.calls.length())
+  })
 }
 
 ///|
@@ -116,40 +120,44 @@ fn expected_method(n : @syntax.NodeRef) -> String {
 
 ///|
 test "accept dispatches every method group" {
-  let root = parse_root(expression_source)
-  let r = Recorder::new()
-  @syntax.accept(root, r)
-  let expected = []
-  @syntax.walk(root, n => {
-    expected.push(expected_method(n))
-    Continue
+  @expect.expect_all(s => {
+    let root = parse_root(expression_source)
+    let r = Recorder::new()
+    @syntax.accept(root, r)
+    let expected = []
+    @syntax.walk(root, n => {
+      expected.push(expected_method(n))
+      Continue
+    })
+    s.expect(r.calls).to_equal(expected)
+    for
+      m in [
+        "declaration", "function", "expression", "pattern", "type", "case", "import",
+        "comment", "attribute", "other",
+      ] {
+      s.expect(r.calls.contains(m)).to_equal(true)
+    }
   })
-  @expect.expect(r.calls).to_equal(expected)
-  for
-    m in [
-      "declaration", "function", "expression", "pattern", "type", "case", "import",
-      "comment", "attribute", "other",
-    ] {
-    @expect.expect(r.calls.contains(m)).to_equal(true)
-  }
 }
 
 ///|
 test "accept dispatches each of the 77 kinds as the table says" {
-  // kind_cases() has every kind except the file root.
-  let cases = kind_cases() + [(parse_root(small), "file", "file")]
-  let rows = @syntax.kind_table().map(row => "\{row.0}/\{row.1}")
-  let covered = cases.map(c => "\{c.1}/\{c.2}")
-  covered.sort()
-  rows.sort()
-  @expect.expect(covered).to_equal(rows)
-  for c in cases {
-    let (node, _, _) = c
-    let r = Recorder::new()
-    @syntax.accept(node, r)
-    // The root is dispatched first.
-    @expect.expect(r.calls[0]).to_equal(expected_method(node))
-  }
+  @expect.expect_all(s => {
+    // kind_cases() has every kind except the file root.
+    let cases = kind_cases() + [(parse_root(small), "file", "file")]
+    let rows = @syntax.kind_table().map(row => "\{row.0}/\{row.1}")
+    let covered = cases.map(c => "\{c.1}/\{c.2}")
+    covered.sort()
+    rows.sort()
+    s.expect(covered).to_equal(rows)
+    for c in cases {
+      let (node, _, _) = c
+      let r = Recorder::new()
+      @syntax.accept(node, r)
+      // The root is dispatched first.
+      s.expect(r.calls[0]).to_equal(expected_method(node))
+    }
+  })
 }
 
 ///|

@@ -422,6 +422,13 @@ Visitor and AST design will aim for **flexibility** similar to moonrockz/gherkin
   (`tests/features/` for the library, `scripts/features/` for scripts).
 - Write assertions with [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect):
   `@expect.expect(actual).to_equal(expected)`, `.to_be_true()`, `.to_contain(...)`.
+- Use soft assertions when a test or a step checks more than one fact: put the
+  checks in one `@expect.expect_all(s => { ... })` block and write
+  `s.expect(...)`, so a failure reports every failed check at once (needs
+  `moonrockz/expect` 0.6.0 or later). Keep a precondition hard: a check that
+  later code depends on (a length before indexing, a value before `unwrap`)
+  uses `@expect.expect(...)` or `guard ... else { fail(...) }`, which stops the
+  block. A single assertion needs no block, and a law returns a `Bool` instead.
   Use `inspect(...)` for snapshot tests. Existing `assert_eq` tests may stay; use
   `@expect` in new tests.
 - Gherkin `{string}` parameters keep backslash escapes literally; use a

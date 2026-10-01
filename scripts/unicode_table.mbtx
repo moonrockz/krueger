@@ -6,7 +6,7 @@ import {
   "moonbitlang/core/env",
   "moonbitlang/core/string",
   "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.2.0",
+  "moonrockz/expect@0.6.0",
 }
 
 ///|

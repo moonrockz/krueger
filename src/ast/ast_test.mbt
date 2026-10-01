@@ -22,28 +22,30 @@ test "decode error names the path of an unknown tag" {
 
 ///|
 test "decode error on missing field, bad range, non-integer int, no payload" {
-  let missing =
-    #|{"type":"ifBlock","ifBlock":{"clause":{"range":[1,1,1,2],"value":{"type":"unit","unit":null}}}}
-  let missing_json = @json.parse(missing)
-  @expect.expect(
-    expect_error(() => ignore(@ast.decode_expression(missing_json))),
-  ).to_equal("$.ifBlock: Expecting an OBJECT with a field named `then`")
-  let short_range = @json.parse("[1,2,3]")
-  @expect.expect(expect_error(() => ignore(@ast.decode_range(short_range)))).to_equal(
-    "$: Invalid input list",
-  )
-  let not_int =
-    #|{"type":"integer","integer":1.5}
-  let not_int_json = @json.parse(not_int)
-  @expect.expect(
-    expect_error(() => ignore(@ast.decode_expression(not_int_json))),
-  ).to_equal("$.integer: Expecting an INT but got 1.5")
-  let no_payload =
-    #|{"type":"unit"}
-  let no_payload_json = @json.parse(no_payload)
-  @expect.expect(
-    expect_error(() => ignore(@ast.decode_expression(no_payload_json))),
-  ).to_equal("$: Expecting an OBJECT with a field named `unit`")
+  @expect.expect_all(s => {
+    let missing =
+      #|{"type":"ifBlock","ifBlock":{"clause":{"range":[1,1,1,2],"value":{"type":"unit","unit":null}}}}
+    let missing_json = @json.parse(missing)
+    s
+    .expect(expect_error(() => ignore(@ast.decode_expression(missing_json))))
+    .to_equal("$.ifBlock: Expecting an OBJECT with a field named `then`")
+    let short_range = @json.parse("[1,2,3]")
+    s
+    .expect(expect_error(() => ignore(@ast.decode_range(short_range))))
+    .to_equal("$: Invalid input list")
+    let not_int =
+      #|{"type":"integer","integer":1.5}
+    let not_int_json = @json.parse(not_int)
+    s
+    .expect(expect_error(() => ignore(@ast.decode_expression(not_int_json))))
+    .to_equal("$.integer: Expecting an INT but got 1.5")
+    let no_payload =
+      #|{"type":"unit"}
+    let no_payload_json = @json.parse(no_payload)
+    s
+    .expect(expect_error(() => ignore(@ast.decode_expression(no_payload_json))))
+    .to_equal("$: Expecting an OBJECT with a field named `unit`")
+  })
 }
 
 ///|
@@ -58,75 +60,83 @@ test "decode_node prefixes inner errors with $.value" {
 
 ///|
 test "hex pattern accepts the encoded shape and elm-syntax's decoder shape" {
-  let encoded =
-    #|{"type":"hex","hex":{"value":255}}
-  let bare =
-    #|{"type":"hex","hex":255}
-  @expect.expect(@ast.decode_pattern(@json.parse(encoded))).to_equal(
-    @ast.Pattern::HexPattern(255L),
-  )
-  @expect.expect(@ast.decode_pattern(@json.parse(bare))).to_equal(
-    @ast.Pattern::HexPattern(255L),
-  )
-  @expect.expect(
-    @ast.encode_pattern(@ast.Pattern::HexPattern(255L)).stringify(),
-  ).to_equal(encoded)
+  @expect.expect_all(s => {
+    let encoded =
+      #|{"type":"hex","hex":{"value":255}}
+    let bare =
+      #|{"type":"hex","hex":255}
+    s
+    .expect(@ast.decode_pattern(@json.parse(encoded)))
+    .to_equal(@ast.Pattern::HexPattern(255L))
+    s
+    .expect(@ast.decode_pattern(@json.parse(bare)))
+    .to_equal(@ast.Pattern::HexPattern(255L))
+    s
+    .expect(@ast.encode_pattern(@ast.Pattern::HexPattern(255L)).stringify())
+    .to_equal(encoded)
+  })
 }
 
 ///|
 test "numbers: large ints, hex beyond 32 bits, floats" {
-  let big =
-    #|{"type":"integer","integer":31536000000}
-  let e = @ast.decode_expression(@json.parse(big))
-  @expect.expect(e).to_equal(@ast.Expression::Integer(31536000000L))
-  @expect.expect(@ast.encode_expression(e).stringify()).to_equal(big)
-  let hex =
-    #|{"type":"hex","hex":4294967296}
-  @expect.expect(@ast.decode_expression(@json.parse(hex))).to_equal(
-    @ast.Expression::Hex(4294967296L),
-  )
-  let tiny =
-    #|{"type":"float","float":1e-7}
-  @expect.expect(@ast.decode_expression(@json.parse(tiny))).to_equal(
-    @ast.Expression::Floatable(1.0e-7),
-  )
-  // Elm `JE.float 1.0` is written as `1` by JSON.stringify; we write the same.
-  @expect.expect(
-    @ast.encode_expression(@ast.Expression::Floatable(1.0)).stringify(),
-  ).to_equal("{\"type\":\"float\",\"float\":1}")
-  @expect.expect(
-    @ast.encode_expression(@ast.Expression::Floatable(9007199254740992.0)).stringify(),
-  ).to_equal("{\"type\":\"float\",\"float\":9007199254740992}")
+  @expect.expect_all(s => {
+    let big =
+      #|{"type":"integer","integer":31536000000}
+    let e = @ast.decode_expression(@json.parse(big))
+    s.expect(e).to_equal(@ast.Expression::Integer(31536000000L))
+    s.expect(@ast.encode_expression(e).stringify()).to_equal(big)
+    let hex =
+      #|{"type":"hex","hex":4294967296}
+    s
+    .expect(@ast.decode_expression(@json.parse(hex)))
+    .to_equal(@ast.Expression::Hex(4294967296L))
+    let tiny =
+      #|{"type":"float","float":1e-7}
+    s
+    .expect(@ast.decode_expression(@json.parse(tiny)))
+    .to_equal(@ast.Expression::Floatable(1.0e-7))
+    // Elm `JE.float 1.0` is written as `1` by JSON.stringify; we write the same.
+    s
+    .expect(@ast.encode_expression(@ast.Expression::Floatable(1.0)).stringify())
+    .to_equal("{\"type\":\"float\",\"float\":1}")
+    s
+    .expect(
+      @ast.encode_expression(@ast.Expression::Floatable(9007199254740992.0)).stringify(),
+    )
+    .to_equal("{\"type\":\"float\",\"float\":9007199254740992}")
+  })
 }
 
 ///|
 test "chars: non-BMP and escapes round-trip" {
-  let rainbow =
-    #|{"type":"charLiteral","charLiteral":"🌈"}
-  @expect.expect(@ast.decode_expression(@json.parse(rainbow))).to_equal(
-    @ast.Expression::CharLiteral('\u{1F308}'),
-  )
-  @expect.expect(
-    @ast.encode_expression(@ast.Expression::CharLiteral('\u{1F308}')),
-  ).to_equal(
-    Json::object(
-      Map([
-        ("type", Json::string("charLiteral")),
-        ("charLiteral", Json::string("\u{1F308}")),
-      ]),
-    ),
-  )
-  let newline =
-    #|{"type":"char","char":{"value":"\n"}}
-  let p = @ast.decode_pattern(@json.parse(newline))
-  @expect.expect(p).to_equal(@ast.Pattern::CharPattern('\n'))
-  @expect.expect(@ast.encode_pattern(p).stringify()).to_equal(newline)
-  let empty =
-    #|{"type":"charLiteral","charLiteral":""}
-  let empty_json = @json.parse(empty)
-  @expect.expect(expect_error(() => ignore(@ast.decode_expression(empty_json)))).to_equal(
-    "$.charLiteral: Not a char",
-  )
+  @expect.expect_all(s => {
+    let rainbow =
+      #|{"type":"charLiteral","charLiteral":"🌈"}
+    s
+    .expect(@ast.decode_expression(@json.parse(rainbow)))
+    .to_equal(@ast.Expression::CharLiteral('\u{1F308}'))
+    s
+    .expect(@ast.encode_expression(@ast.Expression::CharLiteral('\u{1F308}')))
+    .to_equal(
+      Json::object(
+        Map([
+          ("type", Json::string("charLiteral")),
+          ("charLiteral", Json::string("\u{1F308}")),
+        ]),
+      ),
+    )
+    let newline =
+      #|{"type":"char","char":{"value":"\n"}}
+    let p = @ast.decode_pattern(@json.parse(newline))
+    s.expect(p).to_equal(@ast.Pattern::CharPattern('\n'))
+    s.expect(@ast.encode_pattern(p).stringify()).to_equal(newline)
+    let empty =
+      #|{"type":"charLiteral","charLiteral":""}
+    let empty_json = @json.parse(empty)
+    s
+    .expect(expect_error(() => ignore(@ast.decode_expression(empty_json))))
+    .to_equal("$.charLiteral: Not a char")
+  })
 }
 
 ///|

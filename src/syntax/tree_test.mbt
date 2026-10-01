@@ -17,36 +17,42 @@ fn tree_of(text : String) -> @syntax.Tree raise {
 
 ///|
 test "every node knows its parent" {
-  let tree = tree_of(expression_source)
-  let root = tree.root()
-  @expect.expect(tree.parent(root)).to_equal(None)
-  for entry in all_nodes(root) {
-    let (node, parent) = entry
-    @expect.expect(tree.parent(node)).to_equal(parent)
-    let ancestors = tree.ancestors(node)
-    if parent is Some(_) {
-      @expect.expect(ancestors.last()).to_equal(Some(root))
-      @expect.expect(ancestors.get(0)).to_equal(parent)
-    } else {
-      @expect.expect(ancestors).to_equal([])
+  @expect.expect_all(s => {
+    let tree = tree_of(expression_source)
+    let root = tree.root()
+    s.expect(tree.parent(root)).to_equal(None)
+    for entry in all_nodes(root) {
+      let (node, parent) = entry
+      s.expect(tree.parent(node)).to_equal(parent)
+      let ancestors = tree.ancestors(node)
+      if parent is Some(_) {
+        s.expect(ancestors.last()).to_equal(Some(root))
+        s.expect(ancestors.get(0)).to_equal(parent)
+      } else {
+        s.expect(ancestors).to_equal([])
+      }
+      let path = tree.path(node)
+      s.expect(path.get(0)).to_equal(Some(root))
+      s.expect(path.last()).to_equal(Some(node))
+      s.expect(path.length()).to_equal(ancestors.length() + 1)
     }
-    let path = tree.path(node)
-    @expect.expect(path.get(0)).to_equal(Some(root))
-    @expect.expect(path.last()).to_equal(Some(node))
-    @expect.expect(path.length()).to_equal(ancestors.length() + 1)
-  }
+  })
 }
 
 ///|
 test "nested parentheses each have the right parent" {
-  let tree = tree_of("module M exposing (..)\n\n\nf =\n    ((x))\n")
-  let nodes = all_nodes(tree.root()).filter(e => e.0.category() == "expression")
-  // outer parenthesized, inner parenthesized, x
-  @expect.expect(nodes.map(e => e.0.kind())).to_equal([
-    "parenthesized", "parenthesized", "functionOrValue",
-  ])
-  @expect.expect(tree.parent(nodes[1].0)).to_equal(Some(nodes[0].0))
-  @expect.expect(tree.parent(nodes[2].0)).to_equal(Some(nodes[1].0))
+  @expect.expect_all(s => {
+    let tree = tree_of("module M exposing (..)\n\n\nf =\n    ((x))\n")
+    let nodes = all_nodes(tree.root()).filter(e => {
+      e.0.category() == "expression"
+    })
+    // outer parenthesized, inner parenthesized, x
+    s
+    .expect(nodes.map(e => e.0.kind()))
+    .to_equal(["parenthesized", "parenthesized", "functionOrValue"])
+    s.expect(tree.parent(nodes[1].0)).to_equal(Some(nodes[0].0))
+    s.expect(tree.parent(nodes[2].0)).to_equal(Some(nodes[1].0))
+  })
 }
 
 ///|
@@ -83,29 +89,35 @@ test "node_at finds the node that starts at a position, or a descendant" {
 
 ///|
 test "node_at on blank lines, comments and outside the file" {
-  let tree = tree_of(expression_source)
-  // Line 17 is the blank line between the first two case branches.
-  guard tree.node_at(loc(17, 5)) is Some(blank) else { fail("nothing") }
-  @expect.expect(tree.path(blank).any(n => n.category() == "implementation")).to_equal(
-    true,
-  )
-  // Line 38 is `-- a comment`.
-  guard tree.node_at(loc(38, 4)) is Some(comment) else { fail("nothing") }
-  @expect.expect(comment.category()).to_equal("comment")
-  @expect.expect(tree.node_at(loc(90, 1))).to_equal(None)
+  @expect.expect_all(s => {
+    let tree = tree_of(expression_source)
+    // Line 17 is the blank line between the first two case branches.
+    guard tree.node_at(loc(17, 5)) is Some(blank) else { fail("nothing") }
+    s
+    .expect(tree.path(blank).any(n => n.category() == "implementation"))
+    .to_equal(true)
+    // Line 38 is `-- a comment`.
+    guard tree.node_at(loc(38, 4)) is Some(comment) else { fail("nothing") }
+    s.expect(comment.category()).to_equal("comment")
+    s.expect(tree.node_at(loc(90, 1))).to_equal(None)
+  })
 }
 
 ///|
 test "node_at between record setters returns the record" {
-  let tree = tree_of("module M exposing (..)\n\n\nf =\n    { a = 1, b = 2 }\n")
-  guard tree.node_at(loc(5, 12)) is Some(comma) else { fail("nothing") }
-  @expect.expect((comma.category(), comma.kind())).to_equal(
-    ("expression", "record"),
-  )
-  guard tree.node_at(loc(5, 7)) is Some(a) else { fail("nothing") }
-  @expect.expect(tree.path(a).any(n => n.category() == "record_setter")).to_equal(
-    true,
-  )
+  @expect.expect_all(s => {
+    let tree = tree_of(
+      "module M exposing (..)\n\n\nf =\n    { a = 1, b = 2 }\n",
+    )
+    guard tree.node_at(loc(5, 12)) is Some(comma) else { fail("nothing") }
+    s
+    .expect((comma.category(), comma.kind()))
+    .to_equal(("expression", "record"))
+    guard tree.node_at(loc(5, 7)) is Some(a) else { fail("nothing") }
+    s
+    .expect(tree.path(a).any(n => n.category() == "record_setter"))
+    .to_equal(true)
+  })
 }
 
 ///|

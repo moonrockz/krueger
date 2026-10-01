@@ -82,9 +82,11 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
     self.result = Some(@krueger.parse_module(source, dialect=self.dialect))
   })
   setup.then0("parsing succeeds without diagnostics", fn() raise {
-    let result = self.parsed()
-    @expect.expect(result.diagnostics.map(d => d.code)).to_equal([])
-    @expect.expect(result.ast is Some(_)).to_be_true()
+    @expect.expect_all(soft => {
+      let result = self.parsed()
+      soft.expect(result.diagnostics.map(d => d.code)).to_equal([])
+      soft.expect(result.ast is Some(_)).to_be_true()
+    })
   })
   setup.then1("the AST JSON equals the elm-syntax output for {string}", fn(
     name : String,
@@ -119,9 +121,11 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
     )
   })
   setup.then0("both comments are preserved in CST or token trivia", fn() raise {
-    let result = self.parsed()
-    @expect.expect(has_comment_kind_in_cst(result, Doc)).to_be_true()
-    @expect.expect(has_comment_kind_in_cst(result, Line)).to_be_true()
+    @expect.expect_all(soft => {
+      let result = self.parsed()
+      soft.expect(has_comment_kind_in_cst(result, Doc)).to_be_true()
+      soft.expect(has_comment_kind_in_cst(result, Line)).to_be_true()
+    })
   })
   setup.then1("the diagnostics are {string}", fn(expected : String) raise {
     @expect.expect(self.parsed().diagnostics.map(d => d.code).join(", ")).to_equal(

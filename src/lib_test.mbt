@@ -49,32 +49,36 @@ test "root package exposes the elm-syntax model" {
 
 ///|
 test "root package parse_module uses default scanner and builds the module" {
-  let source = @krueger.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (Msg)\ntype Msg = Inc",
-  }
-  let result = @krueger.parse_module(source)
-  guard result.ast is Some(file) else { fail("expected an AST") }
-  guard file.module_definition.value is @krueger.Module::NormalModule(data) else {
-    fail("expected a normal module")
-  }
-  @expect.expect(data.module_name.value).to_equal(["Main"])
-  @expect.expect(file.declarations.length()).to_equal(1)
+  @expect.expect_all(s => {
+    let source = @krueger.SourceText::{
+      module_name: Some("Main"),
+      text: "module Main exposing (Msg)\ntype Msg = Inc",
+    }
+    let result = @krueger.parse_module(source)
+    guard result.ast is Some(file) else { fail("expected an AST") }
+    guard file.module_definition.value is @krueger.Module::NormalModule(data) else {
+      fail("expected a normal module")
+    }
+    s.expect(data.module_name.value).to_equal(["Main"])
+    s.expect(file.declarations.length()).to_equal(1)
+  })
 }
 
 ///|
 test "root package parse_tokens wraps parser parse_tokens" {
-  let source = @krueger.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (add)\nadd x = x + 1",
-  }
-  guard @krueger.tokenize(source) is Ok(stream) else {
-    fail("expected tokenize success")
-  }
-  let result = @krueger.parse_tokens(stream)
-  @expect.expect(result.diagnostics.map(d => d.code)).to_equal([])
-  @expect.expect(result.ast.map(f => f.declarations.length())).to_equal(Some(1))
-  @expect.expect(result.cst.map(c => c.declarations.length())).to_equal(Some(1))
+  @expect.expect_all(s => {
+    let source = @krueger.SourceText::{
+      module_name: Some("Main"),
+      text: "module Main exposing (add)\nadd x = x + 1",
+    }
+    guard @krueger.tokenize(source) is Ok(stream) else {
+      fail("expected tokenize success")
+    }
+    let result = @krueger.parse_tokens(stream)
+    s.expect(result.diagnostics.map(d => d.code)).to_equal([])
+    s.expect(result.ast.map(f => f.declarations.length())).to_equal(Some(1))
+    s.expect(result.cst.map(c => c.declarations.length())).to_equal(Some(1))
+  })
 }
 
 ///|
@@ -108,38 +112,41 @@ test "root package exposes cst contracts" {
 
 ///|
 test "diagnostic_description describes every scanner and parser code" {
-  let codes = [
-    "KR-SCAN-001", "KR-SCAN-002", "KR-SCAN-003", "KR-PARSE-001", "KR-PARSE-002",
-    "KR-PARSE-003", "KR-PARSE-004", "KR-PARSE-005", "KR-PARSE-006", "KR-PARSE-007",
-    "KR-PARSE-008", "KR-PARSE-009", "KR-ATTR-001",
-  ]
-  for code in codes {
-    @expect.expect(@krueger.diagnostic_description(code) is Some(_)).to_be_true()
-  }
-  @expect.expect(@krueger.diagnostic_description("KR-SCAN-003")).to_equal(
-    Some("Invalid or unknown character sequence"),
-  )
-  @expect.expect(@krueger.diagnostic_description("KR-NOPE-999")).to_equal(None)
+  @expect.expect_all(s => {
+    let codes = [
+      "KR-SCAN-001", "KR-SCAN-002", "KR-SCAN-003", "KR-PARSE-001", "KR-PARSE-002",
+      "KR-PARSE-003", "KR-PARSE-004", "KR-PARSE-005", "KR-PARSE-006", "KR-PARSE-007",
+      "KR-PARSE-008", "KR-PARSE-009", "KR-ATTR-001",
+    ]
+    for code in codes {
+      s.expect(@krueger.diagnostic_description(code) is Some(_)).to_be_true()
+    }
+    s
+    .expect(@krueger.diagnostic_description("KR-SCAN-003"))
+    .to_equal(Some("Invalid or unknown character sequence"))
+    s.expect(@krueger.diagnostic_description("KR-NOPE-999")).to_equal(None)
+  })
 }
 
 ///|
 test "root parse_module and tokenize take a dialect" {
-  let d = @krueger.Dialect::elm_syntax_7_3_9()
-  let source = @krueger.SourceText::{
-    module_name: Some("Main"),
-    text: "module Main exposing (..)\n\n\nf = 1\n",
-  }
-  @expect.expect(@krueger.parse_module(source, dialect=d).diagnostics).to_equal([],
-  )
-  let custom = { ..d, reserved_words: ["forall"], }
-  guard @krueger.tokenize(
-      { module_name: None, text: "forall", },
-      dialect=custom,
-    )
-    is Ok(stream) else {
-    fail("tokenize failed")
-  }
-  @expect.expect(stream.tokens.map(t => t.kind)).to_equal([
-    Keyword(Custom("forall")),
-  ])
+  @expect.expect_all(s => {
+    let d = @krueger.Dialect::elm_syntax_7_3_9()
+    let source = @krueger.SourceText::{
+      module_name: Some("Main"),
+      text: "module Main exposing (..)\n\n\nf = 1\n",
+    }
+    s.expect(@krueger.parse_module(source, dialect=d).diagnostics).to_equal([])
+    let custom = { ..d, reserved_words: ["forall"], }
+    guard @krueger.tokenize(
+        { module_name: None, text: "forall", },
+        dialect=custom,
+      )
+      is Ok(stream) else {
+      fail("tokenize failed")
+    }
+    s
+    .expect(stream.tokens.map(t => t.kind))
+    .to_equal([Keyword(Custom("forall"))])
+  })
 }

@@ -1,13 +1,19 @@
 ///|
 test "chunk helpers style code and keywords as elm make does" {
-  @expect.expect(Chunk::code("42")).to_equal(
-    Styled(text="42", color=Some(Yellow), bold=false, underline=false),
-  )
-  @expect.expect(Chunk::keyword("in")).to_equal(
-    Styled(text="in", color=Some(VividCyan), bold=false, underline=false),
-  )
-  @expect.expect(Color::json_name(VividRed)).to_equal("RED")
-  @expect.expect(Color::json_name(Yellow)).to_equal("yellow")
+  @expect.expect_all(s => {
+    s
+    .expect(Chunk::code("42"))
+    .to_equal(
+      Styled(text="42", color=Some(Yellow), bold=false, underline=false),
+    )
+    s
+    .expect(Chunk::keyword("in"))
+    .to_equal(
+      Styled(text="in", color=Some(VividCyan), bold=false, underline=false),
+    )
+    s.expect(Color::json_name(VividRed)).to_equal("RED")
+    s.expect(Color::json_name(Yellow)).to_equal("yellow")
+  })
 }
 
 ///|

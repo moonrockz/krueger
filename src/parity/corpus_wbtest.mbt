@@ -341,55 +341,59 @@ test "parity corpus" {
 
 ///|
 test "dialect_errors names the first error" {
-  let ok : @krueger.ParseResult = {
-    ast: None,
-    cst: None,
-    diagnostics: [],
-    attributes: [],
-  }
-  @expect.expect(dialect_errors("a/B.elm", ok)).to_equal(None)
-  let span : @krueger.Span = {
-    start: { offset: 0, line: 3, column: 1, },
-    end: { offset: 1, line: 3, column: 2, },
-  }
-  let warning : @krueger.Diagnostic = {
-    code: "KR-PARSE-009",
-    severity: Warning,
-    message: "big",
-    span,
-    title: "",
-    report: [],
-  }
-  @expect.expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning], })).to_equal(
-    None,
-  )
-  let bad : @krueger.Diagnostic = {
-    code: "KR-PARSE-004",
-    severity: Error,
-    message: "boom",
-    span,
-    title: "",
-    report: [],
-  }
-  @expect.expect(
-    dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }),
-  ).to_equal(Some("a/B.elm:3:1 KR-PARSE-004 boom"))
+  @expect.expect_all(s => {
+    let ok : @krueger.ParseResult = {
+      ast: None,
+      cst: None,
+      diagnostics: [],
+      attributes: [],
+    }
+    s.expect(dialect_errors("a/B.elm", ok)).to_equal(None)
+    let span : @krueger.Span = {
+      start: { offset: 0, line: 3, column: 1, },
+      end: { offset: 1, line: 3, column: 2, },
+    }
+    let warning : @krueger.Diagnostic = {
+      code: "KR-PARSE-009",
+      severity: Warning,
+      message: "big",
+      span,
+      title: "",
+      report: [],
+    }
+    s
+    .expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning], }))
+    .to_equal(None)
+    let bad : @krueger.Diagnostic = {
+      code: "KR-PARSE-004",
+      severity: Error,
+      message: "boom",
+      span,
+      title: "",
+      report: [],
+    }
+    s
+    .expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }))
+    .to_equal(Some("a/B.elm:3:1 KR-PARSE-004 boom"))
+  })
 }
 
 ///|
 test "warnings do not stop a file counting as parsed" {
-  let span : @krueger.Span = {
-    start: { offset: 0, line: 1, column: 1, },
-    end: { offset: 1, line: 1, column: 2, },
-  }
-  let warning : @krueger.Diagnostic = {
-    code: "KR-PARSE-009",
-    severity: Warning,
-    message: "big",
-    span,
-    title: "NUMBER OUT OF RANGE",
-    report: [],
-  }
-  @expect.expect(has_errors([warning])).to_equal(false)
-  @expect.expect(has_errors([{ ..warning, severity: Error, }])).to_equal(true)
+  @expect.expect_all(s => {
+    let span : @krueger.Span = {
+      start: { offset: 0, line: 1, column: 1, },
+      end: { offset: 1, line: 1, column: 2, },
+    }
+    let warning : @krueger.Diagnostic = {
+      code: "KR-PARSE-009",
+      severity: Warning,
+      message: "big",
+      span,
+      title: "NUMBER OUT OF RANGE",
+      report: [],
+    }
+    s.expect(has_errors([warning])).to_equal(false)
+    s.expect(has_errors([{ ..warning, severity: Error, }])).to_equal(true)
+  })
 }

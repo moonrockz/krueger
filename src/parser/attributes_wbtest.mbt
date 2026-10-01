@@ -12,23 +12,23 @@ let bank : String = "module Bank exposing (..)\n\n{-| Bank. -}\n\n\n"
 
 ///|
 test "attribute ranges are file positions in code points" {
-  let result = attributes_of(
-    bank + "{-| Account.\n\n@x \"😀😀\" 1\n-}\naccount =\n    1\n",
-  )
-  guard result.attributes
-    is [{ attributes: [Attribute(name~, arguments~, range~)], .. }] else {
-    fail("expected one attribute")
-  }
-  @expect.expect(name.range).to_equal({
-    start: { row: 8, column: 2, },
-    end: { row: 8, column: 3, },
+  @expect.expect_all(s => {
+    let result = attributes_of(
+      bank + "{-| Account.\n\n@x \"😀😀\" 1\n-}\naccount =\n    1\n",
+    )
+    guard result.attributes
+      is [{ attributes: [Attribute(name~, arguments~, range~)], .. }] else {
+      fail("expected one attribute")
+    }
+    s
+    .expect(name.range)
+    .to_equal({ start: { row: 8, column: 2, }, end: { row: 8, column: 3, }, })
+    // `@x "😀😀" 1` is 9 code points long.
+    s.expect(range.end).to_equal({ row: 8, column: 10, })
+    s
+    .expect(arguments.map(a => a.range.start))
+    .to_equal([{ row: 8, column: 4, }, { row: 8, column: 9, }])
   })
-  // `@x "😀😀" 1` is 9 code points long.
-  @expect.expect(range.end).to_equal({ row: 8, column: 10, })
-  @expect.expect(arguments.map(a => a.range.start)).to_equal([
-    { row: 8, column: 4, },
-    { row: 8, column: 9, },
-  ])
 }
 
 ///|
@@ -48,14 +48,16 @@ test "docs names have their own ranges" {
 
 ///|
 test "encode_attributes gives the target, name, range and values" {
-  let result = attributes_of(
-    bank + "{-| Account.\n\n@unit \"EUR\"\n-}\naccount =\n    1\n",
-  )
-  let json = encode_attributes(result.attributes).stringify()
-  @expect.expect(json).to_contain("\"declaration\":\"account\"")
-  @expect.expect(json).to_contain("\"value\":\"unit\"")
-  @expect.expect(json).to_contain("\"literal\":\"EUR\"")
-  @expect.expect(json).to_contain("\"range\":[8,1,8,12]")
+  @expect.expect_all(s => {
+    let result = attributes_of(
+      bank + "{-| Account.\n\n@unit \"EUR\"\n-}\naccount =\n    1\n",
+    )
+    let json = encode_attributes(result.attributes).stringify()
+    s.expect(json).to_contain("\"declaration\":\"account\"")
+    s.expect(json).to_contain("\"value\":\"unit\"")
+    s.expect(json).to_contain("\"literal\":\"EUR\"")
+    s.expect(json).to_contain("\"range\":[8,1,8,12]")
+  })
 }
 
 ///|
@@ -68,16 +70,18 @@ test "warnings inside values are kept" {
 
 ///|
 test "other fences and a fence on the first line hold no attributes" {
-  for
-    doc in [
-      "{-| ```\n@x 1\n``` Done.\n\n@ok 1\n-}", "{-| Account.\n\n~~~\n@x 1\n~~~\n\n@ok 1\n-}",
-      "{-| Account.\n\n  ```\n@x 1\n  ```\n\n@ok 1\n-}",
-    ] {
-    let result = attributes_of(bank + doc + "\naccount =\n    1\n")
-    guard result.attributes is [{ attributes: [Attribute(name~, ..)], .. }] else {
-      fail("expected only @ok in \{doc}")
+  @expect.expect_all(s => {
+    for
+      doc in [
+        "{-| ```\n@x 1\n``` Done.\n\n@ok 1\n-}", "{-| Account.\n\n~~~\n@x 1\n~~~\n\n@ok 1\n-}",
+        "{-| Account.\n\n  ```\n@x 1\n  ```\n\n@ok 1\n-}",
+      ] {
+      let result = attributes_of(bank + doc + "\naccount =\n    1\n")
+      guard result.attributes is [{ attributes: [Attribute(name~, ..)], .. }] else {
+        fail("expected only @ok in \{doc}")
+      }
+      s.expect(name.value).to_equal("ok")
+      s.expect(result.diagnostics).to_equal([])
     }
-    @expect.expect(name.value).to_equal("ok")
-    @expect.expect(result.diagnostics).to_equal([])
-  }
+  })
 }

@@ -106,18 +106,20 @@ test "a multi-line highlight marks the gutter" {
 
 ///|
 test "reflow keeps styled chunks whole and lines within 80 columns" {
-  let long = "word ".repeat(15)
-  let d = {
-    ..let_diagnostic(),
-    report: [
-      Text([Plain(long), @scanner.Chunk::code("List.map"), Plain(". end")]),
-    ],
-  }
-  let text = @report.render_plain(d, let_source(), "x.elm")
-  @expect.expect(text).to_contain("List.map. end")
-  @expect.expect(text.split("\n").all(l => l.to_owned().length() <= 80)).to_equal(
-    true,
-  )
+  @expect.expect_all(s => {
+    let long = "word ".repeat(15)
+    let d = {
+      ..let_diagnostic(),
+      report: [
+        Text([Plain(long), @scanner.Chunk::code("List.map"), Plain(". end")]),
+      ],
+    }
+    let text = @report.render_plain(d, let_source(), "x.elm")
+    s.expect(text).to_contain("List.map. end")
+    s
+    .expect(text.split("\n").all(l => l.to_owned().length() <= 80))
+    .to_equal(true)
+  })
 }
 
 ///|
@@ -137,47 +139,57 @@ test "hints, notes and examples" {
 
 ///|
 test "terminal rendering colours the caret and keywords" {
-  let text = @report.render_terminal(
-    let_diagnostic(),
-    let_source(),
-    "src/Main.elm",
-  )
-  @expect.expect(text).to_contain("\u{1b}[91m^\u{1b}[0m")
-  @expect.expect(text).to_contain("\u{1b}[96min\u{1b}[0m")
+  @expect.expect_all(s => {
+    let text = @report.render_terminal(
+      let_diagnostic(),
+      let_source(),
+      "src/Main.elm",
+    )
+    s.expect(text).to_contain("\u{1b}[91m^\u{1b}[0m")
+    s.expect(text).to_contain("\u{1b}[96min\u{1b}[0m")
+  })
 }
 
 ///|
 test "elm json has the elm make shape" {
-  let json = @report.render_elm_json(
-    [let_diagnostic()],
-    let_source(),
-    "src/Main.elm",
-  )
-  guard json is Object(o) &&
-    o.get("type") is Some(String("compile-errors")) &&
-    o.get("errors") is Some(Array([Object(e)])) &&
-    e.get("name") is Some(String("Main")) &&
-    e.get("problems") is Some(Array([Object(p)])) else {
-    fail("bad shape: \{json.stringify()}")
-  }
-  @expect.expect(p.get("title")).to_equal(Some("UNFINISHED LET".to_json()))
-  @expect.expect(p.get("region")).to_equal(
-    Some({
-      "start": { "line": 6, "column": 14 },
-      "end": { "line": 6, "column": 14 },
-    }),
-  )
-  guard p.get("message") is Some(Array(parts)) else { fail("no message") }
-  @expect.expect(parts).to_contain_element({
-    "bold": false,
-    "underline": false,
-    "color": "RED",
-    "string": "^",
+  @expect.expect_all(s => {
+    let json = @report.render_elm_json(
+      [let_diagnostic()],
+      let_source(),
+      "src/Main.elm",
+    )
+    guard json is Object(o) &&
+      o.get("type") is Some(String("compile-errors")) &&
+      o.get("errors") is Some(Array([Object(e)])) &&
+      e.get("name") is Some(String("Main")) &&
+      e.get("problems") is Some(Array([Object(p)])) else {
+      fail("bad shape: \{json.stringify()}")
+    }
+    s.expect(p.get("title")).to_equal(Some("UNFINISHED LET".to_json()))
+    s
+    .expect(p.get("region"))
+    .to_equal(
+      Some({
+        "start": { "line": 6, "column": 14 },
+        "end": { "line": 6, "column": 14 },
+      }),
+    )
+    guard p.get("message") is Some(Array(parts)) else { fail("no message") }
+    s
+    .expect(parts)
+    .to_contain_element({
+      "bold": false,
+      "underline": false,
+      "color": "RED",
+      "string": "^",
+    })
+    s
+    .expect(parts[0])
+    .to_equal(
+      ("I was partway through parsing a `let` expression, but I got stuck here:\n\n5|     let\n6|         y = 1\n" +
+      " ".repeat(16)).to_json(),
+    )
   })
-  @expect.expect(parts[0]).to_equal(
-    ("I was partway through parsing a `let` expression, but I got stuck here:\n\n5|     let\n6|         y = 1\n" +
-    " ".repeat(16)).to_json(),
-  )
 }
 
 ///|
@@ -192,9 +204,11 @@ test "warnings are left out of the elm json" {
 
 ///|
 test "encode_diagnostics keeps codes, severities and titles" {
-  let json = @report.encode_diagnostics([let_diagnostic()])
-  @expect.expect(json.stringify()).to_contain("\"title\":\"UNFINISHED LET\"")
-  @expect.expect(json.stringify()).to_contain("\"severity\":\"error\"")
+  @expect.expect_all(s => {
+    let json = @report.encode_diagnostics([let_diagnostic()])
+    s.expect(json.stringify()).to_contain("\"title\":\"UNFINISHED LET\"")
+    s.expect(json.stringify()).to_contain("\"severity\":\"error\"")
+  })
 }
 
 ///|

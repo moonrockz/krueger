@@ -7,19 +7,21 @@ test "fold counts the nodes walk visits" {
 
 ///|
 test "fold threads the accumulator through enter and leave" {
-  // (depth, deepest): enter goes one level down, leave one level up.
-  let (depth, deepest) = @syntax.fold(
-    parse_root(small),
-    (0, 0),
-    (acc, _) => {
-      let (d, m) = acc
-      ((d + 1, if d + 1 > m { d + 1 } else { m }), Continue)
-    },
-    leave=(acc, _) => (acc.0 - 1, acc.1),
-  )
-  @expect.expect(depth).to_equal(0)
-  // file > declaration > implementation > application > integer
-  @expect.expect(deepest).to_equal(5)
+  @expect.expect_all(s => {
+    // (depth, deepest): enter goes one level down, leave one level up.
+    let (depth, deepest) = @syntax.fold(
+      parse_root(small),
+      (0, 0),
+      (acc, _) => {
+        let (d, m) = acc
+        ((d + 1, if d + 1 > m { d + 1 } else { m }), Continue)
+      },
+      leave=(acc, _) => (acc.0 - 1, acc.1),
+    )
+    s.expect(depth).to_equal(0)
+    // file > declaration > implementation > application > integer
+    s.expect(deepest).to_equal(5)
+  })
 }
 
 ///|

@@ -20,52 +20,60 @@ fn layout_title(body : String) -> String {
 
 ///|
 test "continuation lines must be indented" {
-  @expect.expect(layout_title("f =\n    let\n        y = 1\nin\n    y\n")).to_equal(
-    "UNFINISHED LET",
-  )
-  @expect.expect(layout_title("f =\n    if True\nthen 1 else 2\n")).to_equal(
-    "UNFINISHED IF",
-  )
-  @expect.expect(layout_title("f =\n    if True then 1\nelse 2\n")).to_equal(
-    "WEIRD ELSE BRANCH",
-  )
-  @expect.expect(layout_title("f =\n    [ 1\n, 2 ]\n")).to_equal(
-    "UNFINISHED LIST",
-  )
-  @expect.expect(layout_title("f =\n    (1\n)\n")).to_equal(
-    "UNFINISHED PARENTHESES",
-  )
-  @expect.expect(layout_title("type alias A =\nInt\n")).to_equal(
-    "UNFINISHED TYPE ALIAS",
-  )
-  @expect.expect(
-    layout_title(
-      "f =\n    case x of\n        1 ->\n        2\n\n        _ ->\n            3\n",
-    ),
-  ).to_equal("UNFINISHED CASE")
+  @expect.expect_all(s => {
+    s
+    .expect(layout_title("f =\n    let\n        y = 1\nin\n    y\n"))
+    .to_equal("UNFINISHED LET")
+    s
+    .expect(layout_title("f =\n    if True\nthen 1 else 2\n"))
+    .to_equal("UNFINISHED IF")
+    s
+    .expect(layout_title("f =\n    if True then 1\nelse 2\n"))
+    .to_equal("WEIRD ELSE BRANCH")
+    s.expect(layout_title("f =\n    [ 1\n, 2 ]\n")).to_equal("UNFINISHED LIST")
+    s
+    .expect(layout_title("f =\n    (1\n)\n"))
+    .to_equal("UNFINISHED PARENTHESES")
+    s
+    .expect(layout_title("type alias A =\nInt\n"))
+    .to_equal("UNFINISHED TYPE ALIAS")
+    s
+    .expect(
+      layout_title(
+        "f =\n    case x of\n        1 ->\n        2\n\n        _ ->\n            3\n",
+      ),
+    )
+    .to_equal("UNFINISHED CASE")
+  })
 }
 
 ///|
 test "let declarations must be right of let" {
-  @expect.expect(layout_title("f =\n    let\n    y = 1\n    in\n    y\n")).to_equal(
-    "UNFINISHED LET",
-  )
-  @expect.expect(layout_title("f =\n    let\n  y = 1\n    in\n    y\n")).to_equal(
-    "UNFINISHED LET",
-  )
+  @expect.expect_all(s => {
+    s
+    .expect(layout_title("f =\n    let\n    y = 1\n    in\n    y\n"))
+    .to_equal("UNFINISHED LET")
+    s
+    .expect(layout_title("f =\n    let\n  y = 1\n    in\n    y\n"))
+    .to_equal("UNFINISHED LET")
+  })
 }
 
 ///|
 test "module header and imports start in column 1" {
-  let d = @dialect.Dialect::elm_0_19_1()
-  @expect.expect(first_in(" module Fixture exposing (..)\n\n\nx =\n    1\n", d)).to_equal(
-    "TOO MUCH INDENTATION",
-  )
-  @expect.expect(
-    first_in(
-      "module Fixture exposing (..)\n\n import Dict\n\n\nx =\n    1\n", d,
-    ),
-  ).to_equal("TOO MUCH INDENTATION")
+  @expect.expect_all(s => {
+    let d = @dialect.Dialect::elm_0_19_1()
+    s
+    .expect(first_in(" module Fixture exposing (..)\n\n\nx =\n    1\n", d))
+    .to_equal("TOO MUCH INDENTATION")
+    s
+    .expect(
+      first_in(
+        "module Fixture exposing (..)\n\n import Dict\n\n\nx =\n    1\n", d,
+      ),
+    )
+    .to_equal("TOO MUCH INDENTATION")
+  })
 }
 
 ///|
@@ -108,15 +116,19 @@ test "layout failures are marked right after the previous token" {
 
 ///|
 test "the first case branch must be indented" {
-  @expect.expect(layout_title("f y =\n    case y of\n1 -> 2\n")).to_equal(
-    "UNFINISHED CASE",
-  )
-  @expect.expect(
-    first_in(
-      "module Fixture exposing (..)\n\n\nf y =\n    case y of\n1 -> 2\n",
-      @dialect.Dialect::elm_syntax_7_3_9(),
-    ),
-  ).to_equal("UNFINISHED CASE")
+  @expect.expect_all(s => {
+    s
+    .expect(layout_title("f y =\n    case y of\n1 -> 2\n"))
+    .to_equal("UNFINISHED CASE")
+    s
+    .expect(
+      first_in(
+        "module Fixture exposing (..)\n\n\nf y =\n    case y of\n1 -> 2\n",
+        @dialect.Dialect::elm_syntax_7_3_9(),
+      ),
+    )
+    .to_equal("UNFINISHED CASE")
+  })
 }
 
 ///|
@@ -149,11 +161,13 @@ test "a declaration after a failing one is still parsed" {
 
 ///|
 test "only the first import must be in column 1 for elm-syntax" {
-  let text = "module Fixture exposing (..)\n\nimport Dict\n  import Set\n\n\nx =\n    1\n"
-  @expect.expect(first_in(text, @dialect.Dialect::elm_syntax_7_3_9())).to_equal(
-    "no error",
-  )
-  @expect.expect(first_in(text, @dialect.Dialect::elm_0_19_1())).to_equal(
-    "UNFINISHED IMPORT",
-  )
+  @expect.expect_all(s => {
+    let text = "module Fixture exposing (..)\n\nimport Dict\n  import Set\n\n\nx =\n    1\n"
+    s
+    .expect(first_in(text, @dialect.Dialect::elm_syntax_7_3_9()))
+    .to_equal("no error")
+    s
+    .expect(first_in(text, @dialect.Dialect::elm_0_19_1()))
+    .to_equal("UNFINISHED IMPORT")
+  })
 }
