@@ -6,6 +6,28 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.3.0] - 2026-10-01
+
+<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+### 🚀 Features
+
+- *(release)* Release-manager skill and release:status check ([#35](https://github.com/moonrockz/krueger/pull/35)) by @DamianReeves
+- Tested API examples, a cookbook and SourceText::new ([#36](https://github.com/moonrockz/krueger/pull/36)) by @DamianReeves
+- *(syntax)* Goto_node_at, EventReader::iter, NodePath helpers; faster children() ([#38](https://github.com/moonrockz/krueger/pull/38)) by @DamianReeves
+- *(bench)* First-class benchmarks with history, report and manual workflow ([#39](https://github.com/moonrockz/krueger/pull/39)) by @DamianReeves
+
+### ⚡ Performance
+
+- *(syntax)* Linear file entries, O(1) field lookup through Tree ([#37](https://github.com/moonrockz/krueger/pull/37)) by @DamianReeves
+
+### 🏗️ Build and CI
+
+- *(release)* Make a repeated release run for one tag succeed ([#33](https://github.com/moonrockz/krueger/pull/33)) by @DamianReeves
+- *(release)* Release pull requests, CHANGELOG.md and release notes from it ([#34](https://github.com/moonrockz/krueger/pull/34)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.2.0...v0.3.0
+
 ## [0.2.0] - 2026-10-01
 
 The published package is smaller. The test harness (moonspec features,
