@@ -133,9 +133,14 @@ pub fn TreeCursor::goto_parent(self : TreeCursor) -> Bool {
 /// Move to the child whose range contains `p`, or else to the first child
 /// that starts after `p`. Where children overlap (a doc comment and its
 /// attributes), the innermost one that contains `p` wins, and the first in
-/// source order among equals, so a descent ends at `Tree::node_at(p)`. (A
-/// port's doc comment overlaps its declaration only in part; there the
-/// descent stops at the comment, which contains `node_at(p)`.)
+/// source order among equals.
+///
+/// To reach `Tree::node_at(p)`, descend while the new node contains `p`, and
+/// step back with `goto_parent` from the first one that does not: a loop that
+/// only calls `goto_first_child_for` goes one node too far whenever
+/// `node_at(p)` has children after `p`. (Where a port's doc comment with
+/// attributes overlaps the port declaration only in part, the descent stops
+/// at the comment, which contains `node_at(p)`.)
 pub fn TreeCursor::goto_first_child_for(
   self : TreeCursor,
   p : @ast.Location,

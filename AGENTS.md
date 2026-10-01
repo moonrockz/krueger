@@ -316,9 +316,12 @@ The kind table below is checked against `kind_table()` by
 - `TreeCursor::new(node)` is a tree-sitter-style cursor driven by the caller:
   `goto_first_child`, `goto_last_child`, `goto_next_sibling`,
   `goto_previous_sibling`, `goto_parent` and `goto_first_child_for(location)`
-  (the innermost child that contains it, or else the first child after it, so
-  a descent ends at `node_at`) each return `false` and leave
-  the cursor in place when there is nowhere to go. `node()`, `field_name()`
+  (the innermost child that contains it, or else the first child after it)
+  each return `false` and leave the cursor in place when there is nowhere to
+  go. To reach `node_at(location)`, descend while the new node contains the
+  location and step back with `goto_parent` from the first that does not; a
+  plain `goto_first_child_for` loop goes one node too far when that node has
+  children after the location. `node()`, `field_name()`
   (the role in the parent, `None` at the start node), `depth()`, `path()`,
   `reset(node)` and `copy()` (an independent cursor at the same place).
 - With equivalent `Control` decisions, `walk`, `fold`, `accept`, an
