@@ -4,8 +4,9 @@
 /// declarations; non-ASCII strings, chars, names and comments (surrogate
 /// pairs), also before a token on the same line and in multi-line strings and
 /// comments; tokens with no space between them; comments inside expressions;
-/// a port whose doc comment has attributes; CRLF line ends and no final
-/// newline (independently).
+/// a port whose doc comment has attributes; layout or a comment before the
+/// header; trailing spaces at the end; CRLF line ends and no final newline
+/// (independently).
 pub(all) struct ElmModule(String) derive(Debug)
 
 ///|
@@ -188,6 +189,8 @@ fn gen_declaration(
 ///|
 pub impl @quickcheck.Arbitrary for ElmModule with fn arbitrary(size, rs) {
   let sb = StringBuilder()
+  // Layout or a comment before the module header.
+  sb.write_string(["", "", "\n\n", "-- c\n", "{- c -}\n"][pick(rs, 5)])
   let ports = pick(rs, 4) == 0
   sb.write_string(
     if ports {
@@ -205,10 +208,11 @@ pub impl @quickcheck.Arbitrary for ElmModule with fn arbitrary(size, rs) {
   }
   // No final newline and CRLF are chosen independently.
   let text = sb.to_string()
-  let text = if pick(rs, 3) == 0 {
-    text.trim_end(chars="\n").to_owned()
-  } else {
-    text
+  let text = match pick(rs, 6) {
+    0 | 1 => text.trim_end(chars="\n").to_owned()
+    // Trailing spaces and no final newline.
+    2 => text + "   "
+    _ => text
   }
   ElmModule(
     if pick(rs, 3) == 0 {

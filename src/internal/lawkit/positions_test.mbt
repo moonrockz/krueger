@@ -141,8 +141,8 @@ fn units(xs : Array[Int]) -> String {
 
 ///|
 test "lone surrogates count as the scanner counts them" {
-  // The scanner adds a column for every UTF-16 unit except a low surrogate,
-  // so a lone high surrogate is one column and a lone low surrogate none.
+  // The scanner adds a column for every UTF-16 unit except the low half of a
+  // surrogate pair, so a lone surrogate, high or low, is one column.
   let high = units(['a'.to_int(), 0xD800, '\n'.to_int(), 'b'.to_int()])
   let alone = units(['a'.to_int(), 0xD800])
   let low = units(['a'.to_int(), 0xDC00, 'b'.to_int()])
@@ -153,7 +153,114 @@ test "lone surrogates count as the scanner counts them" {
     s
     .expect(@lawkit.offset_of(alone, @lawkit.end_of_text(alone)))
     .to_equal(Some(2))
-    s.expect(@lawkit.end_of_text(low)).to_equal(at(1, 3))
-    s.expect(@lawkit.offset_of(low, at(1, 2))).to_equal(Some(2))
+    s.expect(@lawkit.end_of_text(low)).to_equal(at(1, 4))
+    s.expect(@lawkit.offset_of(low, at(1, 2))).to_equal(Some(1))
+    s.expect(@lawkit.offset_of(low, at(1, 3))).to_equal(Some(2))
+  })
+}
+
+///|
+test "law: position_of and offset_of are inverses on every offset between characters" {
+  // Edges: CRLF and lone `\r`, surrogate pairs, lone surrogates, BOM, tab,
+  // the end of the text. Offsets inside a CRLF or a surrogate pair are not
+  // between characters.
+  @quickcheck.check(
+    (t : @lawkit.ElmText) => {
+      let text = t.text()
+      (0)
+      .until(text.length(), inclusive=true)
+      .all(o => {
+        !@lawkit.between_characters(text, o) ||
+        (match @lawkit.position_of(text, o) {
+          Some(p) => @lawkit.offset_of(text, p) == Some(o)
+          None => false
+        })
+      })
+    },
+    count=200,
+    max_size=24,
+    seed=287,
+  )
+}
+
+///|
+test "law: a column is one more than the characters before it on its line" {
+  // An oracle independent of `positions_of`: rows count LFs, and columns
+  // count the characters `String::iter` gives (a pair is one character, a
+  // lone surrogate is one, a lone `\r` is one). Edges: as the inverse law.
+  @quickcheck.check(
+    (t : @lawkit.ElmText) => {
+      let text = t.text()
+      let mut row = 1
+      let mut line_start = 0
+      let mut ok = true
+      for o in 0..<=text.length() {
+        if o > 0 && text.code_unit_at(o - 1) == '\n' {
+          row += 1
+          line_start = o
+        }
+        if @lawkit.between_characters(text, o) {
+          let column = 1 +
+            text.view(start_offset=line_start, end_offset=o).iter().count()
+          ok = ok && @lawkit.position_of(text, o) == Some({ row, column, })
+        }
+      }
+      ok
+    },
+    count=200,
+    max_size=24,
+    seed=347,
+  )
+}
+
+///|
+test "positions_of maps sorted offsets in one pass" {
+  let text = "a\r\nb" + units([0xD83D, 0xDE00]) + "c"
+  @expect.expect_all(s => {
+    s
+    .expect(@lawkit.positions_of(text, [0, 1, 2, 3, 4, 5, 6, 7]))
+    .to_equal([
+      Some(at(1, 1)),
+      Some(at(1, 2)),
+      Some(at(1, 2)),
+      Some(at(2, 1)),
+      Some(at(2, 2)),
+      Some(at(2, 3)),
+      Some(at(2, 3)),
+      Some(at(2, 4)),
+    ])
+    // Out of order or past the end.
+    s
+    .expect(@lawkit.positions_of(text, [3, 1, 8]))
+    .to_equal([Some(at(2, 1)), None, None])
+  })
+}
+
+///|
+test "between_characters rejects offsets inside a CRLF or a surrogate pair" {
+  let text = "a\r\n" + units([0xD83D, 0xDE00, 0xDC00, '\r'.to_int()])
+  @expect.expect(
+    (-1)
+    .until(text.length() + 1, inclusive=true)
+    .map(o => @lawkit.between_characters(text, o))
+    .collect(),
+  ).to_equal([
+    // -1, 0 a 1 \r 2 \n 3 high 4 low 5 low 6 \r 7, 8
+    false, true, true, false, true, false, true, true, true, false,
+  ])
+}
+
+///|
+test "nested modules nest each construct the given depth" {
+  @expect.expect_all(s => {
+    s
+    .expect(@lawkit.nested(Parens, 2))
+    .to_equal("module M exposing (..)\n\n\nf =\n    ((1))\n")
+    s
+    .expect(@lawkit.nested(Operators, 2))
+    .to_equal("module M exposing (..)\n\n\nf =\n    1 + 1 + 1\n")
+    s
+    .expect(@lawkit.nested(Pattern, 1))
+    .to_equal("module M exposing (..)\n\n\nf (x) =\n    1\n")
   })
 }
