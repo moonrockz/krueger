@@ -293,21 +293,39 @@ fn range_at(line : Int, column : Int, length : Int) -> @ast.Range {
 }
 
 ///|
-/// A token moved from attribute-text coordinates to file coordinates.
+/// A token moved from attribute-text coordinates to file coordinates. `body`
+/// is the values' text: its first line starts `shift` code units into the
+/// attribute's first line, and its other lines are the attribute's following
+/// lines, joined with `\n` (a CRLF in the file is one unit longer, so each
+/// line is moved by its own start).
 fn shift_token(
   t : @scanner.Token,
-  base : DocLine,
-  column_shift : Int,
+  raw : RawAttribute,
+  shift : Int,
 ) -> @scanner.Token {
+  let body_starts = []
+  let mut at = 0
+  for k, line in raw.lines {
+    body_starts.push(at)
+    at += line.text.length() + 1 - (if k == 0 { shift } else { 0 })
+  }
+  let first = raw.lines[0]
   let relocate = fn(p : @scanner.Position) -> @scanner.Position {
+    let k = p.line - 1
+    let line = raw.lines[k]
+    let (start, column) = if k == 0 {
+      (
+        line.offset + shift,
+        line.column +
+        code_points(first.text.unsafe_substring(start=0, end=shift)),
+      )
+    } else {
+      (line.offset, line.column)
+    }
     {
-      offset: p.offset + base.offset + column_shift,
-      line: p.line + base.line - 1,
-      column: if p.line == 1 {
-        p.column + column_shift + base.column - 1
-      } else {
-        p.column + base.column - 1
-      },
+      offset: start + p.offset - body_starts[k],
+      line: line.line,
+      column: column + p.column - 1,
     }
   }
   { ..t, span: { start: relocate(t.span.start), end: relocate(t.span.end), }, }
@@ -411,15 +429,23 @@ fn parse_attribute(
     let names : Array[@ast.Node[String]] = []
     for li, line_text in rest {
       let line = raw.lines[li]
-      let base = if li == 0 { first.column + name_end } else { line.column }
+      // Columns count code points; `index` counts UTF-16 units.
+      let base = if li == 0 {
+        first.column +
+        code_points(first.text.unsafe_substring(start=0, end=name_end))
+      } else {
+        line.column
+      }
       let mut index = 0
       for piece in line_text.split(",") {
         let piece = piece.to_owned()
         let trimmed = piece.trim().to_owned()
         if trimmed != "" {
           let lead = piece.length() - piece.trim_start().length()
+          let column = base +
+            code_points(line_text.unsafe_substring(start=0, end=index + lead))
           names.push({
-            range: range_at(line.line, base + index + lead, trimmed.length()),
+            range: range_at(line.line, column, code_points(trimmed)),
             value: trimmed,
           })
         }
@@ -453,13 +479,12 @@ fn parse_values(
   dialect : @dialect.Dialect,
   warnings : Array[@scanner.Diagnostic],
 ) -> Result[DocAttribute, @scanner.Diagnostic] {
-  let first = raw.lines[0]
   let source = @scanner.SourceText::{ module_name: None, text: body, }
   guard @scanner.lex_raw(source, dialect~) is Ok(raw_tokens) else {
     return Err(malformed(raw, "I could not read the values of `@\{name}`."))
   }
   let tokens = @scanner.normalize_tokens(raw_tokens).tokens.map(t => {
-    shift_token(t, first, shift)
+    shift_token(t, raw, shift)
   })
   let c = Cursor::new(tokens, dialect)
   // Attribute values are not laid out like Elm code: elm-format may move

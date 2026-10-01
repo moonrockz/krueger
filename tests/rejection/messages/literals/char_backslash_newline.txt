@@ -1,0 +1,7 @@
+-- UNKNOWN ESCAPE ---------------------------------------------- src/Fixture.elm
+
+Backslashes always start escaped characters, but I do not recognize this one:
+
+9|     '\
+       ^
+Valid escape characters include \n, \t, \", \', \\ and \u{1F600}.

@@ -215,6 +215,7 @@ pub fn TokenKind::where_kw() -> Self
 
 pub(all) struct TokenStream {
   tokens : Array[Token]
+  trivia : Array[Trivia]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Trivia {

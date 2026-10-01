@@ -31,6 +31,7 @@ pub fn normalize_tokens(raw_tokens : Array[RawToken]) -> TokenStream {
   if tokens.length() > 0 && pending_trivia.length() > 0 {
     let last = tokens.length() - 1
     tokens[last] = { ..tokens[last], trivia_after: pending_trivia, }
+    return TokenStream::{ tokens, trivia: [], }
   }
-  TokenStream::{ tokens, }
+  TokenStream::{ tokens, trivia: pending_trivia, }
 }

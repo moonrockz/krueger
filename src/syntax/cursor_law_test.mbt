@@ -1,27 +1,24 @@
 ///|
 fn range_contains(r : @ast.Range, p : @ast.Location) -> Bool {
-  before_or_at(r.start, p) && !before_or_at(r.end, p)
+  @lawkit.contains(r, p)
 }
 
 ///|
 fn range_within(a : @ast.Range, b : @ast.Range) -> Bool {
-  before_or_at(b.start, a.start) && before_or_at(a.end, b.end)
+  @lawkit.within(a, b)
 }
 
 ///|
-/// Positions around and inside `n`: just before it, just after it, and the
-/// start and end of every node in it.
+/// Positions around and inside `n` (edges: the start and end of every node in
+/// it and one column before each; the row after `n`).
 fn node_positions(n : @syntax.NodeRef) -> Array[@ast.Location] {
-  let r = n.range()
-  let out : Array[@ast.Location] = [
-    { row: r.start.row, column: r.start.column - 1, },
-    { row: r.end.row + 1, column: 1, },
-  ]
+  let ranges = []
   @syntax.walk(n, k => {
-    out.push(k.range().start)
-    out.push(k.range().end)
+    ranges.push(k.range())
     Continue
   })
+  let out = @lawkit.range_edges(ranges)
+  out.push({ row: n.range().end.row + 1, column: 1, })
   out
 }
 

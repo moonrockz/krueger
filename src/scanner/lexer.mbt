@@ -84,7 +84,9 @@ fn Cursor::advance(self : Cursor) -> Unit {
   if c == '\n'.to_int() {
     self.line += 1
     self.column = 1
-  } else if c < 0xDC00 || c > 0xDFFF {
+  } else if !(c >= 0xDC00 && c <= 0xDFFF && self.after_high_surrogate()) {
+    // The low half of a surrogate pair adds no column; a lone surrogate is
+    // one character.
     self.column += 1
   }
   self.pos += 1
@@ -234,10 +236,23 @@ fn skip_quoted(cursor : Cursor, close : String, multiline : Bool) -> Bool {
       return true
     }
     let c = cursor.at()
-    if c == '\\'.to_int() {
-      cursor.advance_by(2)
-    } else if !multiline && c == '\n'.to_int() {
+    // A single-line literal ends before an unescaped line break, LF or CRLF,
+    // so its span never ends inside a CRLF.
+    let line_break = (ahead : Int) => {
+      cursor.at(ahead~) == '\n'.to_int() ||
+      (
+        cursor.at(ahead~) == '\r'.to_int() &&
+        cursor.at(ahead=ahead + 1) == '\n'.to_int()
+      )
+    }
+    if !multiline && line_break(0) {
       return false
+    } else if c == '\\'.to_int() {
+      // An escaped line break is an unknown escape (as in elm make), not the
+      // end of the literal; a CRLF is taken whole, so no span ends inside it.
+      let crlf = cursor.at(ahead=1) == '\r'.to_int() &&
+        cursor.at(ahead=2) == '\n'.to_int()
+      cursor.advance_by(if crlf { 3 } else { 2 })
     } else {
       cursor.advance()
     }
@@ -436,8 +451,9 @@ pub fn lex_raw(
           Some(Significant(p))
         }
         None => {
-          // A character outside the BMP is two code units.
-          let width = if c >= 0xD800 && c <= 0xDBFF { 2 } else { 1 }
+          // A surrogate pair is one character (two code units); a lone
+          // surrogate is one unit.
+          let (_, width) = cursor.code_point()
           cursor.advance_by(width)
           let span = { start, end: cursor.position(), }
           diagnostics.push(
@@ -466,4 +482,14 @@ pub fn lex_raw(
   } else {
     Err({ diagnostics, })
   }
+}
+
+///|
+/// Whether the code unit before the cursor is a high surrogate.
+fn Cursor::after_high_surrogate(self : Cursor) -> Bool {
+  if self.pos == 0 {
+    return false
+  }
+  let prev = self.text.code_unit_at(self.pos - 1).to_int()
+  prev >= 0xD800 && prev <= 0xDBFF
 }

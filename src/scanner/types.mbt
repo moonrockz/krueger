@@ -200,6 +200,10 @@ pub(all) struct Token {
 ///|
 pub(all) struct TokenStream {
   tokens : Array[Token]
+  /// The trivia of a text that has no tokens (only whitespace and comments).
+  /// Empty otherwise: when there is a token, all trivia attaches to tokens.
+  /// The parser's CST does not keep it.
+  trivia : Array[Trivia]
 } derive(Eq, Debug)
 
 ///|

@@ -42,7 +42,7 @@ test "a port's doc attributes lie inside the port declaration" {
 
 ///|
 fn at_or_before_loc(a : @ast.Location, b : @ast.Location) -> Bool {
-  a.row < b.row || (a.row == b.row && a.column <= b.column)
+  @lawkit.at_or_before(a, b)
 }
 
 ///|

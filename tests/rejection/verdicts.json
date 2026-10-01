@@ -1178,6 +1178,86 @@
       "accepted": false
     }
   },
+  "literals/backslash_newline.elm": {
+    "sha256": "12b73a85ee9c073a9049a95570cd1d45b6f7aaded900d91a999f256fe3e3a85e",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNKNOWN ESCAPE",
+      "region": [
+        9,
+        7,
+        9,
+        9
+      ],
+      "message": [
+        "Backslashes always start escaped characters, but I do not recognize this one:\n\n9|     \"a\\\n         ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nValid escape characters include:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \\n\n    \\r\n    \\t\n    \\\"\n    \\'\n    \\\\\n    \\u{003D}"
+        },
+        "\n\nDo you want one of those instead? Maybe you need \\\\ to escape a backslash?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": The last style lets encode ANY character by its Unicode code point. That\nmeans \\u{0009} and \\t are the same. You can use that style for anything not\ncovered by the other six escapes!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
+  "literals/char_backslash_newline.elm": {
+    "sha256": "839b998ed71237db6e79354b6c9d61edf50595781b9e9079e4bab6378cab62e5",
+    "elm-0.19.1": {
+      "accepted": false,
+      "title": "UNKNOWN ESCAPE",
+      "region": [
+        9,
+        6,
+        9,
+        8
+      ],
+      "message": [
+        "Backslashes always start escaped characters, but I do not recognize this one:\n\n9|     '\\\n        ",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "RED",
+          "string": "^^"
+        },
+        "\nValid escape characters include:\n\n",
+        {
+          "bold": false,
+          "underline": false,
+          "color": "yellow",
+          "string": "    \\n\n    \\r\n    \\t\n    \\\"\n    \\'\n    \\\\\n    \\u{003D}"
+        },
+        "\n\nDo you want one of those instead? Maybe you need \\\\ to escape a backslash?\n\n",
+        {
+          "bold": false,
+          "underline": true,
+          "color": null,
+          "string": "Note"
+        },
+        ": The last style lets encode ANY character by its Unicode code point. That\nmeans \\u{0009} and \\t are the same. You can use that style for anything not\ncovered by the other six escapes!"
+      ]
+    },
+    "elm-syntax-7.3.9": {
+      "accepted": false
+    }
+  },
   "literals/char_empty.elm": {
     "sha256": "00815f5dc4d748220ef33be0ae39cc87fb4f7da4228afe58432baa240c72beaf",
     "elm-0.19.1": {
