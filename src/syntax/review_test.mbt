@@ -81,3 +81,37 @@ test "changing the parse result does not change the tree" {
   guard tree.root() is File(_, groups) else { fail("no file") }
   @expect.expect(groups.length()).to_equal(0)
 }
+
+///|
+/// The number of trivia items before and after each token in `r`.
+fn trivia_counts(tree : @syntax.Tree, r : @ast.Range) -> Array[Int] {
+  tree.tokens_in(r).map(t => t.trivia_before.length() + t.trivia_after.length())
+}
+
+///|
+test "changing token trivia returned by tokens_in does not change the tree" {
+  let tree = tree_of("module M exposing (..)\n\n-- hi\nx =\n    1\n")
+  let whole = tree.root().range()
+  let before = trivia_counts(tree, whole)
+  for t in tree.tokens_in(whole) {
+    t.trivia_before.clear()
+    t.trivia_after.clear()
+  }
+  @expect.expect(trivia_counts(tree, whole)).to_equal(before)
+  @expect.expect(before.any(n => n > 0)).to_equal(true)
+}
+
+///|
+test "changing the parse result's token trivia does not change the tree" {
+  let result = parse_result("module M exposing (..)\n\n-- hi\nx =\n    1\n")
+  guard @syntax.Tree::new(result) is Some(tree) && result.cst is Some(cst) else {
+    fail("no tree")
+  }
+  let whole = tree.root().range()
+  let before = trivia_counts(tree, whole)
+  for t in cst.tokens {
+    t.trivia_before.clear()
+    t.trivia_after.clear()
+  }
+  @expect.expect(trivia_counts(tree, whole)).to_equal(before)
+}

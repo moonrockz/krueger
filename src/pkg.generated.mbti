@@ -64,7 +64,7 @@ pub using @ast {type Case}
 
 pub using @ast {type CaseBlock}
 
-pub type Cases = Array[@ast.Case]
+pub type Cases = ArrayView[@ast.Case]
 
 pub using @scanner {type Chunk}
 
@@ -132,7 +132,7 @@ pub using @cst {type ModuleCst}
 
 pub using @cst {type ModuleHeaderCst}
 
-pub type ModuleName = Array[String]
+pub type ModuleName = ArrayView[String]
 
 pub using @ast {type Node}
 
@@ -150,7 +150,7 @@ pub using @ast {type QualifiedNameRef}
 
 pub using @ast {type Range}
 
-pub type RecordDefinition = Array[@ast.Node[@ast.RecordField]]
+pub type RecordDefinition = ArrayView[@ast.Node[@ast.RecordField]]
 
 pub using @ast {type RecordField}
 

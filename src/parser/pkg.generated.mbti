@@ -21,7 +21,7 @@ pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> ParseR
 // Types and methods
 pub(all) struct AttributeGroup {
   target : AttributeTarget
-  attributes : Array[DocAttribute]
+  attributes : ArrayView[DocAttribute]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum AttributeTarget {
@@ -30,8 +30,8 @@ pub(all) enum AttributeTarget {
 } derive(Eq, @debug.Debug)
 
 pub(all) enum DocAttribute {
-  Attribute(name~ : @ast.Node[String], arguments~ : Array[@ast.Node[@ast.Expression]], range~ : @ast.Range)
-  Docs(names~ : Array[@ast.Node[String]], range~ : @ast.Range)
+  Attribute(name~ : @ast.Node[String], arguments~ : ArrayView[@ast.Node[@ast.Expression]], range~ : @ast.Range)
+  Docs(names~ : ArrayView[@ast.Node[String]], range~ : @ast.Range)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ParseResult {

@@ -72,7 +72,7 @@ fn type_no_fn_at_depth(
 /// `Name` or `Module.Name`, with the dots touching the names.
 fn qualified_type_name(
   c : Cursor,
-) -> @ast.Node[(Array[String], String)] raise SyntaxError {
+) -> @ast.Node[(@ast.ModuleName, String)] raise SyntaxError {
   let first = c.upper("a type name")
   let parts = [first.lexeme]
   let mut last = first
@@ -82,7 +82,7 @@ fn qualified_type_name(
     parts.push(last.lexeme)
   }
   let name = parts.pop().unwrap()
-  node(range_from(first, last), (parts, name))
+  node(range_from(first, last), (parts[:], name))
 }
 
 ///|

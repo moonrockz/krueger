@@ -25,15 +25,15 @@ pub(all) enum AttributeTarget {
 pub(all) enum DocAttribute {
   Attribute(
     name~ : @ast.Node[String],
-    arguments~ : Array[@ast.Node[@ast.Expression]],
+    arguments~ : ArrayView[@ast.Node[@ast.Expression]],
     range~ : @ast.Range
   )
-  Docs(names~ : Array[@ast.Node[String]], range~ : @ast.Range)
+  Docs(names~ : ArrayView[@ast.Node[String]], range~ : @ast.Range)
 } derive(Eq, Debug)
 
 ///|
 /// The attributes of the module or of one declaration, in source order.
 pub(all) struct AttributeGroup {
   target : AttributeTarget
-  attributes : Array[DocAttribute]
+  attributes : ArrayView[DocAttribute]
 } derive(Eq, Debug)

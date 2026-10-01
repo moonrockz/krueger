@@ -35,7 +35,7 @@ fn encode_char(c : Char) -> Json {
 }
 
 ///|
-fn[T] encode_list(xs : Array[T], f : (T) -> Json) -> Json {
+fn[T] encode_list(xs : ArrayView[T], f : (T) -> Json) -> Json {
   Json::array(xs.map(f))
 }
 
