@@ -23,13 +23,16 @@ pub fn units(xs : Array[Int]) -> String {
 
 ///|
 /// Characters at the edges of what the scanner handles: lone surrogates
-/// (high, low, and high before another unit), a surrogate pair, a lone `\r`,
-/// CRLF, LF, tab, a byte order mark, ASCII, non-ASCII, and nothing.
+/// (high, low, high before another unit, a low after a pair, two lows), a
+/// surrogate pair, a lone `\r`, CRLF, LF, tab, a byte order mark, ASCII,
+/// non-ASCII, and nothing.
 pub fn edge_chars() -> Array[String] {
   [
     units([0xD800]),
     units([0xDC00]),
     units([0xD800, 'a'.to_int()]),
+    units([0xD83D, 0xDE00, 0xDC00]),
+    units([0xDC00, 0xDC00]),
     "😀",
     "\r",
     "\r\n",
