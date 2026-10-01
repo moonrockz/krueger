@@ -97,7 +97,8 @@ fn result_json(c : Case, target : String, summary : Json) -> Json raise {
 }
 
 ///|
-/// Smoke: check every case. Run: measure every case and write the raw file.
+/// Smoke: check every case. Run: check, then measure every case and write
+/// the raw file (a wrong result on real input fails the run).
 fn run_cases(cases : Array[Case], mode : Mode) -> Unit raise {
   match mode {
     Smoke =>
@@ -107,6 +108,7 @@ fn run_cases(cases : Array[Case], mode : Mode) -> Unit raise {
     Run(target) => {
       let results : Array[Json] = []
       for c in cases {
+        (c.check)()
         let summary = @bench.single_bench(
           name=c.id(),
           () => sink.val = sink.val + (c.run)(),

@@ -33,38 +33,75 @@ fn manifest_keys() -> Array[String] raise {
 }
 
 ///|
+/// An input file: its key (a corpus key such as `elm/core@1.0.5/src/Task.elm`,
+/// `fixtures/<name>` or `large`) and its text.
+priv struct Source {
+  key : String
+  text : String
+}
+
+///|
+/// The dialect the parity harness uses for a corpus file in the default
+/// dialect: `elm make` lets only `elm/*` and `elm-explorations/*` packages
+/// declare effect modules and infix operators.
+fn dialect_of(s : Source) -> @krueger.Dialect {
+  {
+    ..@krueger.Dialect::elm_0_19_1(),
+    core_package: s.key.has_prefix("elm/") ||
+    s.key.has_prefix("elm-explorations/"),
+  }
+}
+
+///|
+fn source_text(s : Source) -> @scanner.SourceText {
+  @scanner.SourceText::new(s.text)
+}
+
+///|
+fn parse_source(s : Source) -> @parser.ParseResult {
+  @krueger.parse_module(source_text(s), dialect=dialect_of(s))
+}
+
+///|
 /// Every corpus file under `dir`, in manifest order. `mise run
 /// corpus:fetch` checks the hashes, so this does not.
-fn corpus_sources_in(dir : String) -> Array[String] raise {
+fn corpus_sources_in(dir : String) -> Array[Source] raise {
   let sources = []
   for key in manifest_keys() {
     let path = "\{dir}/\{key}"
     if !@fs.path_exists(path) {
       fail("missing corpus file \{path}; run `mise run corpus:fetch`")
     }
-    sources.push(@fs.read_file_to_string(path))
+    sources.push({ key, text: @fs.read_file_to_string(path), })
   }
   sources
 }
 
 ///|
-fn corpus_sources() -> Array[String] raise {
+fn corpus_sources() -> Array[Source] raise {
   corpus_sources_in(corpus_dir)
 }
 
 ///|
 /// The parser fixtures (`tests/fixtures/parser/*.elm`), sorted by name.
-fn fixture_sources() -> Array[String] raise {
+fn fixture_sources() -> Array[Source] raise {
   let names = @fs.read_dir(fixtures_dir)
-    .to_array()
+    .to_owned()
     .filter(n => n.has_suffix(".elm"))
   names.sort()
-  names.map(n => @fs.read_file_to_string("\{fixtures_dir}/\{n}"))
+  let sources = []
+  for n in names {
+    sources.push({
+      key: "fixtures/\{n}",
+      text: @fs.read_file_to_string("\{fixtures_dir}/\{n}"),
+    })
+  }
+  sources
 }
 
 ///|
 /// The corpus in `Run` mode; the parser fixtures in `Smoke` mode.
-fn sources_for(mode : Mode) -> Array[String] raise {
+fn sources_for(mode : Mode) -> Array[Source] raise {
   match mode {
     Smoke => fixture_sources()
     Run(_) => corpus_sources()
@@ -111,4 +148,17 @@ test "missing corpus names the fix" {
     _ => "no error"
   }
   @expect.expect(message).to_contain("run `mise run corpus:fetch`")
+}
+
+///|
+test "an elm/* effect module parses in its source's dialect" {
+  let src : Source = {
+    key: "elm/core@1.0.5/src/Task.elm",
+    text: "effect module Task where { command = MyCmd } exposing (Task)\n\n\ntype alias Task x a = Platform.Task x a\n",
+  }
+  let other : Source = { ..src, key: "someone/pkg@1.0.0/src/Task.elm", }
+  @expect.expect_all(s => {
+    s.expect(parse_source(src).ast is Some(_)).to_be_true()
+    s.expect(parse_source(other).ast is Some(_)).to_be_false()
+  })
 }

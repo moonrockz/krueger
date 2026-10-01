@@ -2,13 +2,12 @@
 /// `corpus/*`: one sample is one pass over all `sources`. `encode` parses
 /// once, outside the measured work, and measures `encode_file` with the
 /// JSON text.
-fn corpus_cases(sources : Array[String]) -> Array[Case] {
-  let texts = sources.map(s => @scanner.SourceText::new(s))
-  let files = texts.filter_map(t => @krueger.parse_module(t).ast)
+fn corpus_cases(sources : Array[Source]) -> Array[Case] {
+  let files = sources.filter_map(s => parse_source(s).ast)
   let tokenize = () => {
     let mut n = 0
-    for t in texts {
-      if @krueger.tokenize(t) is Ok(stream) {
+    for s in sources {
+      if @krueger.tokenize(source_text(s), dialect=dialect_of(s)) is Ok(stream) {
         n += stream.tokens.length()
       }
     }
@@ -16,8 +15,8 @@ fn corpus_cases(sources : Array[String]) -> Array[Case] {
   }
   let parse = () => {
     let mut n = 0
-    for t in texts {
-      if @krueger.parse_module(t).ast is Some(_) {
+    for s in sources {
+      if parse_source(s).ast is Some(_) {
         n += 1
       }
     }
@@ -44,7 +43,7 @@ fn corpus_cases(sources : Array[String]) -> Array[Case] {
       input: "corpus",
       run: parse,
       check: () => {
-        if parse() != texts.length() {
+        if parse() != sources.length() {
           fail("corpus/parse: a source did not parse")
         }
       },
