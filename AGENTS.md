@@ -810,6 +810,10 @@ design is final and meant for readers, write it up in a committed location on pu
 - In the pull request, replace the highlights comment at the top of the new section
   with a few sentences on what the release brings, and reword the generated lines
   where needed. Then merge. Do not bump the version in any other pull request.
+- Merge the release pull request before other pull requests. A pull request that
+  merges first is not in the new section and goes into no later section either (the
+  tag covers it). If that happens, close the release pull request, delete its branch
+  and run `mise run release:prepare` again.
 - The merge changes `moon.mod` on `main`, so the Release workflow runs:
   - `plan` (`mise run release:plan`) releases when `v<version>` has no tag yet and
     `CHANGELOG.md` has the version's section; otherwise it skips, or fails when the
