@@ -44,6 +44,7 @@ moonrockz/krueger
 │   └── e2e/              # End-to-end tests (test-only)
 ├── harness/              # Unpublished module moonrockz/krueger_harness (test-only dependencies)
 │   ├── bdd/              # MoonSpec step definitions for tests/features
+│   ├── bench/            # Benchmarks (mise run bench; smoke check in mise run test)
 │   ├── parity/           # Elm parity over the pinned corpus (mise run test:parity)
 │   └── rejection/        # Rejection parity (mise run test:rejection)
 ├── tests/features/       # Gherkin features
@@ -719,7 +720,10 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
 | `unicode:generate`  | Regenerate the Unicode identifier table from UnicodeData.txt |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
-| `test`              | Run all tests (unit + bdd + e2e + scripts + rejection + docs) |
+| `test:bench`        | Run every benchmark case once on small input (smoke check) |
+| `bench`             | Measure the benchmarks (`--target t[,t...]`; all targets by default) |
+| `bench:compare`     | Compare the last measurement with a run from the `benchmarks` branch |
+| `test`              | Run all tests (unit + bdd + e2e + scripts + rejection + docs + bench) |
 | `release:prepare`   | Open the release pull request (version bump and changelog section) |
 | `release:version`   | Compute next version from conventional commits |
 | `release:plan`      | Decide whether a Release workflow run releases (CI) |
@@ -758,6 +762,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
 | `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |
+| `scripts/bench.mbtx` | `bench`, `bench:compare` | Measure, compare with the history, write the summary and the HTML report, add a run to the history |
 
 ## Elm Parity
 
@@ -819,6 +824,42 @@ krueger checks which Elm source it accepts and rejects against two oracles: `elm
   The list only shrinks: the check fails on a mismatch that is not listed and on a listed
   pair that now matches (remove it). `KRUEGER_REJECTION_MODE=write-pending` rewrites the
   list; use it only when adding fixtures.
+
+## Benchmarks
+
+Benchmarks measure krueger's speed over time. They are not a CI gate.
+
+- `harness/bench` holds the cases: `corpus/*` (tokenize, parse and encode
+  every corpus file) and `syntax/*` (tree queries on the corpus and on a
+  generated module with 1000 declarations). A case ID is
+  `<suite>/<case>/<input>`; a renamed case starts a new series. Each case
+  has a `check`, which runs before the case is measured.
+- `mise run bench` measures every case on `native`, `js`, `wasm-gc` and
+  `wasm` (`mise run bench --target native,js` for a subset; needs
+  `mise run corpus:fetch`) and writes
+  `_build/reports/bench/benchmark-results.json` (the results file). Times
+  are microseconds per call (from 10 batches).
+- `mise run bench:compare` compares the results file with a run from the
+  history (default: the latest `main` run; `--against <sha|run:<id>|file>`)
+  and writes `summary.md` and `report.html` (the tables and a trend of the
+  last 20 `main` runs per case).
+- A case is marked `slower` or `faster` only when the median changes by
+  more than 10% and the interquartile ranges do not overlap. GitHub runners
+  vary by 10 to 20 percent between runs; the summary warns when the
+  baseline ran on another CPU or toolchain.
+- The history is the orphan branch `benchmarks`: one run file per run under
+  `runs/YYYY/MM/`. Never merge it. Local runs are not added.
+- The Benchmarks workflow (Actions > Benchmarks > Run workflow) takes
+  `targets` (empty: all four), `compare_to`, `record` and `force_record`.
+  It adds the summary to the job summary, uploads `_build/reports/bench/`
+  as the `bench-report` artifact (90 days) and adds runs on `main` to the
+  history.
+- `mise run test` runs every case once on small input (`test:bench`), so
+  the cases stay correct.
+- To add a case, add it to `corpus_cases` or `syntax_cases` in
+  `harness/bench`, with a `check` that fails on a wrong result.
+- For a performance change, compare a run before and after the change
+  (locally, or with the workflow) and put the summary in the pull request.
 
 ## Tooling
 
