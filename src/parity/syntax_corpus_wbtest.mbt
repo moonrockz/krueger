@@ -83,6 +83,10 @@ test "syntax corpus" {
         let (count, found) = syntax_problems(key, tree, kinds)
         problems.append(walk_problems(key, tree.root(), count))
         problems.append(descent_problems(key, tree))
+        problems.append(scan_problems(key, text))
+        problems.append(
+          scan_problems(key + " (CRLF)", text.replace_all(old="\n", new="\r\n")),
+        )
         files = files + 1
         nodes = nodes + count
         problems.append(found)
@@ -276,6 +280,62 @@ fn descent_problems(key : String, tree : @krueger.Tree) -> Array[String] {
           "\{key}: a cursor descent to \{p.row}:\{p.column} does not end at node_at",
         )
     }
+  }
+  problems
+}
+
+///|
+fn corpus_trivia(t : @krueger.Trivia) -> (String, @krueger.Span) {
+  match t {
+    Whitespace(s, span) | Newline(s, span) => (s, span)
+    Comment(c) => (c.text, c.span)
+  }
+}
+
+///|
+fn scan_problems(key : String, text : String) -> Array[String] {
+  let source = @krueger.SourceText::{ module_name: None, text, }
+  guard @krueger.tokenize(source) is Ok(ts) else {
+    return ["\{key}: the scanner reports errors"]
+  }
+  let pieces = ts.trivia.map(corpus_trivia)
+  for t in ts.tokens {
+    pieces.append(t.trivia_before.map(corpus_trivia))
+    pieces.push((t.lexeme, t.span))
+    pieces.append(t.trivia_after.map(corpus_trivia))
+  }
+  let problems = []
+  if pieces.map(p => p.0).join("") != text {
+    problems.push("\{key}: tokens and trivia do not rebuild the text")
+  }
+  // One pass over the text for every boundary (offsets in order when the
+  // pieces tile the text; an offset out of order maps to `None`).
+  let offsets = []
+  for p in pieces {
+    offsets.push(p.1.start.offset)
+    offsets.push(p.1.end.offset)
+  }
+  let expected = @lawkit.positions_of(text, offsets)
+  let mut at = 0
+  for k, p in pieces {
+    let (piece, span) = p
+    let agrees = (q : @krueger.Position, e : @ast.Location?) => {
+      @lawkit.between_characters(text, q.offset) &&
+      e == Some({ row: q.line, column: q.column, })
+    }
+    if span.start.offset != at ||
+      span.end.offset != at + piece.length() ||
+      !agrees(span.start, expected[2 * k]) ||
+      !agrees(span.end, expected[2 * k + 1]) {
+      problems.push(
+        "\{key}: a span at offset \{span.start.offset} does not tile the text",
+      )
+      break
+    }
+    at = span.end.offset
+  }
+  if problems.is_empty() && at != text.length() {
+    problems.push("\{key}: the pieces stop at offset \{at}")
   }
   problems
 }

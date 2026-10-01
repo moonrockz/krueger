@@ -11,7 +11,13 @@ This module (`moonrockz/krueger`) is a **parser and parsing utilities** library 
 [Elm](https://elm-lang.org/) and Elm-like dialects (e.g.
 [Morphir](https://github.com/finos/morphir)). It provides:
 
-- **Scanner** — tokenization of Elm/Elm-like source
+- **Scanner** — tokenization of Elm/Elm-like source. Lossless: each token's
+  `trivia_before`, `lexeme` and `trivia_after` (and, for a text with no tokens,
+  the stream's `trivia`) rebuild the source, and their spans tile it. Offsets
+  count UTF-16 units; columns count code points (a surrogate pair is one
+  column, a lone surrogate one, a lone `\r` one); a single-line literal stops
+  before an unescaped line break, LF or CRLF (a `\` before a line break is an
+  unknown escape, as in `elm make`)
 - **Parser** — grammar-driven parsing into an AST
 - **AST** — an exact mirror of [stil4m/elm-syntax](https://package.elm-lang.org/packages/stil4m/elm-syntax/7.3.9/) 7.3.9, with a JSON encoder and decoder that match elm-syntax byte for byte
 - **CST** — every token and top-level declaration, with trivia (whitespace and comments)
@@ -546,9 +552,30 @@ inputs.
   package's laws reach the same edges; add a new edge there, not in one
   package's tests. `lawkit` imports only the MoonBit core library and `@ast`, so
   black-box tests of any package, and white-box tests of any package except
-  `ast`, can import it. It also has the position helpers `at_or_before`,
-  `contains`, `within`, `end_of_text` and `offset_of` (UTF-16 offset of a
-  row/column position).
+  `ast`, can import it. Generators: `ElmModule` (valid Elm), `ElmText` (any
+  text: fragments, unclosed literals and comments, edge characters, valid
+  modules cut short or changed; it shrinks), `Nesting` and `nested(construct,
+  depth)` (each nesting construct at any depth, biased to the limits ± 2),
+  `DocAttributes` (doc-comment attributes with Unicode names and values,
+  continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
+  `Ranges`, and `units` (a string of UTF-16 units, for lone surrogates). Edge
+  lists: `edge_chars()` and `literal_forms()`. Position helpers:
+  `at_or_before`, `contains`, `within`, `range_edges`, `edge_positions`,
+  `end_of_text`, `offset_of` (row/column to UTF-16 offset), `position_of` and
+  `positions_of` (the inverse, for one offset or for sorted offsets in one
+  pass) and `between_characters` (not inside a CRLF or a surrogate pair),
+  which count columns exactly as the scanner does.
+- **Reach the success branch.** A law that returns `true` on an error (`Err(_)
+  => true`) tests nothing for inputs that fail. Measure how often its
+  generator reaches the success branch for each edge, and add a generator or
+  an exhaustive test where it does not.
+- **Enumerate small edge products.** When edges combine into a small product
+  (every literal form × every edge character × every ending), test all of
+  them in one example test with soft assertions instead of sampling.
+- **Boundaries between characters.** A position law checks that every span
+  boundary lies between characters (`between_characters`), not only that its
+  row and column agree with its offset: an offset inside a surrogate pair maps
+  to the same row and column as the offset after it.
 - **Corpus as a law check.** A law that holds for generated input should also
   hold for the pinned corpus; add it to the corpus check where it is cheap.
 - **Run on every target.** Laws run in `mise run test:unit` and
