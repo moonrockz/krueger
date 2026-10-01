@@ -61,8 +61,11 @@ moonrockz/krueger
   `encode_declaration_with`, `encode_pattern_with`, `encode_expression_with`,
   `encode_function_with` and `encode_attributes_with`) writes the exact
   digits; it differs from elm-syntax only for literals above 2^53. The
-  decoder reads a number's digits when the JSON text has them, so it reads
-  both forms.
+  decoder reads a number's digits when they are an Int that rounds to the
+  number's Double, unless they are that Double's own shortest form (as
+  elm-syntax writes 2^60, `1152921504606847000`), so it reads both forms. The
+  one ambiguous text, a literal whose digits are its Double's shortest form,
+  is read as that Double.
 - Every list in `@ast` types and in `@parser.DocAttribute`/`AttributeGroup` is an
   `ArrayView` (read-only; `src/ast/readonly_test.mbt` and its siblings check this
   at compile time). Build a list as an `Array` and store it (an `Array` converts

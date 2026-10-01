@@ -262,3 +262,88 @@ test "the decoder reads an Int's digits, and falls back to its Double" {
     s.expect(@ast.decode_expression(built)).to_equal(Integer(5L))
   })
 }
+
+///|
+test "by default, Ints above 2^56 that a Double holds exactly round-trip" {
+  // elm-syntax writes a Double's shortest digits (`1152921504606847000` for
+  // 2^60); the decoder must read them as that Double, not as the digits.
+  @expect.expect_all(s => {
+    for v in ["0x1000000000000000", "0x4000000000000000", "1152921504606846976"] {
+      let file = elm_file(with_expression(v))
+      s.expect((v, round_trip(file) == file)).to_equal((v, true))
+      let file = elm_file(with_pattern(v))
+      s.expect((v, round_trip(file) == file)).to_equal((v, true))
+    }
+  })
+}
+
+///|
+test "with exact Ints, digits that are a Double's shortest form read as that Double" {
+  // The one ambiguous text: `1152921504606847000` is both the exact form of
+  // that literal and elm-syntax's form of 2^60. It is read as elm-syntax
+  // means it.
+  let file = elm_file(with_expression("1152921504606847000"))
+  @expect.expect(first_expression(exact_round_trip(file))).to_equal(
+    Integer(1152921504606846976L),
+  )
+}
+
+///|
+test "with exact Ints, a big literal survives in every expression and pattern context" {
+  let l = "9007199254740993"
+  let expressions = [
+    "\\_ -> " + l,
+    "\\" + l + " -> 0",
+    "let\n        y =\n            0\n    in\n    " + l,
+    "let\n        ( " + l + ", b ) =\n            r\n    in\n    b",
+    "1 + " + l,
+    "if " + l + " == 0 then 0 else " + l,
+    "case 0 of\n        _ ->\n            " + l,
+    "let\n        y =\n            " + l + "\n    in\n    y",
+    "let\n        ( a, _ ) =\n            ( " + l + ", 0 )\n    in\n    a",
+    "{ a = " + l + " }",
+    "{ r | a = " + l + " }",
+    "f " + l,
+    l + " + 1",
+    "if True then " + l + " else 0",
+    "-" + l,
+    "( " + l + ", 0 )",
+    "[ " + l + " ]",
+    "(" + l + ")",
+    "{ a = " + l + " }.a",
+    "case " + l + " of\n        _ ->\n            0",
+  ]
+  let patterns = [
+    "( " + l + ", _ )",
+    "[ " + l + " ]",
+    l + " :: _",
+    "_ :: " + l,
+    "Just " + l,
+    "(" + l + " as y)",
+    "(" + l + ")",
+  ]
+  let modules = expressions.map(with_expression) +
+    patterns.map(with_pattern) +
+    ["module M exposing (..)\n\n\nf " + l + " =\n    1\n"]
+  // The parser makes no top-level destructuring, so build one from JSON
+  // text with exact digits.
+  let top = @ast.decode_file(
+    @json.parse(
+      (
+        #|{"moduleDefinition":{"range":[1,1,1,23],"value":{"type":"normal","normal":{"moduleName":{"range":[1,8,1,9],"value":["M"]},"exposingList":{"range":[1,10,1,23],"value":{"type":"all","all":[1,20,1,22]}}}}},
+        #| "imports":[],
+        #| "declarations":[{"range":[4,1,5,21],"value":{"type":"destructuring","destructuring":{
+        #|   "pattern":{"range":[4,1,4,17],"value":{"type":"int","int":{"value":9007199254740993}}},
+        #|   "expression":{"range":[5,5,5,21],"value":{"type":"integer","integer":9007199254740993}}}}}],
+        #| "comments":[]}
+      ),
+    ),
+  )
+  @expect.expect_all(s => {
+    for text in modules {
+      let file = elm_file(text)
+      s.expect((text, exact_round_trip(file) == file)).to_equal((text, true))
+    }
+    s.expect(exact_round_trip(top) == top).to_be_true()
+  })
+}
