@@ -82,6 +82,7 @@ pub using @parser {
   type DocAttribute,
   type AttributeGroup,
   encode_attributes,
+  encode_attributes_with,
 }
 
 ///|

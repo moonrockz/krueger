@@ -12,6 +12,8 @@ import {
 // Values
 pub fn encode_attributes(Array[AttributeGroup]) -> Json
 
+pub fn encode_attributes_with(Array[AttributeGroup], exact_ints~ : Bool) -> Json
+
 pub fn[S : @scanner.Scanner] parse_module(@scanner.SourceText, S, dialect? : @dialect.Dialect) -> ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> ParseResult

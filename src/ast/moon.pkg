@@ -1,4 +1,8 @@
 import {
+  "moonbitlang/core/string",
+}
+
+import {
   "moonbitlang/core/json",
   "moonrockz/expect",
   "moonrockz/krueger/parser",

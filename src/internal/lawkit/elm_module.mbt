@@ -9,9 +9,9 @@
 /// (independently); literals at the edges of their types (the largest Int and
 /// hex a Double holds exactly, the largest, smallest and an inexact Float, a
 /// Float that rounds to zero, the first and last code point, escapes). No Int
-/// literal above 2^53 (they do not survive the JSON round trip yet,
-/// krueger-wqh.4). No GLSL: its elm-syntax range ends two columns late, which
-/// the range laws reject.
+/// literal above 2^53: the default encoder writes Ints as Doubles, as
+/// elm-syntax does (`IntLiteral` reaches them). No GLSL: its elm-syntax range
+/// ends two columns late, which the range laws reject.
 pub(all) struct ElmModule(String) derive(Debug)
 
 ///|

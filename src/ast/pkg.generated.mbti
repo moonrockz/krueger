@@ -46,13 +46,21 @@ pub fn decode_value_constructor(Json) -> ValueConstructor raise DecodeError
 
 pub fn encode_declaration(Declaration) -> Json
 
+pub fn encode_declaration_with(Declaration, exact_ints~ : Bool) -> Json
+
 pub fn encode_exposing(Exposing) -> Json
 
 pub fn encode_expression(Expression) -> Json
 
+pub fn encode_expression_with(Expression, exact_ints~ : Bool) -> Json
+
 pub fn encode_file(File) -> Json
 
+pub fn encode_file_with(File, exact_ints~ : Bool) -> Json
+
 pub fn encode_function(Function) -> Json
+
+pub fn encode_function_with(Function, exact_ints~ : Bool) -> Json
 
 pub fn encode_import(Import) -> Json
 
@@ -67,6 +75,8 @@ pub fn encode_module_name(ArrayView[String]) -> Json
 pub fn[T] encode_node(Node[T], (T) -> Json) -> Json
 
 pub fn encode_pattern(Pattern) -> Json
+
+pub fn encode_pattern_with(Pattern, exact_ints~ : Bool) -> Json
 
 pub fn encode_range(Range) -> Json
 

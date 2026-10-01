@@ -17,6 +17,8 @@ pub fn diagnostic_description(String) -> String?
 
 pub fn encode_attributes(Array[@parser.AttributeGroup]) -> Json
 
+pub fn encode_attributes_with(Array[@parser.AttributeGroup], exact_ints~ : Bool) -> Json
+
 pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
 
 pub fn[A] fold(@syntax.NodeRef, A, (A, @syntax.NodeRef) -> (A, @syntax.Control), leave? : (A, @syntax.NodeRef) -> A) -> A
