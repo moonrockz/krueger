@@ -86,24 +86,18 @@ test "law: edge_positions are sorted, unique and include every range edge" {
 }
 
 ///|
-test "law: every line's edge positions are on the text, and its end is its last" {
+test "law: every line's end is on the text and one column past it is not" {
   // Edges: CRLF, surrogate pairs, no final newline, an empty last line.
   @quickcheck.check(
     (m : @lawkit.ElmModule) => {
       let text = m.text()
       let rows = @lawkit.end_of_text(text).row
-      @lawkit.edge_positions(text, [])
-      .iter()
-      .all(p => {
-        if p.row > rows {
-          @lawkit.offset_of(text, p) is None
-        } else {
-          let on = @lawkit.offset_of(text, p) is Some(_)
-          let next_on = @lawkit.offset_of(text, at(p.row, p.column + 1))
-            is Some(_)
-          // A position is on the text up to the line end; one past it is not.
-          on || !next_on
-        }
+      let ps = @lawkit.edge_positions(text, [])
+      let on = (p : @ast.Location) => @lawkit.offset_of(text, p) is Some(_)
+      (1)
+      .until(rows, inclusive=true)
+      .all(row => {
+        ps.iter().any(p => p.row == row && on(p) && !on(at(row, p.column + 1)))
       }) &&
       @lawkit.offset_of(text, @lawkit.end_of_text(text)) == Some(text.length())
     },
@@ -132,4 +126,34 @@ test "law: generated ranges never run backwards and stay on the grid" {
     max_size=12,
     seed=223,
   )
+}
+
+///|
+/// A string made of these UTF-16 code units (string literals cannot hold a
+/// lone surrogate).
+fn units(xs : Array[Int]) -> String {
+  let sb = StringBuilder()
+  for x in xs {
+    sb.write_char(Int::unsafe_to_char(x))
+  }
+  sb.to_string()
+}
+
+///|
+test "lone surrogates count as the scanner counts them" {
+  // The scanner adds a column for every UTF-16 unit except a low surrogate,
+  // so a lone high surrogate is one column and a lone low surrogate none.
+  let high = units(['a'.to_int(), 0xD800, '\n'.to_int(), 'b'.to_int()])
+  let alone = units(['a'.to_int(), 0xD800])
+  let low = units(['a'.to_int(), 0xDC00, 'b'.to_int()])
+  @expect.expect_all(s => {
+    s.expect(@lawkit.end_of_text(high)).to_equal(at(2, 2))
+    s.expect(@lawkit.offset_of(high, at(2, 1))).to_equal(Some(3))
+    s.expect(@lawkit.end_of_text(alone)).to_equal(at(1, 3))
+    s
+    .expect(@lawkit.offset_of(alone, @lawkit.end_of_text(alone)))
+    .to_equal(Some(2))
+    s.expect(@lawkit.end_of_text(low)).to_equal(at(1, 3))
+    s.expect(@lawkit.offset_of(low, at(1, 2))).to_equal(Some(2))
+  })
 }

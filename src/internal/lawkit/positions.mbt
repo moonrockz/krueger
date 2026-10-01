@@ -33,11 +33,20 @@ fn lines(text : String) -> Array[StringView] {
 }
 
 ///|
-/// The number of code points in `s` (a surrogate pair is one).
+fn is_low_surrogate(unit : Int) -> Bool {
+  unit >= 0xDC00 && unit <= 0xDFFF
+}
+
+///|
+/// The number of columns `s` takes, counted as the scanner counts them: one
+/// for every UTF-16 unit except a low surrogate (so a surrogate pair is one
+/// column, a lone high surrogate one and a lone low surrogate none).
 fn code_points(s : StringView) -> Int {
   let mut n = 0
-  for _ in s {
-    n = n + 1
+  for i in 0..<s.length() {
+    if !is_low_surrogate(s.code_unit_at(i).to_int()) {
+      n = n + 1
+    }
   }
   n
 }
@@ -101,18 +110,19 @@ pub fn edge_positions(
 }
 
 ///|
-/// The UTF-16 offset of position `p` in `text` (columns in code points, a
-/// CRLF one line break), or `None` when `p` is not on the text. The end of a
-/// line and the end of the text are on it.
+/// The UTF-16 offset of position `p` in `text`, or `None` when `p` is not on
+/// the text. Columns are counted as the scanner counts them (see
+/// `code_points`); a CRLF is one line break. The end of a line and the end of
+/// the text are on it.
 pub fn offset_of(text : String, p : @ast.Location) -> Int? {
   let mut row = 1
   let mut column = 1
   let mut i = 0
   while i < text.length() {
-    if row == p.row && column == p.column {
+    let c = text.code_unit_at(i).to_int()
+    if row == p.row && column == p.column && !is_low_surrogate(c) {
       return Some(i)
     }
-    let c = text.code_unit_at(i).to_int()
     let crlf = c == '\r'.to_int() &&
       i + 1 < text.length() &&
       text.code_unit_at(i + 1).to_int() == '\n'.to_int()
@@ -124,8 +134,10 @@ pub fn offset_of(text : String, p : @ast.Location) -> Int? {
       column = 1
       i = i + (if crlf { 2 } else { 1 })
     } else {
-      column = column + 1
-      i = i + (if c >= 0xD800 && c <= 0xDBFF { 2 } else { 1 })
+      if !is_low_surrogate(c) {
+        column = column + 1
+      }
+      i = i + 1
     }
   }
   if row == p.row && column == p.column {
