@@ -15,6 +15,8 @@ pub fn[A] fold(NodeRef, A, (A, NodeRef) -> (A, Control), leave? : (A, NodeRef) -
 
 pub fn kind_table() -> Array[(String, String, Array[String])]
 
+pub fn[S : EventSource, H : Handler] push_events(S, H) -> Unit
+
 pub fn walk(NodeRef, (NodeRef) -> Control, leave? : (NodeRef) -> Unit) -> Unit
 
 // Errors
@@ -121,6 +123,11 @@ pub fn Tree::tokens_in(Self, @ast.Range) -> Array[@scanner.Token]
 pub(open) trait EventSource {
   fn next(Self) -> Event?
   fn skip_children(Self) -> Unit
+}
+
+pub(open) trait Handler {
+  fn on_enter(Self, EnterEvent) -> Control = _
+  fn on_leave(Self, LeaveEvent) -> Unit = _
 }
 
 pub(open) trait Visitor {
