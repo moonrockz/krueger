@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Check that main, the tags, the GitHub release and mooncakes.io agree"
+set -euo pipefail
+
+exec moon run -q --target wasm scripts/release.mbtx -- status

@@ -5,6 +5,7 @@ import {
   "moonbitlang/async@0.22.4/process",
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
+  "moonbitlang/core/json",
   "moonrockz/moonspec@0.7.1",
   "moonrockz/expect@0.6.0",
 }
@@ -21,9 +22,10 @@ import {
 ///                                     open the release pull request
 ///   release.mbtx plan                 decide in CI whether to release
 ///   release.mbtx notes <version>      print the GitHub release notes
+///   release.mbtx status               check main, tags, GitHub and mooncakes.io
 
 ///|
-let usage : String = "Usage: release.mbtx version | prepare [<version>] [--local] | plan | notes <version>"
+let usage : String = "Usage: release.mbtx version | prepare [<version>] [--local] | plan | notes <version> | status"
 
 ///|
 let initial_version : String = "v0.1.0"
@@ -274,6 +276,133 @@ fn pr_body(version : Version, notes : String) -> String {
 }
 
 ///|
+/// What `status` collects about the release state.
+struct Facts {
+  /// The version in moon.mod on origin/main.
+  main_version : Version
+  /// The highest `vX.Y.Z` tag on origin.
+  latest_tag : Version?
+  /// `v<main_version>` is tagged.
+  tagged : Bool
+  /// `v<main_version>` has a GitHub release.
+  github_release : Bool
+  /// The latest version on mooncakes.io, or `None` when it cannot be read.
+  mooncakes : Version?
+  /// Commits on origin/main after the latest tag.
+  unreleased : Int
+  /// Head branches of open release pull requests.
+  release_prs : Array[String]
+}
+
+///|
+/// One line of the `status` report.
+enum Finding {
+  Good(String)
+  Info(String)
+  Problem(String)
+} derive(Eq, Debug)
+
+///|
+fn finding_line(f : Finding) -> String {
+  match f {
+    Good(m) => "ok: \{m}"
+    Info(m) => "info: \{m}"
+    Problem(m) => "problem: \{m}"
+  }
+}
+
+///|
+/// Check that main, the tags, the GitHub release and mooncakes.io agree.
+/// Each problem names the command that fixes it.
+fn diagnose(f : Facts) -> Array[Finding] {
+  let v = f.main_version
+  let tag = "v\{v}"
+  let out : Array[Finding] = []
+  let published = match f.mooncakes {
+    Some(m) => "mooncakes.io has \{m}"
+    None => "mooncakes.io could not be read"
+  }
+  if f.tagged {
+    let on_mooncakes = f.mooncakes is Some(m) && m == v
+    if !f.github_release {
+      out.push(
+        Problem(
+          "\{tag} is tagged but has no GitHub release; run `gh workflow run release.yml --ref \{tag}`",
+        ),
+      )
+    }
+    if !on_mooncakes {
+      out.push(
+        Problem(
+          "\{tag} is tagged but \{published}; run `gh workflow run release.yml --ref \{tag}`",
+        ),
+      )
+    }
+    if f.github_release && on_mooncakes {
+      out.push(Good("\{tag} is released: tag, GitHub release and mooncakes.io"))
+    }
+  } else {
+    match f.latest_tag {
+      Some(t) if v <= t =>
+        out.push(
+          Problem(
+            "moon.mod on main is \{v} but the latest tag is v\{t}; set moon.mod to the released version or release a higher one",
+          ),
+        )
+      Some(_) =>
+        out.push(
+          Problem(
+            "moon.mod on main is \{v} but \{tag} has no tag (\{published}); check the latest Release run (`gh run list --workflow release.yml`), fix the cause, then run `gh workflow run release.yml --ref main`",
+          ),
+        )
+      None =>
+        out.push(Info("nothing is released yet; moon.mod on main is \{v}"))
+    }
+  }
+  if f.unreleased > 0 {
+    let since = match f.latest_tag {
+      Some(t) => " since v\{t}"
+      None => ""
+    }
+    out.push(Info("\{f.unreleased} commits on main\{since}"))
+  }
+  match f.release_prs {
+    [] => ()
+    [one] => out.push(Info("open release pull request: \{one}"))
+    many =>
+      out.push(
+        Problem(
+          "more than one open release pull request (\{many.join(", ")}); close all but one",
+        ),
+      )
+  }
+  out
+}
+
+///|
+/// The highest `vX.Y.Z` among tag names.
+fn latest_version(tags : Array[String]) -> Version? {
+  let mut best : Version? = None
+  for t in tags {
+    guard t.trim().has_prefix("v") else { continue }
+    guard parse_version(t) is Ok(v) else { continue }
+    match best {
+      Some(b) if b >= v => ()
+      _ => best = Some(v)
+    }
+  }
+  best
+}
+
+///|
+/// The `version` of a mooncakes.io module API answer.
+fn mooncakes_version(text : String) -> Version? {
+  let json = @json.parse(text) catch { _ => return None }
+  guard json is { "version": String(v), .. } else { return None }
+  parse_version(v).to_option()
+}
+
+///|
 fn fail_with(message : String) -> Unit {
   eprintln(message)
   @sys.exit(1)
@@ -482,6 +611,73 @@ async fn notes(version : String) -> Unit {
 }
 
 ///|
+async fn status() -> Unit {
+  run_or_fail("git", ["fetch", "--quiet", "--tags", "origin", "main"])
+  let (_, moon_mod) = stdout_of("git", ["show", "origin/main:moon.mod"])
+  let main_version = match mod_version(moon_mod).map(parse_version) {
+    Some(Ok(v)) => v
+    _ => {
+      fail_with("moon.mod on origin/main has no version")
+      return
+    }
+  }
+  let (_, tags) = stdout_of("git", ["tag", "--list", "v*"])
+  let tag_names = tags.split("\n").map(t => t.to_owned()).collect()
+  let latest_tag = latest_version(tag_names)
+  let tag = "v\{main_version}"
+  let tagged = tag_names.contains(tag)
+  let (release_code, _) = stdout_of("gh", ["release", "view", tag])
+  let (_, api) = stdout_of("curl", [
+    "-fsS",
+    "https://mooncakes.io/api/v0/modules/\{module_name}",
+  ])
+  let unreleased = match latest_tag {
+    Some(t) => {
+      let (_, count) = stdout_of("git", [
+        "rev-list",
+        "--count",
+        "v\{t}..origin/main",
+      ])
+      count.trim().to_owned()
+    }
+    None => {
+      let (_, count) = stdout_of("git", ["rev-list", "--count", "origin/main"])
+      count.trim().to_owned()
+    }
+  }
+  let (_, prs) = stdout_of("gh", [
+    "pr", "list", "--state", "open", "--json", "headRefName", "--jq", ".[].headRefName",
+  ])
+  let release_prs = prs
+    .split("\n")
+    .filter(b => b.has_prefix("release/v"))
+    .map(b => b.to_owned())
+    .collect()
+  let findings = diagnose({
+    main_version,
+    latest_tag,
+    tagged,
+    github_release: release_code == 0,
+    mooncakes: mooncakes_version(api),
+    unreleased: parse_number(unreleased).unwrap_or(0),
+    release_prs,
+  })
+  for f in findings {
+    println(finding_line(f))
+  }
+  let (_, run) = stdout_of("gh", [
+    "run", "list", "--workflow", "release.yml", "--limit", "1", "--json", "status,conclusion,event,headBranch,url",
+    "--jq", ".[] | \"latest Release run: \\(.event) on \\(.headBranch), \\(.status) \\(.conclusion) \\(.url)\"",
+  ])
+  if run.trim() != "" {
+    println("info: \{run.trim()}")
+  }
+  if findings.iter().any(f => f is Problem(_)) {
+    @sys.exit(1)
+  }
+}
+
+///|
 async fn main {
   match @env.args()[1:] {
     ["version"] => println(computed_version())
@@ -492,6 +688,7 @@ async fn main {
       prepare(Some(version), true)
     ["plan"] => run_plan()
     ["notes", version] => notes(version)
+    ["status"] => status()
     _ => {
       eprintln(usage)
       @sys.exit(2)
@@ -510,6 +707,7 @@ struct ReleaseWorld {
   mut ref_name : String
   mut tag_exists : Bool
   mut has_section : Bool
+  mut facts : Facts
 }
 
 ///|
@@ -523,6 +721,15 @@ fn ReleaseWorld::new() -> ReleaseWorld {
     ref_name: "",
     tag_exists: false,
     has_section: true,
+    facts: {
+      main_version: { major: 0, minor: 0, patch: 0, },
+      latest_tag: None,
+      tagged: false,
+      github_release: false,
+      mooncakes: None,
+      unreleased: 0,
+      release_prs: [],
+    },
   }
 }
 
@@ -654,6 +861,74 @@ impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
     @expect.expect(plan_outputs(Release(version_of(version)))).to_equal(
       doc.content + "\n",
     )
+  })
+  setup.given2("moon.mod on main is {string} and the latest tag is {string}", fn(
+    main : String,
+    latest : String,
+  ) raise {
+    self.facts = {
+      ..self.facts,
+      main_version: version_of(main),
+      latest_tag: if latest == "" {
+        None
+      } else {
+        Some(version_of(latest))
+      },
+    }
+  })
+  setup.given3(
+    "the main version is tagged: {string}, has a GitHub release: {string}, mooncakes.io has {string}",
+    fn(tagged : String, release : String, mooncakes : String) raise {
+      self.facts = {
+        ..self.facts,
+        tagged: tagged == "yes",
+        github_release: release == "yes",
+        mooncakes: if mooncakes == "" {
+          None
+        } else {
+          Some(version_of(mooncakes))
+        },
+      }
+    },
+  )
+  setup.given2("{int} unreleased commits and release pull requests {string}", fn(
+    n : Int,
+    prs : String,
+  ) {
+    self.facts = {
+      ..self.facts,
+      unreleased: n,
+      release_prs: if prs == "" {
+        []
+      } else {
+        prs.split(",").map(b => b.trim().to_owned()).collect()
+      },
+    }
+  })
+  setup.then1("the status report is:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(diagnose(self.facts).map(finding_line).join("\n")).to_equal(
+      doc.content,
+    )
+  })
+  setup.then2("the latest version of tags {string} is {string}", fn(
+    tags : String,
+    expected : String,
+  ) raise {
+    let names = tags.split(" ").map(t => t.to_owned()).collect()
+    let actual = match latest_version(names) {
+      Some(v) => "\{v}"
+      None => "none"
+    }
+    @expect.expect(actual).to_equal(expected)
+  })
+  setup.then1("the mooncakes.io version is {string}", fn(
+    expected : String,
+  ) raise {
+    let actual = match mooncakes_version(self.text) {
+      Some(v) => "\{v}"
+      None => "none"
+    }
+    @expect.expect(actual).to_equal(expected)
   })
 }
 

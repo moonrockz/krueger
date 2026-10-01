@@ -241,3 +241,120 @@ Feature: Release tooling
       version=0.3.0
       tag=v0.3.0
       """
+
+  Scenario Outline: The latest version among the tags
+    Then the latest version of tags "<tags>" is "<latest>"
+
+    Examples:
+      | tags                         | latest |
+      | v0.1.0 v0.2.0                | 0.2.0  |
+      | v0.10.0 v0.9.0 v0.2.0        | 0.10.0 |
+      | v0.2.0 0.3.0 vnext v1.0      | 0.2.0  |
+      | other                        | none   |
+
+  Scenario: The version mooncakes.io publishes
+    Given the text:
+      """
+      {"module":"moonrockz/krueger","version":"0.2.0","yanked":false}
+      """
+    Then the mooncakes.io version is "0.2.0"
+
+  Scenario Outline: mooncakes.io answers without a version
+    Given the text:
+      """
+      <answer>
+      """
+    Then the mooncakes.io version is "none"
+
+    Examples:
+      | answer                          |
+      | {"error":"not found"}           |
+      | <html>Bad gateway</html>        |
+      | {"version":"latest"}            |
+
+  Scenario: Released
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "yes", has a GitHub release: "yes", mooncakes.io has "0.3.0"
+    And 0 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      ok: v0.3.0 is released: tag, GitHub release and mooncakes.io
+      """
+
+  Scenario: Released, with work on main and an open release pull request
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "yes", has a GitHub release: "yes", mooncakes.io has "0.3.0"
+    And 4 unreleased commits and release pull requests "release/v0.4.0"
+    Then the status report is:
+      """
+      ok: v0.3.0 is released: tag, GitHub release and mooncakes.io
+      info: 4 commits on main since v0.3.0
+      info: open release pull request: release/v0.4.0
+      """
+
+  Scenario: Tagged without a GitHub release
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "yes", has a GitHub release: "no", mooncakes.io has "0.3.0"
+    And 0 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      problem: v0.3.0 is tagged but has no GitHub release; run `gh workflow run release.yml --ref v0.3.0`
+      """
+
+  Scenario: Tagged but not published
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "yes", has a GitHub release: "yes", mooncakes.io has "0.2.0"
+    And 0 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      problem: v0.3.0 is tagged but mooncakes.io has 0.2.0; run `gh workflow run release.yml --ref v0.3.0`
+      """
+
+  Scenario: mooncakes.io cannot be read
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "yes", has a GitHub release: "yes", mooncakes.io has ""
+    And 0 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      problem: v0.3.0 is tagged but mooncakes.io could not be read; run `gh workflow run release.yml --ref v0.3.0`
+      """
+
+  Scenario: The version on main has no tag
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.2.0"
+    And the main version is tagged: "no", has a GitHub release: "no", mooncakes.io has "0.3.0"
+    And 1 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      problem: moon.mod on main is 0.3.0 but v0.3.0 has no tag (mooncakes.io has 0.3.0); check the latest Release run (`gh run list --workflow release.yml`), fix the cause, then run `gh workflow run release.yml --ref main`
+      info: 1 commits on main since v0.2.0
+      """
+
+  Scenario: The version on main is below the latest tag
+    Given moon.mod on main is "0.2.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "no", has a GitHub release: "no", mooncakes.io has "0.3.0"
+    And 0 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      problem: moon.mod on main is 0.2.0 but the latest tag is v0.3.0; set moon.mod to the released version or release a higher one
+      """
+
+  Scenario: Nothing released yet
+    Given moon.mod on main is "0.1.0" and the latest tag is ""
+    And the main version is tagged: "no", has a GitHub release: "no", mooncakes.io has ""
+    And 12 unreleased commits and release pull requests ""
+    Then the status report is:
+      """
+      info: nothing is released yet; moon.mod on main is 0.1.0
+      info: 12 commits on main
+      """
+
+  Scenario: Two open release pull requests
+    Given moon.mod on main is "0.3.0" and the latest tag is "0.3.0"
+    And the main version is tagged: "yes", has a GitHub release: "yes", mooncakes.io has "0.3.0"
+    And 2 unreleased commits and release pull requests "release/v0.3.1, release/v0.4.0"
+    Then the status report is:
+      """
+      ok: v0.3.0 is released: tag, GitHub release and mooncakes.io
+      info: 2 commits on main since v0.3.0
+      problem: more than one open release pull request (release/v0.3.1, release/v0.4.0); close all but one
+      """
