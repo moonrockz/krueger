@@ -8,6 +8,7 @@ import {
 
 import {
   "moonrockz/expect",
+  "moonrockz/krueger/internal/lawkit",
   "moonbitlang/core/env",
   "moonbitlang/core/quickcheck",
   "moonbitlang/core/quickcheck/splitmix",

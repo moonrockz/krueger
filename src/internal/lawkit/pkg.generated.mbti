@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/internal/lawkit"
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/quickcheck",
+  "moonbitlang/core/quickcheck/shrink",
+  "moonbitlang/core/quickcheck/splitmix",
+  "moonrockz/krueger/ast",
+}
+
+// Values
+pub fn at_or_before(@ast.Location, @ast.Location) -> Bool
+
+pub fn contains(@ast.Range, @ast.Location) -> Bool
+
+pub fn edge_positions(String, Array[@ast.Range]) -> Array[@ast.Location]
+
+pub fn end_of_text(String) -> @ast.Location
+
+pub fn offset_of(String, @ast.Location) -> Int?
+
+pub fn within(@ast.Range, @ast.Range) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) struct ElmModule(String) derive(@debug.Debug)
+pub fn ElmModule::text(Self) -> String
+pub impl @quickcheck.Arbitrary for ElmModule
+pub impl @shrink.Shrink for ElmModule
+
+pub(all) struct Ranges(Array[@ast.Range]) derive(@debug.Debug)
+pub fn Ranges::ranges(Self) -> Array[@ast.Range]
+pub impl @quickcheck.Arbitrary for Ranges
+pub impl @shrink.Shrink for Ranges
+
+// Type aliases
+
+// Traits
