@@ -1,0 +1,186 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.6.0",
+}
+
+///|
+/// Publish the module to mooncakes.io (CI only). A release tag must name the
+/// version in moon.mod. When that version is already published (a second
+/// release run for the same tag), succeed without publishing again.
+
+///|
+/// The text mooncakes.io answers when the version already exists.
+let duplicated : String = "is duplicated with an existing version"
+
+///|
+/// The `version = "..."` value of a moon.mod file.
+fn mod_version(moon_mod : String) -> String? {
+  for line in moon_mod.split("\n") {
+    let line = line.trim()
+    guard line.has_prefix("version") else { continue }
+    let rest = line.view(start_offset=7).trim_start()
+    guard rest.has_prefix("=") else { continue }
+    let value = rest.view(start_offset=1).trim()
+    if value.length() >= 2 && value.has_prefix("\"") && value.has_suffix("\"") {
+      return Some(
+        value.view(start_offset=1, end_offset=value.length() - 1).to_owned(),
+      )
+    }
+  }
+  None
+}
+
+///|
+/// A release tag (`ref_type` "tag") must be `v` + the module version. Other
+/// refs (a manual run from a branch) are not checked.
+fn check_ref(
+  ref_type : String,
+  ref_name : String,
+  version : String,
+) -> Result[Unit, String] {
+  if ref_type == "tag" && ref_name != "v" + version {
+    Err(
+      "tag \{ref_name} does not match moon.mod version \{version} (v\{version})",
+    )
+  } else {
+    Ok(())
+  }
+}
+
+///|
+/// What a `moon publish` run means.
+enum Outcome {
+  Published
+  AlreadyPublished
+  Failed
+} derive(Eq, Debug)
+
+///|
+fn classify(exit_code : Int, output : String) -> Outcome {
+  if exit_code == 0 {
+    Published
+  } else if output.contains(duplicated) {
+    AlreadyPublished
+  } else {
+    Failed
+  }
+}
+
+///|
+async fn main {
+  let moon_mod = @fs.read_file("moon.mod").text()
+  guard mod_version(moon_mod) is Some(version) else {
+    eprintln("moon.mod has no version")
+    @sys.exit(1)
+    return
+  }
+  let ref_type = @env.get_env_var("GITHUB_REF_TYPE").unwrap_or("")
+  let ref_name = @env.get_env_var("GITHUB_REF_NAME").unwrap_or("")
+  if check_ref(ref_type, ref_name, version) is Err(message) {
+    eprintln(message)
+    @sys.exit(1)
+    return
+  }
+  let (code, output) = @process.collect_output_merged("moon", ["publish"])
+  let output = output.text()
+  println(output.trim_end())
+  match classify(code, output) {
+    Published => println("Published moonrockz/krueger \{version}")
+    AlreadyPublished =>
+      println(
+        "moonrockz/krueger \{version} is already published (a second release run for this tag); nothing to do",
+      )
+    Failed => @sys.exit(1)
+  }
+}
+
+///|
+/// Scenario state for `features/publish.feature`.
+struct PublishWorld {
+  mut moon_mod : String
+  mut ref_type : String
+  mut ref_name : String
+  mut check : Result[Unit, String]
+  mut exit_code : Int
+  mut output : String
+}
+
+///|
+fn PublishWorld::new() -> PublishWorld {
+  {
+    moon_mod: "",
+    ref_type: "",
+    ref_name: "",
+    check: Err("not run"),
+    exit_code: 0,
+    output: "",
+  }
+}
+
+///|
+fn outcome_name(o : Outcome) -> String {
+  match o {
+    Published => "published"
+    AlreadyPublished => "already published"
+    Failed => "failed"
+  }
+}
+
+///|
+impl @moonspec.World for PublishWorld with fn configure(self, setup) {
+  setup.given1("moon.mod is:", fn(doc : @moonspec.DocString) {
+    self.moon_mod = doc.content
+  })
+  setup.then1("the module version is {string}", fn(expected : String) raise {
+    @expect.expect(mod_version(self.moon_mod)).to_equal(Some(expected))
+  })
+  setup.then0("the module has no version", fn() raise {
+    @expect.expect(mod_version(self.moon_mod)).to_equal(None)
+  })
+  setup.given2("the ref type is {string} and the ref name is {string}", fn(
+    ref_type : String,
+    ref_name : String,
+  ) {
+    self.ref_type = ref_type
+    self.ref_name = ref_name
+  })
+  setup.when1("I check the ref against version {string}", fn(version : String) {
+    self.check = check_ref(self.ref_type, self.ref_name, version)
+  })
+  setup.then1("the check gives {string}", fn(expected : String) raise {
+    let actual = match self.check {
+      Ok(_) => "ok"
+      Err(message) => message
+    }
+    @expect.expect(actual).to_equal(expected)
+  })
+  setup.given2("moon publish exits with {int} and prints {string}", fn(
+    code : Int,
+    output : String,
+  ) {
+    self.exit_code = code
+    self.output = output
+  })
+  setup.then1("the outcome is {string}", fn(expected : String) raise {
+    @expect.expect(outcome_name(classify(self.exit_code, self.output))).to_equal(
+      expected,
+    )
+  })
+}
+
+///|
+async test "publish feature" {
+  @moonspec.run_or_fail(
+    PublishWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/publish.feature"),
+    ]),
+  )
+  |> ignore
+}
