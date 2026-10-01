@@ -81,6 +81,7 @@ test "syntax corpus" {
           continue
         }
         let (count, found) = syntax_problems(key, tree, kinds)
+        problems.append(walk_problems(key, tree.root(), count))
         files = files + 1
         nodes = nodes + count
         problems.append(found)
@@ -94,4 +95,71 @@ test "syntax corpus" {
       }
     }
   }
+}
+
+///|
+/// A node's occurrence tag: category, kind, full range.
+fn walk_tag(n : @krueger.NodeRef) -> String {
+  let r = n.range()
+  "\{n.category()}/\{n.kind()}@\{r.start.row}:\{r.start.column}-\{r.end.row}:\{r.end.column}"
+}
+
+///|
+/// Counts the nodes a visitor leaves (defaults elsewhere).
+struct LeaveCount {
+  mut count : Int
+}
+
+///|
+impl @krueger.Visitor for LeaveCount with fn leave(self, _) {
+  self.count = self.count + 1
+}
+
+///|
+/// walk, fold and accept over one corpus file: walk enters the `count` nodes
+/// in children() pre-order (tag and depth), every leave gets the object of
+/// the latest open enter, and fold and accept see `count` nodes.
+fn walk_problems(
+  key : String,
+  root : @krueger.NodeRef,
+  count : Int,
+) -> Array[String] {
+  let pre = []
+  let stack = [(root, 0)]
+  while stack.pop() is Some((n, depth)) {
+    pre.push("\{depth} \{walk_tag(n)}")
+    n.children().rev_each(c => stack.push((c, depth + 1)))
+  }
+  let entered = []
+  let open : Array[@krueger.NodeRef] = []
+  let mut nested = true
+  @krueger.walk(
+    root,
+    n => {
+      entered.push("\{open.length()} \{walk_tag(n)}")
+      open.push(n)
+      Continue
+    },
+    leave=n => {
+      if !(open.pop() is Some(o) && physical_equal(o, n)) {
+        nested = false
+      }
+    },
+  )
+  let folded = @krueger.fold(root, 0, (k, _) => (k + 1, Continue))
+  let visitor = { count: 0, }
+  @krueger.accept(root, visitor)
+  let problems = []
+  if pre.length() != count || folded != count || visitor.count != count {
+    problems.push(
+      "\{key}: walk/fold/accept visit \{entered.length()}/\{folded}/\{visitor.count} nodes, expected \{count}",
+    )
+  }
+  if entered != pre {
+    problems.push("\{key}: walk order is not the children() pre-order")
+  }
+  if !nested || !open.is_empty() {
+    problems.push("\{key}: a leave does not match its enter")
+  }
+  problems
 }

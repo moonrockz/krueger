@@ -93,7 +93,16 @@ pub using @report {
 }
 
 ///|
-pub using @syntax {type NodeRef, type Tree, kind_table}
+pub using @syntax {
+  type NodeRef,
+  type Tree,
+  type Control,
+  trait Visitor,
+  kind_table,
+  walk,
+  fold,
+  accept,
+}
 
 ///|
 pub using @dialect {

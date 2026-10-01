@@ -32,10 +32,10 @@ moonrockz/krueger
 │   ├── report/           # Renders diagnostics like elm make (terminal, plain, JSON)
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
-│   ├── syntax/           # Node model over the AST: NodeRef, Tree, kind_table
+│   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor
 │   ├── bdd/              # MoonSpec step definitions (test-only)
 │   ├── e2e/              # End-to-end tests (test-only)
-│   └── (traversal)       # walk / fold / Visitor / events / cursor in syntax/ — planned
+│   └── (events, cursor)  # EventReader / TreeCursor in syntax/ — planned
 ├── tests/features/       # Gherkin features
 ├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
 ├── scripts/              # MoonBit tooling scripts (.mbtx)
@@ -267,6 +267,29 @@ The kind table below is checked against `kind_table()` by
 | `type` | `genericRecord` | name, values |
 <!-- kinds:end -->
 
+#### Traversal
+
+- `walk(root, enter, leave?)` is the engine: pre-order over `children()` (source
+  order), an explicit stack, `enter` returns a `Control`. `Continue` visits the
+  children; `SkipChildren` does not (the node is still left); `Stop` ends the
+  walk with no further `leave` calls. `leave` gets the same node object as its
+  `enter`.
+- `fold(root, init, enter, leave?)` threads an accumulator through the same walk,
+  in callback order.
+- `accept(root, visitor)` calls one `Visitor` method per node: `visit_function`
+  (functions, top-level or `let`), `visit_declaration` (other declarations),
+  `visit_expression`, `visit_pattern`, `visit_type`, `visit_case` (case
+  branches), `visit_import`, `visit_comment`, `visit_attribute`, and
+  `visit_other` for the rest (doc comments included). Every method defaults to
+  `Continue`; `leave` to nothing.
+- With equivalent `Control` decisions, `walk`, `fold` and `accept` produce the
+  same enter and leave sequence. With `Continue` throughout, enters follow
+  `children()` pre-order. Traversal state is private to each call; accumulator
+  and visitor state remain the caller's and are not cloned. Nodes share the
+  parse result's AST, which must not change while nodes or traversals are in
+  use.
+- Laws: `src/syntax/*_law_test.mbt` (see "Property-Based Testing (Laws)").
+
 ### Dialects
 
 A `Dialect` (`src/dialect`) selects what krueger accepts and rejects, and carries
@@ -394,6 +417,78 @@ Visitor and AST design will aim for **flexibility** similar to moonrockz/gherkin
 - Gherkin `{string}` parameters keep backslash escapes literally; use a
   single-quoted string (`'a"b\c'`) to pass `"` or `\`.
 - Run `mise run test:unit` for tests; `moon test --update` to refresh snapshots.
+
+### Property-Based Testing (Laws)
+
+Property-based tests are a supplemental strategy. They do not replace the
+example tests and features above; they add evidence of correctness by stating
+**laws**: rules that hold for every input, checked against many generated
+inputs.
+
+- **When to write laws.** For every new type, feature or capability, ask which
+  laws it must obey, and write them down in the plan next to the example tests.
+  Typical laws:
+  - invariants (every child's range lies inside its parent's range);
+  - round trips (decode after encode gives the value back);
+  - equivalences (two APIs give the same result: `walk`, `fold` and `accept`
+    visit the same nodes);
+  - algebraic rules (identity, idempotence, associativity, order preservation);
+  - a model (a small, obviously correct reference implementation agrees with
+    the real one).
+- **Tooling.** Use `moonbitlang/core/quickcheck` (part of core; import it and
+  `moonbitlang/core/quickcheck/splitmix` for `"test"` only). Check a law with
+  `@quickcheck.check(law, count=…, max_size=…, seed=…)`. Always set `seed`, so
+  a run is repeatable and CI failures reproduce locally.
+- **Generators.** For domain inputs, wrap the value in a test-only newtype and
+  implement `@quickcheck.Arbitrary` (and `@quickcheck.Shrink`, the default
+  impl is fine to start):
+
+  ```moonbit
+  struct ElmModule(String) derive(Debug)
+
+  impl @quickcheck.Arbitrary for ElmModule with fn arbitrary(size, rs) {
+    ElmModule(gen_module(size, rs)) // the gen_* helpers halve `size` per level
+  }
+
+  impl @quickcheck.Shrink for ElmModule
+
+  test "law: every child's range lies inside its parent's range" {
+    @quickcheck.check(
+      (m : ElmModule) => {
+        let root = elm_root(m) // fails the law on any parse diagnostic
+        let mut ok = true
+        @syntax.walk(root, n => {
+          let r = n.range()
+          for c in n.children() {
+            let cr = c.range()
+            ok = ok && before_or_at(r.start, cr.start) && before_or_at(cr.end, r.end)
+          }
+          Continue
+        })
+        ok
+      },
+      count=100,
+      max_size=24,
+      seed=2026,
+    )
+  }
+  ```
+
+  `src/syntax/gen_elm_test.mbt` has the full generator (`ElmModule`,
+  `Policy`) and `elm_root`. Keep generated depth bounded by `size`, so
+  generators do not overflow the stack on wasm.
+- **Valid input fails loudly.** A generator of valid input must make the law
+  fail on any diagnostic (as `elm_root` does), never skip or filter the case:
+  otherwise a broken generator makes every law pass without testing anything.
+  Generate arbitrary text only for laws that must hold for any text (the
+  parser never crashes; a diagnostic is reported instead).
+- **Name laws as laws.** Test names start with `law:` and state the rule, for
+  example `law: fold with a logging accumulator gives walk's events`.
+- **Corpus as a law check.** A law that holds for generated input should also
+  hold for the pinned corpus; add it to the corpus check where it is cheap.
+- **Run on every target.** Laws run in `mise run test:unit` and
+  `mise run test:targets` like other tests. Keep `count` and `max_size` small
+  enough that a package's tests stay fast (a few seconds).
 
 ## Coding Convention
 
