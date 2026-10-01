@@ -58,20 +58,24 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
     self.source = doc.content
   })
   setup.given1("the Elm fixture {string}", fn(name : String) raise {
-    self.source = @fs.read_file_to_string("tests/fixtures/parser/\{name}.elm")
+    self.source = @fs.read_file_to_string(
+      "../tests/fixtures/parser/\{name}.elm",
+    )
     self.dialect = @krueger.Dialect::elm_syntax_7_3_9()
   })
   setup.given1("the Elm fixture {string} from the AST fixtures", fn(
     name : String,
   ) raise {
-    self.source = @fs.read_file_to_string("tests/fixtures/ast/\{name}.elm")
+    self.source = @fs.read_file_to_string("../tests/fixtures/ast/\{name}.elm")
     self.dialect = @krueger.Dialect::elm_syntax_7_3_9()
   })
   setup.then1(
     "the AST JSON equals the elm-syntax output for AST fixture {string}",
     fn(name : String) raise {
       guard self.parsed().ast is Some(file) else { fail("expected an AST") }
-      let expected = @fs.read_file_to_string("tests/fixtures/ast/\{name}.json")
+      let expected = @fs.read_file_to_string(
+          "../tests/fixtures/ast/\{name}.json",
+        )
         .trim_end(chars="\n")
         .to_owned()
       @expect.expect(@ast.encode_file(file).stringify()).to_equal(expected)
@@ -92,7 +96,9 @@ impl @moonspec.World for ParserWorld with fn configure(self, setup) {
     name : String,
   ) raise {
     guard self.parsed().ast is Some(file) else { fail("expected an AST") }
-    let expected = @fs.read_file_to_string("tests/fixtures/parser/\{name}.json")
+    let expected = @fs.read_file_to_string(
+        "../tests/fixtures/parser/\{name}.json",
+      )
       .trim_end(chars="\n")
       .to_owned()
     @expect.expect(@ast.encode_file(file).stringify()).to_equal(expected)
@@ -170,7 +176,7 @@ async test "parser feature" {
   @moonspec.run_or_fail(
     ParserWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/parser.feature"),
+      @moonspec.FeatureSource::File("../tests/features/parser.feature"),
     ]),
   )
   |> ignore

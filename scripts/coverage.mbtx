@@ -62,7 +62,7 @@ let coverage_prefix : String = "moonbit_coverage_"
 
 ///|
 let test_suites : Array[String] = [
-  "src/scanner", "src/parser", "src", "src/bdd", "src/e2e",
+  "src/scanner", "src/parser", "src", "harness/bdd", "src/e2e",
 ]
 
 ///|

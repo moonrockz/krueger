@@ -30,7 +30,8 @@ The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax outp
 
 ```
 moonrockz/krueger
-├── src/                  # The library (sole artifact for now)
+├── moon.work             # Workspace: the library (.) and the test harness (harness/)
+├── src/                  # The library (the only published module)
 │   ├── lib.mbt           # Package entry point; re-exports the public types
 │   ├── dialect/          # Dialect: rejection rules, operator table, extension hooks
 │   ├── scanner/          # Hand-written Elm 0.19.1 lexer, trivia, diagnostics
@@ -39,8 +40,12 @@ moonrockz/krueger
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
 │   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor, events, NodePath, TreeCursor
-│   ├── bdd/              # MoonSpec step definitions (test-only)
+│   ├── lawkit/           # Property-test generators and position/report helpers (public test support)
 │   └── e2e/              # End-to-end tests (test-only)
+├── harness/              # Unpublished module moonrockz/krueger_harness (test-only dependencies)
+│   ├── bdd/              # MoonSpec step definitions for tests/features
+│   ├── parity/           # Elm parity over the pinned corpus (mise run test:parity)
+│   └── rejection/        # Rejection parity (mise run test:rejection)
 ├── tests/features/       # Gherkin features
 ├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
 ├── scripts/              # MoonBit tooling scripts (.mbtx)
@@ -417,12 +422,29 @@ versioned on mooncakes.io, so keep them on the latest release when you bump the 
 
 | Module | Purpose |
 |--------|---------|
-| [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`src/bdd`, test-only) |
+| [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`harness/bdd`, test-only) |
 | [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect) | Fluent test assertions (scripts; new tests) |
 
 Module dependencies are declared in the `import` block of `moon.mod`. Each package lists
 what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"` for
 test-only dependencies.
+
+MoonBit has no module-level test-only dependencies: every module in `moon.mod` is
+downloaded by every user of krueger. So the published module (`moon.mod` at the root)
+depends only on `moonrockz/expect` (used by the library packages' own tests). Test
+harnesses that need more (`moonspec`, `moonbitlang/async`, `moonbitlang/x`) live in the
+unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
+`moonbitlang/async` keeps its `examples/` and `test_programs/`:
+
+- `moon.work` lists both modules; `harness/moon.mod` imports `moonrockz/krueger@0.0.0`,
+  which the workspace resolves to the local module (the version is ignored).
+- Run harness tests from the root: `moon test harness/parity`. They run with `harness/`
+  as the working directory, so they reach repository files as `../tests/...`,
+  `../.corpus` and `../_build/reports/...` (BDD steps take feature paths from the
+  repository root and resolve them with `repo_path`).
+- Put a new test that needs a harness-only dependency in `harness/`, not in `src/`.
+- `moon.mod` `options(exclude: [...])` keeps the harness, test data, docs and tooling
+  out of the published package; `moon package --list` shows what ships.
 
 ### Toolchain
 
@@ -437,7 +459,7 @@ test-only dependencies.
 - The MoonBit toolchain version is pinned in `.github/workflows/*.yml` (`MOONBIT_VERSION`).
   Keep your local toolchain on the same version (`moon version --all`, `moon upgrade`).
 - To upgrade: run `moon upgrade`, bump `MOONBIT_VERSION`, bump the `import` versions in
-  `moon.mod` and the pinned imports in `scripts/*.mbtx`, then run
+  `moon.mod`, `harness/moon.mod` and the pinned imports in `scripts/*.mbtx`, then run
   `moon update && moon check && mise run test`. Fix all new warnings, not only errors.
 - Use `derive(Debug)` (not `derive(Show)`) for data types. `assert_eq` requires `Debug`.
   Implement `Show` by hand only for real text formats.
@@ -541,7 +563,7 @@ inputs.
   }
   ```
 
-  Shared generators are `pub` types in `src/internal/lawkit`:
+  Shared generators are `pub` types in `src/lawkit`:
   `elm_module.mbt` has the full `ElmModule` generator, and
   `src/syntax/gen_elm_test.mbt` has `elm_root` and the traversal `Policy`.
   Keep generated depth bounded by `size`, so
@@ -560,11 +582,13 @@ inputs.
   file ends; non-ASCII text (surrogate pairs); limits ± 1. A boundary bug found
   by hand becomes a law, not only an example.
 - **Shared generators.** Use and extend the test-support package
-  `src/internal/lawkit` (`ElmModule`, `edge_positions`, `Ranges`, …), so every
+  `src/lawkit` (`ElmModule`, `edge_positions`, `Ranges`, …), so every
   package's laws reach the same edges; add a new edge there, not in one
-  package's tests. `lawkit` imports only the MoonBit core library and `@ast`, so
-  black-box tests of any package, and white-box tests of any package except
-  `ast`, can import it. Generators: `ElmModule` (valid Elm), `ElmText` (any
+  package's tests. It is public (the harness module and krueger's users can
+  write laws with it), so its names are part of krueger's versioned API.
+  `lawkit` imports only the MoonBit core library and `@ast`, so black-box
+  tests of any package, and white-box tests of any package except `ast`, can
+  import it. Generators: `ElmModule` (valid Elm), `ElmText` (any
   text: fragments, unclosed literals and comments, edge characters, valid
   modules cut short or changed; it shrinks), `Nesting` and `nested(construct,
   depth)` (each nesting construct at any depth, biased to the limits ± 2),

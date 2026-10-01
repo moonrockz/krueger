@@ -98,7 +98,7 @@ impl @moonspec.World for TokenizerWorld with fn configure(self, setup) {
 ///|
 async test "tokenizer feature: comments and doc comments scenario" {
   let options = @moonspec.RunOptions::new([
-    @moonspec.FeatureSource::File("tests/features/tokenizer.feature"),
+    @moonspec.FeatureSource::File("../tests/features/tokenizer.feature"),
   ])
   options.scenario_name("Tokenize module with comments and doc comment")
   @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
@@ -107,7 +107,7 @@ async test "tokenizer feature: comments and doc comments scenario" {
 ///|
 async test "tokenizer feature: malformed comment diagnostics scenario" {
   let options = @moonspec.RunOptions::new([
-    @moonspec.FeatureSource::File("tests/features/tokenizer.feature"),
+    @moonspec.FeatureSource::File("../tests/features/tokenizer.feature"),
   ])
   options.scenario_name("Report malformed block comment")
   @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
@@ -116,7 +116,7 @@ async test "tokenizer feature: malformed comment diagnostics scenario" {
 ///|
 async test "tokenizer feature: invalid character diagnostics scenario" {
   let options = @moonspec.RunOptions::new([
-    @moonspec.FeatureSource::File("tests/features/tokenizer.feature"),
+    @moonspec.FeatureSource::File("../tests/features/tokenizer.feature"),
   ])
   options.scenario_name("Report invalid character sequence")
   @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore

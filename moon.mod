@@ -3,9 +3,6 @@ name = "moonrockz/krueger"
 version = "0.1.0"
 
 import {
-  "moonbitlang/x@0.5.5",
-  "moonrockz/moonspec@0.7.1",
-  "moonbitlang/async@0.22.4",
   "moonrockz/expect@0.6.0",
 }
 
@@ -22,3 +19,19 @@ description = "Parser and parsing utilities for Elm and Elm-like dialects (e.g. 
 source = "src"
 
 warnings = "-implicit_impl_as_method"
+
+options(
+  exclude: [
+    "harness",
+    "tests",
+    "docs",
+    "scripts",
+    "mise-tasks",
+    "tools",
+    ".github",
+    ".beads",
+    "moon.work",
+    "CLAUDE.md",
+    "lefthook.yml",
+  ],
+)

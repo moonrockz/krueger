@@ -14,25 +14,25 @@ priv enum Mode {
 }
 
 ///|
-let manifest_path : String = "tests/corpus/manifest.json"
+let manifest_path : String = "../tests/corpus/manifest.json"
 
 ///|
-let lock_path : String = "tests/corpus/goldens.lock"
+let lock_path : String = "../tests/corpus/goldens.lock"
 
 ///|
-let baseline_path : String = "tests/corpus/baseline.json"
+let baseline_path : String = "../tests/corpus/baseline.json"
 
 ///|
-let corpus_dir : String = ".corpus"
+let corpus_dir : String = "../.corpus"
 
 ///|
-let raw_goldens_dir : String = ".dev/out/goldens/raw"
+let raw_goldens_dir : String = "../.dev/out/goldens/raw"
 
 ///|
 let max_reported_mismatches : Int = 20
 
 ///|
-let reports_dir : String = "_build/reports/parity"
+let reports_dir : String = "../_build/reports/parity"
 
 ///|
 fn parity_mode() -> Mode? raise {

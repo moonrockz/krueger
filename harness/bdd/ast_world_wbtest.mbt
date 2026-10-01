@@ -13,7 +13,7 @@ fn AstWorld::new() -> AstWorld {
 ///|
 impl @moonspec.World for AstWorld with fn configure(self, setup) {
   setup.given1("the elm-syntax JSON fixture {string}", fn(name : String) raise {
-    self.fixture = @fs.read_file_to_string("tests/fixtures/ast/\{name}.json")
+    self.fixture = @fs.read_file_to_string("../tests/fixtures/ast/\{name}.json")
       .trim_end(chars="\n")
       .to_owned()
   })
@@ -36,7 +36,7 @@ async test "ast json feature" {
   @moonspec.run_or_fail(
     AstWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/ast_json.feature"),
+      @moonspec.FeatureSource::File("../tests/features/ast_json.feature"),
     ]),
   )
   |> ignore

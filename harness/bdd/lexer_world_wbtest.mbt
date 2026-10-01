@@ -80,7 +80,7 @@ async test "lexer feature" {
   @moonspec.run_or_fail(
     LexerWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/lexer.feature"),
+      @moonspec.FeatureSource::File("../tests/features/lexer.feature"),
     ]),
   )
   |> ignore

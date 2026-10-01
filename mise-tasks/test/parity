@@ -2,4 +2,4 @@
 #MISE description="Score Elm parity against the golden lock (needs mise run corpus:fetch)"
 set -euo pipefail
 
-KRUEGER_PARITY_MODE=check exec moon test src/parity --target js
+KRUEGER_PARITY_MODE=check exec moon test harness/parity --target js

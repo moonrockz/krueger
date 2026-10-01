@@ -76,7 +76,7 @@ impl @moonspec.World for AttributesWorld with fn configure(self, setup) {
     self.source = doc.content
   })
   setup.given1("the Elm file {string}", fn(path : String) raise {
-    self.source = @fs.read_file_to_string(path)
+    self.source = @fs.read_file_to_string(repo_path(path))
   })
   setup.given0("the attribute syntax is off", fn() {
     self.dialect = { ..@krueger.Dialect::elm_0_19_1(), attributes: Off, }
@@ -114,7 +114,7 @@ async test "attributes feature" {
   @moonspec.run_or_fail(
     AttributesWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/attributes.feature"),
+      @moonspec.FeatureSource::File("../tests/features/attributes.feature"),
     ]),
   )
   |> ignore

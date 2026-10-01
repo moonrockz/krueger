@@ -153,10 +153,10 @@ fn marked_kind_table(text : String) -> String raise {
 ///|
 impl @moonspec.World for SyntaxWorld with fn configure(self, setup) {
   setup.given1("the Elm file {string}", fn(path : String) raise {
-    self.text = @fs.read_file_to_string(path)
+    self.text = @fs.read_file_to_string(repo_path(path))
   })
   setup.given1("the file {string}", fn(path : String) raise {
-    self.text = @fs.read_file_to_string(path)
+    self.text = @fs.read_file_to_string(repo_path(path))
   })
   // The fixtures are elm-syntax output, so they parse in its dialect (effect
   // modules included).
@@ -192,7 +192,7 @@ async test "syntax feature" {
   @moonspec.run_or_fail(
     SyntaxWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/syntax.feature"),
+      @moonspec.FeatureSource::File("../tests/features/syntax.feature"),
     ]),
   )
   |> ignore
