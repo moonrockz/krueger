@@ -1,0 +1,1480 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.6.0",
+}
+
+///|
+/// Benchmark tooling. See AGENTS.md > Benchmarks.
+///
+/// - `run`: run `harness/bench` per target and write
+///   `_build/reports/bench/benchmark-results.json`.
+/// - `compare`: compare that file with a run file from the history (the
+///   `benchmarks` branch) and write `summary.md` and `report.html`.
+/// - `record`: add the run to a checkout of the history.
+let usage : String =
+  #|Usage:
+  #|  bench.mbtx run [--target t[,t...]]...
+  #|  bench.mbtx compare [--against <sha|run:<id>|file>] [--data <git-ref>] [--threshold <fraction>]
+  #|  bench.mbtx record --dir <path>
+
+///|
+let all_targets : Array[String] = ["native", "js", "wasm-gc", "wasm"]
+
+///|
+let reports_dir : String = "_build/reports/bench"
+
+///|
+let results_name : String = "benchmark-results.json"
+
+///|
+/// The targets to run: each value is one target or a comma-separated list;
+/// spaces and empty items are ignored, repeats are kept once. None: all.
+fn parse_targets(values : Array[String]) -> Result[Array[String], String] {
+  let chosen : Array[String] = []
+  for v in values {
+    for item in v.split(",") {
+      let t = item.trim().to_owned()
+      if t == "" || chosen.contains(t) {
+        continue
+      }
+      if !all_targets.contains(t) {
+        return Err(
+          "unknown target \{t}; valid targets: \{all_targets.join(", ")}",
+        )
+      }
+      chosen.push(t)
+    }
+  }
+  Ok(if chosen.is_empty() { all_targets.copy() } else { chosen })
+}
+
+///|
+/// One case's result on one target (microseconds per call).
+struct CaseResult {
+  target : String
+  suite : String
+  case_name : String
+  input : String
+  median : Double
+  mean : Double
+  min : Double
+  max : Double
+  std_dev : Double
+  q1 : Double
+  q3 : Double
+  iqr : Double
+  runs : Int
+  batch_size : Int
+} derive(Eq, Debug)
+
+///|
+fn CaseResult::id(self : CaseResult) -> String {
+  "\{self.suite}/\{self.case_name}/\{self.input}"
+}
+
+///|
+struct RunInfo {
+  id : String
+  url : String
+  event : String
+  git_ref : String
+  sha : String
+  date : String
+} derive(Eq, Debug)
+
+///|
+struct EnvInfo {
+  runner_os : String
+  cpu : String
+  moon_version : String
+  toolchain : String
+} derive(Eq, Debug)
+
+///|
+/// `benchmark-results.json`: one run's results with its environment and
+/// run metadata. A results file in the history is a run file.
+struct ResultsFile {
+  schema : Int
+  run : RunInfo
+  env : EnvInfo
+  targets : Array[String]
+  results : Array[CaseResult]
+} derive(Eq, Debug)
+
+///|
+fn text_field(o : Map[String, Json], key : String) -> String raise {
+  guard o.get(key) is Some(String(s)) else { fail("missing text field \{key}") }
+  s
+}
+
+///|
+fn number_field(o : Map[String, Json], key : String) -> Double raise {
+  guard o.get(key) is Some(Number(x, ..)) else {
+    fail("missing number field \{key}")
+  }
+  x
+}
+
+///|
+fn case_result_of(j : Json) -> CaseResult raise {
+  guard j is Object(o) else { fail("a result is not an object") }
+  {
+    target: text_field(o, "target"),
+    suite: text_field(o, "suite"),
+    case_name: text_field(o, "case"),
+    input: text_field(o, "input"),
+    median: number_field(o, "median"),
+    mean: number_field(o, "mean"),
+    min: number_field(o, "min"),
+    max: number_field(o, "max"),
+    std_dev: number_field(o, "std_dev"),
+    q1: number_field(o, "q1"),
+    q3: number_field(o, "q3"),
+    iqr: number_field(o, "iqr"),
+    runs: number_field(o, "runs").to_int(),
+    batch_size: number_field(o, "batch_size").to_int(),
+  }
+}
+
+///|
+fn case_result_to_json(r : CaseResult) -> Json {
+  {
+    "target": r.target.to_json(),
+    "suite": r.suite.to_json(),
+    "case": r.case_name.to_json(),
+    "input": r.input.to_json(),
+    "unit": "us",
+    "median": r.median.to_json(),
+    "mean": r.mean.to_json(),
+    "min": r.min.to_json(),
+    "max": r.max.to_json(),
+    "std_dev": r.std_dev.to_json(),
+    "q1": r.q1.to_json(),
+    "q3": r.q3.to_json(),
+    "iqr": r.iqr.to_json(),
+    "runs": r.runs.to_json(),
+    "batch_size": r.batch_size.to_json(),
+  }
+}
+
+///|
+/// The results of one raw file (`{ "target": ..., "results": [...] }`).
+fn parse_raw(text : String) -> Result[Array[CaseResult], String] {
+  try {
+    guard @json.parse(text) is Object(o) &&
+      o.get("results") is Some(Array(items)) else {
+      fail("missing results array")
+    }
+    Ok(items.map(case_result_of))
+  } catch {
+    e => Err("raw file: \{e}")
+  }
+}
+
+///|
+fn results_to_json(r : ResultsFile) -> Json {
+  {
+    "schema": r.schema.to_json(),
+    "run": {
+      "id": r.run.id.to_json(),
+      "url": r.run.url.to_json(),
+      "event": r.run.event.to_json(),
+      "ref": r.run.git_ref.to_json(),
+      "sha": r.run.sha.to_json(),
+      "date": r.run.date.to_json(),
+    },
+    "env": {
+      "runner_os": r.env.runner_os.to_json(),
+      "cpu": r.env.cpu.to_json(),
+      "moon_version": r.env.moon_version.to_json(),
+      "toolchain": r.env.toolchain.to_json(),
+    },
+    "targets": r.targets.to_json(),
+    "results": r.results.map(case_result_to_json).to_json(),
+  }
+}
+
+///|
+fn parse_results(text : String) -> Result[ResultsFile, String] {
+  try {
+    guard @json.parse(text) is Object(o) &&
+      o.get("schema") is Some(Number(schema, ..)) &&
+      o.get("run") is Some(Object(run)) &&
+      o.get("env") is Some(Object(env)) &&
+      o.get("targets") is Some(Array(targets)) &&
+      o.get("results") is Some(Array(items)) else {
+      fail("missing schema, run, env, targets or results")
+    }
+    Ok({
+      schema: schema.to_int(),
+      run: {
+        id: text_field(run, "id"),
+        url: text_field(run, "url"),
+        event: text_field(run, "event"),
+        git_ref: text_field(run, "ref"),
+        sha: text_field(run, "sha"),
+        date: text_field(run, "date"),
+      },
+      env: {
+        runner_os: text_field(env, "runner_os"),
+        cpu: text_field(env, "cpu"),
+        moon_version: text_field(env, "moon_version"),
+        toolchain: text_field(env, "toolchain"),
+      },
+      targets: targets.filter_map(t => {
+        if t is String(s) {
+          Some(s)
+        } else {
+          None
+        }
+      }),
+      results: items.map(case_result_of),
+    })
+  } catch {
+    e => Err("results file: \{e}")
+  }
+}
+
+///|
+/// `runs/YYYY/MM/<YYYYMMDDTHHMMSSZ>-<sha7>-<run id>.json` from an ISO date
+/// such as `2026-10-01T18:05:12Z`.
+fn run_file_path(r : ResultsFile) -> String {
+  let digits = StringBuilder()
+  for c in r.run.date {
+    if c >= '0' && c <= '9' {
+      digits.write_char(c)
+    }
+  }
+  let d = digits.to_string().pad_end(14, '0')
+  let year = d.view(end_offset=4)
+  let month = d.view(start_offset=4, end_offset=6)
+  let day = d.view(start_offset=6, end_offset=8)
+  let time = d.view(start_offset=8, end_offset=14)
+  "runs/\{year}/\{month}/\{year}\{month}\{day}T\{time}Z-\{short_sha(r.run.sha)}-\{r.run.id}.json"
+}
+
+///|
+fn short_sha(sha : String) -> String {
+  if sha.length() > 7 {
+    sha.view(end_offset=7).to_owned()
+  } else {
+    sha
+  }
+}
+
+///|
+/// The CPU model: the `model name` line of `/proc/cpuinfo`, or else the
+/// first non-empty line (macOS `sysctl -n machdep.cpu.brand_string`).
+fn parse_cpu(text : String) -> String {
+  for line in text.split("\n") {
+    if line.has_prefix("model name") && line.find(":") is Some(i) {
+      return line.view(start_offset=i + 1).trim().to_owned()
+    }
+  }
+  for line in text.split("\n") {
+    let t = line.trim().to_owned()
+    if t != "" {
+      return t
+    }
+  }
+  "unknown"
+}
+
+///|
+let default_threshold : Double = 0.10
+
+///|
+/// Which run file is the baseline: the latest `main` run, the latest run of
+/// a commit (SHA prefix), a workflow run, or a results file on disk.
+enum Against {
+  LatestMain
+  Commit(String)
+  RunId(String)
+  File(String)
+} derive(Eq, Debug)
+
+///|
+fn parse_against(value : String?) -> Against {
+  match value {
+    None | Some("") => LatestMain
+    Some(v) =>
+      if v.has_prefix("run:") {
+        RunId(v.view(start_offset=4).to_owned())
+      } else if v.contains("/") || v.has_suffix(".json") {
+        File(v)
+      } else {
+        Commit(v)
+      }
+  }
+}
+
+///|
+fn latest(items : Array[(String, ResultsFile)]) -> (String, ResultsFile)? {
+  let mut best : (String, ResultsFile)? = None
+  for item in items {
+    match best {
+      None => best = Some(item)
+      Some(b) => if item.1.run.date > b.1.run.date { best = Some(item) }
+    }
+  }
+  best
+}
+
+///|
+/// The baseline run file in `history` for `against` (the caller reads a
+/// `File`). The current run is never its own baseline. The latest `main`
+/// run is the latest one that measured every target of the current run, or
+/// else the latest `main` run (so a partial run on `main` does not hide the
+/// other targets from the next full run).
+fn select_baseline(
+  history : Array[(String, ResultsFile)],
+  current : ResultsFile,
+  against : Against,
+) -> (String, ResultsFile)? {
+  let others = history.filter(h => {
+    !(h.1.run.id == current.run.id && h.1.run.sha == current.run.sha)
+  })
+  match against {
+    LatestMain => {
+      let main = others.filter(h => h.1.run.git_ref == "refs/heads/main")
+      let covering = main.filter(h => {
+        current.targets.iter().all(t => h.1.targets.contains(t))
+      })
+      match latest(covering) {
+        Some(found) => Some(found)
+        None => latest(main)
+      }
+    }
+    Commit(prefix) => latest(others.filter(h => h.1.run.sha.has_prefix(prefix)))
+    RunId(id) => latest(others.filter(h => h.1.run.id == id))
+    File(_) => None
+  }
+}
+
+///|
+/// `select_baseline`, but a baseline that the user named and that is not in
+/// the history is an error (an empty history is not: then there is no
+/// baseline).
+fn choose_baseline(
+  history : Array[(String, ResultsFile)],
+  current : ResultsFile,
+  against : Against,
+) -> Result[(String, ResultsFile)?, String] {
+  let found = select_baseline(history, current, against)
+  match (against, found) {
+    (Commit(spec), None) => Err("no run file for \{spec} in the history")
+    (RunId(id), None) => Err("no run file for run:\{id} in the history")
+    _ => Ok(found)
+  }
+}
+
+///|
+enum Mark {
+  Slower
+  Faster
+  Same
+  New
+  Removed
+} derive(Eq, Debug)
+
+///|
+fn mark_name(m : Mark) -> String {
+  match m {
+    Slower => "slower"
+    Faster => "faster"
+    Same => "~"
+    New => "new"
+    Removed => "removed"
+  }
+}
+
+///|
+fn mark_rank(m : Mark) -> Int {
+  match m {
+    Slower => 0
+    Faster => 1
+    Same => 2
+    New => 3
+    Removed => 4
+  }
+}
+
+///|
+/// Slower or faster only when the median ratio passes `1 + threshold` (or
+/// its inverse) and the interquartile ranges do not overlap. The ratio form
+/// is antisymmetric: swapping the runs swaps slower and faster.
+fn mark_of(
+  baseline : CaseResult,
+  current : CaseResult,
+  threshold : Double,
+) -> Mark {
+  let ratio = current.median / baseline.median
+  if ratio > 1.0 + threshold && current.q1 > baseline.q3 {
+    Slower
+  } else if ratio < 1.0 / (1.0 + threshold) && current.q3 < baseline.q1 {
+    Faster
+  } else {
+    Same
+  }
+}
+
+///|
+/// One line of the comparison: a case on a target, in one run or both.
+struct Row {
+  target : String
+  id : String
+  baseline : CaseResult?
+  current : CaseResult?
+  mark : Mark
+} derive(Eq, Debug)
+
+///|
+struct Comparison {
+  current : ResultsFile
+  baseline : (String, ResultsFile)?
+  rows : Array[Row]
+  not_run : Array[String]
+  warnings : Array[String]
+} derive(Eq, Debug)
+
+///|
+/// Rows per target in the current run's target order; within a target,
+/// slower, faster, ~, new, then removed, each in the run's case order.
+fn compare_runs(
+  current : ResultsFile,
+  baseline : (String, ResultsFile)?,
+  threshold : Double,
+) -> Comparison {
+  let base = match baseline {
+    Some((_, b)) => b
+    None => { ..current, targets: [], results: [], }
+  }
+  let rows : Array[Row] = []
+  for t in current.targets {
+    let cur = current.results.filter(r => r.target == t)
+    let old = base.results.filter(r => r.target == t)
+    for c in cur {
+      match old.search_by(b => b.id() == c.id()) {
+        Some(i) =>
+          rows.push({
+            target: t,
+            id: c.id(),
+            baseline: Some(old[i]),
+            current: Some(c),
+            mark: mark_of(old[i], c, threshold),
+          })
+        None =>
+          rows.push({
+            target: t,
+            id: c.id(),
+            baseline: None,
+            current: Some(c),
+            mark: New,
+          })
+      }
+    }
+    for b in old {
+      if !cur.iter().any(c => c.id() == b.id()) {
+        rows.push({
+          target: t,
+          id: b.id(),
+          baseline: Some(b),
+          current: None,
+          mark: Removed,
+        })
+      }
+    }
+  }
+  // Array::sort_by is not stable, so the original position breaks ties.
+  let keyed = rows.mapi((i, r) => {
+    (current.targets.search(r.target).unwrap_or(0), mark_rank(r.mark), i, r)
+  })
+  keyed.sort_by((a, b) => {
+    if a.0 != b.0 {
+      a.0.compare(b.0)
+    } else if a.1 != b.1 {
+      a.1.compare(b.1)
+    } else {
+      a.2.compare(b.2)
+    }
+  })
+  let not_run = base.targets.filter(t => !current.targets.contains(t))
+  let warnings = []
+  if baseline is Some((_, b)) {
+    if b.env.cpu != current.env.cpu {
+      warnings.push(
+        "The baseline ran on another CPU (\{b.env.cpu}; this run: \{current.env.cpu}). Compare with care.",
+      )
+    }
+    if b.env.toolchain != current.env.toolchain {
+      warnings.push(
+        "The baseline used another toolchain (\{b.env.toolchain}; this run: \{current.env.toolchain}). Compare with care.",
+      )
+    }
+  }
+  { current, baseline, rows: keyed.map(k => k.3), not_run, warnings, }
+}
+
+///|
+/// `x` rounded to `digits` decimals (0 to 3), as text.
+fn fixed(x : Double, digits : Int) -> String {
+  let scale = [1L, 10L, 100L, 1000L][digits]
+  let scaled = (x.abs() * scale.to_double()).round().to_int64()
+  let sign = if x < 0.0 && scaled != 0L { "-" } else { "" }
+  let whole = scaled / scale
+  if digits == 0 {
+    return "\{sign}\{whole}"
+  }
+  let frac = (scaled % scale).to_string()
+  "\{sign}\{whole}.\{"0".repeat(digits - frac.length())}\{frac}"
+}
+
+///|
+/// Microseconds as `12.3 µs`, `12.3 ms` or `1.23 s`.
+fn format_us(us : Double) -> String {
+  if us < 1000.0 {
+    "\{fixed(us, 1)} µs"
+  } else if us < 1000000.0 {
+    "\{fixed(us / 1000.0, 1)} ms"
+  } else {
+    "\{fixed(us / 1000000.0, 2)} s"
+  }
+}
+
+///|
+/// `+12.3%`: the change of the median from `baseline` to `current`.
+fn format_change(baseline : CaseResult, current : CaseResult) -> String {
+  let pct = (current.median / baseline.median - 1.0) * 100.0
+  let sign = if pct >= 0.0 { "+" } else { "" }
+  "\{sign}\{fixed(pct, 1)}%"
+}
+
+///|
+fn short_ref(git_ref : String) -> String {
+  if git_ref.has_prefix("refs/heads/") {
+    git_ref.view(start_offset=11).to_owned()
+  } else {
+    git_ref
+  }
+}
+
+///|
+fn run_line(r : ResultsFile) -> String {
+  let run = if r.run.url == "" {
+    "local"
+  } else {
+    "[run \{r.run.id}](\{r.run.url})"
+  }
+  "`\{short_ref(r.run.git_ref)}` @ `\{short_sha(r.run.sha)}` (\{r.run.date}, \{run}) on \{r.env.runner_os}, \{r.env.cpu}"
+}
+
+///|
+fn marks_note(threshold : Double) -> String {
+  "Marks: slower or faster when the median changes by more than \{fixed(threshold * 100.0, 0)}% and the interquartile ranges do not overlap; ~ otherwise. Benchmarks are not a gate."
+}
+
+///|
+/// The job summary (GitHub-flavored Markdown).
+fn render_summary(c : Comparison, threshold : Double) -> String {
+  let lines = ["## Benchmarks", "", "Current: \{run_line(c.current)}"]
+  match c.baseline {
+    Some((_, b)) => lines.push("Baseline: \{run_line(b)}")
+    None => lines.push("Baseline: none (no earlier run in the history)")
+  }
+  for w in c.warnings {
+    lines.push("")
+    lines.push("> Warning: \{w}")
+  }
+  if !c.not_run.is_empty() {
+    lines.push("")
+    lines.push("Not run: \{c.not_run.join(", ")}")
+  }
+  for t in c.current.targets {
+    lines.push("")
+    lines.push("### \{t}")
+    lines.push("")
+    lines.push("| Case | Baseline | Current | Change | Mark |")
+    lines.push("|---|---:|---:|---:|---|")
+    for row in c.rows.filter(r => r.target == t) {
+      let b = row.baseline.map(x => format_us(x.median)).unwrap_or("")
+      let cur = row.current.map(x => format_us(x.median)).unwrap_or("")
+      let change = match (row.baseline, row.current) {
+        (Some(x), Some(y)) => format_change(x, y)
+        _ => ""
+      }
+      lines.push(
+        "| \{row.id} | \{b} | \{cur} | \{change} | \{mark_name(row.mark)} |",
+      )
+    }
+  }
+  lines.push("")
+  lines.push(marks_note(threshold))
+  lines.join("\n")
+}
+
+///|
+/// The `main` runs of the history by date, oldest first, the last `limit`
+/// of them, then the current run.
+fn trend_history(
+  history : Array[(String, ResultsFile)],
+  current : ResultsFile,
+  limit : Int,
+) -> Array[ResultsFile] {
+  let main = history
+    .filter(h => {
+      h.1.run.git_ref == "refs/heads/main" &&
+      !(h.1.run.id == current.run.id && h.1.run.sha == current.run.sha)
+    })
+    .map(h => h.1)
+  main.sort_by((a, b) => a.run.date.compare(b.run.date))
+  let start = if main.length() > limit { main.length() - limit } else { 0 }
+  [..main[start:], current]
+}
+
+///|
+/// `run_line` for the HTML page, with the run as a link.
+fn html_run_line(r : ResultsFile) -> String {
+  let run = if r.run.url == "" {
+    "local"
+  } else {
+    "<a href=\"\{escape_html(r.run.url)}\">run \{escape_html(r.run.id)}</a>"
+  }
+  "<code>\{escape_html(short_ref(r.run.git_ref))}</code> @ <code>\{escape_html(short_sha(r.run.sha))}</code> (\{escape_html(r.run.date)}, \{run}) on \{escape_html(r.env.runner_os)}, \{escape_html(r.env.cpu)}"
+}
+
+///|
+fn escape_html(s : String) -> String {
+  s
+  .replace_all(old="&", new="&amp;")
+  .replace_all(old="<", new="&lt;")
+  .replace_all(old=">", new="&gt;")
+  .replace_all(old="\"", new="&quot;")
+}
+
+///|
+/// A line of the medians (oldest left); the last point (this run) is marked.
+fn trend_svg(points : Array[Double]) -> String {
+  let w = 240.0
+  let h = 48.0
+  let lo = points.fold(init=points[0], (a, b) => if b < a { b } else { a })
+  let hi = points.fold(init=points[0], (a, b) => if b > a { b } else { a })
+  let span = if hi - lo == 0.0 { 1.0 } else { hi - lo }
+  let step = w / (points.length() - 1).to_double()
+  let xy = points.mapi((i, p) => {
+    (i.to_double() * step, h - 4.0 - (p - lo) / span * (h - 8.0))
+  })
+  let coords = xy.map(p => "\{fixed(p.0, 1)},\{fixed(p.1, 1)}").join(" ")
+  let last = xy[xy.length() - 1]
+  "<svg class=\"trend\" viewBox=\"0 0 240 48\" width=\"240\" height=\"48\" role=\"img\" aria-label=\"median of the last \{points.length()} runs\"><polyline fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" points=\"\{coords}\"/><circle cx=\"\{fixed(last.0, 1)}\" cy=\"\{fixed(last.1, 1)}\" r=\"3\" class=\"now\"/></svg>"
+}
+
+///|
+let report_style : String =
+  #|body{font:14px/1.4 system-ui,sans-serif;margin:16px;color:#1b1b1b;background:#fff}
+  #|table{border-collapse:collapse;margin-bottom:24px}
+  #|th,td{padding:4px 8px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap}
+  #|td:first-child,th:first-child{text-align:left}
+  #|tr.slower td{background:#fde8e8}tr.faster td{background:#e6f6ea}
+  #|.trend{color:#555}.trend .now{fill:#d33}.warn{color:#a15c00}
+  #|@media (prefers-color-scheme: dark){body{color:#eee;background:#161616}th,td{border-color:#333}tr.slower td{background:#4a1f1f}tr.faster td{background:#1d3b25}.trend{color:#bbb}}
+
+///|
+/// A self-contained page: the comparison tables and, per case, a trend of
+/// the median over `trend` (no scripts, nothing from the network).
+fn render_html(
+  c : Comparison,
+  trend : Array[ResultsFile],
+  threshold : Double,
+) -> String {
+  let body = ["<h1>Benchmarks</h1>"]
+  body.push("<p>Current: \{html_run_line(c.current)}</p>")
+  match c.baseline {
+    Some((_, b)) => body.push("<p>Baseline: \{html_run_line(b)}</p>")
+    None => body.push("<p>Baseline: none (no earlier run in the history)</p>")
+  }
+  for w in c.warnings {
+    body.push("<p class=\"warn\">Warning: \{escape_html(w)}</p>")
+  }
+  if !c.not_run.is_empty() {
+    body.push("<p>Not run: \{escape_html(c.not_run.join(", "))}</p>")
+  }
+  for t in c.current.targets {
+    body.push("<h2>\{escape_html(t)}</h2>")
+    body.push(
+      "<table><thead><tr><th>Case</th><th>Baseline</th><th>Current</th><th>Change</th><th>Mark</th><th>Trend (main)</th></tr></thead><tbody>",
+    )
+    for row in c.rows.filter(r => r.target == t) {
+      let b = row.baseline.map(x => format_us(x.median)).unwrap_or("")
+      let cur = row.current.map(x => format_us(x.median)).unwrap_or("")
+      let change = match (row.baseline, row.current) {
+        (Some(x), Some(y)) => format_change(x, y)
+        _ => ""
+      }
+      let points = trend.filter_map(r => {
+        r.results
+        .iter()
+        .find_first(x => x.target == t && x.id() == row.id)
+        .map(x => x.median)
+      })
+      let chart = if points.length() >= 2 { trend_svg(points) } else { "" }
+      let mark = mark_name(row.mark)
+      body.push(
+        "<tr class=\"\{if mark == "~" { "same" } else { mark }}\"><td>\{escape_html(row.id)}</td><td>\{b}</td><td>\{cur}</td><td>\{change}</td><td>\{mark}</td><td>\{chart}</td></tr>",
+      )
+    }
+    body.push("</tbody></table>")
+  }
+  body.push("<p>\{escape_html(marks_note(threshold))}</p>")
+  "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>krueger benchmarks</title><style>\{report_style}</style></head><body>\n\{body.join("\n")}\n</body></html>\n"
+}
+
+///|
+enum Command {
+  Run(Array[String])
+  Compare(String?, String, Double)
+  Record(String)
+} derive(Eq, Debug)
+
+///|
+/// `run [--target t]...`, `compare [--against a] [--data ref] [--threshold x]`
+/// or `record --dir d`; anything else gives the usage text.
+fn parse_command(args : Array[String]) -> Result[Command, String] {
+  guard args.length() > 0 else { return Err(usage) }
+  let opts : Map[String, Array[String]] = Map([])
+  let mut i = 1
+  while i < args.length() {
+    let key = args[i]
+    guard key.has_prefix("--") && i + 1 < args.length() else {
+      return Err(usage)
+    }
+    match opts.get(key) {
+      Some(vs) => vs.push(args[i + 1])
+      None => opts[key] = [args[i + 1]]
+    }
+    i += 2
+  }
+  let one = (k : String) => opts.get(k).bind(vs => vs.last())
+  match args[0] {
+    "run" => Ok(Run(opts.get("--target").unwrap_or([])))
+    "compare" => {
+      let threshold = match one("--threshold") {
+        None => default_threshold
+        Some(t) =>
+          try @string.parse_double(t) catch {
+            _ => return Err(usage)
+          } noraise {
+            x => x
+          }
+      }
+      Ok(
+        Compare(
+          one("--against"),
+          one("--data").unwrap_or("origin/benchmarks"),
+          threshold,
+        ),
+      )
+    }
+    "record" =>
+      match one("--dir") {
+        Some(d) => Ok(Record(d))
+        None => Err(usage)
+      }
+    _ => Err(usage)
+  }
+}
+
+///|
+/// The README of the history branch.
+fn data_readme() -> String {
+  (
+    #|# krueger benchmark history
+    #|
+    #|This branch holds the results of benchmark runs of moonrockz/krueger, one
+    #|JSON file per run under `runs/YYYY/MM/`. The Benchmarks workflow adds a
+    #|file for each run on `main`. Do not merge this branch into another branch.
+    #|
+    #|To compare a local run with the latest `main` run, run `mise run bench`
+    #|and then `mise run bench:compare`. See AGENTS.md > Benchmarks.
+  )
+}
+
+///|
+async fn output_of(cmd : String, args : Array[String]) -> (Int, String) {
+  let (code, out) = @process.collect_stdout(
+    cmd,
+    args,
+    stderr=@process.redirect_to_file("/dev/null"),
+  ) catch {
+    _ => (1, b"")
+  }
+  (code, out.text())
+}
+
+///|
+async fn first_line_of(
+  cmd : String,
+  args : Array[String],
+  fallback : String,
+) -> String {
+  let (code, out) = output_of(cmd, args)
+  guard code == 0 else { return fallback }
+  let line = out.split("\n").next().map(l => l.trim().to_owned()).unwrap_or("")
+  if line == "" {
+    fallback
+  } else {
+    line
+  }
+}
+
+///|
+fn env_or(name : String, fallback : String) -> String {
+  match @env.get_env_var(name) {
+    Some(v) if v != "" => v
+    _ => fallback
+  }
+}
+
+///|
+async fn run_info() -> RunInfo {
+  let server = env_or("GITHUB_SERVER_URL", "")
+  let repo = env_or("GITHUB_REPOSITORY", "")
+  let id = env_or("GITHUB_RUN_ID", "local")
+  let git_ref = match @env.get_env_var("GITHUB_REF") {
+    Some(r) if r != "" => r
+    _ => first_line_of("git", ["symbolic-ref", "-q", "HEAD"], "detached")
+  }
+  let sha = match @env.get_env_var("GITHUB_SHA") {
+    Some(s) if s != "" => s
+    _ => first_line_of("git", ["rev-parse", "HEAD"], "unknown")
+  }
+  {
+    id,
+    url: if server == "" || id == "local" {
+      ""
+    } else {
+      "\{server}/\{repo}/actions/runs/\{id}"
+    },
+    event: env_or("GITHUB_EVENT_NAME", "local"),
+    git_ref,
+    sha,
+    date: first_line_of(
+      "date",
+      ["-u", "+%Y-%m-%dT%H:%M:%SZ"],
+      "1970-01-01T00:00:00Z",
+    ),
+  }
+}
+
+///|
+async fn env_info() -> EnvInfo {
+  let os = match @env.get_env_var("RUNNER_OS") {
+    Some(o) if o != "" => o
+    _ => first_line_of("uname", ["-s"], "unknown")
+  }
+  let cpu = if @fs.exists("/proc/cpuinfo") {
+    parse_cpu(@fs.read_file("/proc/cpuinfo").text())
+  } else {
+    parse_cpu(
+      first_line_of("sysctl", ["-n", "machdep.cpu.brand_string"], "unknown"),
+    )
+  }
+  {
+    runner_os: os,
+    cpu,
+    moon_version: first_line_of("moon", ["version"], "unknown"),
+    toolchain: env_or("MOONBIT_VERSION", ""),
+  }
+}
+
+///|
+fn fail_with(message : String) -> Unit {
+  eprintln("bench: \{message}")
+  @sys.exit(1)
+}
+
+///|
+async fn run_command(values : Array[String]) -> Unit {
+  let targets = match parse_targets(values) {
+    Ok(ts) => ts
+    Err(m) => {
+      eprintln(m)
+      @sys.exit(2)
+      return
+    }
+  }
+  let raw = "\{reports_dir}/raw"
+  @fs.mkdir(raw, recursive=true, allow_exist=true)
+  for f in @fs.readdir(raw) {
+    @fs.remove("\{raw}/\{f}")
+  }
+  let results = []
+  for t in targets {
+    println("bench: measuring \{t}")
+    let code = @process.run(
+      "moon",
+      ["test", "harness/bench/bench_wbtest.mbt", "--release", "--target", t],
+      extra_env={ "KRUEGER_BENCH_MODE": "run", "KRUEGER_BENCH_TARGET": t },
+    )
+    if code != 0 {
+      fail_with("moon test failed for \{t} (exit \{code})")
+      return
+    }
+    match parse_raw(@fs.read_file("\{raw}/\{t}.json").text()) {
+      Ok(rs) => results.append(rs)
+      Err(m) => {
+        fail_with("\{t}: \{m}")
+        return
+      }
+    }
+  }
+  let file : ResultsFile = {
+    schema: 1,
+    run: run_info(),
+    env: env_info(),
+    targets,
+    results,
+  }
+  let path = "\{reports_dir}/\{results_name}"
+  @fs.write_file(path, results_to_json(file).stringify(indent=2) + "\n")
+  println("bench: wrote \{path} (\{results.length()} results)")
+}
+
+///|
+/// Every run file in `data_ref` (none when the ref does not exist).
+async fn load_history(data_ref : String) -> Array[(String, ResultsFile)] {
+  let (code, listing) = output_of("git", [
+    "ls-tree", "-r", "--name-only", data_ref, "runs/",
+  ])
+  guard code == 0 else { return [] }
+  let history = []
+  for line in listing.split("\n") {
+    let p = line.trim().to_owned()
+    if !p.has_suffix(".json") {
+      continue
+    }
+    let (c, text) = output_of("git", ["show", "\{data_ref}:\{p}"])
+    match (c, parse_results(text)) {
+      (0, Ok(r)) => history.push((p, r))
+      _ => eprintln("bench: skipped unreadable run file \{p}")
+    }
+  }
+  history
+}
+
+///|
+async fn read_results(path : String) -> ResultsFile? {
+  guard @fs.exists(path) else {
+    fail_with("no \{path}; run `mise run bench` first")
+    return None
+  }
+  match parse_results(@fs.read_file(path).text()) {
+    Ok(r) => Some(r)
+    Err(m) => {
+      fail_with("\{path}: \{m}")
+      None
+    }
+  }
+}
+
+///|
+async fn compare_command(
+  against : String?,
+  data_ref : String,
+  threshold : Double,
+) -> Unit {
+  guard read_results("\{reports_dir}/\{results_name}") is Some(current) else {
+    return
+  }
+  let history = load_history(data_ref)
+  // A path to an existing file is a results file, whatever its name.
+  let spec = match parse_against(against) {
+    Commit(v) if @fs.exists(v) => File(v)
+    other => other
+  }
+  let baseline = match spec {
+    File(f) => {
+      guard read_results(f) is Some(r) else { return }
+      Some((f, r))
+    }
+    _ =>
+      match choose_baseline(history, current, spec) {
+        Ok(found) => found
+        Err(m) => {
+          fail_with("\{m} (\{data_ref})")
+          return
+        }
+      }
+  }
+  let c = compare_runs(current, baseline, threshold)
+  let summary = render_summary(c, threshold)
+  @fs.write_file("\{reports_dir}/summary.md", summary + "\n")
+  @fs.write_file(
+    "\{reports_dir}/report.html",
+    render_html(c, trend_history(history, current, 20), threshold),
+  )
+  println(summary)
+}
+
+///|
+async fn record_command(dir : String) -> Unit {
+  guard read_results("\{reports_dir}/\{results_name}") is Some(current) else {
+    return
+  }
+  let relative = run_file_path(current)
+  let target = "\{dir}/\{relative}"
+  let parent = relative.view(end_offset=relative.rev_find("/").unwrap_or(0))
+  @fs.mkdir("\{dir}/\{parent}", recursive=true, allow_exist=true)
+  @fs.write_file(target, results_to_json(current).stringify(indent=2) + "\n")
+  if !@fs.exists("\{dir}/README.md") {
+    @fs.write_file("\{dir}/README.md", data_readme() + "\n")
+  }
+  println("bench: added \{target}")
+}
+
+///|
+async fn main {
+  match parse_command(@env.args()[1:].to_owned()) {
+    Ok(Run(values)) => run_command(values)
+    Ok(Compare(against, data_ref, threshold)) =>
+      compare_command(against, data_ref, threshold)
+    Ok(Record(dir)) => record_command(dir)
+    Err(m) => {
+      eprintln(m)
+      @sys.exit(2)
+    }
+  }
+}
+
+///|
+/// Scenario state for `features/bench.feature`.
+struct BenchWorld {
+  mut targets : Result[Array[String], String]
+  mut current : ResultsFile
+  mut cpu : String
+  mut baseline : ResultsFile?
+  history : Array[(String, ResultsFile)]
+  mut comparison : Comparison?
+  mut html : String
+}
+
+///|
+fn empty_results() -> ResultsFile {
+  {
+    schema: 1,
+    run: { id: "", url: "", event: "", git_ref: "", sha: "", date: "", },
+    env: {
+      runner_os: "Linux",
+      cpu: "cpu-a",
+      moon_version: "moon 0.1",
+      toolchain: "t1",
+    },
+    targets: [],
+    results: [],
+  }
+}
+
+///|
+fn BenchWorld::new() -> BenchWorld {
+  {
+    targets: Ok([]),
+    current: empty_results(),
+    cpu: "",
+    baseline: None,
+    history: [],
+    comparison: None,
+    html: "",
+  }
+}
+
+///|
+fn case_result(
+  target : String,
+  id : String,
+  median : Double,
+  q1 : Double,
+  q3 : Double,
+) -> CaseResult raise {
+  let parts = id.split("/").map(p => p.to_owned()).to_array()
+  guard parts.length() == 3 else {
+    fail("case id must be suite/case/input: \{id}")
+  }
+  {
+    target,
+    suite: parts[0],
+    case_name: parts[1],
+    input: parts[2],
+    median,
+    mean: median,
+    min: q1,
+    max: q3,
+    std_dev: 0.0,
+    q1,
+    q3,
+    iqr: q3 - q1,
+    runs: 10,
+    batch_size: 1,
+  }
+}
+
+///|
+fn add_result(r : ResultsFile, c : CaseResult) -> ResultsFile {
+  let targets = if r.targets.contains(c.target) {
+    r.targets
+  } else {
+    [..r.targets, c.target]
+  }
+  { ..r, targets, results: [..r.results, c], }
+}
+
+///|
+impl @moonspec.World for BenchWorld with fn configure(self, setup) {
+  setup.when1("I choose the targets {string}", fn(v : String) {
+    self.targets = parse_targets([v])
+  })
+  setup.then1("the targets are {string}", fn(expected : String) raise {
+    @expect.expect(self.targets.map(ts => ts.join(","))).to_equal(Ok(expected))
+  })
+  setup.then1("target selection fails with {string}", fn(
+    expected : String,
+  ) raise {
+    @expect.expect(self.targets).to_equal(Err(expected))
+  })
+  setup.given4(
+    "a results file from {string} at commit {string} on {string} with run id {string}",
+    fn(git_ref : String, sha : String, date : String, id : String) {
+      self.current = {
+        ..empty_results(),
+        run: {
+          id,
+          url: "https://example.test/run/\{id}",
+          event: "workflow_dispatch",
+          git_ref,
+          sha,
+          date,
+        },
+      }
+    },
+  )
+  setup.given5(
+    "the current run has {string} {string} with median {float}, q1 {float} and q3 {float}",
+    fn(
+      target : String,
+      id : String,
+      median : Double,
+      q1 : Double,
+      q3 : Double,
+    ) raise {
+      self.current = add_result(
+        self.current,
+        case_result(target, id, median, q1, q3),
+      )
+    },
+  )
+  setup.then1("its run file path is {string}", fn(expected : String) raise {
+    @expect.expect(run_file_path(self.current)).to_equal(expected)
+  })
+  setup.then0("the results file reads back unchanged", fn() raise {
+    @expect.expect(parse_results(results_to_json(self.current).stringify())).to_equal(
+      Ok(self.current),
+    )
+  })
+  setup.when1("I read the CPU from:", fn(doc : @moonspec.DocString) {
+    self.cpu = parse_cpu(doc.content)
+  })
+  setup.then1("the CPU is {string}", fn(expected : String) raise {
+    @expect.expect(self.cpu).to_equal(expected)
+  })
+  setup.given4(
+    "a baseline run from {string} at commit {string} on {string} with run id {string}",
+    fn(git_ref : String, sha : String, date : String, id : String) {
+      self.baseline = Some({
+        ..empty_results(),
+        run: {
+          id,
+          url: "https://example.test/run/\{id}",
+          event: "workflow_dispatch",
+          git_ref,
+          sha,
+          date,
+        },
+      })
+    },
+  )
+  setup.given5(
+    "the baseline run has {string} {string} with median {float}, q1 {float} and q3 {float}",
+    fn(
+      target : String,
+      id : String,
+      median : Double,
+      q1 : Double,
+      q3 : Double,
+    ) raise {
+      guard self.baseline is Some(b) else { fail("no baseline run") }
+      self.baseline = Some(
+        add_result(b, case_result(target, id, median, q1, q3)),
+      )
+    },
+  )
+  setup.given2("the baseline ran on CPU {string} with toolchain {string}", fn(
+    cpu : String,
+    toolchain : String,
+  ) raise {
+    guard self.baseline is Some(b) else { fail("no baseline run") }
+    self.baseline = Some({ ..b, env: { ..b.env, cpu, toolchain, }, })
+  })
+  setup.when0("I compare the runs", fn() {
+    self.comparison = Some(
+      compare_runs(
+        self.current,
+        self.baseline.map(b => ("runs/baseline.json", b)),
+        default_threshold,
+      ),
+    )
+  })
+  setup.then1("the marks are:", fn(doc : @moonspec.DocString) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    let actual = c.rows
+      .map(r => "\{r.target} \{r.id} \{mark_name(r.mark)}")
+      .join("\n")
+    @expect.expect(actual).to_equal(doc.content)
+  })
+  setup.then1("the targets not run are {string}", fn(expected : String) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    @expect.expect(c.not_run.join(",")).to_equal(expected)
+  })
+  setup.then1("the warnings are:", fn(doc : @moonspec.DocString) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    @expect.expect(c.warnings.join("\n")).to_equal(doc.content)
+  })
+  setup.then1("the summary is:", fn(doc : @moonspec.DocString) raise {
+    guard self.comparison is Some(c) else { fail("no comparison") }
+    @expect.expect(render_summary(c, default_threshold)).to_equal(doc.content)
+  })
+  setup.given1("the history:", fn(doc : @moonspec.DocString) raise {
+    for line in doc.content.split("\n") {
+      let f = line.split(" ").map(p => p.to_owned()).to_array()
+      guard f.length() == 5 else { fail("history line: path ref sha id date") }
+      self.history.push(
+        (
+          f[0],
+          {
+            ..empty_results(),
+            run: {
+              id: f[3],
+              url: "",
+              event: "workflow_dispatch",
+              git_ref: f[1],
+              sha: f[2],
+              date: f[4],
+            },
+          },
+        ),
+      )
+    }
+  })
+  setup.given5(
+    "every history run has {string} {string} with median {float}, q1 {float} and q3 {float}",
+    fn(
+      target : String,
+      id : String,
+      median : Double,
+      q1 : Double,
+      q3 : Double,
+    ) raise {
+      let r = case_result(target, id, median, q1, q3)
+      for i, h in self.history {
+        self.history[i] = (h.0, add_result(h.1, r))
+      }
+    },
+  )
+  setup.when0("I compare the runs with the history", fn() {
+    let baseline = select_baseline(self.history, self.current, LatestMain)
+    let c = compare_runs(self.current, baseline, default_threshold)
+    self.html = render_html(
+      c,
+      trend_history(self.history, self.current, 20),
+      default_threshold,
+    )
+  })
+  setup.then1("the HTML report contains {string}", fn(text : String) raise {
+    @expect.expect(self.html).to_contain(text)
+  })
+  setup.then1("the HTML report contains {int} trend chart", fn(n : Int) raise {
+    @expect.expect(self.html.split("<svg class=\"trend\"").count() - 1).to_equal(
+      n,
+    )
+  })
+  setup.then0("the HTML report loads nothing from the network", fn() raise {
+    let h = self.html
+    @expect.expect(
+      h.contains("<script") || h.contains("<link") || h.contains("src=\"http"),
+    ).to_be_false()
+  })
+  setup.given2("history run {string} measured {string}", fn(
+    path : String,
+    targets : String,
+  ) raise {
+    guard self.history.search_by(h => h.0 == path) is Some(i) else {
+      fail("no history run \{path}")
+    }
+    let h = self.history[i]
+    self.history[i] = (
+      h.0,
+      { ..h.1, targets: targets.split(",").map(t => t.to_owned()).to_array(), },
+    )
+  })
+  setup.then2("choosing the baseline {string} fails with {string}", fn(
+    spec : String,
+    expected : String,
+  ) raise {
+    @expect.expect(
+      choose_baseline(self.history, self.current, parse_against(Some(spec))).map(f => {
+          f.map(x => x.0)
+        },
+      ),
+    ).to_equal(Err(expected))
+  })
+  setup.then2("choosing the baseline {string} gives {string}", fn(
+    spec : String,
+    expected : String,
+  ) raise {
+    @expect.expect(
+      choose_baseline(self.history, self.current, parse_against(Some(spec))).map(f => {
+          f.map(x => x.0)
+        },
+      ),
+    ).to_equal(Ok(Some(expected)))
+  })
+  setup.then2("the baseline for {string} is {string}", fn(
+    spec : String,
+    expected : String,
+  ) raise {
+    let found = select_baseline(
+      self.history,
+      self.current,
+      parse_against(Some(spec)),
+    )
+    @expect.expect(found.map(f => f.0).unwrap_or("none")).to_equal(expected)
+  })
+}
+
+///|
+async test "bench feature" {
+  @moonspec.run_or_fail(
+    BenchWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/bench.feature"),
+    ]),
+  )
+  |> ignore
+}
+
+///|
+test "law: parse_targets keeps only valid targets, each once" {
+  // Edges: empty, only separators, one target, a repeat, spaces, all four.
+  @expect.expect_all(s => {
+    for
+      input in [
+        "", ",", "native", "wasm,wasm", " js , native ,", "wasm-gc,js,native,wasm",
+      ] {
+      match parse_targets([input]) {
+        Ok(ts) => {
+          s.expect(ts.iter().all(t => all_targets.contains(t))).to_be_true()
+          let seen : Array[String] = []
+          for t in ts {
+            if !seen.contains(t) {
+              seen.push(t)
+            }
+          }
+          s.expect(seen.length()).to_equal(ts.length())
+          s.expect(ts.is_empty()).to_be_false()
+        }
+        Err(m) => s.expect(m).to_equal("no error for \{input}")
+      }
+    }
+  })
+}
+
+///|
+test "law: a run compared with itself is ~ everywhere" {
+  // Edges: two targets, zero spread and a wide spread.
+  let r = add_result(
+    add_result(
+      empty_results(),
+      case_result("native", "a/b/c", 100.0, 90.0, 110.0),
+    ),
+    case_result("js", "a/b/c", 5.0, 5.0, 5.0),
+  )
+  let c = compare_runs(r, Some(("x", r)), default_threshold)
+  @expect.expect_all(s => {
+    s.expect(c.rows.length()).to_equal(2)
+    s.expect(c.rows.iter().all(row => row.mark == Same)).to_be_true()
+  })
+}
+
+///|
+test "law: swapping the runs swaps slower and faster" {
+  // Edges: medians just inside and outside 10% in both directions, equal
+  // medians, and zero, small and wide interquartile ranges.
+  @expect.expect_all(s => {
+    for
+      m in [
+        1.0, 50.0, 89.0, 90.9, 91.0, 100.0, 109.0, 110.0, 111.0, 112.0, 200.0,
+      ] {
+      for spread in [0.0, 1.0, 5.0] {
+        let a = case_result(
+          "native",
+          "a/b/c",
+          100.0,
+          100.0 - spread,
+          100.0 + spread,
+        )
+        let b = case_result("native", "a/b/c", m, m - spread, m + spread)
+        let swapped = match mark_of(a, b, default_threshold) {
+          Slower => Faster
+          Faster => Slower
+          other => other
+        }
+        s.expect(mark_of(b, a, default_threshold)).to_equal(swapped)
+      }
+    }
+  })
+}
+
+///|
+test "parse_command reads the three commands and their options" {
+  @expect.expect_all(s => {
+    s.expect(parse_command(["run"])).to_equal(Ok(Run([])))
+    s
+    .expect(parse_command(["run", "--target", "native,js", "--target", "wasm"]))
+    .to_equal(Ok(Run(["native,js", "wasm"])))
+    s
+    .expect(parse_command(["compare"]))
+    .to_equal(Ok(Compare(None, "origin/benchmarks", 0.10)))
+    s
+    .expect(
+      parse_command([
+        "compare", "--against", "run:12", "--data", "refs/x", "--threshold", "0.2",
+      ]),
+    )
+    .to_equal(Ok(Compare(Some("run:12"), "refs/x", 0.2)))
+    s
+    .expect(parse_command(["record", "--dir", "bench-data"]))
+    .to_equal(Ok(Record("bench-data")))
+    s.expect(parse_command(["record"])).to_equal(Err(usage))
+    s.expect(parse_command(["run", "--target"])).to_equal(Err(usage))
+    s
+    .expect(parse_command(["compare", "--threshold", "x"]))
+    .to_equal(Err(usage))
+    s.expect(parse_command(["fly"])).to_equal(Err(usage))
+    s.expect(parse_command([])).to_equal(Err(usage))
+  })
+}

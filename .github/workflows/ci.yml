@@ -61,6 +61,9 @@ jobs:
       - name: Run script tests
         run: mise run test:scripts
 
+      - name: Check the benchmark cases (smoke)
+        run: mise run test:bench
+
       - name: Run cookbook tests
         run: mise run test:docs
 

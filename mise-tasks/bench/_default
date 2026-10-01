@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Measure the benchmarks (all targets, or --target t[,t...]); writes _build/reports/bench"
+set -euo pipefail
+
+exec moon run -q --target wasm scripts/bench.mbtx -- run "$@"
