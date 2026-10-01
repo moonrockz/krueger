@@ -337,6 +337,28 @@ test "an EventReader prints an outline" {
 }
 ```
 
+A reader is also an iterator: `reader.iter()` gives the remaining events as
+an `Iter[Event]`, for a `for` loop or `map` and `filter`. It reads from the
+same reader, so `reader.skip_children()` still works inside the loop:
+
+```mbt check
+///|
+test "an EventReader's iter skips with the reader" {
+  let reader = @syntax.EventReader::new(tr_root(tr_source))
+  let names = []
+  for event in reader.iter() {
+    guard event is Enter(e) else { continue }
+    if e.category == "import" {
+      reader.skip_children()
+    }
+    if e.category == "module_name" {
+      names.push(e.path.to_string())
+    }
+  }
+  debug_inspect(names, content="[\"moduleDefinition[0].moduleName[0]\"]")
+}
+```
+
 Every event carries a `NodePath`: the steps from the root, like a path into
 elm-syntax's JSON. Print it, or keep it to find the node again later (see
 [Build editor features](editor-features.mbt.md)):

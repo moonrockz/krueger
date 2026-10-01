@@ -123,6 +123,47 @@ pub fn EventReader::new(root : NodeRef) -> EventReader {
 }
 
 ///|
+/// The reader's remaining events as an `Iter`. The iterator calls `next` on
+/// this reader, so it shares the reader's state: call `skip_children` on the
+/// reader right after an `Enter` to skip that node's children, and break out
+/// of the loop to stop.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let reader = @syntax.EventReader::new(root)
+///   let patterns = []
+///   for event in reader.iter() {
+///     if event is Enter(e) {
+///       if e.category == "module" {
+///         reader.skip_children()
+///       }
+///       if e.category == "pattern" {
+///         patterns.push(e.path.to_string())
+///       }
+///     }
+///   }
+///   debug_inspect(
+///     patterns,
+///     content=(
+///       #|[
+///       #|  "declarations[0].declaration[0].arguments[0]",
+///       #|  "declarations[0].declaration[0].arguments[1]",
+///       #|]
+///     ),
+///   )
+/// }
+/// ```
+pub fn EventReader::iter(self : EventReader) -> Iter[Event] {
+  Iter::new(() => self.next())
+}
+
+///|
 fn enter_event(n : NodeRef, field : String?, path : NodePath) -> Event {
   Enter(
     EnterEvent::new(

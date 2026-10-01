@@ -59,6 +59,45 @@ test "law: an event reader driven by a Control policy gives walk's events" {
 }
 
 ///|
+/// `reader_events`, read through `iter()` with a `for` loop.
+fn iter_events(root : @syntax.NodeRef, p : Policy) -> Array[String] {
+  let r = @syntax.EventReader::new(root)
+  let events = []
+  let mut k = 0
+  for e in r.iter() {
+    match e {
+      Enter(e) => {
+        events.push("+" + start_tag(e.category, e.kind, e.start))
+        k = k + 1
+        match decide(p, k - 1) {
+          Continue => ()
+          SkipChildren => r.skip_children()
+          Stop => break
+        }
+      }
+      Leave(e) => events.push("-" + tag(e.node))
+    }
+  }
+  events
+}
+
+///|
+test "law: iter gives the reader's events, and skip_children on the reader steers it" {
+  // Edges: Continue throughout, SkipChildren at the root and at leaves, Stop
+  // at the first and the last Enter.
+  @quickcheck.check(
+    (input : (ElmModule, Policy)) => {
+      let (m, p) = input
+      let root = elm_root(m)
+      iter_events(root, p) == walk_projection(root, p)
+    },
+    count=200,
+    max_size=24,
+    seed=239,
+  )
+}
+
+///|
 test "law: each Enter's field is the parent's field_of the child" {
   @quickcheck.check(
     (m : ElmModule) => {

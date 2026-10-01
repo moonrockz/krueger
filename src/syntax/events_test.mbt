@@ -137,3 +137,19 @@ test "events carry the depth and path of their node" {
     "-integer 4 declarations[0].declaration[0].expression[0].application[1]",
   ])
 }
+
+///|
+test "iter continues where next stopped, and ends after the root's Leave" {
+  let root = @syntax.NodeRef::of_result(
+    parse_result("module M exposing (..)\n\nf x = x\n"),
+  ).unwrap()
+  let all = read_all(@syntax.EventReader::new(root))
+  let reader = @syntax.EventReader::new(root)
+  let first = reader.next().map(event_label)
+  let rest = reader.iter().map(event_label).to_array()
+  @expect.expect_all(s => {
+    s.expect(first).to_equal(Some(all[0]))
+    s.expect(rest).to_equal(all[1:].to_owned())
+    s.expect(reader.iter().to_array()).to_equal([])
+  })
+}

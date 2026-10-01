@@ -172,10 +172,11 @@ pub fn TreeCursor::goto_parent(self : TreeCursor) -> Bool {
 /// attributes), the innermost one that contains `p` wins, and the first in
 /// source order among equals.
 ///
-/// To reach `Tree::node_at(p)`, descend while the new node contains `p`, and
-/// step back with `goto_parent` from the first one that does not: a loop that
-/// only calls `goto_first_child_for` goes one node too far whenever
-/// `node_at(p)` has children after `p`. (Where a port's doc comment with
+/// `goto_node_at(p)` moves to `Tree::node_at(p)` in one call. By hand,
+/// descend while the new node contains `p`, and step back with `goto_parent`
+/// from the first one that does not: a loop that only calls
+/// `goto_first_child_for` goes one node too far whenever `node_at(p)` has
+/// children after `p`. (Where a port's doc comment with
 /// attributes overlaps the port declaration only in part, the descent stops
 /// at the comment, which contains `node_at(p)`.)
 ///
@@ -241,6 +242,44 @@ pub fn TreeCursor::goto_first_child_for(
       None => kids.search_by(x => !at_or_before(x.1.range().start, p))
     }
   })
+}
+
+///|
+/// Move to `Tree::node_at(p)` within the current node: the innermost node at
+/// or below it whose range contains `p` (the smallest range; for equal ranges
+/// the deeper node, then the first in source order). `goto_parent` then goes
+/// back up the way it came. Return `false` and stay when the current node
+/// does not contain `p`; stay and return `true` when no child does.
+///
+/// Unlike a descent with `goto_first_child_for`, it searches every child that
+/// contains `p`, so it also reaches `node_at(p)` where children overlap (a
+/// port's doc comment and the port).
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   let p : @ast.Location = { row: 4, column: 7, } // the `+` in `x + y`
+///   let cursor = @syntax.TreeCursor::new(tree.root())
+///   inspect(cursor.goto_node_at(p), content="true")
+///   inspect(cursor.node().kind(), content="operatorapplication")
+///   inspect(tree.node_at(p) == Some(cursor.node()), content="true")
+///   inspect(cursor.path(), content="declarations[0].declaration[0].expression[0]")
+///   // `add` is outside the current node: the cursor stays.
+///   inspect(cursor.goto_node_at({ row: 3, column: 1, }), content="false")
+///   inspect(cursor.node().kind(), content="operatorapplication")
+/// }
+/// ```
+pub fn TreeCursor::goto_node_at(self : TreeCursor, p : @ast.Location) -> Bool {
+  guard innermost_at(self.node(), p) is Some((_, indices)) else { return false }
+  for i in indices {
+    ignore(self.descend(_ => Some(i)))
+  }
+  true
 }
 
 ///|

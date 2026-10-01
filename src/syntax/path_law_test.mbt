@@ -44,3 +44,63 @@ test "law: a child path's parent is the path, and its steps grow by the new step
     seed=179,
   )
 }
+
+///|
+fn steps_of(xs : ArrayView[(Bool, UInt)]) -> Array[@syntax.PathStep] {
+  xs.map(x => {
+    field: if x.0 {
+      "a"
+    } else {
+      "b"
+    },
+    index: x.1.reinterpret_as_int(),
+  })
+}
+
+///|
+test "law: from_steps builds the path whose steps it gets" {
+  // Edges: no step, one step, many steps.
+  @quickcheck.check(
+    (s : Steps) => {
+      let Steps(xs) = s
+      let steps = steps_of(xs)
+      let mut built = @syntax.NodePath::root()
+      for step in steps {
+        built = built.child(step.field, step.index)
+      }
+      let path = @syntax.NodePath::from_steps(steps)
+      path.steps() == steps && path == built && path.depth() == steps.length()
+    },
+    count=100,
+    max_size=24,
+    seed=229,
+  )
+}
+
+///|
+test "law: append puts the steps of its argument after its own" {
+  // Edges: either part empty (root is the identity on both sides), one step,
+  // many steps; three parts for associativity.
+  @quickcheck.check(
+    (s : Steps) => {
+      let Steps(xs) = s
+      let third = xs.length() / 3
+      let a = steps_of(xs[:third])
+      let b = steps_of(xs[third:2 * third])
+      let c = steps_of(xs[2 * third:])
+      let pa = @syntax.NodePath::from_steps(a)
+      let pb = @syntax.NodePath::from_steps(b)
+      let pc = @syntax.NodePath::from_steps(c)
+      let root = @syntax.NodePath::root()
+      pa.append(pb).steps() == [..a, ..b] &&
+      pa.append(pb).depth() == a.length() + b.length() &&
+      pa.append(root) == pa &&
+      root.append(pa) == pa &&
+      pa.append(pb).append(pc) == pa.append(pb.append(pc)) &&
+      pa.append(root.child("a", 1)) == pa.child("a", 1)
+    },
+    count=100,
+    max_size=24,
+    seed=233,
+  )
+}

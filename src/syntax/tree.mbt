@@ -212,24 +212,43 @@ fn within(a : @ast.Range, b : @ast.Range) -> Bool {
 /// ranges the deeper node wins, then the first in source order. See
 /// `node_path` for an example.
 pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
-  if !contains(self.root.range(), p) {
+  innermost_at(self.root, p).map(found => found.0)
+}
+
+///|
+/// The innermost node at or below `start` whose range contains `p` (the rule
+/// of `Tree::node_at`), with the index of each step down in its parent's
+/// `children()`, or `None` when `start` does not contain `p`.
+fn innermost_at(start : NodeRef, p : @ast.Location) -> (NodeRef, Array[Int])? {
+  if !contains(start.range(), p) {
     return None
   }
-  let mut best = self.root
+  let mut best = start
+  let mut best_trail : @list.List[Int] = @list.empty()
   let mut best_depth = 0
-  // An explicit stack, visited in source order.
-  let stack = [(self.root, 0)]
-  while stack.pop() is Some((node, depth)) {
+  // An explicit stack, visited in source order. A trail holds the child
+  // indices from `start`, innermost first.
+  let stack : Array[(NodeRef, Int, @list.List[Int])] = [
+    (start, 0, @list.empty()),
+  ]
+  while stack.pop() is Some((node, depth, trail)) {
     let r = node.range()
     let b = best.range()
     if (within(r, b) && r != b) || (r == b && depth > best_depth) {
       best = node
+      best_trail = trail
       best_depth = depth
     }
-    let inside = node.children().filter(c => contains(c.range(), p))
-    inside.rev_each(c => stack.push((c, depth + 1)))
+    let kids = node.children()
+    for i = kids.length() - 1; i >= 0; i = i - 1 {
+      if contains(kids[i].range(), p) {
+        stack.push((kids[i], depth + 1, trail.add(i)))
+      }
+    }
   }
-  Some(best)
+  let indices = best_trail.to_array()
+  indices.rev_in_place()
+  Some((best, indices))
 }
 
 ///|

@@ -328,12 +328,16 @@ The kind table below is checked against `kind_table()` by
   `start`, `depth` and `path`. A `LeaveEvent` has the finished `node` and the
   `depth` and `path` of its `Enter`. `skip_children()` right after an `Enter`
   makes the next event that node's `Leave`; elsewhere it does nothing. To stop,
-  stop calling `next()`.
+  stop calling `next()`. `iter()` gives the remaining events as an
+  `Iter[Event]` that reads from the same reader, so `skip_children()` on the
+  reader still steers it.
 - A `NodePath` is the list of steps (field and index in that field) from the
   start node, like a path into elm-syntax's JSON:
   `declarations[0].declaration[0].expression[0].application[1]`. It is
   immutable (a child's path shares its parent's steps); `depth()`, `steps()`,
-  `last()`, `parent()` and `resolve(start)` read it.
+  `last()`, `parent()` and `resolve(start)` read it. `from_steps(steps)`
+  builds one, and `a.append(b)` is `a`'s steps followed by `b`'s. Its `Debug`
+  form is `{ steps: [...] }`, root first.
 - `push_events(source, handler)` drives any `EventSource` and calls
   `Handler::on_enter(EnterEvent)` (its `Control` steers the run) and
   `on_leave(LeaveEvent)`. Both default to `Continue` and nothing. A future
@@ -346,10 +350,11 @@ The kind table below is checked against `kind_table()` by
   `goto_previous_sibling`, `goto_parent` and `goto_first_child_for(location)`
   (the innermost child that contains it, or else the first child after it)
   each return `false` and leave the cursor in place when there is nowhere to
-  go. To reach `node_at(location)`, descend while the new node contains the
-  location and step back with `goto_parent` from the first that does not; a
-  plain `goto_first_child_for` loop goes one node too far when that node has
-  children after the location. `node()`, `field_name()`
+  go. `goto_node_at(location)` moves to `node_at(location)` within the
+  cursor's node (the rule of `Tree::node_at`, also where children overlap);
+  it returns `false` and stays when the node does not contain the location.
+  A plain `goto_first_child_for` loop goes one node too far when that node
+  has children after the location. `node()`, `field_name()`
   (the role in the parent, `None` at the start node), `depth()`, `path()`,
   `reset(node)` and `copy()` (an independent cursor at the same place).
 - With equivalent `Control` decisions, `walk`, `fold`, `accept`, an

@@ -377,3 +377,53 @@ test "law: descending with goto_first_child_for ends at node_at, except at a por
     seed=139,
   )
 }
+
+///|
+test "law: goto_node_at from the root or from any ancestor of node_at(p) moves to node_at(p), with its path" {
+  // Edges: every node's start and end, one column before each, every line's
+  // start and end and one past it, the end of the file and (1,1); positions
+  // outside the root (the cursor stays); a port's doc comment that overlaps
+  // its declaration in part (goto_first_child_for stops at the comment,
+  // goto_node_at does not).
+  @quickcheck.check(
+    (m : ElmModule) => {
+      ignore(elm_root(m))
+      let text = m.text()
+      guard @syntax.Tree::new(parse_result(text)) is Some(tree) else {
+        return false
+      }
+      let root = tree.root()
+      let ranges = []
+      @syntax.walk(root, n => {
+        ranges.push(n.range())
+        Continue
+      })
+      @lawkit.edge_positions(text, ranges)
+      .iter()
+      .all(p => {
+        let c = @syntax.TreeCursor::new(root)
+        let moved = c.goto_node_at(p)
+        match tree.node_at(p) {
+          None => !moved && c.depth() == 0 && c.node() == root
+          Some(found) =>
+            moved &&
+            c.node() == found &&
+            Some(c.path()) == tree.node_path(found) &&
+            tree
+            .ancestors(found)
+            .iter()
+            .all(a => {
+              let from_a = @syntax.TreeCursor::new(a)
+              from_a.goto_node_at(p) &&
+              from_a.node() == found &&
+              tree.node_path(a).map(ap => ap.append(from_a.path())) ==
+              tree.node_path(found)
+            })
+        }
+      })
+    },
+    count=100,
+    max_size=24,
+    seed=241,
+  )
+}
