@@ -10,4 +10,5 @@ import {
   "moonbitlang/core/env",
   "moonbitlang/core/quickcheck",
   "moonbitlang/core/quickcheck/splitmix",
+  "moonbitlang/core/list",
 } for "test"
