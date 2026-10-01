@@ -431,7 +431,9 @@ test-only dependencies.
 
 MoonBit has no module-level test-only dependencies: every module in `moon.mod` is
 downloaded by every user of krueger. So the published module (`moon.mod` at the root)
-depends only on `moonrockz/expect` (used by the library packages' own tests). Test
+depends only on `moonrockz/expect` (used by the library packages' own tests); `expect`
+itself imports `moonbitlang/async` and `moonbitlang/x`, so users still download those
+two. Test
 harnesses that need more (`moonspec`, `moonbitlang/async`, `moonbitlang/x`) live in the
 unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
 `moonbitlang/async` keeps its `examples/` and `test_programs/`:
@@ -443,8 +445,9 @@ unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
   `../.corpus` and `../_build/reports/...` (BDD steps take feature paths from the
   repository root and resolve them with `repo_path`).
 - Put a new test that needs a harness-only dependency in `harness/`, not in `src/`.
-- `moon.mod` `options(exclude: [...])` keeps the harness, test data, docs and tooling
-  out of the published package; `moon package --list` shows what ships.
+- `.moonignore` keeps the harness, test data, docs and tooling out of the published
+  package (`options(exclude: ...)` in `moon.mod` is deprecated); `moon package --list`
+  shows what ships.
 
 ### Toolchain
 
@@ -585,7 +588,9 @@ inputs.
   `src/lawkit` (`ElmModule`, `edge_positions`, `Ranges`, …), so every
   package's laws reach the same edges; add a new edge there, not in one
   package's tests. It is public (the harness module and krueger's users can
-  write laws with it), so its names are part of krueger's versioned API.
+  write laws with it), so its names are part of krueger's versioned API. It
+  is test support and unstable: generators, constructs and edge values change
+  as the laws need them, also in minor releases.
   `lawkit` imports only the MoonBit core library and `@ast`, so black-box
   tests of any package, and white-box tests of any package except `ast`, can
   import it. Generators: `ElmModule` (valid Elm), `ElmText` (any

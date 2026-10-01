@@ -19,19 +19,3 @@ description = "Parser and parsing utilities for Elm and Elm-like dialects (e.g. 
 source = "src"
 
 warnings = "-implicit_impl_as_method"
-
-options(
-  exclude: [
-    "harness",
-    "tests",
-    "docs",
-    "scripts",
-    "mise-tasks",
-    "tools",
-    ".github",
-    ".beads",
-    "moon.work",
-    "CLAUDE.md",
-    "lefthook.yml",
-  ],
-)

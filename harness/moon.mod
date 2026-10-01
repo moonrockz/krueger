@@ -10,8 +10,6 @@ import {
   "moonrockz/expect@0.6.0",
 }
 
-readme = "README.md"
-
 repository = "https://github.com/moonrockz/krueger"
 
 license = "Apache-2.0"
