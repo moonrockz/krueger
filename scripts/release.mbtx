@@ -1,0 +1,669 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.6.0",
+}
+
+///|
+/// Release tooling. A release is a pull request that sets the version in
+/// moon.mod and adds its section to CHANGELOG.md; when it merges, the Release
+/// workflow tags the commit, publishes to mooncakes.io and creates the GitHub
+/// release from that section.
+///
+/// Usage:
+///   release.mbtx version              print the next version (git-cliff)
+///   release.mbtx prepare [<version>] [--local]
+///                                     open the release pull request
+///   release.mbtx plan                 decide in CI whether to release
+///   release.mbtx notes <version>      print the GitHub release notes
+
+///|
+let usage : String = "Usage: release.mbtx version | prepare [<version>] [--local] | plan | notes <version>"
+
+///|
+let initial_version : String = "v0.1.0"
+
+///|
+let module_name : String = "moonrockz/krueger"
+
+///|
+let changelog_path : String = "CHANGELOG.md"
+
+///|
+/// Pick the version to print from the git-cliff exit code and stdout.
+fn choose_version(exit_code : Int, stdout : String) -> String {
+  let version = stdout.trim().to_owned()
+  if exit_code == 0 && version != "" {
+    version
+  } else {
+    initial_version
+  }
+}
+
+///|
+/// A `major.minor.patch` version.
+struct Version {
+  major : Int
+  minor : Int
+  patch : Int
+} derive(Eq, Compare, Debug)
+
+///|
+impl Show for Version with fn output(self, logger) {
+  logger.write_string("\{self.major}.\{self.minor}.\{self.patch}")
+}
+
+///|
+fn parse_number(text : StringView) -> Int? {
+  guard text.length() > 0 && text.length() <= 9 else { return None }
+  let mut n = 0
+  for c in text {
+    guard c >= '0' && c <= '9' else { return None }
+    n = n * 10 + (c.to_int() - '0'.to_int())
+  }
+  Some(n)
+}
+
+///|
+/// Read `1.2.3` or `v1.2.3`. Pre-release and build suffixes are not used here.
+fn parse_version(text : String) -> Result[Version, String] {
+  let trimmed = text.trim()
+  let bare = if trimmed.has_prefix("v") {
+    trimmed.view(start_offset=1)
+  } else {
+    trimmed
+  }
+  let parts = bare.split(".").collect()
+  match parts {
+    [major, minor, patch] =>
+      match (parse_number(major), parse_number(minor), parse_number(patch)) {
+        (Some(major), Some(minor), Some(patch)) => Ok({ major, minor, patch, })
+        _ => Err("not a version: \{text}")
+      }
+    _ => Err("not a version: \{text}")
+  }
+}
+
+///|
+/// The `version = "..."` value of a moon.mod file.
+fn mod_version(moon_mod : String) -> String? {
+  for line in moon_mod.split("\n") {
+    if version_value(line) is Some(value) {
+      return Some(value)
+    }
+  }
+  None
+}
+
+///|
+fn version_value(line : StringView) -> String? {
+  let line = line.trim()
+  guard line.has_prefix("version") else { return None }
+  let rest = line.view(start_offset=7).trim_start()
+  guard rest.has_prefix("=") else { return None }
+  let value = rest.view(start_offset=1).trim()
+  guard value.length() >= 2 && value.has_prefix("\"") && value.has_suffix("\"") else {
+    return None
+  }
+  Some(value.view(start_offset=1, end_offset=value.length() - 1).to_owned())
+}
+
+///|
+/// moon.mod with its version set to `version`, or `None` when it has no
+/// version line.
+fn set_mod_version(moon_mod : String, version : Version) -> String? {
+  let lines = moon_mod.split("\n").map(l => l.to_owned()).collect()
+  for i, line in lines {
+    if version_value(line) is Some(_) {
+      lines[i] = "version = \"\{version}\""
+      return Some(lines.join("\n"))
+    }
+  }
+  None
+}
+
+///|
+/// The version that `prepare` releases: the one asked for, or else the one
+/// git-cliff computes. It must be above the version in moon.mod.
+fn release_version(
+  requested : String?,
+  computed : String,
+  current : String,
+) -> Result[Version, String] {
+  guard parse_version(current) is Ok(current) else {
+    return Err("moon.mod has a bad version: \{current}")
+  }
+  let next = match parse_version(requested.unwrap_or(computed)) {
+    Ok(v) => v
+    Err(message) => return Err(message)
+  }
+  if next <= current {
+    Err(
+      "version \{next} is not above the current version \{current}; nothing to release, or pass a higher version",
+    )
+  } else {
+    Ok(next)
+  }
+}
+
+///|
+/// Collapse runs of blank lines to one and end the text with one line break.
+/// `git cliff --prepend` leaves extra blank lines between sections.
+fn tidy_changelog(text : String) -> String {
+  let out = StringBuilder()
+  let mut blank = 0
+  let mut started = false
+  for line in text.split("\n") {
+    let line = line.trim_end()
+    if line.is_empty() {
+      blank += 1
+      continue
+    }
+    if started && blank > 0 {
+      out.write_string("\n")
+    }
+    out.write_view(line)
+    out.write_string("\n")
+    blank = 0
+    started = true
+  }
+  out.to_string()
+}
+
+///|
+/// The body of the CHANGELOG.md section `## [<version>] ...`, without its
+/// heading, or `None` when there is no such section.
+fn changelog_section(changelog : String, version : Version) -> String? {
+  let heading = "## [\{version}]"
+  let body : Array[String] = []
+  let mut inside = false
+  for line in changelog.split("\n") {
+    if line.has_prefix("## [") {
+      if inside {
+        break
+      }
+      inside = line.has_prefix(heading)
+      continue
+    }
+    if inside {
+      body.push(line.to_owned())
+    }
+  }
+  if inside || !body.is_empty() {
+    Some(tidy_changelog(body.join("\n")))
+  } else {
+    None
+  }
+}
+
+///|
+/// The GitHub release notes: an install line, then the changelog section.
+fn release_notes(version : Version, section : String) -> String {
+  let install = "**Install:** `moon add \{module_name}@\{version}` · [mooncakes.io](https://mooncakes.io/docs/\{module_name})"
+  tidy_changelog(install + "\n\n" + section)
+}
+
+///|
+/// What the Release workflow does for one run.
+enum Plan {
+  Release(Version)
+  Skip(String)
+} derive(Eq, Debug)
+
+///|
+/// Decide whether a Release run releases. A tag push must name the version in
+/// moon.mod. Any other run (a push to main that changes moon.mod, a manual
+/// run) releases when the version has no tag yet. A release needs its section
+/// in CHANGELOG.md.
+fn plan(
+  ref_type : String,
+  ref_name : String,
+  version : Version,
+  tag_exists : Bool,
+  has_section : Bool,
+) -> Result[Plan, String] {
+  let tag = "v\{version}"
+  if ref_type == "tag" && ref_name != tag {
+    return Err(
+      "tag \{ref_name} does not match moon.mod version \{version} (\{tag})",
+    )
+  }
+  if ref_type != "tag" && tag_exists {
+    return Ok(Skip("\{tag} is already tagged; nothing to release"))
+  }
+  if !has_section {
+    return Err(
+      "CHANGELOG.md has no section for \{version}; release with `mise run release:prepare`",
+    )
+  }
+  Ok(Release(version))
+}
+
+///|
+/// Lines for $GITHUB_OUTPUT.
+fn plan_outputs(p : Plan) -> String {
+  match p {
+    Release(v) => "release=true\nversion=\{v}\ntag=v\{v}\n"
+    Skip(_) => "release=false\n"
+  }
+}
+
+///|
+/// The body of the release pull request.
+fn pr_body(version : Version, notes : String) -> String {
+  (
+    $|Release \{module_name} \{version}.
+    $|
+    $|Before you merge, edit the highlights comment at the top of the
+    $|`## [\{version}]` section in `CHANGELOG.md`: a few sentences on what this
+    $|release brings. You can also reword the generated lines.
+    $|
+    $|When this pull request merges, the Release workflow tags the merge
+    $|commit `v\{version}`, publishes to mooncakes.io and creates the GitHub
+    $|release from the changelog section.
+    $|
+    $|## Release notes preview
+    $|
+  ) +
+  notes
+}
+
+///|
+fn fail_with(message : String) -> Unit {
+  eprintln(message)
+  @sys.exit(1)
+}
+
+///|
+/// Run a command; stop the script when it fails.
+async fn run_or_fail(
+  cmd : String,
+  args : Array[String],
+  extra_env? : Map[String, String] = {},
+) -> Unit {
+  let code = @process.run(cmd, args, extra_env~)
+  if code != 0 {
+    fail_with("`\{cmd} \{args.join(" ")}` failed with exit code \{code}")
+  }
+}
+
+///|
+async fn stdout_of(cmd : String, args : Array[String]) -> (Int, String) {
+  let (code, out) = @process.collect_stdout(
+    cmd,
+    args,
+    stderr=@process.redirect_to_file("/dev/null"),
+  ) catch {
+    _ => (1, b"")
+  }
+  (code, out.text())
+}
+
+///|
+async fn computed_version() -> String {
+  let (code, out) = stdout_of("git", ["cliff", "--bumped-version"])
+  choose_version(code, out)
+}
+
+///|
+async fn current_version() -> String {
+  match mod_version(@fs.read_file("moon.mod").text()) {
+    Some(v) => v
+    None => {
+      fail_with("moon.mod has no version")
+      ""
+    }
+  }
+}
+
+///|
+/// GitHub token for git-cliff's PR numbers and authors.
+async fn github_env() -> Map[String, String] {
+  if @env.get_env_var("GITHUB_TOKEN") is Some(t) && t != "" {
+    return {}
+  }
+  let (code, token) = stdout_of("gh", ["auth", "token"])
+  if code == 0 && token.trim() != "" {
+    { "GITHUB_TOKEN": token.trim().to_owned() }
+  } else {
+    eprintln(
+      "warning: no GITHUB_TOKEN and no `gh auth token`; PR links and authors may be missing",
+    )
+    {}
+  }
+}
+
+///|
+async fn prepare(requested : String?, local_only : Bool) -> Unit {
+  let (_, dirty) = stdout_of("git", ["status", "--porcelain"])
+  if dirty.trim() != "" {
+    fail_with(
+      "the working tree has changes; commit them or set them aside first",
+    )
+  }
+  run_or_fail("git", ["fetch", "--tags", "origin", "main"])
+  run_or_fail("git", ["switch", "--detach", "origin/main"])
+  let computed = match requested {
+    Some(_) => ""
+    None => {
+      let (code, out) = stdout_of("git", ["cliff", "--bumped-version"])
+      if code != 0 || out.trim() == "" {
+        fail_with(
+          "git-cliff could not compute the next version; run `mise run release:prepare` so mise provides git-cliff",
+        )
+      }
+      out
+    }
+  }
+  let version = match release_version(requested, computed, current_version()) {
+    Ok(v) => v
+    Err(message) => {
+      fail_with(message)
+      return
+    }
+  }
+  let tag = "v\{version}"
+  let (tag_code, _) = stdout_of("git", [
+    "rev-parse",
+    "--quiet",
+    "--verify",
+    "refs/tags/\{tag}",
+  ])
+  if tag_code == 0 {
+    fail_with("tag \{tag} already exists")
+  }
+  let branch = "release/\{tag}"
+  run_or_fail("git", ["switch", "-c", branch])
+  guard set_mod_version(@fs.read_file("moon.mod").text(), version) is Some(m) else {
+    fail_with("moon.mod has no version")
+    return
+  }
+  @fs.write_file("moon.mod", m)
+  run_or_fail(
+    "git",
+    ["cliff", "--unreleased", "--tag", tag, "--prepend", changelog_path],
+    extra_env=github_env(),
+  )
+  let changelog = tidy_changelog(@fs.read_file(changelog_path).text())
+  @fs.write_file(changelog_path, changelog)
+  run_or_fail("git", ["add", "moon.mod", changelog_path])
+  run_or_fail("git", ["commit", "-m", "chore(release): \{tag}"])
+  let notes = release_notes(
+    version,
+    changelog_section(changelog, version).unwrap_or(""),
+  )
+  if local_only {
+    println(
+      (
+        $|Created branch \{branch} with the release commit. Edit the highlights in
+        $|CHANGELOG.md, then push the branch and open a pull request titled
+        $|"chore(release): \{tag}".
+      ),
+    )
+    return
+  }
+  run_or_fail("git", ["push", "--set-upstream", "origin", branch])
+  run_or_fail("gh", [
+    "pr",
+    "create",
+    "--base",
+    "main",
+    "--head",
+    branch,
+    "--title",
+    "chore(release): \{tag}",
+    "--body",
+    pr_body(version, notes),
+  ])
+  println(
+    "Opened the release pull request. Edit the highlights in CHANGELOG.md on \{branch}, then merge.",
+  )
+}
+
+///|
+async fn run_plan() -> Unit {
+  let version = match parse_version(current_version()) {
+    Ok(v) => v
+    Err(message) => {
+      fail_with(message)
+      return
+    }
+  }
+  let ref_type = @env.get_env_var("GITHUB_REF_TYPE").unwrap_or("")
+  let ref_name = @env.get_env_var("GITHUB_REF_NAME").unwrap_or("")
+  // Exit code 2: no such tag on origin.
+  let (code, _) = stdout_of("git", [
+    "ls-remote",
+    "--exit-code",
+    "--tags",
+    "origin",
+    "refs/tags/v\{version}",
+  ])
+  let changelog = if @fs.exists(changelog_path) {
+    @fs.read_file(changelog_path).text()
+  } else {
+    ""
+  }
+  let has_section = changelog_section(changelog, version) is Some(_)
+  match plan(ref_type, ref_name, version, code == 0, has_section) {
+    Err(message) => fail_with(message)
+    Ok(p) => {
+      match p {
+        Release(v) => println("Release \{v}")
+        Skip(reason) => println(reason)
+      }
+      match @env.get_env_var("GITHUB_OUTPUT") {
+        Some(path) if path != "" =>
+          @fs.write_file(path, plan_outputs(p), append=true)
+        _ => println(plan_outputs(p).trim_end())
+      }
+    }
+  }
+}
+
+///|
+async fn notes(version : String) -> Unit {
+  let version = match parse_version(version) {
+    Ok(v) => v
+    Err(message) => {
+      fail_with(message)
+      return
+    }
+  }
+  match changelog_section(@fs.read_file(changelog_path).text(), version) {
+    Some(section) => println(release_notes(version, section).trim_end())
+    None => fail_with("CHANGELOG.md has no section for \{version}")
+  }
+}
+
+///|
+async fn main {
+  match @env.args()[1:] {
+    ["version"] => println(computed_version())
+    ["prepare"] => prepare(None, false)
+    ["prepare", "--local"] => prepare(None, true)
+    ["prepare", version] => prepare(Some(version), false)
+    ["prepare", version, "--local"] | ["prepare", "--local", version] =>
+      prepare(Some(version), true)
+    ["plan"] => run_plan()
+    ["notes", version] => notes(version)
+    _ => {
+      eprintln(usage)
+      @sys.exit(2)
+    }
+  }
+}
+
+///|
+/// Scenario state for `features/release.feature`.
+struct ReleaseWorld {
+  mut exit_code : Int
+  mut stdout : String
+  mut text : String
+  mut result : Result[String, String]
+  mut ref_type : String
+  mut ref_name : String
+  mut tag_exists : Bool
+  mut has_section : Bool
+}
+
+///|
+fn ReleaseWorld::new() -> ReleaseWorld {
+  {
+    exit_code: 0,
+    stdout: "",
+    text: "",
+    result: Err("not run"),
+    ref_type: "",
+    ref_name: "",
+    tag_exists: false,
+    has_section: true,
+  }
+}
+
+///|
+fn version_of(text : String) -> Version raise {
+  match parse_version(text) {
+    Ok(v) => v
+    Err(message) => fail(message)
+  }
+}
+
+///|
+fn plan_name(r : Result[Plan, String]) -> String {
+  match r {
+    Ok(Release(v)) => "release \{v}"
+    Ok(Skip(reason)) => "skip: \{reason}"
+    Err(message) => "error: \{message}"
+  }
+}
+
+///|
+impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
+  setup.given2("git-cliff exits with {int} and prints {string}", fn(
+    code : Int,
+    stdout : String,
+  ) {
+    self.exit_code = code
+    self.stdout = stdout
+  })
+  setup.then1("the printed version is {string}", fn(expected : String) raise {
+    @expect.expect(choose_version(self.exit_code, self.stdout)).to_equal(
+      expected,
+    )
+  })
+  setup.when1("I read the version {string}", fn(text : String) {
+    self.result = match parse_version(text) {
+      Ok(v) => Ok("\{v}")
+      Err(message) => Err(message)
+    }
+  })
+  setup.when3(
+    "I choose the release version with request {string}, computed {string} and current {string}",
+    fn(requested : String, computed : String, current : String) {
+      let requested = if requested == "" { None } else { Some(requested) }
+      self.result = match release_version(requested, computed, current) {
+        Ok(v) => Ok("\{v}")
+        Err(message) => Err(message)
+      }
+    },
+  )
+  setup.then1("the version is {string}", fn(expected : String) raise {
+    @expect.expect(self.result).to_equal(Ok(expected))
+  })
+  setup.then1("it fails with {string}", fn(expected : String) raise {
+    @expect.expect(self.result).to_equal(Err(expected))
+  })
+  setup.given1("the text:", fn(doc : @moonspec.DocString) {
+    self.text = doc.content
+  })
+  setup.when1("I set the module version to {string}", fn(
+    version : String,
+  ) raise {
+    self.result = match set_mod_version(self.text, version_of(version)) {
+      Some(m) => Ok(m)
+      None => Err("no version")
+    }
+  })
+  setup.then1("moon.mod becomes:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(self.result).to_equal(Ok(doc.content))
+  })
+  setup.then0("the module has no version line", fn() raise {
+    @expect.expect(self.result).to_equal(Err("no version"))
+  })
+  setup.when0("I tidy the changelog", fn() {
+    self.result = Ok(tidy_changelog(self.text))
+  })
+  setup.when1("I take the changelog section for {string}", fn(
+    version : String,
+  ) raise {
+    self.result = match changelog_section(self.text, version_of(version)) {
+      Some(s) => Ok(s)
+      None => Err("no section")
+    }
+  })
+  setup.when1("I make the release notes for {string}", fn(
+    version : String,
+  ) raise {
+    self.result = Ok(release_notes(version_of(version), self.text))
+  })
+  setup.then1("the result is:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(self.result).to_equal(Ok(doc.content + "\n"))
+  })
+  setup.then0("the section is empty", fn() raise {
+    @expect.expect(self.result).to_equal(Ok(""))
+  })
+  setup.then0("there is no section", fn() raise {
+    @expect.expect(self.result).to_equal(Err("no section"))
+  })
+  setup.given2("the ref type is {string} and the ref name is {string}", fn(
+    ref_type : String,
+    ref_name : String,
+  ) {
+    self.ref_type = ref_type
+    self.ref_name = ref_name
+  })
+  setup.given1("the tag exists: {string}", fn(answer : String) {
+    self.tag_exists = answer == "yes"
+  })
+  setup.given1("the changelog has the section: {string}", fn(answer : String) {
+    self.has_section = answer == "yes"
+  })
+  setup.then2("the plan for version {string} is {string}", fn(
+    version : String,
+    expected : String,
+  ) raise {
+    let r = plan(
+      self.ref_type,
+      self.ref_name,
+      version_of(version),
+      self.tag_exists,
+      self.has_section,
+    )
+    @expect.expect(plan_name(r)).to_equal(expected)
+  })
+  setup.then2("the outputs for a release of {string} are:", fn(
+    version : String,
+    doc : @moonspec.DocString,
+  ) raise {
+    @expect.expect(plan_outputs(Release(version_of(version)))).to_equal(
+      doc.content + "\n",
+    )
+  })
+}
+
+///|
+async test "release feature" {
+  @moonspec.run_or_fail(
+    ReleaseWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/release.feature"),
+    ]),
+  )
+  |> ignore
+}
