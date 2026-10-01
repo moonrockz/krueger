@@ -24,7 +24,7 @@ test "token stream keeps tokens in order" {
     trivia_before: [],
     trivia_after: [],
   }
-  let stream = @scanner.TokenStream::{ tokens: [t1, t2], }
+  let stream = @scanner.TokenStream::{ tokens: [t1, t2], trivia: [], }
   assert_eq(stream.tokens.length(), 2)
   assert_eq(stream.tokens[0].lexeme, "add")
   assert_eq(stream.tokens[1].lexeme, "1")

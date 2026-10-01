@@ -323,7 +323,10 @@ test "parse module returns scanner diagnostics when tokenization fails" {
 ///|
 test "empty stream has no ast and an empty cst span" {
   @expect.expect_all(s => {
-    let result = @parser.parse_tokens(@scanner.TokenStream::{ tokens: [], })
+    let result = @parser.parse_tokens(@scanner.TokenStream::{
+      tokens: [],
+      trivia: [],
+    })
     s.expect(codes(result)).to_equal(["KR-PARSE-006"])
     s.expect(result.ast is None).to_be_true()
     guard result.cst is Some(cst) else { fail("expected a CST") }

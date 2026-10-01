@@ -90,6 +90,7 @@ pub struct Token {
 
 pub struct TokenStream {
   tokens : Array[Token]
+  trivia : Array[Trivia] // only for a text with no tokens; empty otherwise
 }
 
 pub struct ScanErrorList {
