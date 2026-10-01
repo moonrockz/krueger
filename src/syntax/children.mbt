@@ -46,17 +46,28 @@ fn function_entries(f : @ast.Function) -> Array[(String, Array[NodeRef])] {
 }
 
 ///|
-/// The doc attributes of the declaration at `range`.
+/// The key of a declaration range in `declaration_attributes`.
+fn range_key(r : @ast.Range) -> (Int, Int, Int, Int) {
+  (r.start.row, r.start.column, r.end.row, r.end.column)
+}
+
+///|
+/// The doc attributes of each declaration, by range: the first group for a
+/// range wins. One pass over the groups, so that the file's entries stay
+/// linear in the number of declarations.
 fn declaration_attributes(
   groups : ArrayView[@parser.AttributeGroup],
-  range : @ast.Range,
-) -> ArrayView[@parser.DocAttribute] {
+) -> Map[(Int, Int, Int, Int), ArrayView[@parser.DocAttribute]] {
+  let by_range = Map([])
   for g in groups {
-    if g.target is Declaration(range=r, ..) && r == range {
-      return g.attributes
+    if g.target is Declaration(range~, ..) {
+      let key = range_key(range)
+      if !by_range.contains(key) {
+        by_range[key] = g.attributes
+      }
     }
   }
-  []
+  by_range
 }
 
 ///|
@@ -70,13 +81,14 @@ fn NodeRef::entries(self : NodeRef) -> Array[(String, Array[NodeRef])] {
           module_attributes.append(g.attributes.map(a => Attribute(a)))
         }
       }
+      let attributes = declaration_attributes(groups)
       [
         ("moduleDefinition", [Module(file.module_definition)]),
         ("imports", file.imports.map(i => Import(i))),
         (
           "declarations",
           file.declarations.map(d => {
-            Declaration(d, declaration_attributes(groups, d.range))
+            Declaration(d, attributes.get(range_key(d.range)).unwrap_or([]))
           }),
         ),
         ("comments", file.comments.map(c => Comment(c))),
@@ -322,33 +334,57 @@ fn start_before(a : NodeRef, b : NodeRef) -> Int {
 }
 
 ///|
-/// All child nodes in source order (a new array), each with its field name
-/// and its index in that field. Children that start at the same place keep
-/// their field order.
-fn NodeRef::children_with_fields(
+/// All child nodes in source order (a new array), each with its step: its
+/// field and its index in that field. Children that start at the same place
+/// keep their field order. The nodes are the ones that `children` gives.
+///
+/// Use it to get the field of every child in one call. `field_of` looks
+/// through all the fields on each call, so calling it for each child of a
+/// wide node (a file with many declarations) is quadratic.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let implementation = root.field("declarations")[0].field("declaration")[0]
+///   let labels = implementation
+///     .children_with_fields()
+///     .map(x => "\{x.0.field}[\{x.0.index}]:\{x.1.kind()}")
+///   inspect(
+///     labels.join(" "),
+///     content="name[0]:name arguments[0]:var arguments[1]:var expression[0]:operatorapplication",
+///   )
+/// }
+/// ```
+pub fn NodeRef::children_with_fields(
   self : NodeRef,
-) -> Array[(String, Int, NodeRef)] {
-  let all : Array[(Int, String, Int, NodeRef)] = []
+) -> Array[(PathStep, NodeRef)] {
+  let all : Array[(Int, PathStep, NodeRef)] = []
   for e in self.entries() {
     for i, c in e.1 {
-      all.push((all.length(), e.0, i, c))
+      all.push((all.length(), { field: e.0, index: i, }, c))
     }
   }
   // Array::sort_by is not stable, so the original position breaks ties.
   all.sort_by((a, b) => {
-    let c = start_before(a.3, b.3)
+    let c = start_before(a.2, b.2)
     if c != 0 {
       c
     } else {
       a.0.compare(b.0)
     }
   })
-  all.map(x => (x.1, x.2, x.3))
+  all.map(x => (x.1, x.2))
 }
 
 ///|
 /// All child nodes in source order (a new array). Use `field_of` to get the
-/// field of each child.
+/// field of one child, and `children_with_fields` (or `Tree::field_of`) to
+/// get the field of each child.
 ///
 /// ```mbt check
 /// test {
@@ -369,12 +405,16 @@ fn NodeRef::children_with_fields(
 /// }
 /// ```
 pub fn NodeRef::children(self : NodeRef) -> Array[NodeRef] {
-  self.children_with_fields().map(x => x.2)
+  self.children_with_fields().map(x => x.1)
 }
 
 ///|
 /// The field of this node that holds `child`, or `None` when `child` is not a
 /// child of this node. See `children` for an example.
+///
+/// It looks through all the fields on each call (linear in the number of
+/// children). To get the field of every child, use `children_with_fields`,
+/// or `Tree::field_of`, which reads the tree's index.
 pub fn NodeRef::field_of(self : NodeRef, child : NodeRef) -> String? {
   for e in self.entries() {
     if e.1.any(c => same(c, child)) {

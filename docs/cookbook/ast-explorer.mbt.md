@@ -15,7 +15,7 @@ Each node becomes one JSON object:
 | Key | Value |
 |-----|-------|
 | `type` | `category.kind`, for example `expression.application` |
-| `field` | The role of the node in its parent (`NodeRef::field_of`). The root has no `field`. |
+| `field` | The role of the node in its parent (`Tree::field_of`). The root has no `field`. |
 | `range` | The elm-syntax range `[startRow, startColumn, endRow, endColumn]`, 1-based |
 | `start`, `end` | The same range as UTF-16 offsets into the source text |
 | `value` | Leaf nodes only: the source text from `start` to `end` |
@@ -138,8 +138,9 @@ Use `@syntax.walk` instead. It walks the tree with its own explicit stack and
 calls `enter` before a node's children and `leave` after them. Keep your own
 stack of open nodes next to it:
 
-1. `enter` pushes a frame for the node. The frame on top of the stack before
-   the push is the parent, so `parent.field_of(node)` gives the `field`.
+1. `enter` pushes a frame for the node. `Tree::field_of(node)` gives the
+   `field`: it reads the tree's index, so it does not look through the
+   parent's fields.
 2. `leave` pops the frame and makes the JSON object. Then it adds the object
    to the children of the new top frame. When the stack is empty, the object
    is the root.
@@ -151,7 +152,6 @@ pairs, so the two stacks stay in step.
 ///|
 /// A node that is open: `enter` has run, `leave` has not.
 struct AxFrame {
-  node : @syntax.NodeRef
   start : Int
   end : Int
   fields : Map[String, Json]
@@ -167,7 +167,8 @@ fn ax_location_json(at : @ast.Location) -> Array[Json] {
 /// The explorer tree of a parsed module, or `None` when the parser made no
 /// AST (a module without a valid header).
 fn ax_tree(text : String, result : @krueger.ParseResult) -> Json? {
-  guard @syntax.NodeRef::of_result(result) is Some(root) else { return None }
+  guard @syntax.Tree::new(result) is Some(nodes) else { return None }
+  let root = nodes.root()
   let rows = AxRows::new(text)
   let stack : Array[AxFrame] = []
   let mut tree = Json::null()
@@ -178,8 +179,7 @@ fn ax_tree(text : String, result : @krueger.ParseResult) -> Json? {
       let fields : Map[String, Json] = {
         "type": Json::string(node.category() + "." + node.kind()),
       }
-      if stack.last() is Some(parent) &&
-        parent.node.field_of(node) is Some(field) {
+      if nodes.field_of(node) is Some(field) {
         fields["field"] = Json::string(field)
       }
       fields["range"] = Json::array(
@@ -189,7 +189,7 @@ fn ax_tree(text : String, result : @krueger.ParseResult) -> Json? {
       let end = rows.offset(range.end)
       fields["start"] = Json::number(start.to_double())
       fields["end"] = Json::number(end.to_double())
-      stack.push({ node, start, end, fields, children: [], })
+      stack.push({ start, end, fields, children: [], })
       Continue
     },
     leave=_ => {
@@ -303,8 +303,7 @@ test "one node as JSON" {
 ```
 
 `@syntax.EventReader` is another way to do the same work. Its `Enter` event
-has the `field` already, so it does not need `field_of`, which looks through
-the parent's fields each time. For most modules the difference is small.
+has the `field` already, so it needs no `Tree`.
 
 ## Check that the offsets select the right text
 
@@ -698,7 +697,8 @@ The functions in this article, in the order of the data flow:
   position in the editor.
 - [Read and write elm-syntax JSON](elm-syntax-json.mbt.md): the AST as
   elm-syntax JSON, with `@ast.encode_file`.
-- `@syntax.NodeRef`: `category`, `kind`, `range`, `children` and `field_of`.
+- `@syntax.NodeRef`: `category`, `kind`, `range` and `children`.
+- `@syntax.Tree`: `new`, `root` and `field_of`.
 - `@syntax.Tree::node_at`: the innermost node at a location, on the MoonBit
   side.
 - `@lawkit.offset_of`: the same row and column to offset conversion, in the

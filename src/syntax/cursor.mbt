@@ -101,10 +101,7 @@ fn TreeCursor::descend(
   self : TreeCursor,
   choose : (Array[(PathStep?, NodeRef)]) -> Int?,
 ) -> Bool {
-  let kids = self
-    .node()
-    .children_with_fields()
-    .map(x => (Some({ field: x.0, index: x.1, }), x.2))
+  let kids = self.node().children_with_fields().map(x => (Some(x.0), x.1))
   guard choose(kids) is Some(i) else { return false }
   let parent_path = self.path()
   self.frames.push({ siblings: kids, parent_path, index: i, })
