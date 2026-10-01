@@ -240,6 +240,33 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 ///|
 /// Parse a token stream into an elm-syntax AST, a CST and diagnostics,
 /// following stil4m/elm-syntax 7.3.9.
+///
+/// Get the tokens from a scanner built for the same `dialect` (default: Elm
+/// 0.19.1). The dialect's rules decide what is an error, and its operator
+/// table decides how operators group.
+///
+/// ```mbt check
+/// test {
+///   let dialect = @dialect.Dialect::elm_0_19_1()
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nx =\n    1 + 2 * 3\n",
+///   )
+///   guard @scanner.DefaultScanner::new(dialect~).tokenize(source) is Ok(tokens) else {
+///     fail("scan error")
+///   }
+///   let result = @parser.parse_tokens(tokens, dialect~)
+///   inspect(result.diagnostics.length(), content="0")
+///   guard result.ast is Some(file) else { fail("no AST") }
+///   guard file.declarations[0].value is FunctionDeclaration(f) else {
+///     fail("not a function")
+///   }
+///   // `*` binds tighter than `+`, so `+` is the root.
+///   guard f.declaration.value.expression.value is OperatorApplication(op, _, _, _) else {
+///     fail("not an operator application")
+///   }
+///   inspect(op, content="+")
+/// }
+/// ```
 pub fn parse_tokens(
   tokens : @scanner.TokenStream,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
@@ -522,8 +549,32 @@ fn collect_attributes(
 }
 
 ///|
-/// Tokenize `source` with `scanner` and parse it in `dialect`. The caller
-/// builds `scanner` for the same dialect.
+/// Tokenize `source` with `scanner` and parse it in `dialect` (default: Elm
+/// 0.19.1). The caller builds `scanner` for the same dialect.
+///
+/// When the source does not scan, the result has no AST and no CST, and its
+/// diagnostics are the scanner's. The root package's `parse_module` builds
+/// the default scanner for you.
+///
+/// ```mbt check
+/// test {
+///   let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+///   let scanner = @scanner.DefaultScanner::new(dialect~)
+///   let ok = @parser.parse_module(
+///     @scanner.SourceText::new("module Main exposing (..)\n\nx = 1\n"),
+///     scanner,
+///     dialect~,
+///   )
+///   inspect(ok.diagnostics.length(), content="0")
+///   let bad = @parser.parse_module(
+///     @scanner.SourceText::new("module Main exposing (..)\n\n{- open\n"),
+///     scanner,
+///     dialect~,
+///   )
+///   inspect(bad.ast is None && bad.cst is None, content="true")
+///   inspect(bad.diagnostics[0].code, content="KR-SCAN-001")
+/// }
+/// ```
 pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,

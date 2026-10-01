@@ -79,6 +79,25 @@ pub fn encode_module_name(m : ModuleName) -> Json {
 /// Elm.Syntax.File.encode.
 /// With `exact_ints`, Int literals are written with their exact digits
 /// (elm-syntax writes the nearest Double, which differs above 2^53).
+/// With `exact_ints=false` the result is the same as `encode_file`.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nbig =\n    9007199254740993\n",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   guard result.ast is Some(file) else { fail("no AST") }
+///   // elm-syntax writes the nearest Double.
+///   let nearest = @ast.encode_file(file).stringify()
+///   inspect(nearest.contains("9007199254740992"), content="true")
+///   // exact_ints keeps the digits of the literal.
+///   let exact = @ast.encode_file_with(file, exact_ints=true).stringify()
+///   inspect(exact.contains("9007199254740993"), content="true")
+///   // The decoder reads both forms; the exact form gives the literal back.
+///   inspect(@ast.decode_file(@json.parse(exact)) == file, content="true")
+/// }
+/// ```
 pub fn encode_file_with(file : File, exact_ints~ : Bool) -> Json {
   obj([
     ("moduleDefinition", encode_node(file.module_definition, encode_module)),
@@ -665,6 +684,30 @@ fn encode_lambda(l : Lambda, exact_ints~ : Bool) -> Json {
 
 ///|
 /// Elm.Syntax.File.encode.
+///
+/// The JSON is the JSON that elm-syntax 7.3.9 writes for the same file, with
+/// the object keys in elm-syntax's order. The parity check compares the two
+/// on a corpus of real packages. An Int literal
+/// above 2^53 becomes the nearest Double, as in elm-syntax; use
+/// `encode_file_with(file, exact_ints=true)` to keep its digits.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new("module Main exposing (x)\n\nx = 1\n")
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   guard result.ast is Some(file) else { fail("no AST") }
+///   let json = @ast.encode_file(file)
+///   guard json is { "declarations": [declaration], .. } else {
+///     fail("unexpected shape")
+///   }
+///   inspect(
+///     declaration.stringify(),
+///     content=(
+///       #|{"range":[3,1,3,6],"value":{"type":"function","function":{"documentation":null,"signature":null,"declaration":{"range":[3,1,3,6],"value":{"name":{"range":[3,1,3,2],"value":"x"},"arguments":[],"expression":{"range":[3,5,3,6],"value":{"type":"integer","integer":1}}}}}}}
+///     ),
+///   )
+/// }
+/// ```
 pub fn encode_file(file : File) -> Json {
   encode_file_with(file, exact_ints=false)
 }

@@ -2,3 +2,7 @@ import {
   "moonbitlang/core/builtin",
   "moonrockz/krueger/scanner",
 }
+
+import {
+  "moonrockz/krueger/parser",
+} for "test"

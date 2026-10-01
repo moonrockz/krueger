@@ -14,6 +14,36 @@ priv struct CursorFrame {
 /// Each `goto_*` returns `false` and leaves the cursor in place when there is
 /// nowhere to go. Its state is a stack of frames, not recursion. A cursor
 /// belongs to its caller; `copy` gives an independent cursor.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let cursor = @syntax.TreeCursor::new(root)
+///   // To the module header, back to the file, then to the function.
+///   inspect(cursor.goto_first_child(), content="true")
+///   inspect(cursor.node().kind(), content="normal")
+///   inspect(cursor.goto_previous_sibling(), content="false")
+///   inspect(cursor.goto_parent(), content="true")
+///   inspect(cursor.goto_last_child(), content="true")
+///   inspect(cursor.node().kind(), content="function")
+///   // Down to the arguments of `add`.
+///   ignore(cursor.goto_first_child()) // implementation
+///   ignore(cursor.goto_first_child()) // name `add`
+///   inspect(cursor.goto_next_sibling(), content="true")
+///   debug_inspect(cursor.field_name(), content="Some(\"arguments\")")
+///   inspect(cursor.depth(), content="3")
+///   inspect(cursor.path(), content="declarations[0].declaration[0].arguments[0]")
+///   // A copy moves on its own.
+///   let other = cursor.copy()
+///   ignore(other.goto_parent())
+///   inspect(cursor.node().kind(), content="var")
+/// }
+/// ```
 pub struct TreeCursor {
   priv frames : Array[CursorFrame]
 }
@@ -82,11 +112,15 @@ fn TreeCursor::descend(
 }
 
 ///|
+/// Move to the node's first child in source order. Return `false` and stay
+/// when the node has no children.
 pub fn TreeCursor::goto_first_child(self : TreeCursor) -> Bool {
   self.descend(kids => if kids.is_empty() { None } else { Some(0) })
 }
 
 ///|
+/// Move to the node's last child in source order. Return `false` and stay
+/// when the node has no children.
 pub fn TreeCursor::goto_last_child(self : TreeCursor) -> Bool {
   self.descend(kids => {
     if kids.is_empty() {
@@ -98,6 +132,8 @@ pub fn TreeCursor::goto_last_child(self : TreeCursor) -> Bool {
 }
 
 ///|
+/// Move to the next child of the same parent, in source order. Return
+/// `false` and stay at the last child and at the start node.
 pub fn TreeCursor::goto_next_sibling(self : TreeCursor) -> Bool {
   let f = self.top()
   if f.index + 1 < f.siblings.length() {
@@ -109,6 +145,8 @@ pub fn TreeCursor::goto_next_sibling(self : TreeCursor) -> Bool {
 }
 
 ///|
+/// Move to the previous child of the same parent, in source order. Return
+/// `false` and stay at the first child and at the start node.
 pub fn TreeCursor::goto_previous_sibling(self : TreeCursor) -> Bool {
   let f = self.top()
   if f.index > 0 {
@@ -120,6 +158,8 @@ pub fn TreeCursor::goto_previous_sibling(self : TreeCursor) -> Bool {
 }
 
 ///|
+/// Move to the parent. Return `false` and stay at the start node: the
+/// cursor never goes above the node it started at.
 pub fn TreeCursor::goto_parent(self : TreeCursor) -> Bool {
   if self.frames.length() > 1 {
     ignore(self.frames.pop())
@@ -141,6 +181,44 @@ pub fn TreeCursor::goto_parent(self : TreeCursor) -> Bool {
 /// `node_at(p)` has children after `p`. (Where a port's doc comment with
 /// attributes overlaps the port declaration only in part, the descent stops
 /// at the comment, which contains `node_at(p)`.)
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   let p : @ast.Location = { row: 4, column: 7, } // the `+` in `x + y`
+///   let contains = (r : @ast.Range) => {
+///     let after_start = r.start.row < p.row ||
+///       (r.start.row == p.row && r.start.column <= p.column)
+///     let before_end = p.row < r.end.row ||
+///       (p.row == r.end.row && p.column < r.end.column)
+///     after_start && before_end
+///   }
+///   // The recipe: descend while the new node contains `p`.
+///   let cursor = @syntax.TreeCursor::new(tree.root())
+///   while cursor.goto_first_child_for(p) {
+///     if !contains(cursor.node().range()) {
+///       ignore(cursor.goto_parent())
+///       break
+///     }
+///   }
+///   inspect(cursor.node().kind(), content="operatorapplication")
+///   inspect(tree.node_at(p) == Some(cursor.node()), content="true")
+///   // A plain loop goes one node too far, to `y` after the `+`.
+///   let naive = @syntax.TreeCursor::new(tree.root())
+///   while naive.goto_first_child_for(p) {
+///
+///   }
+///   inspect(
+///     naive.path(),
+///     content="declarations[0].declaration[0].expression[0].right[0]",
+///   )
+/// }
+/// ```
 pub fn TreeCursor::goto_first_child_for(
   self : TreeCursor,
   p : @ast.Location,

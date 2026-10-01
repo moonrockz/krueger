@@ -1,5 +1,5 @@
 ///|
-/// A lexical unit before trivia is attached: a significant token or trivia.
+/// The kind of a `RawToken`: a significant token, or one kind of trivia.
 pub(all) enum RawTokenKind {
   Significant(TokenKind)
   Whitespace
@@ -10,6 +10,9 @@ pub(all) enum RawTokenKind {
 } derive(Eq, Debug)
 
 ///|
+/// A lexical unit before trivia is attached: a significant token or one
+/// piece of trivia, with its exact text and its span. `lex_raw` makes them;
+/// `normalize_tokens` turns them into a `TokenStream`.
 pub(all) struct RawToken {
   kind : RawTokenKind
   lexeme : String
@@ -320,6 +323,32 @@ fn skip_number(cursor : Cursor) -> Bool {
 /// `KR-SCAN-001` unterminated block comment, `KR-SCAN-002` malformed doc
 /// comment, `KR-SCAN-003` a character Elm does not allow here, `KR-SCAN-004`
 /// an unterminated string, char or GLSL literal.
+///
+/// The result is a flat list: trivia is not attached to tokens yet, and the
+/// lexemes in order give the source back. `DefaultScanner::tokenize` is
+/// `lex_raw` followed by `normalize_tokens`.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new("x = 1 -- one\n")
+///   guard @scanner.lex_raw(source) is Ok(raw) else { fail("scan failed") }
+///   debug_inspect(
+///     raw.map(r => (r.kind, r.lexeme)),
+///     content=(
+///       #|[
+///       #|  (Significant(Identifier), "x"),
+///       #|  (Whitespace, " "),
+///       #|  (Significant(Equals), "="),
+///       #|  (Whitespace, " "),
+///       #|  (Significant(IntLiteral), "1"),
+///       #|  (Whitespace, " "),
+///       #|  (LineComment, "-- one"),
+///       #|  (Newline, "\n"),
+///       #|]
+///     ),
+///   )
+/// }
+/// ```
 pub fn lex_raw(
   source : SourceText,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),

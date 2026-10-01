@@ -1,5 +1,5 @@
 ///|
-/// Colours of `elm make` reports. `Vivid*` are the bright variants; in the
+/// Colors of `elm make` reports. `Vivid*` are the bright variants; in the
 /// `--report=json` output they are upper case (`"RED"`), the others lower case.
 pub(all) enum Color {
   Red
@@ -52,7 +52,7 @@ pub fn Chunk::keyword(text : String) -> Chunk {
 }
 
 ///|
-/// The colour name in `elm make --report=json` output.
+/// The color name in `elm make --report=json` output.
 pub fn Color::json_name(self : Color) -> String {
   match self {
     Red => "red"

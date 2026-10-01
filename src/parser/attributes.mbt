@@ -551,13 +551,66 @@ fn encode_attribute(a : DocAttribute, exact_ints~ : Bool) -> Json {
 
 ///|
 /// Attribute groups as JSON, for tools.
+///
+/// Each group is `{"target": ..., "attributes": [...]}`. The target is
+/// `"module"` or `{"declaration": name, "range": [...]}`. An attribute is
+/// `{"name": ..., "arguments": [...], "range": [...]}`, with names and
+/// arguments as elm-syntax nodes; `@docs` is `{"docs": [...], "range":
+/// [...]}`. Ranges are elm-syntax ranges: `[startRow, startColumn, endRow,
+/// endColumn]`. Int arguments are written as elm-syntax writes them (see
+/// `encode_attributes_with`).
+///
+/// ```mbt check
+/// test {
+///   let text =
+///     #|module Main exposing (x)
+///     #|
+///     #|{-| Answers.
+///     #|
+///     #|@since 2
+///     #|-}
+///     #|x = 42
+///     #|
+///   let source = @scanner.SourceText::new(text)
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   // The first doc comment documents the module.
+///   let json = @parser.encode_attributes(result.attributes)
+///   inspect(
+///     json.stringify(),
+///     content=(
+///       #|[{"target":"module","attributes":[{"name":{"range":[5,2,5,7],"value":"since"},"arguments":[{"range":[5,8,5,9],"value":{"type":"integer","integer":2}}],"range":[5,1,5,9]}]}]
+///     ),
+///   )
+/// }
+/// ```
 pub fn encode_attributes(groups : Array[AttributeGroup]) -> Json {
   encode_attributes_with(groups, exact_ints=false)
 }
 
 ///|
 /// Attribute groups as JSON. With `exact_ints`, Int arguments are written
-/// with their exact digits (see `@ast.encode_file_with`).
+/// with their exact digits (see `@ast.encode_file_with`). Without it, an Int
+/// above 2^53 is written as the nearest Double, as elm-syntax does.
+///
+/// ```mbt check
+/// test {
+///   let text =
+///     #|module Main exposing (x)
+///     #|
+///     #|{-| Ids.
+///     #|
+///     #|@id 9007199254740993
+///     #|-}
+///     #|x = 1
+///     #|
+///   let source = @scanner.SourceText::new(text)
+///   let groups = @parser.parse_module(source, @scanner.DefaultScanner::new()).attributes
+///   let exact = @parser.encode_attributes_with(groups, exact_ints=true).stringify()
+///   inspect(exact.contains("9007199254740993"), content="true")
+///   let nearest = @parser.encode_attributes(groups).stringify()
+///   inspect(nearest.contains("9007199254740993"), content="false")
+/// }
+/// ```
 pub fn encode_attributes_with(
   groups : Array[AttributeGroup],
   exact_ints~ : Bool,

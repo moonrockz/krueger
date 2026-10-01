@@ -138,7 +138,7 @@ test "hints, notes and examples" {
 }
 
 ///|
-test "terminal rendering colours the caret and keywords" {
+test "terminal rendering colors the caret and keywords" {
   @expect.expect_all(s => {
     let text = @report.render_terminal(
       let_diagnostic(),

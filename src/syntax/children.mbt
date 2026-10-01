@@ -271,7 +271,29 @@ fn type_entries(t : @ast.TypeAnnotation) -> Array[(String, Array[NodeRef])] {
 }
 
 ///|
-/// The names of this node's fields, in elm-syntax JSON order.
+/// The names of this node's fields, in elm-syntax JSON order. A field is
+/// listed also when it holds no node (a function with no signature has an
+/// empty `signature` field).
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let decl = root.field("declarations")[0]
+///   inspect(
+///     decl.fields().join(" "),
+///     content="documentation signature declaration attributes",
+///   )
+///   inspect(decl.field("signature").length(), content="0")
+///   inspect(decl.field("no-such-field").length(), content="0")
+///   let arguments = decl.field("declaration")[0].field("arguments")
+///   debug_inspect(arguments.map(a => a.kind()), content="[\"var\", \"var\"]")
+/// }
+/// ```
 pub fn NodeRef::fields(self : NodeRef) -> Array[String] {
   self.entries().map(e => e.0)
 }
@@ -325,13 +347,34 @@ fn NodeRef::children_with_fields(
 }
 
 ///|
-/// All child nodes in source order (a new array).
+/// All child nodes in source order (a new array). Use `field_of` to get the
+/// field of each child.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let implementation = root.field("declarations")[0].field("declaration")[0]
+///   let labels = implementation
+///     .children()
+///     .map(c => "\{implementation.field_of(c).unwrap()}:\{c.kind()}")
+///   inspect(
+///     labels.join(" "),
+///     content="name:name arguments:var arguments:var expression:operatorapplication",
+///   )
+/// }
+/// ```
 pub fn NodeRef::children(self : NodeRef) -> Array[NodeRef] {
   self.children_with_fields().map(x => x.2)
 }
 
 ///|
-/// The field of this node that holds `child`, if any.
+/// The field of this node that holds `child`, or `None` when `child` is not a
+/// child of this node. See `children` for an example.
 pub fn NodeRef::field_of(self : NodeRef, child : NodeRef) -> String? {
   for e in self.entries() {
     if e.1.any(c => same(c, child)) {
@@ -342,8 +385,19 @@ pub fn NodeRef::field_of(self : NodeRef, child : NodeRef) -> String? {
 }
 
 ///|
-/// Every node type: (category, kind, fields), one row per kind. AGENTS.md
-/// lists the same table.
+/// Every node type: (category, kind, fields), one row per kind. The kinds
+/// and field names are the elm-syntax JSON vocabulary.
+///
+/// ```mbt check
+/// test {
+///   let rows = @syntax.kind_table()
+///   let row = rows.filter(r => r.0 == "expression" && r.1 == "ifBlock")[0]
+///   debug_inspect(row.2, content="[\"clause\", \"then\", \"else\"]")
+///   // `list` is a kind of both expressions and patterns.
+///   let lists = rows.filter(r => r.1 == "list").map(r => r.0)
+///   debug_inspect(lists, content="[\"expression\", \"pattern\"]")
+/// }
+/// ```
 pub fn kind_table() -> Array[(String, String, Array[String])] {
   let function_fields = ["documentation", "signature", "declaration"]
   let rows : Array[(String, String, Array[String])] = [

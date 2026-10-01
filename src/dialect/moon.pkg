@@ -6,4 +6,6 @@ import {
 
 import {
   "moonrockz/expect",
+  "moonrockz/krueger/scanner",
+  "moonrockz/krueger/parser",
 } for "test"
