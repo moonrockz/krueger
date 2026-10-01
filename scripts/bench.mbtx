@@ -1,0 +1,460 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.6.0",
+}
+
+///|
+/// Benchmark tooling. See AGENTS.md > Benchmarks.
+///
+/// - `run`: run `harness/bench` per target and write
+///   `_build/reports/bench/benchmark-results.json`.
+/// - `compare`: compare that file with a run file from the history (the
+///   `benchmarks` branch) and write `summary.md` and `report.html`.
+/// - `record`: add the run to a checkout of the history.
+let usage : String =
+  #|Usage:
+  #|  bench.mbtx run [--target t[,t...]]...
+  #|  bench.mbtx compare [--against <sha|run:<id>|file>] [--data <git-ref>] [--threshold <fraction>]
+  #|  bench.mbtx record --dir <path>
+
+///|
+let all_targets : Array[String] = ["native", "js", "wasm-gc", "wasm"]
+
+///|
+let reports_dir : String = "_build/reports/bench"
+
+///|
+let results_name : String = "benchmark-results.json"
+
+///|
+/// The targets to run: each value is one target or a comma-separated list;
+/// spaces and empty items are ignored, repeats are kept once. None: all.
+fn parse_targets(values : Array[String]) -> Result[Array[String], String] {
+  let chosen : Array[String] = []
+  for v in values {
+    for item in v.split(",") {
+      let t = item.trim().to_owned()
+      if t == "" || chosen.contains(t) {
+        continue
+      }
+      if !all_targets.contains(t) {
+        return Err(
+          "unknown target \{t}; valid targets: \{all_targets.join(", ")}",
+        )
+      }
+      chosen.push(t)
+    }
+  }
+  Ok(if chosen.is_empty() { all_targets.copy() } else { chosen })
+}
+
+///|
+/// One case's result on one target (microseconds per call).
+struct CaseResult {
+  target : String
+  suite : String
+  case_name : String
+  input : String
+  median : Double
+  mean : Double
+  min : Double
+  max : Double
+  std_dev : Double
+  q1 : Double
+  q3 : Double
+  iqr : Double
+  runs : Int
+  batch_size : Int
+} derive(Eq, Debug)
+
+///|
+fn CaseResult::id(self : CaseResult) -> String {
+  "\{self.suite}/\{self.case_name}/\{self.input}"
+}
+
+///|
+struct RunInfo {
+  id : String
+  url : String
+  event : String
+  git_ref : String
+  sha : String
+  date : String
+} derive(Eq, Debug)
+
+///|
+struct EnvInfo {
+  runner_os : String
+  cpu : String
+  moon_version : String
+  toolchain : String
+} derive(Eq, Debug)
+
+///|
+/// `benchmark-results.json`: one run's results with its environment and
+/// run metadata. A results file in the history is a run file.
+struct ResultsFile {
+  schema : Int
+  run : RunInfo
+  env : EnvInfo
+  targets : Array[String]
+  results : Array[CaseResult]
+} derive(Eq, Debug)
+
+///|
+fn text_field(o : Map[String, Json], key : String) -> String raise {
+  guard o.get(key) is Some(String(s)) else { fail("missing text field \{key}") }
+  s
+}
+
+///|
+fn number_field(o : Map[String, Json], key : String) -> Double raise {
+  guard o.get(key) is Some(Number(x, ..)) else {
+    fail("missing number field \{key}")
+  }
+  x
+}
+
+///|
+fn case_result_of(j : Json) -> CaseResult raise {
+  guard j is Object(o) else { fail("a result is not an object") }
+  {
+    target: text_field(o, "target"),
+    suite: text_field(o, "suite"),
+    case_name: text_field(o, "case"),
+    input: text_field(o, "input"),
+    median: number_field(o, "median"),
+    mean: number_field(o, "mean"),
+    min: number_field(o, "min"),
+    max: number_field(o, "max"),
+    std_dev: number_field(o, "std_dev"),
+    q1: number_field(o, "q1"),
+    q3: number_field(o, "q3"),
+    iqr: number_field(o, "iqr"),
+    runs: number_field(o, "runs").to_int(),
+    batch_size: number_field(o, "batch_size").to_int(),
+  }
+}
+
+///|
+fn case_result_to_json(r : CaseResult) -> Json {
+  {
+    "target": r.target.to_json(),
+    "suite": r.suite.to_json(),
+    "case": r.case_name.to_json(),
+    "input": r.input.to_json(),
+    "unit": "us",
+    "median": r.median.to_json(),
+    "mean": r.mean.to_json(),
+    "min": r.min.to_json(),
+    "max": r.max.to_json(),
+    "std_dev": r.std_dev.to_json(),
+    "q1": r.q1.to_json(),
+    "q3": r.q3.to_json(),
+    "iqr": r.iqr.to_json(),
+    "runs": r.runs.to_json(),
+    "batch_size": r.batch_size.to_json(),
+  }
+}
+
+///|
+/// The results of one raw file (`{ "target": ..., "results": [...] }`).
+fn parse_raw(text : String) -> Result[Array[CaseResult], String] {
+  try {
+    guard @json.parse(text) is Object(o) &&
+      o.get("results") is Some(Array(items)) else {
+      fail("missing results array")
+    }
+    Ok(items.map(case_result_of))
+  } catch {
+    e => Err("raw file: \{e}")
+  }
+}
+
+///|
+fn results_to_json(r : ResultsFile) -> Json {
+  {
+    "schema": r.schema.to_json(),
+    "run": {
+      "id": r.run.id.to_json(),
+      "url": r.run.url.to_json(),
+      "event": r.run.event.to_json(),
+      "ref": r.run.git_ref.to_json(),
+      "sha": r.run.sha.to_json(),
+      "date": r.run.date.to_json(),
+    },
+    "env": {
+      "runner_os": r.env.runner_os.to_json(),
+      "cpu": r.env.cpu.to_json(),
+      "moon_version": r.env.moon_version.to_json(),
+      "toolchain": r.env.toolchain.to_json(),
+    },
+    "targets": r.targets.to_json(),
+    "results": r.results.map(case_result_to_json).to_json(),
+  }
+}
+
+///|
+fn parse_results(text : String) -> Result[ResultsFile, String] {
+  try {
+    guard @json.parse(text) is Object(o) &&
+      o.get("schema") is Some(Number(schema, ..)) &&
+      o.get("run") is Some(Object(run)) &&
+      o.get("env") is Some(Object(env)) &&
+      o.get("targets") is Some(Array(targets)) &&
+      o.get("results") is Some(Array(items)) else {
+      fail("missing schema, run, env, targets or results")
+    }
+    Ok({
+      schema: schema.to_int(),
+      run: {
+        id: text_field(run, "id"),
+        url: text_field(run, "url"),
+        event: text_field(run, "event"),
+        git_ref: text_field(run, "ref"),
+        sha: text_field(run, "sha"),
+        date: text_field(run, "date"),
+      },
+      env: {
+        runner_os: text_field(env, "runner_os"),
+        cpu: text_field(env, "cpu"),
+        moon_version: text_field(env, "moon_version"),
+        toolchain: text_field(env, "toolchain"),
+      },
+      targets: targets.filter_map(t => {
+        if t is String(s) {
+          Some(s)
+        } else {
+          None
+        }
+      }),
+      results: items.map(case_result_of),
+    })
+  } catch {
+    e => Err("results file: \{e}")
+  }
+}
+
+///|
+/// `runs/YYYY/MM/<YYYYMMDDTHHMMSSZ>-<sha7>-<run id>.json` from an ISO date
+/// such as `2026-10-01T18:05:12Z`.
+fn run_file_path(r : ResultsFile) -> String {
+  let digits = StringBuilder()
+  for c in r.run.date {
+    if c >= '0' && c <= '9' {
+      digits.write_char(c)
+    }
+  }
+  let d = digits.to_string().pad_end(14, '0')
+  let year = d.view(end_offset=4)
+  let month = d.view(start_offset=4, end_offset=6)
+  let day = d.view(start_offset=6, end_offset=8)
+  let time = d.view(start_offset=8, end_offset=14)
+  "runs/\{year}/\{month}/\{year}\{month}\{day}T\{time}Z-\{short_sha(r.run.sha)}-\{r.run.id}.json"
+}
+
+///|
+fn short_sha(sha : String) -> String {
+  if sha.length() > 7 {
+    sha.view(end_offset=7).to_owned()
+  } else {
+    sha
+  }
+}
+
+///|
+/// The CPU model: the `model name` line of `/proc/cpuinfo`, or else the
+/// first non-empty line (macOS `sysctl -n machdep.cpu.brand_string`).
+fn parse_cpu(text : String) -> String {
+  for line in text.split("\n") {
+    if line.has_prefix("model name") && line.find(":") is Some(i) {
+      return line.view(start_offset=i + 1).trim().to_owned()
+    }
+  }
+  for line in text.split("\n") {
+    let t = line.trim().to_owned()
+    if t != "" {
+      return t
+    }
+  }
+  "unknown"
+}
+
+///|
+async fn main {
+  eprintln(usage)
+  @sys.exit(2)
+}
+
+///|
+/// Scenario state for `features/bench.feature`.
+struct BenchWorld {
+  mut targets : Result[Array[String], String]
+  mut current : ResultsFile
+  mut cpu : String
+}
+
+///|
+fn empty_results() -> ResultsFile {
+  {
+    schema: 1,
+    run: { id: "", url: "", event: "", git_ref: "", sha: "", date: "", },
+    env: {
+      runner_os: "Linux",
+      cpu: "cpu-a",
+      moon_version: "moon 0.1",
+      toolchain: "t1",
+    },
+    targets: [],
+    results: [],
+  }
+}
+
+///|
+fn BenchWorld::new() -> BenchWorld {
+  { targets: Ok([]), current: empty_results(), cpu: "", }
+}
+
+///|
+fn case_result(
+  target : String,
+  id : String,
+  median : Double,
+  q1 : Double,
+  q3 : Double,
+) -> CaseResult raise {
+  let parts = id.split("/").map(p => p.to_owned()).to_array()
+  guard parts.length() == 3 else {
+    fail("case id must be suite/case/input: \{id}")
+  }
+  {
+    target,
+    suite: parts[0],
+    case_name: parts[1],
+    input: parts[2],
+    median,
+    mean: median,
+    min: q1,
+    max: q3,
+    std_dev: 0.0,
+    q1,
+    q3,
+    iqr: q3 - q1,
+    runs: 10,
+    batch_size: 1,
+  }
+}
+
+///|
+fn add_result(r : ResultsFile, c : CaseResult) -> ResultsFile {
+  let targets = if r.targets.contains(c.target) {
+    r.targets
+  } else {
+    [..r.targets, c.target]
+  }
+  { ..r, targets, results: [..r.results, c], }
+}
+
+///|
+impl @moonspec.World for BenchWorld with fn configure(self, setup) {
+  setup.when1("I choose the targets {string}", fn(v : String) {
+    self.targets = parse_targets([v])
+  })
+  setup.then1("the targets are {string}", fn(expected : String) raise {
+    @expect.expect(self.targets.map(ts => ts.join(","))).to_equal(Ok(expected))
+  })
+  setup.then1("target selection fails with {string}", fn(
+    expected : String,
+  ) raise {
+    @expect.expect(self.targets).to_equal(Err(expected))
+  })
+  setup.given4(
+    "a results file from {string} at commit {string} on {string} with run id {string}",
+    fn(git_ref : String, sha : String, date : String, id : String) {
+      self.current = {
+        ..empty_results(),
+        run: {
+          id,
+          url: "https://example.test/run/\{id}",
+          event: "workflow_dispatch",
+          git_ref,
+          sha,
+          date,
+        },
+      }
+    },
+  )
+  setup.given5(
+    "the current run has {string} {string} with median {float}, q1 {float} and q3 {float}",
+    fn(
+      target : String,
+      id : String,
+      median : Double,
+      q1 : Double,
+      q3 : Double,
+    ) raise {
+      self.current = add_result(
+        self.current,
+        case_result(target, id, median, q1, q3),
+      )
+    },
+  )
+  setup.then1("its run file path is {string}", fn(expected : String) raise {
+    @expect.expect(run_file_path(self.current)).to_equal(expected)
+  })
+  setup.then0("the results file reads back unchanged", fn() raise {
+    @expect.expect(parse_results(results_to_json(self.current).stringify())).to_equal(
+      Ok(self.current),
+    )
+  })
+  setup.when1("I read the CPU from:", fn(doc : @moonspec.DocString) {
+    self.cpu = parse_cpu(doc.content)
+  })
+  setup.then1("the CPU is {string}", fn(expected : String) raise {
+    @expect.expect(self.cpu).to_equal(expected)
+  })
+}
+
+///|
+async test "bench feature" {
+  @moonspec.run_or_fail(
+    BenchWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/bench.feature"),
+    ]),
+  )
+  |> ignore
+}
+
+///|
+test "law: parse_targets keeps only valid targets, each once" {
+  // Edges: empty, only separators, one target, a repeat, spaces, all four.
+  @expect.expect_all(s => {
+    for
+      input in [
+        "", ",", "native", "wasm,wasm", " js , native ,", "wasm-gc,js,native,wasm",
+      ] {
+      match parse_targets([input]) {
+        Ok(ts) => {
+          s.expect(ts.iter().all(t => all_targets.contains(t))).to_be_true()
+          let seen : Array[String] = []
+          for t in ts {
+            if !seen.contains(t) {
+              seen.push(t)
+            }
+          }
+          s.expect(seen.length()).to_equal(ts.length())
+          s.expect(ts.is_empty()).to_be_false()
+        }
+        Err(m) => s.expect(m).to_equal("no error for \{input}")
+      }
+    }
+  })
+}
