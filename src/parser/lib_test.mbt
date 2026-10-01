@@ -38,28 +38,35 @@ fn assert_node_span_matches_tokens(
   node_span : @scanner.Span,
   tokens : Array[@scanner.Token],
 ) -> Unit raise {
+  // A precondition stays hard: the checks below index the tokens.
   @expect.expect(tokens.length() > 0).to_be_true()
-  @expect.expect(node_span.start).to_equal(tokens[0].span.start)
-  @expect.expect(node_span.end).to_equal(tokens[tokens.length() - 1].span.end)
+  @expect.expect_all(s => {
+    s.expect(node_span.start).to_equal(tokens[0].span.start)
+    s.expect(node_span.end).to_equal(tokens[tokens.length() - 1].span.end)
+  })
 }
 
 ///|
 test "module header becomes a normal module with its exposing list" {
-  let file = ast(parse("module Main exposing (Msg(..), view, Id)"))
-  @expect.expect(file.module_definition.range).to_equal(range(1, 1, 1, 41))
-  guard file.module_definition.value is NormalModule(data) else {
-    fail("expected a normal module")
-  }
-  @expect.expect(data.module_name.value).to_equal(["Main"])
-  @expect.expect(data.exposing_list.range).to_equal(range(1, 13, 1, 41))
-  guard data.exposing_list.value is Explicit(items) else {
-    fail("expected an explicit exposing list")
-  }
-  @expect.expect(items.map(i => i.value)).to_equal([
-    TypeExpose({ name: "Msg", open: Some(range(1, 26, 1, 30)), }),
-    FunctionExpose("view"),
-    TypeOrAliasExpose("Id"),
-  ])
+  @expect.expect_all(s => {
+    let file = ast(parse("module Main exposing (Msg(..), view, Id)"))
+    s.expect(file.module_definition.range).to_equal(range(1, 1, 1, 41))
+    guard file.module_definition.value is NormalModule(data) else {
+      fail("expected a normal module")
+    }
+    s.expect(data.module_name.value).to_equal(["Main"])
+    s.expect(data.exposing_list.range).to_equal(range(1, 13, 1, 41))
+    guard data.exposing_list.value is Explicit(items) else {
+      fail("expected an explicit exposing list")
+    }
+    s
+    .expect(items.map(i => i.value))
+    .to_equal([
+      TypeExpose({ name: "Msg", open: Some(range(1, 26, 1, 30)), }),
+      FunctionExpose("view"),
+      TypeOrAliasExpose("Id"),
+    ])
+  })
 }
 
 ///|
@@ -73,167 +80,187 @@ test "exposing everything records the range of the dots" {
 
 ///|
 test "cst keeps the header and imports with token span fidelity" {
-  let result = parse(
-    "module Main exposing (add)\nimport Html exposing (text)\nadd x = x + 1",
-  )
-  guard result.cst is Some(cst) else { fail("expected a CST") }
-  guard cst.header is Some(header) else { fail("expected a CST header") }
-  @expect.expect(header.module_name).to_equal(Some("Main"))
-  @expect.expect(header.exposing).to_equal(["add"])
-  @expect.expect(header.tokens[0].kind).to_equal(
-    @scanner.TokenKind::module_kw(),
-  )
-  assert_node_span_matches_tokens(header.span, header.tokens)
-  @expect.expect(cst.imports.length()).to_equal(1)
-  @expect.expect(cst.imports[0].module_name).to_equal("Html")
-  @expect.expect(cst.imports[0].exposing).to_equal(Some(["text"]))
-  assert_node_span_matches_tokens(cst.imports[0].span, cst.imports[0].tokens)
+  @expect.expect_all(s => {
+    let result = parse(
+      "module Main exposing (add)\nimport Html exposing (text)\nadd x = x + 1",
+    )
+    guard result.cst is Some(cst) else { fail("expected a CST") }
+    guard cst.header is Some(header) else { fail("expected a CST header") }
+    s.expect(header.module_name).to_equal(Some("Main"))
+    s.expect(header.exposing).to_equal(["add"])
+    s.expect(header.tokens[0].kind).to_equal(@scanner.TokenKind::module_kw())
+    assert_node_span_matches_tokens(header.span, header.tokens)
+    @expect.expect(cst.imports.length()).to_equal(1)
+    s.expect(cst.imports[0].module_name).to_equal("Html")
+    s.expect(cst.imports[0].exposing).to_equal(Some(["text"]))
+    assert_node_span_matches_tokens(cst.imports[0].span, cst.imports[0].tokens)
+  })
 }
 
 ///|
 test "imports keep their alias and exposing list" {
-  let file = ast(
-    parse(
-      "module Main exposing (main)\nimport Browser as B exposing (sandbox, Program(..))",
-    ),
-  )
-  @expect.expect(file.imports.length()).to_equal(1)
-  let import_ = file.imports[0]
-  @expect.expect(import_.range).to_equal(range(2, 1, 2, 52))
-  @expect.expect(import_.value.module_name.value).to_equal(["Browser"])
-  @expect.expect(import_.value.module_alias.map(a => a.value)).to_equal(
-    Some(["B"]),
-  )
-  guard import_.value.exposing_list is Some({ value: Explicit(items), .. }) else {
-    fail("expected an explicit exposing list")
-  }
-  @expect.expect(items.map(i => i.value)).to_equal([
-    FunctionExpose("sandbox"),
-    TypeExpose({ name: "Program", open: Some(range(2, 47, 2, 51)), }),
-  ])
+  @expect.expect_all(s => {
+    let file = ast(
+      parse(
+        "module Main exposing (main)\nimport Browser as B exposing (sandbox, Program(..))",
+      ),
+    )
+    @expect.expect(file.imports.length()).to_equal(1)
+    let import_ = file.imports[0]
+    s.expect(import_.range).to_equal(range(2, 1, 2, 52))
+    s.expect(import_.value.module_name.value).to_equal(["Browser"])
+    s.expect(import_.value.module_alias.map(a => a.value)).to_equal(Some(["B"]))
+    guard import_.value.exposing_list is Some({ value: Explicit(items), .. }) else {
+      fail("expected an explicit exposing list")
+    }
+    s
+    .expect(items.map(i => i.value))
+    .to_equal([
+      FunctionExpose("sandbox"),
+      TypeExpose({ name: "Program", open: Some(range(2, 47, 2, 51)), }),
+    ])
+  })
 }
 
 ///|
 test "function declarations are parsed and kept in the cst" {
-  let result = parse("module Main exposing (add)\nadd x = x + 1")
-  @expect.expect(codes(result)).to_equal([])
-  guard ast(result).declarations is [{ value: FunctionDeclaration(f), .. }] else {
-    fail("expected one function declaration")
-  }
-  @expect.expect(f.declaration.value.name.value).to_equal("add")
-  guard result.cst is Some(cst) else { fail("expected a CST") }
-  guard cst.declarations is [Function(cst_f)] else {
-    fail("expected one function in the CST")
-  }
-  @expect.expect(cst_f.name).to_equal("add")
-  @expect.expect(cst_f.args).to_equal(["x"])
-  assert_node_span_matches_tokens(cst_f.span, cst_f.tokens)
+  @expect.expect_all(s => {
+    let result = parse("module Main exposing (add)\nadd x = x + 1")
+    s.expect(codes(result)).to_equal([])
+    guard ast(result).declarations is [{ value: FunctionDeclaration(f), .. }] else {
+      fail("expected one function declaration")
+    }
+    s.expect(f.declaration.value.name.value).to_equal("add")
+    guard result.cst is Some(cst) else { fail("expected a CST") }
+    guard cst.declarations is [Function(cst_f)] else {
+      fail("expected one function in the CST")
+    }
+    s.expect(cst_f.name).to_equal("add")
+    s.expect(cst_f.args).to_equal(["x"])
+    assert_node_span_matches_tokens(cst_f.span, cst_f.tokens)
+  })
 }
 
 ///|
 test "ast and cst keep every declaration" {
-  let result = parse(
-    "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
-  )
-  @expect.expect(codes(result)).to_equal([])
-  @expect.expect(ast(result).declarations.length()).to_equal(3)
-  guard result.cst is Some(cst) else { fail("expected a CST") }
-  guard cst.declarations
-    is [TypeAlias(type_alias), UnionType(union), Function(f)] else {
-    fail("expected alias, union and function in the CST")
-  }
-  @expect.expect(type_alias.name).to_equal("User")
-  @expect.expect(type_alias.type_params).to_equal(["a"])
-  assert_node_span_matches_tokens(type_alias.span, type_alias.tokens)
-  @expect.expect(union.name).to_equal("Color")
-  assert_node_span_matches_tokens(union.span, union.tokens)
-  @expect.expect(f.name).to_equal("add")
-  let file = ast(result)
-  @expect.expect(custom_type(file, "Color") is Some(_)).to_be_true()
+  @expect.expect_all(s => {
+    let result = parse(
+      "module Main exposing (add)\ntype alias User a = a\ntype Color = Red\nadd x = x + 1",
+    )
+    s.expect(codes(result)).to_equal([])
+    s.expect(ast(result).declarations.length()).to_equal(3)
+    guard result.cst is Some(cst) else { fail("expected a CST") }
+    guard cst.declarations
+      is [TypeAlias(type_alias), UnionType(union), Function(f)] else {
+      fail("expected alias, union and function in the CST")
+    }
+    s.expect(type_alias.name).to_equal("User")
+    s.expect(type_alias.type_params).to_equal(["a"])
+    assert_node_span_matches_tokens(type_alias.span, type_alias.tokens)
+    s.expect(union.name).to_equal("Color")
+    assert_node_span_matches_tokens(union.span, union.tokens)
+    s.expect(f.name).to_equal("add")
+    let file = ast(result)
+    s.expect(custom_type(file, "Color") is Some(_)).to_be_true()
+  })
 }
 
 ///|
 test "custom type with one simple constructor becomes a custom type declaration" {
-  let file = ast(
-    parse("module Main exposing (Wrapper)\ntype Wrapper a = Wrapper a Int"),
-  )
-  guard custom_type(file, "Wrapper") is Some(t) else {
-    fail("expected custom type Wrapper")
-  }
-  @expect.expect(t.generics.map(g => g.value)).to_equal(["a"])
-  guard t.constructors is [c] else { fail("expected one constructor") }
-  @expect.expect(c.range).to_equal(range(2, 18, 2, 31))
-  @expect.expect(c.value.name.value).to_equal("Wrapper")
-  @expect.expect(c.value.arguments.map(a => a.value)).to_equal([
-    GenericType("a"),
-    Typed({ range: range(2, 28, 2, 31), value: ([], "Int"), }, []),
-  ])
+  @expect.expect_all(s => {
+    let file = ast(
+      parse("module Main exposing (Wrapper)\ntype Wrapper a = Wrapper a Int"),
+    )
+    guard custom_type(file, "Wrapper") is Some(t) else {
+      fail("expected custom type Wrapper")
+    }
+    s.expect(t.generics.map(g => g.value)).to_equal(["a"])
+    guard t.constructors is [c] else { fail("expected one constructor") }
+    s.expect(c.range).to_equal(range(2, 18, 2, 31))
+    s.expect(c.value.name.value).to_equal("Wrapper")
+    s
+    .expect(c.value.arguments.map(a => a.value))
+    .to_equal([
+      GenericType("a"),
+      Typed({ range: range(2, 28, 2, 31), value: ([], "Int"), }, []),
+    ])
+  })
 }
 
 ///|
 test "custom type arguments can be any type" {
-  let result = parse("module Main exposing (Box)\ntype Box = Box (Maybe Int)")
-  @expect.expect(codes(result)).to_equal([])
-  guard custom_type(ast(result), "Box") is Some(t) else {
-    fail("expected custom type Box")
-  }
-  guard t.constructors is [{ value: { arguments: [arg], .. }, .. }] else {
-    fail("expected one constructor with one argument")
-  }
-  // A parenthesized type is the inner type with a range over the parens.
-  @expect.expect(arg.range).to_equal(range(2, 16, 2, 27))
-  guard arg.value is Typed({ value: ([], "Maybe"), .. }, [_]) else {
-    fail("expected Maybe Int")
-  }
+  @expect.expect_all(s => {
+    let result = parse("module Main exposing (Box)\ntype Box = Box (Maybe Int)")
+    s.expect(codes(result)).to_equal([])
+    guard custom_type(ast(result), "Box") is Some(t) else {
+      fail("expected custom type Box")
+    }
+    guard t.constructors is [{ value: { arguments: [arg], .. }, .. }] else {
+      fail("expected one constructor with one argument")
+    }
+    // A parenthesized type is the inner type with a range over the parens.
+    s.expect(arg.range).to_equal(range(2, 16, 2, 27))
+    guard arg.value is Typed({ value: ([], "Maybe"), .. }, [_]) else {
+      fail("expected Maybe Int")
+    }
+  })
 }
 
 ///|
 test "doc comment attaches to the following type and starts its range" {
-  let file = ast(
-    parse(
-      "module Main exposing (Msg)\n\nimport Html\n\n{-| A message. -}\ntype Msg\n    = Inc",
-    ),
-  )
-  @expect.expect(file.declarations.length()).to_equal(1)
-  @expect.expect(file.declarations[0].range).to_equal(range(5, 1, 7, 10))
-  guard custom_type(file, "Msg") is Some(t) else {
-    fail("expected custom type Msg")
-  }
-  @expect.expect(t.documentation).to_equal(
-    Some({ range: range(5, 1, 5, 18), value: "{-| A message. -}", }),
-  )
-  @expect.expect(file.comments.length()).to_equal(0)
+  @expect.expect_all(s => {
+    let file = ast(
+      parse(
+        "module Main exposing (Msg)\n\nimport Html\n\n{-| A message. -}\ntype Msg\n    = Inc",
+      ),
+    )
+    @expect.expect(file.declarations.length()).to_equal(1)
+    s.expect(file.declarations[0].range).to_equal(range(5, 1, 7, 10))
+    guard custom_type(file, "Msg") is Some(t) else {
+      fail("expected custom type Msg")
+    }
+    s
+    .expect(t.documentation)
+    .to_equal(Some({ range: range(5, 1, 5, 18), value: "{-| A message. -}", }))
+    s.expect(file.comments.length()).to_equal(0)
+  })
 }
 
 ///|
 test "first doc comment after the header documents the module" {
-  let file = ast(
-    parse(
-      "module Main exposing (Msg)\n\n{-| About Main. -}\ntype Msg\n    = Inc",
-    ),
-  )
-  guard custom_type(file, "Msg") is Some(t) else {
-    fail("expected custom type Msg")
-  }
-  @expect.expect(t.documentation is None).to_be_true()
-  @expect.expect(file.declarations[0].range).to_equal(range(4, 1, 5, 10))
-  @expect.expect(file.comments).to_equal([
-    { range: range(3, 1, 3, 19), value: "{-| About Main. -}", },
-  ])
+  @expect.expect_all(s => {
+    let file = ast(
+      parse(
+        "module Main exposing (Msg)\n\n{-| About Main. -}\ntype Msg\n    = Inc",
+      ),
+    )
+    guard custom_type(file, "Msg") is Some(t) else {
+      fail("expected custom type Msg")
+    }
+    s.expect(t.documentation is None).to_be_true()
+    s.expect(file.declarations[0].range).to_equal(range(4, 1, 5, 10))
+    s
+    .expect(file.comments)
+    .to_equal([{ range: range(3, 1, 3, 19), value: "{-| About Main. -}", }])
+  })
 }
 
 ///|
 test "missing module header gives no ast" {
-  let result = parse("x = 1")
-  @expect.expect(codes(result)).to_contain_element("KR-PARSE-006")
-  @expect.expect(result.ast is None).to_be_true()
+  @expect.expect_all(s => {
+    let result = parse("x = 1")
+    s.expect(codes(result)).to_contain_element("KR-PARSE-006")
+    s.expect(result.ast is None).to_be_true()
+  })
 }
 
 ///|
 test "malformed module header gives no ast" {
-  let result = parse("module Main (add)\nadd x = x + 1")
-  @expect.expect(codes(result)).to_contain_element("KR-PARSE-001")
-  @expect.expect(result.ast is None).to_be_true()
+  @expect.expect_all(s => {
+    let result = parse("module Main (add)\nadd x = x + 1")
+    s.expect(codes(result)).to_contain_element("KR-PARSE-001")
+    s.expect(result.ast is None).to_be_true()
+  })
 }
 
 ///|
@@ -244,18 +271,22 @@ test "malformed exposing list in the header is reported" {
 
 ///|
 test "parser recovers from a malformed import" {
-  let result = parse("module Main exposing (add)\nimport )\ntype Color = Red")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-002"])
-  @expect.expect(custom_type(ast(result), "Color") is Some(_)).to_be_true()
+  @expect.expect_all(s => {
+    let result = parse("module Main exposing (add)\nimport )\ntype Color = Red")
+    s.expect(codes(result)).to_equal(["KR-PARSE-002"])
+    s.expect(custom_type(ast(result), "Color") is Some(_)).to_be_true()
+  })
 }
 
 ///|
 test "malformed import exposing list is reported" {
-  let result = parse(
-    "module Main exposing (add)\nimport Html exposing text\ntype Color = Red",
-  )
-  @expect.expect(codes(result)).to_contain_element("KR-PARSE-002")
-  @expect.expect(custom_type(ast(result), "Color") is Some(_)).to_be_true()
+  @expect.expect_all(s => {
+    let result = parse(
+      "module Main exposing (add)\nimport Html exposing text\ntype Color = Red",
+    )
+    s.expect(codes(result)).to_contain_element("KR-PARSE-002")
+    s.expect(custom_type(ast(result), "Color") is Some(_)).to_be_true()
+  })
 }
 
 ///|
@@ -268,30 +299,36 @@ test "malformed type declaration is reported" {
 
 ///|
 test "malformed function declaration is reported" {
-  let result = parse("module Main exposing (add)\nadd x x + 1\nok y = y")
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
-  @expect.expect(ast(result).declarations.length()).to_equal(1)
+  @expect.expect_all(s => {
+    let result = parse("module Main exposing (add)\nadd x x + 1\nok y = y")
+    s.expect(codes(result)).to_equal(["KR-PARSE-004"])
+    s.expect(ast(result).declarations.length()).to_equal(1)
+  })
 }
 
 ///|
 test "parse module returns scanner diagnostics when tokenization fails" {
-  let source = @scanner.SourceText::{
-    module_name: Some("Main"),
-    text: "{-| missing close",
-  }
-  let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
-  @expect.expect(result.ast is None).to_be_true()
-  @expect.expect(result.cst is None).to_be_true()
-  @expect.expect(codes(result)).to_contain_element("KR-SCAN-002")
+  @expect.expect_all(s => {
+    let source = @scanner.SourceText::{
+      module_name: Some("Main"),
+      text: "{-| missing close",
+    }
+    let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+    s.expect(result.ast is None).to_be_true()
+    s.expect(result.cst is None).to_be_true()
+    s.expect(codes(result)).to_contain_element("KR-SCAN-002")
+  })
 }
 
 ///|
 test "empty stream has no ast and an empty cst span" {
-  let result = @parser.parse_tokens(@scanner.TokenStream::{ tokens: [], })
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-006"])
-  @expect.expect(result.ast is None).to_be_true()
-  guard result.cst is Some(cst) else { fail("expected a CST") }
-  @expect.expect(cst.span is None).to_be_true()
+  @expect.expect_all(s => {
+    let result = @parser.parse_tokens(@scanner.TokenStream::{ tokens: [], })
+    s.expect(codes(result)).to_equal(["KR-PARSE-006"])
+    s.expect(result.ast is None).to_be_true()
+    guard result.cst is Some(cst) else { fail("expected a CST") }
+    s.expect(cst.span is None).to_be_true()
+  })
 }
 
 ///|
@@ -307,15 +344,17 @@ fn body_of(file : @ast.File, name : String) -> @ast.Node[@ast.Expression] raise 
 
 ///|
 test "unicode escapes out of range become the replacement character" {
-  // elm-syntax accepts code points above 10FFFF; elm make does not.
-  let text = "module Main exposing (..)\n\n\na = '\\u{110000}'\n\n\nb = \"\\u{FFFFFFFFFFFF}\"\n\n\nc = '\\u{D800}'\n"
-  @expect.expect(codes(parse(text))).to_equal(["KR-PARSE-004", "KR-PARSE-004"])
-  let result = parse_with(text, @dialect.Dialect::elm_syntax_7_3_9())
-  @expect.expect(codes(result)).to_equal([])
-  let file = ast(result)
-  @expect.expect(body_of(file, "a").value).to_equal(CharLiteral('\u{FFFD}'))
-  @expect.expect(body_of(file, "b").value).to_equal(Literal("\u{FFFD}"))
-  @expect.expect(body_of(file, "c").value).to_equal(CharLiteral('\u{FFFD}'))
+  @expect.expect_all(s => {
+    // elm-syntax accepts code points above 10FFFF; elm make does not.
+    let text = "module Main exposing (..)\n\n\na = '\\u{110000}'\n\n\nb = \"\\u{FFFFFFFFFFFF}\"\n\n\nc = '\\u{D800}'\n"
+    s.expect(codes(parse(text))).to_equal(["KR-PARSE-004", "KR-PARSE-004"])
+    let result = parse_with(text, @dialect.Dialect::elm_syntax_7_3_9())
+    s.expect(codes(result)).to_equal([])
+    let file = ast(result)
+    s.expect(body_of(file, "a").value).to_equal(CharLiteral('\u{FFFD}'))
+    s.expect(body_of(file, "b").value).to_equal(Literal("\u{FFFD}"))
+    s.expect(body_of(file, "c").value).to_equal(CharLiteral('\u{FFFD}'))
+  })
 }
 
 ///|
@@ -338,54 +377,68 @@ fn nested(
 
 ///|
 test "deep nesting is a diagnostic, not a stack overflow" {
-  let header = "module Main exposing (..)\n\n\n"
-  let deep = 5000
-  let expr = parse(header + "f = " + nested("(", "1", ")", deep) + "\n")
-  @expect.expect(codes(expr)).to_equal(["KR-PARSE-004"])
-  let unclosed = parse(header + "f = " + nested("(", "1", "", deep) + "\n")
-  @expect.expect(codes(unclosed)).to_equal(["KR-PARSE-004"])
-  let list = parse(header + "f = " + nested("[", "1", "]", deep) + "\n")
-  @expect.expect(codes(list)).to_equal(["KR-PARSE-004"])
-  let typ = parse(header + "f : " + nested("(", "Int", ")", deep) + "\nf = 1\n")
-  @expect.expect(codes(typ)).to_equal(["KR-PARSE-004"])
-  let pat = parse(header + "f " + nested("(", "x", ")", deep) + " = 1\n")
-  @expect.expect(codes(pat)).to_equal(["KR-PARSE-004"])
-  let type_alias = parse(
-    header + "type alias A = " + nested("(", "Int", ")", deep) + "\n",
-  )
-  @expect.expect(codes(type_alias)).to_equal(["KR-PARSE-003"])
+  @expect.expect_all(s => {
+    let header = "module Main exposing (..)\n\n\n"
+    let deep = 5000
+    let expr = parse(header + "f = " + nested("(", "1", ")", deep) + "\n")
+    s.expect(codes(expr)).to_equal(["KR-PARSE-004"])
+    let unclosed = parse(header + "f = " + nested("(", "1", "", deep) + "\n")
+    s.expect(codes(unclosed)).to_equal(["KR-PARSE-004"])
+    let list = parse(header + "f = " + nested("[", "1", "]", deep) + "\n")
+    s.expect(codes(list)).to_equal(["KR-PARSE-004"])
+    let typ = parse(
+      header + "f : " + nested("(", "Int", ")", deep) + "\nf = 1\n",
+    )
+    s.expect(codes(typ)).to_equal(["KR-PARSE-004"])
+    let pat = parse(header + "f " + nested("(", "x", ")", deep) + " = 1\n")
+    s.expect(codes(pat)).to_equal(["KR-PARSE-004"])
+    let type_alias = parse(
+      header + "type alias A = " + nested("(", "Int", ")", deep) + "\n",
+    )
+    s.expect(codes(type_alias)).to_equal(["KR-PARSE-003"])
+  })
 }
 
 ///|
 test "moderate nesting still parses" {
-  let header = "module Main exposing (..)\n\n\n"
-  let depth = 100
-  @expect.expect(
-    codes(parse(header + "f = " + nested("(", "1", ")", depth) + "\n")),
-  ).to_equal([])
-  @expect.expect(
-    codes(parse(header + "f = " + nested("[", "1", "]", depth) + "\n")),
-  ).to_equal([])
-  @expect.expect(
-    codes(parse(header + "f : " + nested("(", "Int", ")", depth) + "\nf = 1\n")),
-  ).to_equal([])
-  @expect.expect(
-    codes(parse(header + "f " + nested("(", "x", ")", depth) + " = 1\n")),
-  ).to_equal([])
+  @expect.expect_all(s => {
+    let header = "module Main exposing (..)\n\n\n"
+    let depth = 100
+    s
+    .expect(codes(parse(header + "f = " + nested("(", "1", ")", depth) + "\n")))
+    .to_equal([])
+    s
+    .expect(codes(parse(header + "f = " + nested("[", "1", "]", depth) + "\n")))
+    .to_equal([])
+    s
+    .expect(
+      codes(
+        parse(header + "f : " + nested("(", "Int", ")", depth) + "\nf = 1\n"),
+      ),
+    )
+    .to_equal([])
+    s
+    .expect(
+      codes(parse(header + "f " + nested("(", "x", ")", depth) + " = 1\n")),
+    )
+    .to_equal([])
+  })
 }
 
 ///|
 test "an operator at the branch column after the last branch applies to the case" {
-  let result = parse(
-    "module Main exposing (..)\n\n\nf x =\n    case x of\n        A -> 1\n        + 2\n",
-  )
-  @expect.expect(codes(result)).to_equal([])
-  let body = body_of(ast(result), "f")
-  @expect.expect(body.range).to_equal(range(5, 5, 7, 12))
-  guard body.value is OperatorApplication("+", Left, left, _) else {
-    fail("expected `+` applied to the case")
-  }
-  @expect.expect(left.range).to_equal(range(5, 5, 6, 15))
+  @expect.expect_all(s => {
+    let result = parse(
+      "module Main exposing (..)\n\n\nf x =\n    case x of\n        A -> 1\n        + 2\n",
+    )
+    s.expect(codes(result)).to_equal([])
+    let body = body_of(ast(result), "f")
+    s.expect(body.range).to_equal(range(5, 5, 7, 12))
+    guard body.value is OperatorApplication("+", Left, left, _) else {
+      fail("expected `+` applied to the case")
+    }
+    s.expect(left.range).to_equal(range(5, 5, 6, 15))
+  })
 }
 
 ///|
@@ -421,15 +474,17 @@ test "a dialect operator table decides precedence" {
 
 ///|
 test "a lexed symbol without an operator entry is an unknown operator" {
-  let d = @dialect.Dialect::elm_0_19_1()
-  let custom = { ..d, operator_symbols: ["<=>"], }
-  let result = parse_with(
-    "module Main exposing (..)\n\n\nf = a <=> b\n", custom,
-  )
-  @expect.expect(codes(result)).to_equal(["KR-PARSE-004"])
-  @expect.expect(result.diagnostics[0].message).to_contain(
-    "unknown infix operator `<=>`",
-  )
+  @expect.expect_all(s => {
+    let d = @dialect.Dialect::elm_0_19_1()
+    let custom = { ..d, operator_symbols: ["<=>"], }
+    let result = parse_with(
+      "module Main exposing (..)\n\n\nf = a <=> b\n", custom,
+    )
+    s.expect(codes(result)).to_equal(["KR-PARSE-004"])
+    s
+    .expect(result.diagnostics[0].message)
+    .to_contain("unknown infix operator `<=>`")
+  })
 }
 
 ///|
@@ -482,12 +537,14 @@ test "very long operator chains are a diagnostic, not a stack overflow" {
 
 ///|
 test "long operator chains still parse and encode" {
-  for text in [chain(" + ", 300, ""), chain(" :: ", 100, " :: []")] {
-    let result = parse(text)
-    @expect.expect(codes(result)).to_equal([])
-    let json = @ast.encode_file(ast(result)).stringify()
-    @expect.expect(json.length() > 0).to_equal(true)
-  }
+  @expect.expect_all(s => {
+    for text in [chain(" + ", 300, ""), chain(" :: ", 100, " :: []")] {
+      let result = parse(text)
+      s.expect(codes(result)).to_equal([])
+      let json = @ast.encode_file(ast(result)).stringify()
+      s.expect(json.length() > 0).to_equal(true)
+    }
+  })
 }
 
 ///|

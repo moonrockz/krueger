@@ -243,11 +243,12 @@ test "every kind has its category and elm-syntax tag" {
 
 ///|
 test "the root is the file" {
-  let root = parse_root("module M exposing (..)\n\n\nf =\n    1\n")
-  @expect.expect((root.category(), root.kind())).to_equal(("file", "file"))
-  @expect.expect(root.range()).to_equal({
-    start: { row: 1, column: 1, },
-    end: { row: 5, column: 6, },
+  @expect.expect_all(s => {
+    let root = parse_root("module M exposing (..)\n\n\nf =\n    1\n")
+    s.expect((root.category(), root.kind())).to_equal(("file", "file"))
+    s
+    .expect(root.range())
+    .to_equal({ start: { row: 1, column: 1, }, end: { row: 5, column: 6, }, })
   })
 }
 

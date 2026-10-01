@@ -73,19 +73,21 @@ test "walk visits every node once, in children() pre-order" {
 
 ///|
 test "SkipChildren skips the subtree but still leaves the node" {
-  let events = events_with(parse_root(small), n => {
-    if n.category() == "declaration" {
-      SkipChildren
-    } else {
-      Continue
-    }
+  @expect.expect_all(s => {
+    let events = events_with(parse_root(small), n => {
+      if n.category() == "declaration" {
+        SkipChildren
+      } else {
+        Continue
+      }
+    })
+    s
+    .expect(events.filter(e => e.has_prefix("+implementation")).length())
+    .to_equal(0)
+    s
+    .expect(events[events.length() - 2:].to_owned())
+    .to_equal(["-declaration/function", "-file/file"])
   })
-  @expect.expect(events.filter(e => e.has_prefix("+implementation")).length()).to_equal(
-    0,
-  )
-  @expect.expect(events[events.length() - 2:].to_owned()).to_equal([
-    "-declaration/function", "-file/file",
-  ])
 }
 
 ///|
@@ -118,19 +120,25 @@ test "Stop on the root enters only the root" {
 
 ///|
 test "Stop keeps finished siblings' leaves and ends the walk" {
-  let events = events_with(parse_root(small), n => {
-    if n.kind() == "integer" {
-      Stop
-    } else {
-      Continue
-    }
+  @expect.expect_all(s => {
+    let events = events_with(parse_root(small), n => {
+      if n.kind() == "integer" {
+        Stop
+      } else {
+        Continue
+      }
+    })
+    s
+    .expect(events[events.length() - 3:].to_owned())
+    .to_equal([
+      "+expression/functionOrValue", "-expression/functionOrValue", "+expression/integer",
+    ])
+    s
+    .expect(
+      events.filter(e => e.has_prefix("-expression/application")).length(),
+    )
+    .to_equal(0)
   })
-  @expect.expect(events[events.length() - 3:].to_owned()).to_equal([
-    "+expression/functionOrValue", "-expression/functionOrValue", "+expression/integer",
-  ])
-  @expect.expect(
-    events.filter(e => e.has_prefix("-expression/application")).length(),
-  ).to_equal(0)
 }
 
 ///|
@@ -163,54 +171,58 @@ test "changing children() inside a callback does not change the walk" {
 
 ///|
 test "a walk inside a callback gets its standalone result" {
-  let root = parse_root(expression_source)
-  let outer = []
-  let mut wrong = 0
-  @syntax.walk(
-    root,
-    n => {
-      outer.push(label(n))
-      let inner = []
-      @syntax.walk(n, m => {
-        inner.push(label(m))
+  @expect.expect_all(s => {
+    let root = parse_root(expression_source)
+    let outer = []
+    let mut wrong = 0
+    @syntax.walk(
+      root,
+      n => {
+        outer.push(label(n))
+        let inner = []
+        @syntax.walk(n, m => {
+          inner.push(label(m))
+          Continue
+        })
+        if inner != preorder(n) {
+          wrong = wrong + 1
+        }
+        // An inner walk that stops at once changes nothing outside it.
+        @syntax.walk(n, _ => Stop)
         Continue
-      })
-      if inner != preorder(n) {
-        wrong = wrong + 1
-      }
-      // An inner walk that stops at once changes nothing outside it.
-      @syntax.walk(n, _ => Stop)
-      Continue
-    },
-    leave=n => {
-      let inner = []
-      @syntax.walk(n, m => {
-        inner.push(label(m))
-        Continue
-      })
-      if inner != preorder(n) {
-        wrong = wrong + 1
-      }
-    },
-  )
-  @expect.expect(wrong).to_equal(0)
-  @expect.expect(outer).to_equal(preorder(root))
+      },
+      leave=n => {
+        let inner = []
+        @syntax.walk(n, m => {
+          inner.push(label(m))
+          Continue
+        })
+        if inner != preorder(n) {
+          wrong = wrong + 1
+        }
+      },
+    )
+    s.expect(wrong).to_equal(0)
+    s.expect(outer).to_equal(preorder(root))
+  })
 }
 
 ///|
 test "walk handles a 398-level tree" {
-  let mut count = 0
-  let mut left = 0
-  @syntax.walk(
-    tree_of(deep_source()).root(),
-    _ => {
-      count = count + 1
-      Continue
-    },
-    leave=_ => left = left + 1,
-  )
-  // 399 integers + 398 operator applications + file, module, module_name,
-  // exposing, declaration, implementation, name.
-  @expect.expect(count).to_equal(399 + 398 + 7)
-  @expect.expect(left).to_equal(count)
+  @expect.expect_all(s => {
+    let mut count = 0
+    let mut left = 0
+    @syntax.walk(
+      tree_of(deep_source()).root(),
+      _ => {
+        count = count + 1
+        Continue
+      },
+      leave=_ => left = left + 1,
+    )
+    // 399 integers + 398 operator applications + file, module, module_name,
+    // exposing, declaration, implementation, name.
+    s.expect(count).to_equal(399 + 398 + 7)
+    s.expect(left).to_equal(count)
+  })
 }

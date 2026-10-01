@@ -130,42 +130,46 @@ impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
   setup.then0(
     "walk, fold and accept visit the same nodes as the children pre-order",
     fn() raise {
-      let root = self.root()
-      let expected = children_preorder(root)
-      let walked = []
-      @krueger.walk(root, n => {
-        walked.push(traversal_label(n))
-        Continue
+      @expect.expect_all(soft => {
+        let root = self.root()
+        let expected = children_preorder(root)
+        let walked = []
+        @krueger.walk(root, n => {
+          walked.push(traversal_label(n))
+          Continue
+        })
+        let folded = @krueger.fold(root, [], (acc : Array[String], n) => {
+          acc.push(traversal_label(n))
+          (acc, Continue)
+        })
+        let visitor = { seen: [], }
+        @krueger.accept(root, visitor)
+        soft.expect(walked).to_equal(expected)
+        soft.expect(folded).to_equal(expected)
+        soft.expect(visitor.seen).to_equal(expected)
       })
-      let folded = @krueger.fold(root, [], (acc : Array[String], n) => {
-        acc.push(traversal_label(n))
-        (acc, Continue)
-      })
-      let visitor = { seen: [], }
-      @krueger.accept(root, visitor)
-      @expect.expect(walked).to_equal(expected)
-      @expect.expect(folded).to_equal(expected)
-      @expect.expect(visitor.seen).to_equal(expected)
     },
   )
   setup.then0("every entered node is left once, after its children", fn() raise {
-    // Each leave gets the same object as the most recent unmatched enter.
-    let open : Array[@krueger.NodeRef] = []
-    let mut problems = 0
-    @krueger.walk(
-      self.root(),
-      n => {
-        open.push(n)
-        Continue
-      },
-      leave=n => {
-        if !(open.pop() is Some(o) && physical_equal(o, n)) {
-          problems = problems + 1
-        }
-      },
-    )
-    @expect.expect(problems).to_equal(0)
-    @expect.expect(open.length()).to_equal(0)
+    @expect.expect_all(soft => {
+      // Each leave gets the same object as the most recent unmatched enter.
+      let open : Array[@krueger.NodeRef] = []
+      let mut problems = 0
+      @krueger.walk(
+        self.root(),
+        n => {
+          open.push(n)
+          Continue
+        },
+        leave=n => {
+          if !(open.pop() is Some(o) && physical_equal(o, n)) {
+            problems = problems + 1
+          }
+        },
+      )
+      soft.expect(problems).to_equal(0)
+      soft.expect(open.length()).to_equal(0)
+    })
   })
   setup.then1("the entered nodes are:", fn(doc : @moonspec.DocString) raise {
     @expect.expect(self.entered.join("\n")).to_equal(doc.content)

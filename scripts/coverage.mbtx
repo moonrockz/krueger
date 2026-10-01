@@ -8,7 +8,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.2.0",
+  "moonrockz/expect@0.6.0",
 }
 
 ///|
@@ -443,31 +443,37 @@ async test "coverage feature" {
 
 ///|
 test "parse_options accepts mode and optional threshold" {
-  @expect.expect(parse_options(["gate"])).to_equal(
-    Ok({ mode: Gate, threshold: 80, }),
-  )
-  @expect.expect(parse_options(["warn", "75"])).to_equal(
-    Ok({ mode: Warn, threshold: 75, }),
-  )
+  @expect.expect_all(s => {
+    s
+    .expect(parse_options(["gate"]))
+    .to_equal(Ok({ mode: Gate, threshold: 80, }))
+    s
+    .expect(parse_options(["warn", "75"]))
+    .to_equal(Ok({ mode: Warn, threshold: 75, }))
+  })
 }
 
 ///|
 test "parse_options rejects bad input" {
-  @expect.expect(parse_options([])).to_equal(Err(usage))
-  @expect.expect(parse_options(["strict"])).to_equal(Err(usage))
-  @expect.expect(parse_options(["gate", "high"])).to_equal(Err(usage))
-  @expect.expect(parse_options(["gate", "80", "extra"])).to_equal(Err(usage))
+  @expect.expect_all(s => {
+    s.expect(parse_options([])).to_equal(Err(usage))
+    s.expect(parse_options(["strict"])).to_equal(Err(usage))
+    s.expect(parse_options(["gate", "high"])).to_equal(Err(usage))
+    s.expect(parse_options(["gate", "80", "extra"])).to_equal(Err(usage))
+  })
 }
 
 ///|
 test "merge takes element-wise max and keeps first-seen order" {
-  let merged = merge([
-    { "b": [1, 0, 0], "a": [0] },
-    { "a": [2, 5], "b": [0, 3] },
-  ])
-  @expect.expect(merged.keys().collect()).to_equal(["b", "a"])
-  @expect.expect(merged.get("b")).to_equal(Some([1, 3, 0]))
-  @expect.expect(merged.get("a")).to_equal(Some([2, 5]))
+  @expect.expect_all(s => {
+    let merged = merge([
+      { "b": [1, 0, 0], "a": [0] },
+      { "a": [2, 5], "b": [0, 3] },
+    ])
+    s.expect(merged.keys().collect()).to_equal(["b", "a"])
+    s.expect(merged.get("b")).to_equal(Some([1, 3, 0]))
+    s.expect(merged.get("a")).to_equal(Some([2, 5]))
+  })
 }
 
 ///|
@@ -484,21 +490,27 @@ test "module_stats skips test modules" {
 
 ///|
 test "number formats match printf and jq" {
-  @expect.expect(format_fixed2(91.558441558)).to_equal("91.56")
-  @expect.expect(format_fixed2(100.0)).to_equal("100.00")
-  @expect.expect(format_fixed2(5.0)).to_equal("5.00")
-  @expect.expect(format_short2(75.510204)).to_equal("75.51")
-  @expect.expect(format_short2(100.0)).to_equal("100")
-  @expect.expect(format_short2(88.1)).to_equal("88.1")
-  @expect.expect(format_short2(3.04)).to_equal("3.04")
+  @expect.expect_all(s => {
+    s.expect(format_fixed2(91.558441558)).to_equal("91.56")
+    s.expect(format_fixed2(100.0)).to_equal("100.00")
+    s.expect(format_fixed2(5.0)).to_equal("5.00")
+    s.expect(format_short2(75.510204)).to_equal("75.51")
+    s.expect(format_short2(100.0)).to_equal("100")
+    s.expect(format_short2(88.1)).to_equal("88.1")
+    s.expect(format_short2(3.04)).to_equal("3.04")
+  })
 }
 
 ///|
 test "verdict messages" {
-  @expect.expect(verdict(Gate, 79.5, 80)).to_equal(
-    Failure("::error::Coverage 79.5% is below threshold 80%"),
-  )
-  @expect.expect(verdict(Warn, 79.5, 80)).to_equal(
-    Warning("::warning::Coverage 79.5% is below threshold 80% (warn mode)"),
-  )
+  @expect.expect_all(s => {
+    s
+    .expect(verdict(Gate, 79.5, 80))
+    .to_equal(Failure("::error::Coverage 79.5% is below threshold 80%"))
+    s
+    .expect(verdict(Warn, 79.5, 80))
+    .to_equal(
+      Warning("::warning::Coverage 79.5% is below threshold 80% (warn mode)"),
+    )
+  })
 }
