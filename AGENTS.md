@@ -49,6 +49,13 @@ moonrockz/krueger
 
 - `@ast` types, field names and JSON shape follow elm-syntax 7.3.9 exactly.
   `@ast.encode_file` output must equal `Elm.Syntax.File.encode` output byte for byte.
+- Every list in `@ast` types and in `@parser.DocAttribute`/`AttributeGroup` is an
+  `ArrayView` (read-only; `src/ast/readonly_test.mbt` and its siblings check this
+  at compile time). Build a list as an `Array` and store it (an `Array` converts
+  to a view where a field expects one, `arr[:]` inside generic types such as
+  `Node[ModuleName]`). An AST built by hand shares the arrays you pass in, so do
+  not change them afterwards; parsed and decoded ASTs share no array with
+  anything.
 - The parser (`src/parser`) is a recursive-descent port of elm-syntax 7.3.9's parser
   over tokens, one file per elm-syntax module (`module_level`, `declarations`,
   `type_annotation`, `patterns`, `expression`), with elm-syntax's layout rules
@@ -176,9 +183,10 @@ result. It is the base for the traversal APIs and queries.
   the tree compare by identity first (`same`), so `parent` and `ancestors` do not
   compare whole subtrees.
 - No shared mutable state: every returned array is new, and `Tree` keeps its own
-  copies of the tokens and attribute groups. The AST itself is shared with the
-  `ParseResult` (nodes point into it, nothing is copied), so do not change a
-  parse result's AST after you build a tree or take nodes from it.
+  copies of the tokens and attribute groups. Nodes point into the parse
+  result's AST (nothing is copied), and every list in the AST, in doc
+  attributes and in node payloads is a read-only `ArrayView`, so nothing
+  reachable from a node can be changed.
 - A declaration's range starts at its first doc attribute when that comes
   first (a port's doc comment is not part of its elm-syntax range).
 
@@ -286,8 +294,7 @@ The kind table below is checked against `kind_table()` by
   same enter and leave sequence. With `Continue` throughout, enters follow
   `children()` pre-order. Traversal state is private to each call; accumulator
   and visitor state remain the caller's and are not cloned. Nodes share the
-  parse result's AST, which must not change while nodes or traversals are in
-  use.
+  parse result's read-only AST.
 - Laws: `src/syntax/*_law_test.mbt` (see "Property-Based Testing (Laws)").
 
 ### Dialects

@@ -1,6 +1,6 @@
 ///|
 /// `Elm.Parser.Base.moduleName`: `Name` or `Name.Name...` with touching dots.
-fn module_name(c : Cursor) -> @ast.Node[Array[String]] raise SyntaxError {
+fn module_name(c : Cursor) -> @ast.Node[@ast.ModuleName] raise SyntaxError {
   let first = c.upper("a module name")
   let parts = [first.lexeme]
   let mut last = first
@@ -9,7 +9,7 @@ fn module_name(c : Cursor) -> @ast.Node[Array[String]] raise SyntaxError {
     last = c.advance()
     parts.push(last.lexeme)
   }
-  node(range_from(first, last), parts)
+  node(range_from(first, last), parts[:])
 }
 
 ///|
@@ -226,7 +226,7 @@ fn import_declaration_body(
   let keyword = c.expect(Keyword(Import), "`import`")
   let name = module_name(c)
   let mut end = name.range.end
-  let mut module_alias : @ast.Node[Array[String]]? = None
+  let mut module_alias : @ast.Node[@ast.ModuleName]? = None
   if c.is_keyword(As) {
     ignore(c.advance())
     if c.at_lower() {
@@ -246,7 +246,10 @@ fn import_declaration_body(
       )
     }
     let alias_token = c.upper("a module alias")
-    let alias_node = token_node(alias_token, [alias_token.lexeme])
+    let alias_node : @ast.Node[@ast.ModuleName] = token_node(
+      alias_token,
+      [alias_token.lexeme][:],
+    )
     end = alias_node.range.end
     module_alias = Some(alias_node)
   }

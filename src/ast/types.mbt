@@ -26,7 +26,7 @@ pub(all) struct Node[T] {
 
 ///|
 /// Elm.Syntax.ModuleName.ModuleName
-pub type ModuleName = Array[String]
+pub type ModuleName = ArrayView[String]
 
 ///|
 /// Elm.Syntax.Documentation.Documentation
@@ -40,9 +40,9 @@ pub type Comment = String
 /// Elm.Syntax.File.File
 pub(all) struct File {
   module_definition : Node[Module]
-  imports : Array[Node[Import]]
-  declarations : Array[Node[Declaration]]
-  comments : Array[Node[Comment]]
+  imports : ArrayView[Node[Import]]
+  declarations : ArrayView[Node[Declaration]]
+  comments : ArrayView[Node[Comment]]
 } derive(Eq, Debug)
 
 ///|
@@ -73,7 +73,7 @@ pub(all) struct EffectModuleData {
 /// Elm.Syntax.Exposing.Exposing
 pub(all) enum Exposing {
   All(Range)
-  Explicit(Array[Node[TopLevelExpose]])
+  Explicit(ArrayView[Node[TopLevelExpose]])
 } derive(Eq, Debug)
 
 ///|
@@ -140,7 +140,7 @@ pub(all) struct Signature {
 pub(all) struct TypeAlias {
   documentation : Node[Documentation]?
   name : Node[String]
-  generics : Array[Node[String]]
+  generics : ArrayView[Node[String]]
   type_annotation : Node[TypeAnnotation]
 } derive(Eq, Debug)
 
@@ -149,24 +149,24 @@ pub(all) struct TypeAlias {
 pub(all) struct Type {
   documentation : Node[Documentation]?
   name : Node[String]
-  generics : Array[Node[String]]
-  constructors : Array[Node[ValueConstructor]]
+  generics : ArrayView[Node[String]]
+  constructors : ArrayView[Node[ValueConstructor]]
 } derive(Eq, Debug)
 
 ///|
 /// Elm.Syntax.Type.ValueConstructor
 pub(all) struct ValueConstructor {
   name : Node[String]
-  arguments : Array[Node[TypeAnnotation]]
+  arguments : ArrayView[Node[TypeAnnotation]]
 } derive(Eq, Debug)
 
 ///|
 /// Elm.Syntax.TypeAnnotation.TypeAnnotation
 pub(all) enum TypeAnnotation {
   GenericType(String)
-  Typed(Node[(ModuleName, String)], Array[Node[TypeAnnotation]])
+  Typed(Node[(ModuleName, String)], ArrayView[Node[TypeAnnotation]])
   Unit
-  Tupled(Array[Node[TypeAnnotation]])
+  Tupled(ArrayView[Node[TypeAnnotation]])
   Record(RecordDefinition)
   GenericRecord(Node[String], Node[RecordDefinition])
   FunctionTypeAnnotation(Node[TypeAnnotation], Node[TypeAnnotation])
@@ -174,7 +174,7 @@ pub(all) enum TypeAnnotation {
 
 ///|
 /// Elm.Syntax.TypeAnnotation.RecordDefinition
-pub type RecordDefinition = Array[Node[RecordField]]
+pub type RecordDefinition = ArrayView[Node[RecordField]]
 
 ///|
 /// Elm.Syntax.TypeAnnotation.RecordField (an Elm tuple `( Node String, Node TypeAnnotation )`)
@@ -193,12 +193,12 @@ pub(all) enum Pattern {
   IntPattern(Int64)
   HexPattern(Int64)
   FloatPattern(Double)
-  TuplePattern(Array[Node[Pattern]])
-  RecordPattern(Array[Node[String]])
+  TuplePattern(ArrayView[Node[Pattern]])
+  RecordPattern(ArrayView[Node[String]])
   UnConsPattern(Node[Pattern], Node[Pattern])
-  ListPattern(Array[Node[Pattern]])
+  ListPattern(ArrayView[Node[Pattern]])
   VarPattern(String)
-  NamedPattern(QualifiedNameRef, Array[Node[Pattern]])
+  NamedPattern(QualifiedNameRef, ArrayView[Node[Pattern]])
   AsPattern(Node[Pattern], Node[String])
   ParenthesizedPattern(Node[Pattern])
 } derive(Eq, Debug)
@@ -222,7 +222,7 @@ pub(all) struct Function {
 /// Elm.Syntax.Expression.FunctionImplementation
 pub(all) struct FunctionImplementation {
   name : Node[String]
-  arguments : Array[Node[Pattern]]
+  arguments : ArrayView[Node[Pattern]]
   expression : Node[Expression]
 } derive(Eq, Debug)
 
@@ -230,7 +230,7 @@ pub(all) struct FunctionImplementation {
 /// Elm.Syntax.Expression.Expression
 pub(all) enum Expression {
   UnitExpr
-  Application(Array[Node[Expression]])
+  Application(ArrayView[Node[Expression]])
   OperatorApplication(
     String,
     InfixDirection,
@@ -247,16 +247,16 @@ pub(all) enum Expression {
   Negation(Node[Expression])
   Literal(String)
   CharLiteral(Char)
-  TupledExpression(Array[Node[Expression]])
+  TupledExpression(ArrayView[Node[Expression]])
   ParenthesizedExpression(Node[Expression])
   LetExpression(LetBlock)
   CaseExpression(CaseBlock)
   LambdaExpression(Lambda)
-  RecordExpr(Array[Node[RecordSetter]])
-  ListExpr(Array[Node[Expression]])
+  RecordExpr(ArrayView[Node[RecordSetter]])
+  ListExpr(ArrayView[Node[Expression]])
   RecordAccess(Node[Expression], Node[String])
   RecordAccessFunction(String)
-  RecordUpdateExpression(Node[String], Array[Node[RecordSetter]])
+  RecordUpdateExpression(Node[String], ArrayView[Node[RecordSetter]])
   GLSLExpression(String)
 } derive(Eq, Debug)
 
@@ -270,7 +270,7 @@ pub(all) struct RecordSetter {
 ///|
 /// Elm.Syntax.Expression.LetBlock
 pub(all) struct LetBlock {
-  declarations : Array[Node[LetDeclaration]]
+  declarations : ArrayView[Node[LetDeclaration]]
   expression : Node[Expression]
 } derive(Eq, Debug)
 
@@ -284,7 +284,7 @@ pub(all) enum LetDeclaration {
 ///|
 /// Elm.Syntax.Expression.Lambda
 pub(all) struct Lambda {
-  args : Array[Node[Pattern]]
+  args : ArrayView[Node[Pattern]]
   expression : Node[Expression]
 } derive(Eq, Debug)
 
@@ -304,4 +304,4 @@ pub(all) struct Case {
 
 ///|
 /// Elm.Syntax.Expression.Cases
-pub type Cases = Array[Case]
+pub type Cases = ArrayView[Case]

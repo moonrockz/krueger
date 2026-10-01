@@ -27,13 +27,13 @@ pub(all) enum Control {
 } derive(Eq, @debug.Debug)
 
 pub(all) enum NodeRef {
-  File(@ast.File, Array[@parser.AttributeGroup])
+  File(@ast.File, ArrayView[@parser.AttributeGroup])
   Module(@ast.Node[@ast.Module])
-  ModuleName(@ast.Node[Array[String]])
+  ModuleName(@ast.Node[ArrayView[String]])
   Exposing(@ast.Node[@ast.Exposing])
   Expose(@ast.Node[@ast.TopLevelExpose])
   Import(@ast.Node[@ast.Import])
-  Declaration(@ast.Node[@ast.Declaration], Array[@parser.DocAttribute])
+  Declaration(@ast.Node[@ast.Declaration], ArrayView[@parser.DocAttribute])
   Documentation(@ast.Node[String])
   Signature(@ast.Node[@ast.Signature])
   Implementation(@ast.Node[@ast.FunctionImplementation])

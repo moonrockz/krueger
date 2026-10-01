@@ -1,30 +1,30 @@
 ///|
-fn names(xs : Array[@ast.Node[String]]) -> Array[NodeRef] {
+fn names(xs : ArrayView[@ast.Node[String]]) -> Array[NodeRef] {
   xs.map(x => Name(x))
 }
 
 ///|
-fn expressions(xs : Array[@ast.Node[@ast.Expression]]) -> Array[NodeRef] {
+fn expressions(xs : ArrayView[@ast.Node[@ast.Expression]]) -> Array[NodeRef] {
   xs.map(x => Expression(x))
 }
 
 ///|
-fn patterns(xs : Array[@ast.Node[@ast.Pattern]]) -> Array[NodeRef] {
+fn patterns(xs : ArrayView[@ast.Node[@ast.Pattern]]) -> Array[NodeRef] {
   xs.map(x => Pattern(x))
 }
 
 ///|
-fn types(xs : Array[@ast.Node[@ast.TypeAnnotation]]) -> Array[NodeRef] {
+fn types(xs : ArrayView[@ast.Node[@ast.TypeAnnotation]]) -> Array[NodeRef] {
   xs.map(x => TypeAnnotation(x))
 }
 
 ///|
-fn record_fields(xs : Array[@ast.Node[@ast.RecordField]]) -> Array[NodeRef] {
+fn record_fields(xs : ArrayView[@ast.Node[@ast.RecordField]]) -> Array[NodeRef] {
   xs.map(x => RecordField(x))
 }
 
 ///|
-fn setters(xs : Array[@ast.Node[@ast.RecordSetter]]) -> Array[NodeRef] {
+fn setters(xs : ArrayView[@ast.Node[@ast.RecordSetter]]) -> Array[NodeRef] {
   xs.map(x => RecordSetter(x))
 }
 
@@ -48,9 +48,9 @@ fn function_entries(f : @ast.Function) -> Array[(String, Array[NodeRef])] {
 ///|
 /// The doc attributes of the declaration at `range`.
 fn declaration_attributes(
-  groups : Array[@parser.AttributeGroup],
+  groups : ArrayView[@parser.AttributeGroup],
   range : @ast.Range,
-) -> Array[@parser.DocAttribute] {
+) -> ArrayView[@parser.DocAttribute] {
   for g in groups {
     if g.target is Declaration(range=r, ..) && r == range {
       return g.attributes

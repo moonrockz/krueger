@@ -7,13 +7,13 @@
 /// writes. elm-syntax reuses tags across node types (`record`, `list`, `unit`,
 /// …), so `(category, kind)` identifies a node type.
 pub(all) enum NodeRef {
-  File(@ast.File, Array[@parser.AttributeGroup])
+  File(@ast.File, ArrayView[@parser.AttributeGroup])
   Module(@ast.Node[@ast.Module])
-  ModuleName(@ast.Node[Array[String]])
+  ModuleName(@ast.Node[@ast.ModuleName])
   Exposing(@ast.Node[@ast.Exposing])
   Expose(@ast.Node[@ast.TopLevelExpose])
   Import(@ast.Node[@ast.Import])
-  Declaration(@ast.Node[@ast.Declaration], Array[@parser.DocAttribute])
+  Declaration(@ast.Node[@ast.Declaration], ArrayView[@parser.DocAttribute])
   Documentation(@ast.Node[String])
   Signature(@ast.Node[@ast.Signature])
   Implementation(@ast.Node[@ast.FunctionImplementation])

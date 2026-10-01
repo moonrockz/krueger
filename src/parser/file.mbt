@@ -207,7 +207,7 @@ fn pattern_text(p : @ast.Node[@ast.Pattern]) -> String {
 }
 
 ///|
-fn header_module_name(m : @ast.Module) -> Array[String] {
+fn header_module_name(m : @ast.Module) -> @ast.ModuleName {
   match m {
     NormalModule(d) | PortModule(d) => d.module_name.value
     EffectModule(d) => d.module_name.value
