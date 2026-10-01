@@ -176,3 +176,46 @@ test "an absent or unknown field is empty" {
     .to_equal(["module_name"])
   })
 }
+
+///|
+test "children that start at the same place keep their field order" {
+  let one : @ast.Node[@ast.Expression] = n(Integer(1L))
+  let two : @ast.Node[@ast.Expression] = n(Integer(2L))
+  let three : @ast.Node[@ast.Expression] = n(Integer(3L))
+  // All three have the same range; the fields are clause, then, else.
+  let node = e(IfBlock(one, two, three))
+  @expect.expect(node.children()).to_equal([
+    Expression(one),
+    Expression(two),
+    Expression(three),
+  ])
+}
+
+///|
+test "law: children are in start order, and in list order among equal starts" {
+  @quickcheck.check(
+    (rows : Array[UInt]) => {
+      let elements : Array[@ast.Node[@ast.Expression]] = rows.mapi((i, r) => {
+        let row = (r % 3).reinterpret_as_int() + 1
+        {
+          range: { start: { row, column: 1, }, end: { row, column: 2, }, },
+          value: Integer(i.to_int64()),
+        }
+      })
+      let kids = e(ListExpr(elements))
+        .children()
+        .map(k => {
+          match k {
+            Expression({ value: Integer(v), .. }) => v.to_int()
+            _ => -1
+          }
+        })
+      let expected = rows.mapi((i, r) => (r % 3, i))
+      expected.sort()
+      kids == expected.map(x => x.1)
+    },
+    count=100,
+    max_size=64,
+    seed=199,
+  )
+}

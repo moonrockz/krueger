@@ -84,6 +84,23 @@ pub fn Tree::path(self : Tree, n : NodeRef) -> Array[NodeRef] {
 }
 
 ///|
+/// The steps from the root to `n`, or `None` when `n` is not in the tree.
+/// With `node_at`, this takes an editor from a position to a path.
+pub fn Tree::node_path(self : Tree, n : NodeRef) -> NodePath? {
+  let chain = self.path(n)
+  guard same(chain[0], self.root) else { return None }
+  let mut path = NodePath::root()
+  for k in 1..<chain.length() {
+    let child = chain[k]
+    let kids = chain[k - 1].children_with_fields()
+    guard kids.search_by(x => same(x.2, child)) is Some(j) else { return None }
+    let (field, index, _) = kids[j]
+    path = path.child(field, index)
+  }
+  Some(path)
+}
+
+///|
 fn at_or_before(a : @ast.Location, b : @ast.Location) -> Bool {
   a.row < b.row || (a.row == b.row && a.column <= b.column)
 }

@@ -33,6 +33,8 @@ pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
+pub fn[S : @syntax.EventSource, H : @syntax.Handler] push_events(S, H) -> Unit
+
 pub fn render_elm_json(Array[@scanner.Diagnostic], @scanner.SourceText, String) -> Json
 
 pub fn render_plain(@scanner.Diagnostic, @scanner.SourceText, String) -> String
@@ -94,6 +96,12 @@ pub type Documentation = String
 
 pub using @ast {type EffectModuleData}
 
+pub using @syntax {type EnterEvent}
+
+pub using @syntax {type Event}
+
+pub using @syntax {type EventReader}
+
 pub using @ast {type ExposedType}
 
 pub using @ast {type Exposing}
@@ -120,6 +128,8 @@ pub using @scanner {type KeywordKind}
 
 pub using @ast {type Lambda}
 
+pub using @syntax {type LeaveEvent}
+
 pub using @ast {type LetBlock}
 
 pub using @ast {type LetDeclaration}
@@ -136,11 +146,15 @@ pub type ModuleName = ArrayView[String]
 
 pub using @ast {type Node}
 
+pub using @syntax {type NodePath}
+
 pub using @syntax {type NodeRef}
 
 pub using @dialect {type OperatorDef}
 
 pub using @parser {type ParseResult}
+
+pub using @syntax {type PathStep}
 
 pub using @ast {type Pattern}
 
@@ -178,6 +192,8 @@ pub using @ast {type TopLevelExpose}
 
 pub using @syntax {type Tree}
 
+pub using @syntax {type TreeCursor}
+
 pub using @scanner {type Trivia}
 
 pub using @ast {type Type}
@@ -191,6 +207,10 @@ pub using @ast {type TypeAnnotation}
 pub using @cst {type UnionTypeCst}
 
 pub using @ast {type ValueConstructor}
+
+pub using @syntax {trait EventSource}
+
+pub using @syntax {trait Handler}
 
 pub using @scanner {trait Scanner}
 

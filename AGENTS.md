@@ -32,10 +32,9 @@ moonrockz/krueger
 │   ├── report/           # Renders diagnostics like elm make (terminal, plain, JSON)
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
-│   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor
+│   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor, events, NodePath, TreeCursor
 │   ├── bdd/              # MoonSpec step definitions (test-only)
-│   ├── e2e/              # End-to-end tests (test-only)
-│   └── (events, cursor)  # EventReader / TreeCursor in syntax/ — planned
+│   └── e2e/              # End-to-end tests (test-only)
 ├── tests/features/       # Gherkin features
 ├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
 ├── scripts/              # MoonBit tooling scripts (.mbtx)
@@ -179,7 +178,8 @@ result. It is the base for the traversal APIs and queries.
   `attributes`); module attributes and all comments are children of the file.
 - `Tree::new(result)` builds a parent index once. `parent`, `ancestors`
   (nearest first), `path` (root first), `node_at(location)` (the innermost node
-  that contains it) and `tokens_in(range)`.
+  that contains it), `node_path(node)` (its `NodePath` from the root) and
+  `tokens_in(range)`.
 - The walks in `src/syntax` use explicit stacks, not recursion, because wasm
   overflows at a few hundred frames and trees can be 400 levels deep. Nodes from
   the tree compare by identity first (`same`), so `parent` and `ancestors` do not
@@ -293,8 +293,40 @@ The kind table below is checked against `kind_table()` by
   branches), `visit_import`, `visit_comment`, `visit_attribute`, and
   `visit_other` for the rest (doc comments included). Every method defaults to
   `Continue`; `leave` to nothing.
-- With equivalent `Control` decisions, `walk`, `fold` and `accept` produce the
-  same enter and leave sequence. With `Continue` throughout, enters follow
+- `EventReader::new(root)` gives the same walk as pull events: `next()` returns
+  `Enter(EnterEvent)` or `Leave(LeaveEvent)`, then `None` after the root's
+  `Leave`. An `EnterEvent` has only what a streaming parser knows when a node
+  starts: `category`, `kind`, `field` (in the parent; `None` for the root),
+  `start`, `depth` and `path`. A `LeaveEvent` has the finished `node` and the
+  `depth` and `path` of its `Enter`. `skip_children()` right after an `Enter`
+  makes the next event that node's `Leave`; elsewhere it does nothing. To stop,
+  stop calling `next()`.
+- A `NodePath` is the list of steps (field and index in that field) from the
+  start node, like a path into elm-syntax's JSON:
+  `declarations[0].declaration[0].expression[0].application[1]`. It is
+  immutable (a child's path shares its parent's steps); `depth()`, `steps()`,
+  `last()`, `parent()` and `resolve(start)` read it.
+- `push_events(source, handler)` drives any `EventSource` and calls
+  `Handler::on_enter(EnterEvent)` (its `Control` steers the run) and
+  `on_leave(LeaveEvent)`. Both default to `Continue` and nothing. A future
+  streaming parser can implement `EventSource`; callers do not change. Code
+  outside `src/syntax` reads event fields and matches them, and builds events
+  with `EnterEvent::new` and `LeaveEvent::new` (which set `depth` from the
+  path), so new fields need not break it.
+- `TreeCursor::new(node)` is a tree-sitter-style cursor driven by the caller:
+  `goto_first_child`, `goto_last_child`, `goto_next_sibling`,
+  `goto_previous_sibling`, `goto_parent` and `goto_first_child_for(location)`
+  (the innermost child that contains it, or else the first child after it)
+  each return `false` and leave the cursor in place when there is nowhere to
+  go. To reach `node_at(location)`, descend while the new node contains the
+  location and step back with `goto_parent` from the first that does not; a
+  plain `goto_first_child_for` loop goes one node too far when that node has
+  children after the location. `node()`, `field_name()`
+  (the role in the parent, `None` at the start node), `depth()`, `path()`,
+  `reset(node)` and `copy()` (an independent cursor at the same place).
+- With equivalent `Control` decisions, `walk`, `fold`, `accept`, an
+  `EventReader` and `push_events` produce the same enter and leave sequence,
+  and a full cursor navigation enters the same nodes. With `Continue` throughout, enters follow
   `children()` pre-order. Traversal state is private to each call; accumulator
   and visitor state remain the caller's and are not cloned. Nodes share the
   parse result's read-only AST.

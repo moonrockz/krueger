@@ -300,16 +300,34 @@ fn start_before(a : NodeRef, b : NodeRef) -> Int {
 }
 
 ///|
+/// All child nodes in source order (a new array), each with its field name
+/// and its index in that field. Children that start at the same place keep
+/// their field order.
+fn NodeRef::children_with_fields(
+  self : NodeRef,
+) -> Array[(String, Int, NodeRef)] {
+  let all : Array[(Int, String, Int, NodeRef)] = []
+  for e in self.entries() {
+    for i, c in e.1 {
+      all.push((all.length(), e.0, i, c))
+    }
+  }
+  // Array::sort_by is not stable, so the original position breaks ties.
+  all.sort_by((a, b) => {
+    let c = start_before(a.3, b.3)
+    if c != 0 {
+      c
+    } else {
+      a.0.compare(b.0)
+    }
+  })
+  all.map(x => (x.1, x.2, x.3))
+}
+
+///|
 /// All child nodes in source order (a new array).
 pub fn NodeRef::children(self : NodeRef) -> Array[NodeRef] {
-  let all = []
-  for e in self.entries() {
-    all.append(e.1)
-  }
-  // Array::sort_by is stable, so children with the same start keep their
-  // field order.
-  all.sort_by(start_before)
-  all
+  self.children_with_fields().map(x => x.2)
 }
 
 ///|

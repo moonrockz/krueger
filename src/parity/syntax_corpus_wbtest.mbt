@@ -82,6 +82,7 @@ test "syntax corpus" {
         }
         let (count, found) = syntax_problems(key, tree, kinds)
         problems.append(walk_problems(key, tree.root(), count))
+        problems.append(descent_problems(key, tree))
         files = files + 1
         nodes = nodes + count
         problems.append(found)
@@ -125,18 +126,23 @@ fn walk_problems(
   count : Int,
 ) -> Array[String] {
   let pre = []
+  let pre_starts = []
   let stack = [(root, 0)]
   while stack.pop() is Some((n, depth)) {
     pre.push("\{depth} \{walk_tag(n)}")
+    let s = n.range().start
+    pre_starts.push("\{depth} \{n.category()}/\{n.kind()}@\{s.row}:\{s.column}")
     n.children().rev_each(c => stack.push((c, depth + 1)))
   }
   let entered = []
   let open : Array[@krueger.NodeRef] = []
   let mut nested = true
+  let walk_fields : Array[String?] = []
   @krueger.walk(
     root,
     n => {
       entered.push("\{open.length()} \{walk_tag(n)}")
+      walk_fields.push(open.last().bind(parent => parent.field_of(n)))
       open.push(n)
       Continue
     },
@@ -160,6 +166,116 @@ fn walk_problems(
   }
   if !nested || !open.is_empty() {
     problems.push("\{key}: a leave does not match its enter")
+  }
+  // The event reader: enters with their own depth and field, in pre-order;
+  // every event's depth matches its path, every Leave its Enter's, and every
+  // 8th path resolves to its node.
+  let read = []
+  let read_fields = []
+  let open = []
+  let mut paths_agree = true
+  let reader = @krueger.EventReader::new(root)
+  while reader.next() is Some(e) {
+    match e {
+      Enter({ category, kind, field, start, depth, path, }) => {
+        let start_tag = "\{category}/\{kind}@\{start.row}:\{start.column}"
+        read.push("\{depth} \{start_tag}")
+        read_fields.push(field)
+        paths_agree = paths_agree && depth == path.depth()
+        if read.length() % 8 == 1 {
+          paths_agree = paths_agree &&
+            path
+            .resolve(root)
+            .map(n => {
+              let s = n.range().start
+              "\{n.category()}/\{n.kind()}@\{s.row}:\{s.column}"
+            }) ==
+            Some(start_tag)
+        }
+        open.push(path)
+      }
+      Leave({ depth, path, .. }) =>
+        paths_agree = paths_agree &&
+          open.pop() == Some(path) &&
+          depth == path.depth()
+    }
+  }
+  if read_fields != walk_fields {
+    problems.push("\{key}: an Enter's field is not its parent's field_of it")
+  }
+  if read != pre_starts || !open.is_empty() || !paths_agree {
+    problems.push(
+      "\{key}: the event reader's order is not the children() pre-order",
+    )
+  }
+  // A full cursor navigation: first child, next sibling, parent.
+  let navigated = []
+  let c = @krueger.TreeCursor::new(root)
+  navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+  let mut going = true
+  while going {
+    if c.goto_first_child() {
+      navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+      continue
+    }
+    while !c.goto_next_sibling() {
+      if !c.goto_parent() {
+        going = false
+        break
+      }
+    }
+    if going {
+      navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+    }
+  }
+  if navigated != pre {
+    problems.push("\{key}: the cursor's order is not the children() pre-order")
+  }
+  problems
+}
+
+///|
+fn corpus_contains(r : @krueger.Range, p : @krueger.Location) -> Bool {
+  let after_start = r.start.row < p.row ||
+    (r.start.row == p.row && r.start.column <= p.column)
+  let before_end = p.row < r.end.row ||
+    (p.row == r.end.row && p.column < r.end.column)
+  after_start && before_end
+}
+
+///|
+/// At every 8th non-empty node start, a cursor descent with
+/// goto_first_child_for ends at `Tree::node_at`.
+fn descent_problems(key : String, tree : @krueger.Tree) -> Array[String] {
+  let root = tree.root()
+  let starts = []
+  let mut i = 0
+  @krueger.walk(root, n => {
+    let r = n.range()
+    if r.start != r.end {
+      if i % 8 == 0 {
+        starts.push(r.start)
+      }
+      i = i + 1
+    }
+    Continue
+  })
+  let problems = []
+  for p in starts {
+    let c = @krueger.TreeCursor::new(root)
+    while c.goto_first_child_for(p) {
+      if !corpus_contains(c.node().range(), p) {
+        ignore(c.goto_parent())
+        break
+      }
+    }
+    match tree.node_at(p) {
+      Some(found) if walk_tag(found) == walk_tag(c.node()) => ()
+      _ =>
+        problems.push(
+          "\{key}: a cursor descent to \{p.row}:\{p.column} does not end at node_at",
+        )
+    }
   }
   problems
 }
