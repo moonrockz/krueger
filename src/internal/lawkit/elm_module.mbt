@@ -7,7 +7,7 @@
 /// a port whose doc comment has attributes; layout or a comment before the
 /// header; trailing spaces at the end; CRLF line ends and no final newline
 /// (independently); literals at the edges of their types (the largest Int and
-/// hex a Double holds exactly, the largest, smallest and an inexact Float, a
+/// hex a Double holds exactly — none above 2^53, krueger-wqh.4 — the largest, smallest and an inexact Float, a
 /// Float that rounds to zero, the first and last code point, escapes). No
 /// GLSL: its elm-syntax range ends two columns late, which the range laws
 /// reject.
