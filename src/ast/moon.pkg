@@ -1,4 +1,8 @@
 import {
   "moonbitlang/core/json",
   "moonrockz/expect",
+  "moonrockz/krueger/parser",
+  "moonrockz/krueger/scanner",
+  "moonrockz/krueger/internal/lawkit",
+  "moonbitlang/core/quickcheck",
 } for "test"

@@ -6,7 +6,12 @@
 /// comments; tokens with no space between them; comments inside expressions;
 /// a port whose doc comment has attributes; layout or a comment before the
 /// header; trailing spaces at the end; CRLF line ends and no final newline
-/// (independently).
+/// (independently); literals at the edges of their types (the largest Int and
+/// hex a Double holds exactly, the largest, smallest and an inexact Float, a
+/// Float that rounds to zero, the first and last code point, escapes). No Int
+/// literal above 2^53 (they do not survive the JSON round trip yet,
+/// krueger-wqh.4). No GLSL: its elm-syntax range ends two columns late, which
+/// the range laws reject.
 pub(all) struct ElmModule(String) derive(Debug)
 
 ///|
@@ -28,7 +33,9 @@ fn ind(n : Int) -> String {
 fn gen_leaf(rs : @splitmix.RandomState) -> String {
   one(rs, [
     "1", "x", "\"s\"", "'c'", "1.5", "()", "Nothing", "0x1F", ".f", "(+)", "r.a",
-    "List.map", "\"é😀\"", "'😀'", "f(x)",
+    "List.map", "\"é😀\"", "'😀'", "f(x)", "9007199254740991", "0x1FFFFFFFFFFFFF",
+    "1.7976931348623157e308", "4.9e-324", "0.1", "1e-400", "'\\u{0}'", "'\\u{10FFFF}'",
+    "\"\\u{2028}\\t\\\"\\\\\"",
   ])
 }
 
@@ -79,7 +86,10 @@ fn gen_inline(size : Int, rs : @splitmix.RandomState) -> String {
 ///|
 fn gen_pattern_atom(size : Int, rs : @splitmix.RandomState) -> String {
   if size <= 0 {
-    return one(rs, ["_", "a", "1", "\"s\"", "()", "Nothing", "[]", "'c'"])
+    return one(rs, [
+      "_", "a", "1", "\"s\"", "()", "Nothing", "[]", "'c'", "9007199254740991", "0x1FFFFFFFFFFFFF",
+      "'\\u{10FFFF}'", "\"\\u{0}\"",
+    ])
   }
   let s = size / 2
   match pick(rs, 5) {

@@ -564,7 +564,12 @@ inputs.
   `end_of_text`, `offset_of` (row/column to UTF-16 offset), `position_of` and
   `positions_of` (the inverse, for one offset or for sorted offsets in one
   pass) and `between_characters` (not inside a CRLF or a surrogate pair),
-  which count columns exactly as the scanner does.
+  which count columns exactly as the scanner does. Report helpers:
+  `excerpt_lines` (the gutter lines of a rendered report), `shows_source`
+  (the excerpts number the expected lines and show those source lines),
+  `source_lines`, `line_count`, `strip_ansi`, `range_in_source` and
+  `elm_json_problems` (the regions and messages of an `elm make` JSON
+  report).
 - **Reach the success branch.** A law that returns `true` on an error (`Err(_)
   => true`) tests nothing for inputs that fail. Measure how often its
   generator reaches the success branch for each edge, and add a generator or
@@ -578,6 +583,11 @@ inputs.
   to the same row and column as the offset after it.
 - **Corpus as a law check.** A law that holds for generated input should also
   hold for the pinned corpus; add it to the corpus check where it is cheap.
+  In parity mode (`mise run test:parity`) the corpus checks the lossless scan
+  (LF and CRLF), the node model, the AST round trip through JSON text, and
+  the never-crash laws for the scanner, the parser and the renderers on
+  prefixes cut at token boundaries (0, each token's start, end and one unit
+  in, and the end: all of them, or 50 evenly spaced ones per file).
 - **Run on every target.** Laws run in `mise run test:unit` and
   `mise run test:targets` like other tests. Keep `count` and `max_size` small
   enough that a package's tests stay fast (a few seconds).
