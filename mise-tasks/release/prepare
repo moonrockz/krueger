@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#MISE description="Open the release pull request: bump moon.mod and add the CHANGELOG.md section"
+#USAGE arg "[version]" help="Version to release (default: computed by git-cliff)"
+#USAGE flag "--local" help="Create the branch and commit, but do not push or open the pull request"
+set -euo pipefail
+
+exec moon run -q --target wasm scripts/release.mbtx -- prepare "$@"

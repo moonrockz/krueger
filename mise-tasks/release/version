@@ -2,4 +2,4 @@
 #MISE description="Compute next version from conventional commits"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/version.mbtx
+exec moon run -q --target wasm scripts/release.mbtx -- version

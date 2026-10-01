@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Print the GitHub release notes for a version from CHANGELOG.md"
+#USAGE arg "<version>" help="Version, for example 0.3.0"
+set -euo pipefail
+
+exec moon run -q --target wasm scripts/release.mbtx -- notes "$@"

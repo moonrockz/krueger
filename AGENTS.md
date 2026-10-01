@@ -676,7 +676,10 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `unicode:generate`  | Regenerate the Unicode identifier table from UnicodeData.txt |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
 | `test`              | Run all tests (unit + bdd + e2e + scripts + rejection) |
+| `release:prepare`   | Open the release pull request (version bump and changelog section) |
 | `release:version`   | Compute next version from conventional commits |
+| `release:plan`      | Decide whether a Release workflow run releases (CI) |
+| `release:notes`     | Print a version's GitHub release notes from `CHANGELOG.md` |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |
 
@@ -705,7 +708,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 |--------|------|---------|
 | `scripts/coverage.mbtx` | `coverage:ci-gate`, `coverage:ci-warn` | Coverage summary and threshold |
 | `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
-| `scripts/version.mbtx` | `release:version` | Next version from conventional commits |
+| `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes` | Release pull request, next version, release decision in CI, release notes |
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
@@ -794,17 +797,36 @@ design is final and meant for readers, write it up in a committed location on pu
 
 ## Release Process
 
-- Publishes to **mooncakes.io** and **GitHub Releases**.
-- Trigger: push tag `v*` or workflow_dispatch.
-- Requires `MOONCAKES_USER_TOKEN` org secret for publish.
-- Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`, `mise run test:scripts`.
-- To release: `mise run release:version` gives the next version (git-cliff, pinned in
-  `.mise.toml`; on 0.x a `feat` bumps the minor). Set `version` in `moon.mod` to it in a
-  pull request, merge, then tag the merge commit `v<version>` and push the tag. The
-  publish step fails when the tag does not match `moon.mod`'s version.
-- A release run is safe to repeat: runs for one tag never overlap (a concurrency group),
-  an already published version and an existing GitHub release are skipped (GitHub has
-  started two runs for one tag push).
+- Publishes to **mooncakes.io** and **GitHub Releases**, and records every release in
+  `CHANGELOG.md`.
+- To release, run `mise run release:prepare` on a clean working tree. It fetches
+  `origin/main`, computes the next version with git-cliff (pinned in `.mise.toml`,
+  configured in `cliff.toml`; on 0.x a `feat` or a breaking change bumps the minor,
+  anything else the patch), sets `version` in `moon.mod`, prepends the version's
+  section to `CHANGELOG.md`, commits `chore(release): v<version>` on branch
+  `release/v<version>`, pushes it and opens the pull request. Give a version to
+  override git-cliff (`mise run release:prepare 1.0.0`); `--local` stops before the
+  push.
+- In the pull request, replace the highlights comment at the top of the new section
+  with a few sentences on what the release brings, and reword the generated lines
+  where needed. Then merge. Do not bump the version in any other pull request.
+- The merge changes `moon.mod` on `main`, so the Release workflow runs:
+  - `plan` (`mise run release:plan`) releases when `v<version>` has no tag yet and
+    `CHANGELOG.md` has the version's section; otherwise it skips, or fails when the
+    section is missing.
+  - `validate` runs `moon fmt`, `moon check`, `mise run test:unit` and
+    `mise run test:scripts`; `publish` publishes to mooncakes.io (needs the
+    `MOONCAKES_USER_TOKEN` org secret).
+  - `release` creates the tag on the merge commit and the GitHub release. Its notes
+    (`mise run release:notes <version>`) are an install line followed by the
+    changelog section: highlights, breaking changes, grouped changes with PR links
+    and authors, and the compare link.
+- A pushed `v*` tag (it must match `moon.mod`'s version) and a manual run also work.
+- A release run is safe to repeat: release runs never overlap (a concurrency group),
+  an already published version and an existing GitHub release are skipped. The tag is
+  created with `GITHUB_TOKEN`, which starts no second run.
+- Write commit and pull request titles for the changelog: the squash-merge title is
+  the changelog line. `chore(release)` and `chore(beads)` commits are left out.
 
 ## Work Tracking
 
