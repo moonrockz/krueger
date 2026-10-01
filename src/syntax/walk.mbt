@@ -23,6 +23,53 @@ priv struct Frame {
 /// after all of a node's children, with the same node object. An explicit
 /// stack, not recursion, holds the open nodes, so trees of any depth work on
 /// every target. All traversal state belongs to this call.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nf x = x\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   // Log enter and leave; skip the module header.
+///   let log = []
+///   @syntax.walk(
+///     root,
+///     n => {
+///       log.push("+" + n.kind())
+///       if n.category() == "module" {
+///         SkipChildren
+///       } else {
+///         Continue
+///       }
+///     },
+///     leave=n => log.push("-" + n.kind()),
+///   )
+///   inspect(
+///     log.join(" "),
+///     content="+file +normal -normal +function +implementation +name -name +var -var +functionOrValue -functionOrValue -implementation -function -file",
+///   )
+///   // Stop at the first pattern: the walk ends there, with no more `leave`.
+///   let seen = []
+///   @syntax.walk(
+///     root,
+///     n => {
+///       seen.push("+" + n.kind())
+///       if n.category() == "pattern" {
+///         Stop
+///       } else {
+///         Continue
+///       }
+///     },
+///     leave=n => seen.push("-" + n.kind()),
+///   )
+///   inspect(
+///     seen.join(" "),
+///     content="+file +normal +module_name -module_name +all -all -normal +function +implementation +name -name +var",
+///   )
+/// }
+/// ```
 pub fn walk(
   root : NodeRef,
   enter : (NodeRef) -> Control,

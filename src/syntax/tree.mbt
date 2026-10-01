@@ -18,7 +18,31 @@ fn identity(n : NodeRef) -> String {
 }
 
 ///|
-/// The tree of `result`, or `None` when the parse produced no AST.
+/// The tree of `result`, or `None` when the parse produced no AST. It walks
+/// the whole tree once to index the parents, so build it once and keep it.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   let decl = tree.root().field("declarations")[0]
+///   let body = decl.field("declaration")[0].field("expression")[0]
+///   inspect(tree.parent(body).unwrap().kind(), content="implementation")
+///   inspect(tree.parent(tree.root()) is None, content="true")
+///   debug_inspect(
+///     tree.ancestors(body).map(n => n.kind()),
+///     content="[\"implementation\", \"function\", \"file\"]",
+///   )
+///   debug_inspect(
+///     tree.path(body).map(n => n.kind()),
+///     content="[\"file\", \"function\", \"implementation\", \"operatorapplication\"]",
+///   )
+/// }
+/// ```
 pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
   guard NodeRef::of_result(result) is Some(root) else { return None }
   let parents : Map[String, Array[(NodeRef, NodeRef)]] = Map([])
@@ -86,6 +110,24 @@ pub fn Tree::path(self : Tree, n : NodeRef) -> Array[NodeRef] {
 ///|
 /// The steps from the root to `n`, or `None` when `n` is not in the tree.
 /// With `node_at`, this takes an editor from a position to a path.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   // Row 4, column 9 is the `y` in `x + y`.
+///   let y = tree.node_at({ row: 4, column: 9, }).unwrap()
+///   inspect("\{y.category()}/\{y.kind()}", content="expression/functionOrValue")
+///   inspect(
+///     tree.node_path(y).unwrap(),
+///     content="declarations[0].declaration[0].expression[0].right[0]",
+///   )
+/// }
+/// ```
 pub fn Tree::node_path(self : Tree, n : NodeRef) -> NodePath? {
   let chain = self.path(n)
   guard same(chain[0], self.root) else { return None }
@@ -123,7 +165,8 @@ fn within(a : @ast.Range, b : @ast.Range) -> Bool {
 /// Every branch that contains `p` is searched, because siblings can overlap: a
 /// comment (a child of the file) lies inside a declaration, and a port's doc
 /// comment holds the port's attributes. The smallest range wins; for equal
-/// ranges the deeper node wins, then the first in source order.
+/// ranges the deeper node wins, then the first in source order. See
+/// `node_path` for an example.
 pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
   if !contains(self.root.range(), p) {
     return None
@@ -158,7 +201,26 @@ fn copy_token(t : @scanner.Token) -> @scanner.Token {
 
 ///|
 /// The tokens that lie inside `r`, in source order: new tokens with new
-/// trivia arrays, so changing them changes nothing in the tree.
+/// trivia arrays, so changing them changes nothing in the tree. A token
+/// that lies only partly inside `r` is left out. The tree has no tokens when
+/// the parse produced no CST.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   let decl = tree.root().field("declarations")[0]
+///   let lexemes = tree.tokens_in(decl.range()).map(t => t.lexeme)
+///   debug_inspect(
+///     lexemes,
+///     content="[\"add\", \"x\", \"y\", \"=\", \"x\", \"+\", \"y\"]",
+///   )
+/// }
+/// ```
 pub fn Tree::tokens_in(self : Tree, r : @ast.Range) -> Array[@scanner.Token] {
   self.tokens
   .filter(t => {

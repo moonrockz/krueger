@@ -156,6 +156,34 @@ fn header(title : String, path : String) -> String {
 
 ///|
 /// A diagnostic as plain text, laid out like `elm make` output.
+///
+/// The text starts with a `-- TITLE ---- path` header. The report follows,
+/// reflowed to 80 columns, with numbered source lines from `source` and `^`
+/// markers under the problem. `path` is only shown in the header.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nmain =\n    (1 + 2\n",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   let text = @report.render_plain(result.diagnostics[0], source, "src/Main.elm")
+///   inspect(
+///     text,
+///     content=(
+///       #|-- UNFINISHED PARENTHESES ----------------------------------------- src/Main.elm
+///       #|
+///       #|I was partway through parsing an expression in parentheses, but I got stuck
+///       #|here:
+///       #|
+///       #|4|     (1 + 2
+///       #|             ^
+///       #|I was expecting to see `,` or `)` next.
+///       #|
+///     ),
+///   )
+/// }
+/// ```
 pub fn render_plain(
   diag : @scanner.Diagnostic,
   source : @scanner.SourceText,
@@ -217,7 +245,29 @@ fn ansi(chunk : @scanner.Chunk) -> String {
 }
 
 ///|
-/// A diagnostic for a terminal, with ANSI colours like `elm make`.
+/// A diagnostic for a terminal, with ANSI colors like `elm make`.
+///
+/// The text is `render_plain`'s text with ANSI escape codes around the
+/// header, the `^` markers and the styled chunks of the report.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nmain =\n    (1 + 2\n",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   let text = @report.render_terminal(
+///     result.diagnostics[0],
+///     source,
+///     "src/Main.elm",
+///   )
+///   // The header is cyan: ESC [36m.
+///   inspect(
+///     text.has_prefix("\u{1b}[36m-- UNFINISHED PARENTHESES"),
+///     content="true",
+///   )
+/// }
+/// ```
 pub fn render_terminal(
   diag : @scanner.Diagnostic,
   source : @scanner.SourceText,

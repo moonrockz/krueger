@@ -14,6 +14,10 @@ fn build_token(
 }
 
 ///|
+/// Attach trivia to the significant tokens of `raw_tokens` (the output of
+/// `lex_raw`). Trivia goes to the next token's `trivia_before`; trivia after
+/// the last token goes to its `trivia_after`. When there is no token, the
+/// trivia goes to `TokenStream::trivia`. Nothing is dropped.
 pub fn normalize_tokens(raw_tokens : Array[RawToken]) -> TokenStream {
   let tokens = []
   let mut pending_trivia = []

@@ -91,6 +91,35 @@ Feature: Release tooling
     When I set the module version to "0.3.0"
     Then the module has no version line
 
+  Scenario: Set the library version
+    Given the text:
+      """
+      ///|
+      /// The version of krueger, the same as `version` in `moon.mod`.
+      pub fn version() -> String {
+        "0.2.0"
+      }
+      """
+    When I set the library version to "0.3.0"
+    Then the library file becomes:
+      """
+      ///|
+      /// The version of krueger, the same as `version` in `moon.mod`.
+      pub fn version() -> String {
+        "0.3.0"
+      }
+      """
+
+  Scenario: A library file without a version function
+    Given the text:
+      """
+      pub fn tokenize() -> Unit {
+        "0.2.0"
+      }
+      """
+    When I set the library version to "0.3.0"
+    Then the library has no version function
+
   Scenario: Tidy a changelog after git cliff --prepend
     Given the text:
       """

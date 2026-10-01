@@ -4,6 +4,7 @@ fn to_comment_trivia(raw : RawToken, kind : CommentKind) -> Trivia {
 }
 
 ///|
+/// The trivia for `raw`, or `None` when `raw` is a significant token.
 pub fn raw_to_trivia(raw : RawToken) -> Trivia? {
   match raw.kind {
     RawTokenKind::Whitespace => Some(Trivia::Whitespace(raw.lexeme, raw.span))

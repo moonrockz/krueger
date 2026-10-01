@@ -9,7 +9,36 @@ pub(all) struct PathStep {
 ///|
 /// Where a node sits below a start node: the steps from the start node, each
 /// a field and an index, like a path into elm-syntax's JSON. A path is
-/// immutable; a child's path shares its parent's steps.
+/// immutable; a child's path shares its parent's steps. Get one from
+/// `Tree::node_path`, an `EnterEvent` or `TreeCursor::path`.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   let x = tree.node_at({ row: 4, column: 5, }).unwrap()
+///   let path = tree.node_path(x).unwrap()
+///   inspect(path, content="declarations[0].declaration[0].expression[0].left[0]")
+///   inspect(path.depth(), content="4")
+///   debug_inspect(path.last(), content="Some({ field: \"left\", index: 0 })")
+///   debug_inspect(
+///     path.steps().map(s => s.field),
+///     content="[\"declarations\", \"declaration\", \"expression\", \"left\"]",
+///   )
+///   // `resolve` follows the steps from a start node.
+///   inspect(path.resolve(root) == Some(x), content="true")
+///   let up = path.parent().unwrap()
+///   inspect(up, content="declarations[0].declaration[0].expression[0]")
+///   inspect(up.resolve(root).unwrap().kind(), content="operatorapplication")
+///   let missing = @syntax.NodePath::root().child("declarations", 5)
+///   inspect(missing.resolve(root) is None, content="true")
+/// }
+/// ```
 pub struct NodePath {
   /// The steps, innermost first.
   priv reversed : @list.List[PathStep]

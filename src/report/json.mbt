@@ -64,6 +64,35 @@ fn region(d : @scanner.Diagnostic) -> @scanner.Span {
 ///|
 /// Errors in `diags` in the shape of `elm make --report=json` output.
 /// Warnings are left out: `elm make` has none.
+///
+/// The result is `{"type": "compile-errors", "errors": [...]}`, with one
+/// entry for the file when it has errors and none otherwise. The entry's
+/// `name` is `source.module_name` (default `Main`). Each problem has the
+/// title, the region of the problem and the message as `elm make` chunks.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nmain =\n    (1 + 2\n",
+///     module_name="Main",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   let json = @report.render_elm_json(result.diagnostics, source, "src/Main.elm")
+///   guard json is { "errors": [{ "problems": [problem], .. }], .. } else {
+///     fail("unexpected shape")
+///   }
+///   guard problem is { "title": String(title), "region": region, .. } else {
+///     fail("unexpected problem")
+///   }
+///   inspect(title, content="UNFINISHED PARENTHESES")
+///   inspect(
+///     region.stringify(),
+///     content=(
+///       #|{"start":{"line":4,"column":11},"end":{"line":4,"column":11}}
+///     ),
+///   )
+/// }
+/// ```
 pub fn render_elm_json(
   diags : Array[@scanner.Diagnostic],
   source : @scanner.SourceText,
@@ -101,6 +130,26 @@ fn severity_name(severity : @scanner.Severity) -> String {
 
 ///|
 /// All diagnostics (warnings too) with krueger's codes, as JSON.
+///
+/// Each diagnostic is an object with `code`, `severity` (`error`,
+/// `warning` or `info`), `title`, `message` and `span`. The long report is
+/// not included; use `render_plain` or `render_elm_json` for it.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nmain =\n    (1 + 2\n",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   let json = @report.encode_diagnostics(result.diagnostics)
+///   inspect(
+///     json.stringify(),
+///     content=(
+///       #|[{"code":"KR-PARSE-004","severity":"error","title":"UNFINISHED PARENTHESES","message":"Malformed function declaration: expected `,` or `)`, found end of input","span":{"start":{"line":4,"column":11},"end":{"line":4,"column":11}}}]
+///     ),
+///   )
+/// }
+/// ```
 pub fn encode_diagnostics(diags : Array[@scanner.Diagnostic]) -> Json {
   Json::array(
     diags.map(d => {

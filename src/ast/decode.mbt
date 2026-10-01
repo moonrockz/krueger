@@ -10,6 +10,8 @@ pub(all) suberror DecodeError {
 } derive(Eq, Debug)
 
 ///|
+/// Shows the error as its JSON path, then `: `, then the message (see the
+/// example on `decode_file`).
 pub impl Show for DecodeError with fn output(self, logger) {
   let DecodeError(path~, message~) = self
   logger.write_string(path)
@@ -862,6 +864,35 @@ fn function_implementation_at(
 
 ///|
 /// Elm.Syntax.File.decoder.
+///
+/// It reads the JSON that elm-syntax 7.3.9 writes, and the JSON from
+/// `encode_file` and `encode_file_with`. `decode_file(encode_file(f))` gives
+/// `f` back, except for Int literals above 2^53 (use `exact_ints=true` for
+/// those). Malformed input raises `DecodeError` with the JSON path of the
+/// problem.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (main)\n\nmain =\n    \"hi\"\n",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   guard result.ast is Some(file) else { fail("no AST") }
+///   let text = @ast.encode_file(file).stringify()
+///   let decoded = @ast.decode_file(@json.parse(text))
+///   inspect(decoded == file, content="true")
+///   // Malformed input raises an error that names the JSON path.
+///   try @ast.decode_file({ "imports": [] }) catch {
+///     e =>
+///       inspect(
+///         e,
+///         content="$: Expecting an OBJECT with a field named `moduleDefinition`",
+///       )
+///   } noraise {
+///     _ => fail("expected a DecodeError")
+///   }
+/// }
+/// ```
 pub fn decode_file(json : Json) -> File raise DecodeError {
   file_at(json, Root)
 }

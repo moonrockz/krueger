@@ -21,6 +21,16 @@ let diagnostic_descriptions : Map[String, String] = {
 
 ///|
 /// The fixed meaning of a diagnostic code, or `None` for an unknown code.
+///
+/// ```mbt check
+/// test {
+///   inspect(
+///     @krueger.diagnostic_description("KR-SCAN-004").unwrap_or("?"),
+///     content="Unterminated string, char or GLSL literal",
+///   )
+///   debug_inspect(@krueger.diagnostic_description("KR-NONE"), content="None")
+/// }
+/// ```
 pub fn diagnostic_description(code : String) -> String? {
   diagnostic_descriptions.get(code)
 }

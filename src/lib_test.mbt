@@ -1,10 +1,4 @@
 ///|
-/// Tests for krueger library (placeholder until scanner/parser/AST exist).
-test "version returns 0.1.0" {
-  assert_eq(@krueger.version(), "0.1.0")
-}
-
-///|
 test "root package exposes scanner tokenize entrypoint" {
   let source = @krueger.SourceText::{
     module_name: Some("Main"),

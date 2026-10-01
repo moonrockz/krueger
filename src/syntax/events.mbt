@@ -69,7 +69,44 @@ priv struct ReaderFrame {
 ///|
 /// Reads the events of a tree one at a time (the walk engine, paused between
 /// `next` calls). Each reader owns its state; readers over one tree do not
-/// affect each other.
+/// affect each other. To stop early, stop calling `next`.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nf x = x\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let reader = @syntax.EventReader::new(root)
+///   let log = []
+///   let mut body = ""
+///   while reader.next() is Some(event) {
+///     match event {
+///       Enter(e) => {
+///         log.push("+" + e.kind)
+///         if e.category == "expression" {
+///           body = "\{e.field.unwrap()} at depth \{e.depth}: \{e.path}"
+///         }
+///         // Skip the module header: its `Leave` comes next.
+///         if e.category == "module" {
+///           reader.skip_children()
+///         }
+///       }
+///       Leave(e) => log.push("-" + e.node.kind())
+///     }
+///   }
+///   inspect(
+///     log.join(" "),
+///     content="+file +normal -normal +function +implementation +name -name +var -var +functionOrValue -functionOrValue -implementation -function -file",
+///   )
+///   inspect(
+///     body,
+///     content="expression at depth 3: declarations[0].declaration[0].expression[0]",
+///   )
+/// }
+/// ```
 pub struct EventReader {
   priv stack : Array[ReaderFrame]
   /// The node whose `Enter` was returned last (with its path), until its
@@ -99,6 +136,7 @@ fn enter_event(n : NodeRef, field : String?, path : NodePath) -> Event {
 }
 
 ///|
+/// The next event in walk order, or `None` after the root's `Leave`.
 pub impl EventSource for EventReader with fn next(self) {
   if self.pending is Some((n, path)) {
     self.pending = None
@@ -129,6 +167,8 @@ pub impl EventSource for EventReader with fn next(self) {
 }
 
 ///|
+/// Right after an `Enter`, skip that node's children: the next event is its
+/// `Leave`. Elsewhere it does nothing.
 pub impl EventSource for EventReader with fn skip_children(self) {
   if self.pending is Some((n, path)) {
     self.pending = None

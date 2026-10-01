@@ -158,6 +158,7 @@ pub(all) struct SourceText {
   module_name : String?
   text : String
 } derive(Eq, @debug.Debug)
+pub fn SourceText::new(String, module_name? : String) -> Self
 
 pub(all) struct Span {
   start : Position

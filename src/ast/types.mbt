@@ -4,21 +4,44 @@
 // keep the JSON key names.
 
 ///|
-/// Elm.Syntax.Range.Location
+/// Elm.Syntax.Range.Location: a point in the source. `row` is the line and
+/// `column` the column, both counted from 1. Columns count code points, so a
+/// character outside the BMP (a surrogate pair) is one column.
 pub(all) struct Location {
   row : Int
   column : Int
 } derive(Eq, Debug)
 
 ///|
-/// Elm.Syntax.Range.Range
+/// Elm.Syntax.Range.Range: the source from `start` up to `end`. `end` is
+/// the location just after the last character, so `x` in column 1 has the
+/// range 1:1 to 1:2. elm-syntax writes it as `[startRow, startColumn,
+/// endRow, endColumn]`.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nname = \"\u{1F600}\" ++ x\n",
+///   )
+///   let result = @parser.parse_module(source, @scanner.DefaultScanner::new())
+///   guard result.ast is Some(file) else { fail("no AST") }
+///   let decl = file.declarations[0]
+///   debug_inspect(
+///     decl.range,
+///     content="{ start: { row: 3, column: 1 }, end: { row: 3, column: 16 } }",
+///   )
+///   inspect(@ast.encode_range(decl.range).stringify(), content="[3,1,3,16]")
+/// }
+/// ```
 pub(all) struct Range {
   start : Location
   end : Location
 } derive(Eq, Debug)
 
 ///|
-/// Elm.Syntax.Node.Node
+/// Elm.Syntax.Node.Node: a value with its source range. Most parts of the
+/// AST are nodes: names, expressions, patterns, type annotations and
+/// declarations.
 pub(all) struct Node[T] {
   range : Range
   value : T

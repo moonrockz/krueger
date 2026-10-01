@@ -1,6 +1,22 @@
 ///|
 /// A rejection rule: one class of syntax that a dialect rejects. A rule only
 /// runs when the dialect enables it.
+///
+/// A diagnostic from a rule names it as `[rule: <name>]` (see `Rule::name`).
+/// `Dialect::has` tells whether a dialect enables a rule.
+///
+/// ```mbt check
+/// test {
+///   let elm = @dialect.Dialect::elm_0_19_1()
+///   let oracle = @dialect.Dialect::elm_syntax_7_3_9()
+///   // Both reject a char literal with two characters.
+///   inspect(elm.has(CharLength) && oracle.has(CharLength), content="true")
+///   // Only `elm make` rejects `007`.
+///   inspect(elm.has(LeadingZero), content="true")
+///   inspect(oracle.has(LeadingZero), content="false")
+///   inspect(@dialect.Rule::LeadingZero.name(), content="leading-zero")
+/// }
+/// ```
 pub(all) enum Rule {
   LeadingZero
   EmptyHex
@@ -72,6 +88,69 @@ pub(all) enum AttributeSyntax {
 ///   parser reads those by name.
 /// - `{ ..d, field: value }` shares `rules` and `operators` with `d`; copy them
 ///   before changing either.
+///
+/// Build the scanner and the parser with the same dialect. To make a custom
+/// dialect, start from a built-in one. This one adds an operator `<=>`. The
+/// operator needs an entry in `operators` (for the parser) and in
+/// `operator_symbols` (for the lexer, which otherwise reads `<=` and `>`):
+///
+/// ```mbt check
+/// test {
+///   let base = @dialect.Dialect::elm_0_19_1()
+///   let dialect = {
+///     ..base,
+///     name: "my-elm",
+///     operators: [
+///       ..base.operators,
+///       { symbol: "<=>", precedence: 4, direction: Non, },
+///     ],
+///     operator_symbols: ["<=>"],
+///   }
+///   inspect(dialect.validate().length(), content="0")
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nx =\n    a <=> b\n",
+///   )
+///   let plain = @parser.parse_module(
+///     source,
+///     @scanner.DefaultScanner::new(dialect=base),
+///     dialect=base,
+///   )
+///   inspect(plain.diagnostics[0].title, content="UNKNOWN OPERATOR")
+///   let custom = @parser.parse_module(
+///     source,
+///     @scanner.DefaultScanner::new(dialect~),
+///     dialect~,
+///   )
+///   inspect(custom.diagnostics.length(), content="0")
+/// }
+/// ```
+///
+/// An extra reserved word stops a name from being used. To turn a rule off,
+/// give the dialect a new rule set; do not change the set of the base:
+///
+/// ```mbt check
+/// test {
+///   let base = @dialect.Dialect::elm_0_19_1()
+///   let rules = base.rules.copy()
+///   rules.remove(LeadingZero)
+///   let dialect = { ..base, rules, reserved_words: ["forall"], }
+///   inspect(base.has(LeadingZero), content="true")
+///   inspect(dialect.has(LeadingZero), content="false")
+///   let parse = (text : String) => {
+///     @parser.parse_module(
+///       @scanner.SourceText::new(text),
+///       @scanner.DefaultScanner::new(dialect~),
+///       dialect~,
+///     ).diagnostics
+///   }
+///   inspect(parse("module Main exposing (..)\n\nx = 007\n").length(), content="0")
+///   let errors = parse("module Main exposing (..)\n\nforall = 1\n")
+///   inspect(
+///     errors[0].message,
+///     content="Malformed function declaration: expected a function name, found `forall`",
+///   )
+/// }
+/// ```
 pub(all) struct Dialect {
   name : String
   rules : @hashset.HashSet[Rule]
@@ -150,6 +229,24 @@ fn standard(name : String, rules : Array[Rule]) -> Dialect {
 
 ///|
 /// The default dialect: rejects what `elm make` 0.19.1 rejects as syntax.
+///
+/// It enables every rule except `TitlecaseNameStart`, has the standard
+/// operator table, and reads doc-comment attributes. `core_package` is
+/// `false`, so effect modules and infix declarations are errors.
+///
+/// ```mbt check
+/// test {
+///   let dialect = @dialect.Dialect::elm_0_19_1()
+///   inspect(dialect.name, content="elm-0.19.1")
+///   inspect(dialect.has(PortInNormalModule), content="true")
+///   debug_inspect(
+///     dialect.operator("|>"),
+///     content=(
+///       #|Some({ symbol: "|>", precedence: 1, direction: Left })
+///     ),
+///   )
+/// }
+/// ```
 pub fn Dialect::elm_0_19_1() -> Dialect {
   standard(
     "elm-0.19.1",
@@ -171,6 +268,27 @@ pub fn Dialect::elm_0_19_1() -> Dialect {
 
 ///|
 /// Rejects exactly what elm-syntax 7.3.9 rejects.
+///
+/// Use it to compare output with elm-syntax: the parity harness scores in
+/// this dialect. It accepts some syntax that `elm make` rejects, for example
+/// `007`, `0X1F` and `1e`.
+///
+/// ```mbt check
+/// test {
+///   let source = @scanner.SourceText::new(
+///     "module Main exposing (..)\n\nx =\n    0X1F\n",
+///   )
+///   let parse = (dialect : @dialect.Dialect) => {
+///     @parser.parse_module(
+///       source,
+///       @scanner.DefaultScanner::new(dialect~),
+///       dialect~,
+///     ).diagnostics.length()
+///   }
+///   inspect(parse(@dialect.Dialect::elm_syntax_7_3_9()), content="0")
+///   inspect(parse(@dialect.Dialect::elm_0_19_1()), content="1")
+/// }
+/// ```
 pub fn Dialect::elm_syntax_7_3_9() -> Dialect {
   standard("elm-syntax-7.3.9", [..shared_rules(), TitlecaseNameStart])
 }

@@ -30,7 +30,7 @@ The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax outp
 
 ```
 moonrockz/krueger
-├── moon.work             # Workspace: the library (.) and the test harness (harness/)
+├── moon.work             # Workspace: the library (.), the test harness (harness/) and the cookbook (docs/cookbook/)
 ├── src/                  # The library (the only published module)
 │   ├── lib.mbt           # Package entry point; re-exports the public types
 │   ├── dialect/          # Dialect: rejection rules, operator table, extension hooks
@@ -49,6 +49,7 @@ moonrockz/krueger
 ├── tests/features/       # Gherkin features
 ├── tests/fixtures/       # Elm sources with elm-syntax JSON (ast/, parser/)
 ├── scripts/              # MoonBit tooling scripts (.mbtx)
+├── docs/cookbook/        # Unpublished module moonrockz/krueger_cookbook: task articles (*.mbt.md), tested
 ├── docs/plans/           # Older committed plans (new work documents go in .dev/)
 ├── .dev/                 # Gitignored working area for specs, plans and scratch files
 ├── .beads/               # Issue tracking (optional)
@@ -383,6 +384,9 @@ extension data for Elm-like languages:
 | `uppercase-hex-prefix` | on | off | `0X1F` |
 | `exponent-without-digits` | on | off | `1e` |
 | `bad-unicode-escape` | on | off | a code point above `10FFFF` |
+| `import-column` | on | off | an import after the first that does not start in column 1 |
+| `non-ascii-digit-in-name` | on | off | a non-ASCII number in a name (`x٣`) |
+| `titlecase-name-start` | off | on | a name that starts with a title-case letter (`ǅx`) |
 | `effect-module` | on | off | an effect module outside an `elm/*` or `elm-explorations/*` package |
 | `infix-declaration` | on | off | an infix declaration outside an `elm/*` or `elm-explorations/*` package |
 | `duplicate-effect-key` | on | off | a repeated `command` or `subscription` in an effect module |
@@ -438,7 +442,8 @@ harnesses that need more (`moonspec`, `moonbitlang/async`, `moonbitlang/x`) live
 unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
 `moonbitlang/async` keeps its `examples/` and `test_programs/`:
 
-- `moon.work` lists both modules; `harness/moon.mod` imports `moonrockz/krueger@0.0.0`,
+- `moon.work` lists the library, `harness/` and `docs/cookbook/` (see
+  "Documentation"); `harness/moon.mod` imports `moonrockz/krueger@0.0.0`,
   which the workspace resolves to the local module (the version is ignored).
 - Run harness tests from the root: `moon test harness/parity`. They run with `harness/`
   as the working directory, so they reach repository files as `../tests/...`,
@@ -633,6 +638,35 @@ inputs.
   `mise run test:targets` like other tests. Keep `count` and `max_size` small
   enough that a package's tests stay fast (a few seconds).
 
+## Documentation
+
+Two kinds of user documentation, both tested:
+
+- **API reference**: `///` doc comments on public items, shown on
+  mooncakes.io. The first line says what the item does; then the details a
+  user needs (defaults, edge cases, errors). Entry points and items whose use
+  is not obvious get an example in a fenced block with the info string
+  `mbt check` that holds a `test { ... }`. `moon test` runs these examples as
+  black-box tests of the package, so refer to the package by its alias
+  (`@syntax.walk`). Use `debug_inspect` for `derive(Debug)` values. A doc
+  comment block can hold only `test` blocks: with a `struct` or `impl` in it,
+  moon skips the block (warning 4191). For such an example, use a block with
+  the info string `mbt nocheck`, check it once in a scratch test, and point
+  to a tested example (a cookbook article, by its GitHub URL). When you
+  add or change a public item, update its doc comment and example.
+- **Cookbook** (`docs/cookbook/`): one article per user task
+  (`<slug>.mbt.md`), indexed in `docs/cookbook/README.md`. The directory is
+  the unpublished workspace module `moonrockz/krueger_cookbook` with one
+  package; `mise run test:docs` runs every `mbt check` block (CI job
+  `unit-tests`). All articles share one namespace, so prefix each article's
+  top-level names (`ax_`, `un_`, `tr_`, …). Use an `mbt nocheck` block only
+  for code that cannot run as a test, such as a `main` that writes a file.
+- `README.mbt.md` is the mooncakes.io landing page. It is not in a package,
+  so its examples are not run: keep them short and copy them from tested
+  code.
+- Write documentation in ASD-STE100 Simplified Technical English: short
+  sentences, active voice, one word for one meaning.
+
 ## Coding Convention
 
 - MoonBit block style: blocks separated by `///|`; block order irrelevant.
@@ -666,6 +700,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:bdd`          | Run MoonSpec BDD tests                         |
 | `test:e2e`          | Run end-to-end tests                           |
 | `test:scripts`      | Run MoonBit script tests (`scripts/*.mbtx`)    |
+| `test:docs`         | Run the cookbook articles (`docs/cookbook/*.mbt.md`) |
 | `test:targets`      | Check and test the library on wasm, wasm-gc, js and native |
 | `test:parity`       | Score Elm parity against the golden lock (needs `corpus:fetch`) |
 | `parity:ratchet`    | Raise `tests/corpus/baseline.json` to the current counts |
@@ -675,7 +710,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
 | `unicode:generate`  | Regenerate the Unicode identifier table from UnicodeData.txt |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
-| `test`              | Run all tests (unit + bdd + e2e + scripts + rejection) |
+| `test`              | Run all tests (unit + bdd + e2e + scripts + rejection + docs) |
 | `release:prepare`   | Open the release pull request (version bump and changelog section) |
 | `release:version`   | Compute next version from conventional commits |
 | `release:plan`      | Decide whether a Release workflow run releases (CI) |
@@ -810,7 +845,9 @@ design is final and meant for readers, write it up in a committed location on pu
   configured in `cliff.toml`; on 0.x a `feat` or a breaking change bumps the minor,
   anything else the patch), sets `version` in `moon.mod`, prepends the version's
   section to `CHANGELOG.md`, commits `chore(release): v<version>` on branch
-  `release/v<version>`, pushes it and opens the pull request. Give a version to
+  `release/v<version>`, pushes it and opens the pull request. It also sets the
+  string that `version()` in `src/lib.mbt` returns; `harness/bdd/version_wbtest.mbt`
+  checks that it equals `moon.mod`'s version. Give a version to
   override git-cliff (`mise run release:prepare 1.0.0`); `--local` stops before the
   push.
 - In the pull request, replace the highlights comment at the top of the new section

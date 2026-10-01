@@ -6,6 +6,27 @@
 /// Kinds and field names follow the JSON that elm-syntax (and `@ast.encode_*`)
 /// writes. elm-syntax reuses tags across node types (`record`, `list`, `unit`,
 /// …), so `(category, kind)` identifies a node type.
+///
+/// Get the root with `NodeRef::of_result` (or `Tree::root`), then go down
+/// with `field` or `children`:
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let decl = root.field("declarations")[0]
+///   inspect("\{decl.category()}/\{decl.kind()}", content="declaration/function")
+///   // Typed code matches the case and reads the AST value.
+///   match decl {
+///     Declaration(node, _) => inspect(node.range.start.row, content="3")
+///     _ => fail("not a declaration")
+///   }
+/// }
+/// ```
 pub(all) enum NodeRef {
   File(@ast.File, ArrayView[@parser.AttributeGroup])
   Module(@ast.Node[@ast.Module])
@@ -73,6 +94,21 @@ fn same(a : NodeRef, b : NodeRef) -> Bool {
 ///
 /// The attribute groups are copied; the AST is shared with `result`, so
 /// neither may be changed while nodes are in use.
+///
+/// ```mbt check
+/// test {
+///   let scanner = @scanner.DefaultScanner::new()
+///   let ok = @parser.parse_module(
+///     @scanner.SourceText::new("module Main exposing (..)\n\nx = 1\n"),
+///     scanner,
+///   )
+///   let kind = @syntax.NodeRef::of_result(ok).map(n => n.kind())
+///   debug_inspect(kind, content="Some(\"file\")")
+///   // A missing module header gives no AST, so there is no root.
+///   let bad = @parser.parse_module(@scanner.SourceText::new("x = 1\n"), scanner)
+///   inspect(@syntax.NodeRef::of_result(bad) is None, content="true")
+/// }
+/// ```
 pub fn NodeRef::of_result(result : @parser.ParseResult) -> NodeRef? {
   result.ast.map(file => File(file, result.attributes.copy()))
 }
@@ -107,7 +143,24 @@ pub fn NodeRef::category(self : NodeRef) -> String {
 
 ///|
 /// The elm-syntax JSON tag of the node, or its category when elm-syntax has no
-/// tag for it.
+/// tag for it. A kind alone does not identify a node type: compare
+/// `category()` too.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nf [] = []\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let implementation = root.field("declarations")[0].field("declaration")[0]
+///   let argument = implementation.field("arguments")[0]
+///   let body = implementation.field("expression")[0]
+///   inspect("\{argument.category()}/\{argument.kind()}", content="pattern/list")
+///   inspect("\{body.category()}/\{body.kind()}", content="expression/list")
+/// }
+/// ```
 pub fn NodeRef::kind(self : NodeRef) -> String {
   match self {
     Module(m) =>
@@ -238,7 +291,24 @@ fn earlier(a : @ast.Location, b : @ast.Location) -> @ast.Location {
 /// The node's range. A case branch runs from its pattern to its expression;
 /// the file from line 1, column 1 to the end of its last node. A declaration
 /// with doc attributes starts no later than its first attribute (a port's doc
-/// comment is not part of its elm-syntax range).
+/// comment is not part of its elm-syntax range). Rows and columns start at 1;
+/// the end is exclusive.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let show = (r : @ast.Range) => {
+///     "\{r.start.row}:\{r.start.column}-\{r.end.row}:\{r.end.column}"
+///   }
+///   inspect(show(root.range()), content="1:1-4:10")
+///   inspect(show(root.field("declarations")[0].range()), content="3:1-4:10")
+/// }
+/// ```
 pub fn NodeRef::range(self : NodeRef) -> @ast.Range {
   match self {
     File(file, _) => {

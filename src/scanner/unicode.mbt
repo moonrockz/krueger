@@ -18,6 +18,16 @@ fn in_ranges(ranges : FixedArray[Int], cp : Int) -> Bool {
 
 ///|
 /// Whether `c` can start a lower-case name (a Unicode lower-case letter).
+/// Lower-case names are values, functions and type variables.
+///
+/// ```mbt check
+/// test {
+///   inspect(@scanner.is_lower_start('a'), content="true")
+///   inspect(@scanner.is_lower_start('é'), content="true")
+///   inspect(@scanner.is_lower_start('A'), content="false")
+///   inspect(@scanner.is_lower_start('_'), content="false")
+/// }
+/// ```
 pub fn is_lower_start(c : Char) -> Bool {
   let cp = c.to_int()
   if cp < 0x80 {
@@ -29,7 +39,18 @@ pub fn is_lower_start(c : Char) -> Bool {
 
 ///|
 /// Whether `c` can start an upper-case name (a Unicode upper-case or
-/// title-case letter).
+/// title-case letter). Upper-case names are modules, types and constructors.
+/// In the `elm-syntax-7.3.9` dialect the scanner does not start a name with
+/// a title-case letter (rule `titlecase-name-start`).
+///
+/// ```mbt check
+/// test {
+///   inspect(@scanner.is_upper_start('M'), content="true")
+///   inspect(@scanner.is_upper_start('Ä'), content="true")
+///   inspect(@scanner.is_upper_start('ǅ'), content="true")
+///   inspect(@scanner.is_upper_start('m'), content="false")
+/// }
+/// ```
 pub fn is_upper_start(c : Char) -> Bool {
   let cp = c.to_int()
   if cp < 0x80 {
@@ -41,6 +62,17 @@ pub fn is_upper_start(c : Char) -> Bool {
 
 ///|
 /// Whether `c` can continue a name: a Unicode letter or number, or `_`.
+///
+/// ```mbt check
+/// test {
+///   inspect(@scanner.is_name_part('x'), content="true")
+///   inspect(@scanner.is_name_part('_'), content="true")
+///   inspect(@scanner.is_name_part('7'), content="true")
+///   inspect(@scanner.is_name_part('ß'), content="true")
+///   inspect(@scanner.is_name_part('-'), content="false")
+///   inspect(@scanner.is_name_part('\''), content="false")
+/// }
+/// ```
 pub fn is_name_part(c : Char) -> Bool {
   let cp = c.to_int()
   if cp < 0x80 {

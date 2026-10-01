@@ -65,6 +65,12 @@ version.
 Fix: with the user's approval, delete that tag (`git push origin --delete vA`)
 and release through `release:prepare`.
 
+**test: `version() equals the version in moon.mod` fails**
+Cause: `moon.mod` was bumped outside `release:prepare`, so `version()` in
+`src/lib.mbt` still returns the old version.
+Fix: in the same pull request, set the string that `version()` returns to the
+`moon.mod` version.
+
 **validate fails (format, check or tests)**
 Cause: main is not releasable.
 Fix: fix it on main with a normal pull request (it is then part of the
