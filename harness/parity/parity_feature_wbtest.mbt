@@ -110,7 +110,7 @@ async test "parity feature" {
   @moonspec.run_or_fail(
     ParityWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/parity.feature"),
+      @moonspec.FeatureSource::File("../tests/features/parity.feature"),
     ]),
   )
   |> ignore

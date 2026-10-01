@@ -7,6 +7,6 @@ import {
 import {
   "moonrockz/expect",
   "moonrockz/krueger/parser",
-  "moonrockz/krueger/internal/lawkit",
+  "moonrockz/krueger/lawkit",
   "moonbitlang/core/quickcheck",
 } for "test"

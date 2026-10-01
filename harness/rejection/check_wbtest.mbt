@@ -8,13 +8,13 @@
 /// current mismatches (use it only when adding fixtures).
 
 ///|
-let fixtures_dir : String = "tests/rejection"
+let fixtures_dir : String = "../tests/rejection"
 
 ///|
-let verdicts_path : String = "tests/rejection/verdicts.json"
+let verdicts_path : String = "../tests/rejection/verdicts.json"
 
 ///|
-let pending_path : String = "tests/rejection/pending.json"
+let pending_path : String = "../tests/rejection/pending.json"
 
 ///|
 /// A fixture and dialect whose check does not match the oracle yet.

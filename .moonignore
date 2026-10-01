@@ -1,0 +1,14 @@
+# Kept out of the published package (moon publish); only src/ and the
+# READMEs ship. See AGENTS.md > Library Dependencies.
+harness/
+tests/
+docs/
+scripts/
+mise-tasks/
+tools/
+.github/
+.beads/
+moon.work
+CLAUDE.md
+AGENTS.md
+lefthook.yml

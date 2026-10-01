@@ -190,7 +190,7 @@ impl @krueger.Handler for PairCheck with fn on_leave(self, e) {
 ///|
 impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
   setup.given1("the Elm file {string}", fn(path : String) raise {
-    self.text = @fs.read_file_to_string(path)
+    self.text = @fs.read_file_to_string(repo_path(path))
   })
   setup.given1("Elm source:", fn(doc : @moonspec.DocString) {
     self.text = doc.content
@@ -351,7 +351,7 @@ async test "traversal feature" {
   @moonspec.run_or_fail(
     TraversalWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/traversal.feature"),
+      @moonspec.FeatureSource::File("../tests/features/traversal.feature"),
     ]),
   )
   |> ignore

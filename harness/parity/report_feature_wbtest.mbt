@@ -207,7 +207,7 @@ async test "parity report feature" {
   @moonspec.run_or_fail(
     ReportWorld::new,
     @moonspec.RunOptions::new([
-      @moonspec.FeatureSource::File("tests/features/parity_report.feature"),
+      @moonspec.FeatureSource::File("../tests/features/parity_report.feature"),
     ]),
   )
   |> ignore

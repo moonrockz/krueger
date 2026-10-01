@@ -4,7 +4,7 @@ Test artifacts **grow with each implementation story**; they are not all created
 
 - **BDD (Gherkin + MoonSpec)**:
   - Feature files live under `tests/features/`.
-  - MoonSpec world tests live in `src/bdd/` and run feature scenarios via
+  - MoonSpec world tests live in `harness/bdd/` and run feature scenarios via
     `@moonspec.FeatureSource::File(...)`.
   - `test:bdd` executes the MoonSpec BDD suite.
 - Seed BDD files for design phase:

@@ -1,7 +1,7 @@
 import {
   "moonrockz/krueger",
   "moonrockz/krueger/ast",
-  "moonrockz/krueger/internal/lawkit",
+  "moonrockz/krueger/lawkit",
   "moonrockz/moonspec",
   "moonrockz/expect",
   "moonbitlang/async",

@@ -95,7 +95,7 @@ test "title parity only compares fixtures that both reject" {
 ///|
 test "snapshots live next to the fixtures under messages/" {
   @expect.expect(snapshot_path("layout/in_col1.elm")).to_equal(
-    "tests/rejection/messages/layout/in_col1.txt",
+    "../tests/rejection/messages/layout/in_col1.txt",
   )
 }
 

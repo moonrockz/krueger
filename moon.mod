@@ -1,11 +1,8 @@
 name = "moonrockz/krueger"
 
-version = "0.1.0"
+version = "0.2.0"
 
 import {
-  "moonbitlang/x@0.5.5",
-  "moonrockz/moonspec@0.7.1",
-  "moonbitlang/async@0.22.4",
   "moonrockz/expect@0.6.0",
 }
 

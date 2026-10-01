@@ -4,4 +4,4 @@
 set -euo pipefail
 
 moon run -q --target wasm scripts/goldens.mbtx -- tests/corpus/manifest.json .corpus tools/elm-syntax-oracle .dev/out/goldens/raw
-KRUEGER_PARITY_MODE=write-lock moon test src/parity --target js
+KRUEGER_PARITY_MODE=write-lock moon test harness/parity --target js

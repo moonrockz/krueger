@@ -3,10 +3,10 @@
 /// report of krueger's and elm make's messages.
 
 ///|
-let messages_dir : String = "tests/rejection/messages"
+let messages_dir : String = "../tests/rejection/messages"
 
 ///|
-let reports_dir : String = "_build/reports/rejection"
+let reports_dir : String = "../_build/reports/rejection"
 
 ///|
 /// The path fixtures are compiled as, used in rendered headers.
