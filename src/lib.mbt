@@ -102,6 +102,16 @@ pub using @syntax {
   walk,
   fold,
   accept,
+  type Event,
+  type EnterEvent,
+  type LeaveEvent,
+  type NodePath,
+  type PathStep,
+  trait EventSource,
+  type EventReader,
+  trait Handler,
+  push_events,
+  type TreeCursor,
 }
 
 ///|

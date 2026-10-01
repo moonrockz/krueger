@@ -98,6 +98,96 @@ impl @krueger.Visitor for Collect with fn visit_attribute(self, n) {
 }
 
 ///|
+/// A node's category, kind and start: what an `Enter` event shows.
+fn start_label(
+  category : String,
+  kind : String,
+  start : @krueger.Location,
+) -> String {
+  "\{category}/\{kind} \{start.row}:\{start.column}"
+}
+
+///|
+/// Records the start label of every pushed `Enter`.
+struct StartLog {
+  starts : Array[String]
+}
+
+///|
+impl @krueger.Handler for StartLog with fn on_enter(self, e) {
+  self.starts.push(start_label(e.category, e.kind, e.start))
+  Continue
+}
+
+///|
+/// The nodes a full cursor navigation (first child, next sibling, parent)
+/// enters.
+fn cursor_preorder(root : @krueger.NodeRef) -> Array[String] {
+  let c = @krueger.TreeCursor::new(root)
+  let out = [traversal_label(c.node())]
+  while true {
+    if c.goto_first_child() {
+      out.push(traversal_label(c.node()))
+      continue
+    }
+    while !c.goto_next_sibling() {
+      if !c.goto_parent() {
+        return out
+      }
+    }
+    out.push(traversal_label(c.node()))
+  }
+  out
+}
+
+///|
+/// The number written with the decimal digits `s`, if it has only digits.
+fn digits(s : StringView) -> Int? {
+  let mut n = 0
+  for c in s {
+    if c < '0' || c > '9' {
+      return None
+    }
+    n = n * 10 + (c.to_int() - '0'.to_int())
+  }
+  if s.is_empty() {
+    None
+  } else {
+    Some(n)
+  }
+}
+
+///|
+/// A node path as the features show it: `(start)` for the start node.
+fn shown_path(path : @krueger.NodePath) -> String {
+  if path.depth() == 0 {
+    "(start)"
+  } else {
+    path.to_string()
+  }
+}
+
+///|
+/// Checks that each pushed Leave closes the latest open Enter.
+struct PairCheck {
+  open : Array[@krueger.NodePath]
+  mut problems : Int
+}
+
+///|
+impl @krueger.Handler for PairCheck with fn on_enter(self, e) {
+  self.open.push(e.path)
+  Continue
+}
+
+///|
+impl @krueger.Handler for PairCheck with fn on_leave(self, e) {
+  if self.open.pop() != Some(e.path) {
+    self.problems = self.problems + 1
+  }
+}
+
+///|
 impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
   setup.given1("the Elm file {string}", fn(path : String) raise {
     self.text = @fs.read_file_to_string(path)
@@ -128,7 +218,7 @@ impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
     self.entered = entered
   })
   setup.then0(
-    "walk, fold and accept visit the same nodes as the children pre-order",
+    "walk, fold, accept, the event reader, push_events and a cursor visit the same nodes as the children pre-order",
     fn() raise {
       @expect.expect_all(soft => {
         let root = self.root()
@@ -147,6 +237,24 @@ impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
         soft.expect(walked).to_equal(expected)
         soft.expect(folded).to_equal(expected)
         soft.expect(visitor.seen).to_equal(expected)
+        // Events show only a node's start.
+        let starts = []
+        @krueger.walk(root, n => {
+          starts.push(start_label(n.category(), n.kind(), n.range().start))
+          Continue
+        })
+        let read = []
+        let reader = @krueger.EventReader::new(root)
+        while reader.next() is Some(e) {
+          if e is Enter({ category, kind, start, .. }) {
+            read.push(start_label(category, kind, start))
+          }
+        }
+        let pushed : StartLog = { starts: [], }
+        @krueger.push_events(@krueger.EventReader::new(root), pushed)
+        soft.expect(read).to_equal(starts)
+        soft.expect(pushed.starts).to_equal(starts)
+        soft.expect(cursor_preorder(root)).to_equal(expected)
       })
     },
   )
@@ -169,9 +277,71 @@ impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
       )
       soft.expect(problems).to_equal(0)
       soft.expect(open.length()).to_equal(0)
+      // The event reader and push_events: each Leave closes the latest open
+      // Enter, with the same path and the node that path leads to.
+      let root = self.root()
+      let reader = @krueger.EventReader::new(root)
+      let paths : Array[@krueger.NodePath] = []
+      let mut reader_problems = 0
+      while reader.next() is Some(e) {
+        match e {
+          Enter(e) => paths.push(e.path)
+          Leave(e) =>
+            if !(paths.pop() == Some(e.path) &&
+              e.path.resolve(root).map(traversal_label) ==
+              Some(traversal_label(e.node))) {
+              reader_problems = reader_problems + 1
+            }
+        }
+      }
+      soft.expect(reader_problems).to_equal(0)
+      soft.expect(paths.length()).to_equal(0)
+      let pairs : PairCheck = { open: [], problems: 0, }
+      @krueger.push_events(@krueger.EventReader::new(root), pairs)
+      soft.expect(pairs.problems).to_equal(0)
+      soft.expect(pairs.open.length()).to_equal(0)
     })
   })
   setup.then1("the entered nodes are:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(self.entered.join("\n")).to_equal(doc.content)
+  })
+  setup.when0("I read its events", fn() raise {
+    let lines = []
+    let reader = @krueger.EventReader::new(self.root())
+    while reader.next() is Some(e) {
+      match e {
+        Enter(e) =>
+          lines.push(
+            "+ \{e.category}/\{e.kind} \{e.depth} \{shown_path(e.path)}",
+          )
+        Leave(e) =>
+          lines.push(
+            "- \{e.node.category()}/\{e.node.kind()} \{e.depth} \{shown_path(e.path)}",
+          )
+      }
+    }
+    self.entered = lines
+  })
+  setup.then1("the events are:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(self.entered.join("\n")).to_equal(doc.content)
+  })
+  setup.when1("I move a cursor toward {string}", fn(at : String) raise {
+    guard at.split(":").map(digits).collect() is [Some(row), Some(column)] else {
+      fail("expected row:column, got \{at}")
+    }
+    let c = @krueger.TreeCursor::new(self.root())
+    let lines = []
+    while c.goto_first_child_for({ row, column, }) {
+      let n = c.node()
+      lines.push(
+        "\{n.category()}/\{n.kind()} \{c.field_name().unwrap_or("-")} \{shown_path(c.path())}",
+      )
+    }
+    self.entered = lines
+  })
+  setup.then1("the cursor passes through:", fn(
+    doc : @moonspec.DocString,
+  ) raise {
     @expect.expect(self.entered.join("\n")).to_equal(doc.content)
   })
 }
