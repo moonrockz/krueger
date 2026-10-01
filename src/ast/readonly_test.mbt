@@ -2,14 +2,18 @@
 /// Implemented only by `ArrayView`. A generic `[V : ReadOnly]` parameter takes
 /// a value as it is, so an `Array` (which converts to a view in a typed
 /// binding) fails this check.
-trait ReadOnly {}
+trait ReadOnly {
+  fn size(Self) -> Int
+}
 
 ///|
-impl[T] ReadOnly for ArrayView[T]
+impl[T] ReadOnly for ArrayView[T] with fn size(self) {
+  self.length()
+}
 
 ///|
-fn[V : ReadOnly] read_only(_ : V) -> Unit {
-  ()
+fn[V : ReadOnly] read_only(list : V) -> Unit {
+  ignore(list.size())
 }
 
 ///|
@@ -18,9 +22,9 @@ fn[V : ReadOnly] read_only(_ : V) -> Unit {
 fn read_only_lists(
   file : @ast.File,
   exposing : @ast.Exposing,
-  alias : @ast.TypeAlias,
+  type_alias : @ast.TypeAlias,
   custom : @ast.Type,
-  constructor : @ast.ValueConstructor,
+  value_constructor : @ast.ValueConstructor,
   annotation : @ast.TypeAnnotation,
   pattern : @ast.Pattern,
   implementation : @ast.FunctionImplementation,
@@ -30,6 +34,11 @@ fn read_only_lists(
   name : @ast.ModuleName,
   record : @ast.RecordDefinition,
   cases : @ast.Cases,
+  case_block : @ast.CaseBlock,
+  import_ : @ast.Import,
+  default_data : @ast.DefaultModuleData,
+  effect_data : @ast.EffectModuleData,
+  qualified_ref : @ast.QualifiedNameRef,
 ) -> Unit {
   read_only(file.imports)
   read_only(file.declarations)
@@ -37,10 +46,10 @@ fn read_only_lists(
   if exposing is Explicit(items) {
     read_only(items)
   }
-  read_only(alias.generics)
+  read_only(type_alias.generics)
   read_only(custom.generics)
   read_only(custom.constructors)
-  read_only(constructor.arguments)
+  read_only(value_constructor.arguments)
   match annotation {
     Typed(qualified, args) => {
       read_only(qualified.value.0)
@@ -68,6 +77,23 @@ fn read_only_lists(
   read_only(name)
   read_only(record)
   read_only(cases)
+  // Fields typed with the aliases above.
+  read_only(case_block.cases)
+  read_only(import_.module_name.value)
+  if import_.module_alias is Some(a) {
+    read_only(a.value)
+  }
+  read_only(default_data.module_name.value)
+  read_only(effect_data.module_name.value)
+  read_only(qualified_ref.module_name)
+  match annotation {
+    Record(fields) => read_only(fields)
+    GenericRecord(_, fields) => read_only(fields.value)
+    _ => ()
+  }
+  if expression is FunctionOrValue(module_name, _) {
+    read_only(module_name)
+  }
 }
 
 ///|

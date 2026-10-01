@@ -2,14 +2,18 @@
 /// Implemented only by `ArrayView`. A generic `[V : ReadOnly]` parameter takes
 /// a value as it is, so an `Array` (which converts to a view in a typed
 /// binding) fails this check.
-trait ReadOnly {}
+trait ReadOnly {
+  fn size(Self) -> Int
+}
 
 ///|
-impl[T] ReadOnly for ArrayView[T]
+impl[T] ReadOnly for ArrayView[T] with fn size(self) {
+  self.length()
+}
 
 ///|
-fn[V : ReadOnly] read_only(_ : V) -> Unit {
-  ()
+fn[V : ReadOnly] read_only(list : V) -> Unit {
+  ignore(list.size())
 }
 
 ///|

@@ -53,9 +53,11 @@ moonrockz/krueger
   `ArrayView` (read-only; `src/ast/readonly_test.mbt` and its siblings check this
   at compile time). Build a list as an `Array` and store it (an `Array` converts
   to a view where a field expects one, `arr[:]` inside generic types such as
-  `Node[ModuleName]`). An AST built by hand shares the arrays you pass in, so do
-  not change them afterwards; parsed and decoded ASTs share no array with
-  anything.
+  `Node[ModuleName]`). A value built by hand (AST values, `DocAttribute`,
+  `AttributeGroup`, or a `NodeRef` such as `File` or `Declaration`) shares the
+  arrays you pass in, so do not change them afterwards (on js a view of a
+  shortened array reads `undefined`). Parsed and decoded ASTs share no array
+  with anything.
 - The parser (`src/parser`) is a recursive-descent port of elm-syntax 7.3.9's parser
   over tokens, one file per elm-syntax module (`module_level`, `declarations`,
   `type_annotation`, `patterns`, `expression`), with elm-syntax's layout rules
@@ -183,7 +185,8 @@ result. It is the base for the traversal APIs and queries.
   the tree compare by identity first (`same`), so `parent` and `ancestors` do not
   compare whole subtrees.
 - No shared mutable state: every returned array is new, and `Tree` keeps its own
-  copies of the tokens and attribute groups. Nodes point into the parse
+  copies of the tokens (with their trivia arrays) and attribute groups;
+  `tokens_in` returns new copies. Nodes point into the parse
   result's AST (nothing is copied), and every list in the AST, in doc
   attributes and in node payloads is a read-only `ArrayView`, so nothing
   reachable from a node can be changed.

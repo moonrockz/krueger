@@ -35,7 +35,7 @@ pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
     }
   }
   let tokens = match result.cst {
-    Some(cst) => cst.tokens.copy()
+    Some(cst) => cst.tokens.map(copy_token)
     None => []
   }
   Some({ root, parents, tokens, })
@@ -129,9 +129,22 @@ pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
 }
 
 ///|
-/// The tokens that lie inside `r`, in source order (a new array).
+/// A token whose trivia arrays are new: a `Token`'s trivia lists are mutable
+/// arrays, so the tree never shares them with the parse result or a caller.
+fn copy_token(t : @scanner.Token) -> @scanner.Token {
+  {
+    ..t,
+    trivia_before: t.trivia_before.copy(),
+    trivia_after: t.trivia_after.copy(),
+  }
+}
+
+///|
+/// The tokens that lie inside `r`, in source order: new tokens with new
+/// trivia arrays, so changing them changes nothing in the tree.
 pub fn Tree::tokens_in(self : Tree, r : @ast.Range) -> Array[@scanner.Token] {
-  self.tokens.filter(t => {
+  self.tokens
+  .filter(t => {
     let start : @ast.Location = {
       row: t.span.start.line,
       column: t.span.start.column,
@@ -142,4 +155,5 @@ pub fn Tree::tokens_in(self : Tree, r : @ast.Range) -> Array[@scanner.Token] {
     }
     at_or_before(r.start, start) && at_or_before(end, r.end)
   })
+  .map(copy_token)
 }
