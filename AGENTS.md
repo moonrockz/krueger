@@ -54,6 +54,15 @@ moonrockz/krueger
 
 - `@ast` types, field names and JSON shape follow elm-syntax 7.3.9 exactly.
   `@ast.encode_file` output must equal `Elm.Syntax.File.encode` output byte for byte.
+- elm-syntax writes an Int literal as a JSON number, so above 2^53 it writes
+  the nearest Double (`9007199254740993` becomes `9007199254740992`), and so
+  does `encode_file`. The AST keeps the exact `Int64`. For an exact round
+  trip, `encode_file_with(file, exact_ints=true)` (also
+  `encode_declaration_with`, `encode_pattern_with`, `encode_expression_with`,
+  `encode_function_with` and `encode_attributes_with`) writes the exact
+  digits; it differs from elm-syntax only for literals above 2^53. The
+  decoder reads a number's digits when the JSON text has them, so it reads
+  both forms.
 - Every list in `@ast` types and in `@parser.DocAttribute`/`AttributeGroup` is an
   `ArrayView` (read-only; `src/ast/readonly_test.mbt` and its siblings check this
   at compile time). Build a list as an `Array` and store it (an `Array` converts

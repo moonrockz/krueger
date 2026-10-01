@@ -92,6 +92,11 @@ pub fn ElmText::text(Self) -> String
 pub impl @quickcheck.Arbitrary for ElmText
 pub impl @shrink.Shrink for ElmText
 
+pub(all) struct IntLiteral(String) derive(@debug.Debug)
+pub fn IntLiteral::text(Self) -> String
+pub impl @quickcheck.Arbitrary for IntLiteral
+pub impl @shrink.Shrink for IntLiteral
+
 pub(all) struct Nesting {
   construct : Construct
   depth : Int

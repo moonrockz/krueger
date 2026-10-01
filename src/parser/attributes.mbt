@@ -525,13 +525,17 @@ fn doc_attributes(
 }
 
 ///|
-fn encode_attribute(a : DocAttribute) -> Json {
+fn encode_attribute(a : DocAttribute, exact_ints~ : Bool) -> Json {
   match a {
     Attribute(name~, arguments~, range~) =>
       {
         "name": @ast.encode_node(name, n => n.to_json()),
         "arguments": Json::array(
-          arguments.map(arg => @ast.encode_node(arg, @ast.encode_expression)),
+          arguments.map(arg => {
+            @ast.encode_node(arg, e => {
+              @ast.encode_expression_with(e, exact_ints~)
+            })
+          }),
         ),
         "range": @ast.encode_range(range),
       }
@@ -548,6 +552,16 @@ fn encode_attribute(a : DocAttribute) -> Json {
 ///|
 /// Attribute groups as JSON, for tools.
 pub fn encode_attributes(groups : Array[AttributeGroup]) -> Json {
+  encode_attributes_with(groups, exact_ints=false)
+}
+
+///|
+/// Attribute groups as JSON. With `exact_ints`, Int arguments are written
+/// with their exact digits (see `@ast.encode_file_with`).
+pub fn encode_attributes_with(
+  groups : Array[AttributeGroup],
+  exact_ints~ : Bool,
+) -> Json {
   Json::array(
     groups.map(g => {
       "target": match g.target {
@@ -555,7 +569,9 @@ pub fn encode_attributes(groups : Array[AttributeGroup]) -> Json {
         Declaration(name~, range~) =>
           { "declaration": name.to_json(), "range": @ast.encode_range(range) }
       },
-      "attributes": Json::array(g.attributes.map(encode_attribute)),
+      "attributes": Json::array(
+        g.attributes.map(a => encode_attribute(a, exact_ints~)),
+      ),
     }),
   )
 }

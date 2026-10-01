@@ -602,3 +602,26 @@ test "realistic long chains still parse" {
     ignore(@ast.encode_file(ast(result)).stringify())
   }
 }
+
+///|
+test "encode_attributes_with exact Ints writes an argument's digits" {
+  let text = "module M exposing (..)\n\n\nx =\n    1\n\n\n{-| d\n\n@size 9007199254740993\n\n-}\nf =\n    1\n"
+  let groups = @parser.parse_module(
+      { module_name: None, text, },
+      @scanner.DefaultScanner::new(),
+    ).attributes
+  @expect.expect_all(s => {
+    s
+    .expect(
+      @parser.encode_attributes_with(groups, exact_ints=true)
+      .stringify()
+      .contains("9007199254740993"),
+    )
+    .to_be_true()
+    s
+    .expect(
+      @parser.encode_attributes(groups).stringify().contains("9007199254740992"),
+    )
+    .to_be_true()
+  })
+}

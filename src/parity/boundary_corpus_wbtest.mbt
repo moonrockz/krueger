@@ -125,7 +125,8 @@ fn prefix_cuts(boundaries : Array[Int]) -> Array[Int] {
 
 ///|
 /// Law 12 on a corpus file: decoding its encoded AST (through JSON text)
-/// gives it back, and encoding that again gives the same JSON text.
+/// gives it back, encoding that again gives the same JSON text, and exact
+/// Ints give the same JSON text too.
 fn round_trip_problems(key : String, text : String) -> Array[String] {
   let result = @krueger.parse_module(
     @krueger.SourceText::{ module_name: None, text, },
@@ -133,11 +134,14 @@ fn round_trip_problems(key : String, text : String) -> Array[String] {
   )
   guard result.ast is Some(file) else { return ["\{key}: no AST"] }
   let json = @ast.encode_file(file).stringify()
-  let same = try @ast.decode_file(@json.parse(json)) catch {
-    _ => false
-  } noraise {
-    back => back == file && @ast.encode_file(back).stringify() == json
-  }
+  let exact = @ast.encode_file_with(file, exact_ints=true).stringify()
+  // The corpus has no Int literal above 2^53, so exact Ints change no byte.
+  let same = exact == json &&
+    (try @ast.decode_file(@json.parse(json)) catch {
+      _ => false
+    } noraise {
+      back => back == file && @ast.encode_file(back).stringify() == json
+    })
   if same {
     []
   } else {

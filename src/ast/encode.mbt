@@ -19,8 +19,12 @@ fn encode_int(i : Int) -> Json {
 }
 
 ///|
-fn encode_int64(i : Int64) -> Json {
-  Json::number(i.to_double())
+fn encode_int64(i : Int64, exact_ints~ : Bool) -> Json {
+  if exact_ints {
+    Json::number(i.to_double(), repr=i.to_string())
+  } else {
+    Json::number(i.to_double())
+  }
 }
 
 ///|
@@ -73,13 +77,17 @@ pub fn encode_module_name(m : ModuleName) -> Json {
 
 ///|
 /// Elm.Syntax.File.encode.
-pub fn encode_file(file : File) -> Json {
+/// With `exact_ints`, Int literals are written with their exact digits
+/// (elm-syntax writes the nearest Double, which differs above 2^53).
+pub fn encode_file_with(file : File, exact_ints~ : Bool) -> Json {
   obj([
     ("moduleDefinition", encode_node(file.module_definition, encode_module)),
     ("imports", encode_list(file.imports, n => encode_node(n, encode_import))),
     (
       "declarations",
-      encode_list(file.declarations, n => encode_node(n, encode_declaration)),
+      encode_list(file.declarations, n => {
+        encode_node(n, v => encode_declaration_with(v, exact_ints~))
+      }),
     ),
     ("comments", encode_list(file.comments, n => encode_node(n, encode_string))),
   ])
@@ -168,9 +176,12 @@ pub fn encode_import(i : Import) -> Json {
 
 ///|
 /// Elm.Syntax.Declaration.encode.
-pub fn encode_declaration(d : Declaration) -> Json {
+/// With `exact_ints`, Int literals are written with their exact digits
+/// (elm-syntax writes the nearest Double, which differs above 2^53).
+pub fn encode_declaration_with(d : Declaration, exact_ints~ : Bool) -> Json {
   match d {
-    FunctionDeclaration(f) => encode_typed("function", encode_function(f))
+    FunctionDeclaration(f) =>
+      encode_typed("function", encode_function_with(f, exact_ints~))
     AliasDeclaration(a) => encode_typed("typeAlias", encode_type_alias(a))
     CustomTypeDeclaration(t) => encode_typed("typedecl", encode_type(t))
     PortDeclaration(s) => encode_typed("port", encode_signature(s))
@@ -179,8 +190,11 @@ pub fn encode_declaration(d : Declaration) -> Json {
       encode_typed(
         "destructuring",
         obj([
-          ("pattern", encode_node(p, encode_pattern)),
-          ("expression", encode_node(e, encode_expression)),
+          ("pattern", encode_node(p, v => encode_pattern_with(v, exact_ints~))),
+          (
+            "expression",
+            encode_node(e, v => encode_expression_with(v, exact_ints~)),
+          ),
         ]),
       )
   }
@@ -331,20 +345,31 @@ fn encode_record_field(f : RecordField) -> Json {
 
 ///|
 /// Elm.Syntax.Pattern.encode.
-pub fn encode_pattern(p : Pattern) -> Json {
+/// With `exact_ints`, Int literals are written with their exact digits
+/// (elm-syntax writes the nearest Double, which differs above 2^53).
+pub fn encode_pattern_with(p : Pattern, exact_ints~ : Bool) -> Json {
   match p {
     AllPattern => encode_typed("all", obj([]))
     UnitPattern => encode_typed("unit", obj([]))
     CharPattern(c) => encode_typed("char", obj([("value", encode_char(c))]))
     StringPattern(s) =>
       encode_typed("string", obj([("value", encode_string(s))]))
-    HexPattern(h) => encode_typed("hex", obj([("value", encode_int64(h))]))
-    IntPattern(i) => encode_typed("int", obj([("value", encode_int64(i))]))
+    HexPattern(h) =>
+      encode_typed("hex", obj([("value", encode_int64(h, exact_ints~))]))
+    IntPattern(i) =>
+      encode_typed("int", obj([("value", encode_int64(i, exact_ints~))]))
     FloatPattern(f) => encode_typed("float", obj([("value", Json::number(f))]))
     TuplePattern(ps) =>
       encode_typed(
         "tuple",
-        obj([("value", encode_list(ps, n => encode_node(n, encode_pattern)))]),
+        obj([
+          (
+            "value",
+            encode_list(ps, n => {
+              encode_node(n, v => encode_pattern_with(v, exact_ints~))
+            }),
+          ),
+        ]),
       )
     RecordPattern(names) =>
       encode_typed(
@@ -355,14 +380,24 @@ pub fn encode_pattern(p : Pattern) -> Json {
       encode_typed(
         "uncons",
         obj([
-          ("left", encode_node(left, encode_pattern)),
-          ("right", encode_node(right, encode_pattern)),
+          ("left", encode_node(left, v => encode_pattern_with(v, exact_ints~))),
+          (
+            "right",
+            encode_node(right, v => encode_pattern_with(v, exact_ints~)),
+          ),
         ]),
       )
     ListPattern(ps) =>
       encode_typed(
         "list",
-        obj([("value", encode_list(ps, n => encode_node(n, encode_pattern)))]),
+        obj([
+          (
+            "value",
+            encode_list(ps, n => {
+              encode_node(n, v => encode_pattern_with(v, exact_ints~))
+            }),
+          ),
+        ]),
       )
     VarPattern(name) =>
       encode_typed("var", obj([("value", encode_string(name))]))
@@ -377,7 +412,12 @@ pub fn encode_pattern(p : Pattern) -> Json {
               ("name", encode_string(qualified.name)),
             ]),
           ),
-          ("patterns", encode_list(ps, n => encode_node(n, encode_pattern))),
+          (
+            "patterns",
+            encode_list(ps, n => {
+              encode_node(n, v => encode_pattern_with(v, exact_ints~))
+            }),
+          ),
         ]),
       )
     AsPattern(destructured, name) =>
@@ -385,37 +425,51 @@ pub fn encode_pattern(p : Pattern) -> Json {
         "as",
         obj([
           ("name", encode_node(name, encode_string)),
-          ("pattern", encode_node(destructured, encode_pattern)),
+          (
+            "pattern",
+            encode_node(destructured, v => encode_pattern_with(v, exact_ints~)),
+          ),
         ]),
       )
     // Tag spelling "parentisized" is elm-syntax's own (sic).
     ParenthesizedPattern(inner) =>
       encode_typed(
         "parentisized",
-        obj([("value", encode_node(inner, encode_pattern))]),
+        obj([
+          (
+            "value",
+            encode_node(inner, v => encode_pattern_with(v, exact_ints~)),
+          ),
+        ]),
       )
   }
 }
 
 ///|
-fn encode_nested(n : Node[Expression]) -> Json {
-  encode_node(n, encode_expression)
+fn encode_nested(n : Node[Expression], exact_ints~ : Bool) -> Json {
+  encode_node(n, v => encode_expression_with(v, exact_ints~))
 }
 
 ///|
 /// Elm.Syntax.Expression.encode.
-pub fn encode_expression(e : Expression) -> Json {
+/// With `exact_ints`, Int literals are written with their exact digits
+/// (elm-syntax writes the nearest Double, which differs above 2^53).
+pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
   match e {
     UnitExpr => encode_typed("unit", Json::null())
-    Application(l) => encode_typed("application", encode_list(l, encode_nested))
+    Application(l) =>
+      encode_typed(
+        "application",
+        encode_list(l, v => encode_nested(v, exact_ints~)),
+      )
     OperatorApplication(op, dir, left, right) =>
       encode_typed(
         "operatorapplication",
         obj([
           ("operator", encode_string(op)),
           ("direction", encode_infix_direction(dir)),
-          ("left", encode_nested(left)),
-          ("right", encode_nested(right)),
+          ("left", encode_nested(left, exact_ints~)),
+          ("right", encode_nested(right, exact_ints~)),
         ]),
       )
     FunctionOrValue(module_name, name) =>
@@ -430,15 +484,15 @@ pub fn encode_expression(e : Expression) -> Json {
       encode_typed(
         "ifBlock",
         obj([
-          ("clause", encode_nested(c)),
-          ("then", encode_nested(t)),
-          ("else", encode_nested(e)),
+          ("clause", encode_nested(c, exact_ints~)),
+          ("then", encode_nested(t, exact_ints~)),
+          ("else", encode_nested(e, exact_ints~)),
         ]),
       )
     PrefixOperator(x) => encode_typed("prefixoperator", encode_string(x))
     Operator(x) => encode_typed("operator", encode_string(x))
-    Hex(h) => encode_typed("hex", encode_int64(h))
-    Integer(x) => encode_typed("integer", encode_int64(x))
+    Hex(h) => encode_typed("hex", encode_int64(h, exact_ints~))
+    Integer(x) => encode_typed("integer", encode_int64(x, exact_ints~))
     // JSON has no infinity or NaN; elm-syntax writes null.
     Floatable(x) =>
       encode_typed(
@@ -449,22 +503,26 @@ pub fn encode_expression(e : Expression) -> Json {
           Json::number(x)
         },
       )
-    Negation(x) => encode_typed("negation", encode_nested(x))
+    Negation(x) => encode_typed("negation", encode_nested(x, exact_ints~))
     Literal(x) => encode_typed("literal", encode_string(x))
     CharLiteral(c) => encode_typed("charLiteral", encode_char(c))
     TupledExpression(xs) =>
-      encode_typed("tupled", encode_list(xs, encode_nested))
-    ListExpr(xs) => encode_typed("list", encode_list(xs, encode_nested))
+      encode_typed(
+        "tupled",
+        encode_list(xs, v => encode_nested(v, exact_ints~)),
+      )
+    ListExpr(xs) =>
+      encode_typed("list", encode_list(xs, v => encode_nested(v, exact_ints~)))
     ParenthesizedExpression(x) =>
-      encode_typed("parenthesized", encode_nested(x))
-    LetExpression(x) => encode_typed("let", encode_let_block(x))
-    CaseExpression(x) => encode_typed("case", encode_case_block(x))
-    LambdaExpression(x) => encode_typed("lambda", encode_lambda(x))
+      encode_typed("parenthesized", encode_nested(x, exact_ints~))
+    LetExpression(x) => encode_typed("let", encode_let_block(x, exact_ints~))
+    CaseExpression(x) => encode_typed("case", encode_case_block(x, exact_ints~))
+    LambdaExpression(x) => encode_typed("lambda", encode_lambda(x, exact_ints~))
     RecordAccess(exp, name) =>
       encode_typed(
         "recordAccess",
         obj([
-          ("expression", encode_nested(exp)),
+          ("expression", encode_nested(exp, exact_ints~)),
           ("name", encode_node(name, encode_string)),
         ]),
       )
@@ -473,7 +531,9 @@ pub fn encode_expression(e : Expression) -> Json {
     RecordExpr(xs) =>
       encode_typed(
         "record",
-        encode_list(xs, n => encode_node(n, encode_record_setter)),
+        encode_list(xs, n => {
+          encode_node(n, v => encode_record_setter(v, exact_ints~))
+        }),
       )
     RecordUpdateExpression(name, updates) =>
       encode_typed(
@@ -482,7 +542,9 @@ pub fn encode_expression(e : Expression) -> Json {
           ("name", encode_node(name, encode_string)),
           (
             "updates",
-            encode_list(updates, n => encode_node(n, encode_record_setter)),
+            encode_list(updates, n => {
+              encode_node(n, v => encode_record_setter(v, exact_ints~))
+            }),
           ),
         ]),
       )
@@ -491,34 +553,37 @@ pub fn encode_expression(e : Expression) -> Json {
 }
 
 ///|
-fn encode_let_block(b : LetBlock) -> Json {
+fn encode_let_block(b : LetBlock, exact_ints~ : Bool) -> Json {
   obj([
     (
       "declarations",
-      encode_list(b.declarations, n => encode_node(n, encode_let_declaration)),
+      encode_list(b.declarations, n => {
+        encode_node(n, v => encode_let_declaration(v, exact_ints~))
+      }),
     ),
-    ("expression", encode_nested(b.expression)),
+    ("expression", encode_nested(b.expression, exact_ints~)),
   ])
 }
 
 ///|
-fn encode_record_setter(s : RecordSetter) -> Json {
+fn encode_record_setter(s : RecordSetter, exact_ints~ : Bool) -> Json {
   obj([
     ("field", encode_node(s.field, encode_string)),
-    ("expression", encode_nested(s.expression)),
+    ("expression", encode_nested(s.expression, exact_ints~)),
   ])
 }
 
 ///|
-fn encode_let_declaration(d : LetDeclaration) -> Json {
+fn encode_let_declaration(d : LetDeclaration, exact_ints~ : Bool) -> Json {
   match d {
-    LetFunction(f) => encode_typed("function", encode_function(f))
+    LetFunction(f) =>
+      encode_typed("function", encode_function_with(f, exact_ints~))
     LetDestructuring(p, e) =>
       encode_typed(
         "destructuring",
         obj([
-          ("pattern", encode_node(p, encode_pattern)),
-          ("expression", encode_nested(e)),
+          ("pattern", encode_node(p, v => encode_pattern_with(v, exact_ints~))),
+          ("expression", encode_nested(e, exact_ints~)),
         ]),
       )
   }
@@ -526,7 +591,9 @@ fn encode_let_declaration(d : LetDeclaration) -> Json {
 
 ///|
 /// Elm.Syntax.Expression.encodeFunction.
-pub fn encode_function(f : Function) -> Json {
+/// With `exact_ints`, Int literals are written with their exact digits
+/// (elm-syntax writes the nearest Double, which differs above 2^53).
+pub fn encode_function_with(f : Function, exact_ints~ : Bool) -> Json {
   obj([
     (
       "documentation",
@@ -536,41 +603,92 @@ pub fn encode_function(f : Function) -> Json {
       "signature",
       encode_maybe(f.signature, n => encode_node(n, encode_signature)),
     ),
-    ("declaration", encode_node(f.declaration, encode_function_implementation)),
+    (
+      "declaration",
+      encode_node(f.declaration, v => {
+        encode_function_implementation(v, exact_ints~)
+      }),
+    ),
   ])
 }
 
 ///|
-fn encode_function_implementation(f : FunctionImplementation) -> Json {
+fn encode_function_implementation(
+  f : FunctionImplementation,
+  exact_ints~ : Bool,
+) -> Json {
   obj([
     ("name", encode_node(f.name, encode_string)),
-    ("arguments", encode_list(f.arguments, n => encode_node(n, encode_pattern))),
-    ("expression", encode_nested(f.expression)),
+    (
+      "arguments",
+      encode_list(f.arguments, n => {
+        encode_node(n, v => encode_pattern_with(v, exact_ints~))
+      }),
+    ),
+    ("expression", encode_nested(f.expression, exact_ints~)),
   ])
 }
 
 ///|
 /// elm-syntax writes "cases" before "expression" here.
-fn encode_case_block(b : CaseBlock) -> Json {
+fn encode_case_block(b : CaseBlock, exact_ints~ : Bool) -> Json {
   obj([
     (
       "cases",
       encode_list(b.cases, c => {
         obj([
-          ("pattern", encode_node(c.pattern, encode_pattern)),
-          ("expression", encode_nested(c.expression)),
+          (
+            "pattern",
+            encode_node(c.pattern, v => encode_pattern_with(v, exact_ints~)),
+          ),
+          ("expression", encode_nested(c.expression, exact_ints~)),
         ])
       }),
     ),
-    ("expression", encode_nested(b.expression)),
+    ("expression", encode_nested(b.expression, exact_ints~)),
   ])
 }
 
 ///|
 /// The Lambda field `args` is written under the key "patterns".
-fn encode_lambda(l : Lambda) -> Json {
+fn encode_lambda(l : Lambda, exact_ints~ : Bool) -> Json {
   obj([
-    ("patterns", encode_list(l.args, n => encode_node(n, encode_pattern))),
-    ("expression", encode_nested(l.expression)),
+    (
+      "patterns",
+      encode_list(l.args, n => {
+        encode_node(n, v => encode_pattern_with(v, exact_ints~))
+      }),
+    ),
+    ("expression", encode_nested(l.expression, exact_ints~)),
   ])
+}
+
+///|
+/// Elm.Syntax.File.encode.
+pub fn encode_file(file : File) -> Json {
+  encode_file_with(file, exact_ints=false)
+}
+
+///|
+/// Elm.Syntax.Declaration.encode.
+pub fn encode_declaration(d : Declaration) -> Json {
+  encode_declaration_with(d, exact_ints=false)
+}
+
+///|
+/// Elm.Syntax.Pattern.encode.
+pub fn encode_pattern(p : Pattern) -> Json {
+  encode_pattern_with(p, exact_ints=false)
+}
+
+///|
+/// Elm.Syntax.Expression.encode.
+pub fn encode_expression(e : Expression) -> Json {
+  encode_expression_with(e, exact_ints=false)
+}
+
+///|
+/// Elm.Syntax.Expression.encodeFunction.
+pub fn encode_function(f : Function) -> Json {
+  encode_function_with(f, exact_ints=false)
 }

@@ -116,8 +116,21 @@ fn int_at(j : Json, path : Path) -> Int raise DecodeError {
 ///|
 /// Elm `JD.int` for literal values. Elm ints on JS are doubles, so literals
 /// such as `0xFFFFFFFF` or `31536000000` do not fit a 32-bit Int.
+/// `digits` as an Int64, when they are an Int literal in its range.
+fn exact_int64(digits : String) -> Int64? {
+  try @string.parse_int64(digits) catch {
+    _ => None
+  } noraise {
+    i => Some(i)
+  }
+}
+
+///|
 fn int64_at(j : Json, path : Path) -> Int64 raise DecodeError {
   match j {
+    // Parsed JSON keeps a number's digits: read them exactly (a value above
+    // 2^53 written with exact Ints), else fall back to the Double.
+    Number(_, repr=Some(digits)) if exact_int64(digits) is Some(i) => i
     Number(d, ..) => {
       let i = d.to_int64()
       if i.to_double() == d {
