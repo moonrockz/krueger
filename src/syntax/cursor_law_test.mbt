@@ -315,31 +315,67 @@ test "law: at every node, goto_first_child_for(p) moves to the innermost child t
 }
 
 ///|
-test "law: descending with goto_first_child_for ends at node_at" {
+/// Whether the descent stopped at the documented port exception: a file
+/// comment (a port's doc comment) that contains `found`, while `found` lies in
+/// a declaration that the comment overlaps only in part.
+fn port_exception(
+  tree : @syntax.Tree,
+  stopped : @syntax.NodeRef,
+  found : @syntax.NodeRef,
+) -> Bool {
+  let c = stopped.range()
+  stopped.category() == "comment" &&
+  range_within(found.range(), c) &&
+  tree
+  .ancestors(found)
+  .iter()
+  .any(a => {
+    let d = a.range()
+    a.category() == "declaration" &&
+    !range_within(d, c) &&
+    !range_within(c, d) &&
+    before_or_at(d.start, c.end) &&
+    before_or_at(c.start, d.end)
+  })
+}
+
+///|
+test "law: descending with goto_first_child_for ends at node_at, except at a port's doc comment" {
+  // Edges: every node's start and end, one column before each, every line's
+  // start and end and one past it, the end of the file and (1,1); every
+  // position inside the file is checked. The port exception is documented on
+  // goto_first_child_for.
   @quickcheck.check(
-    (input : (ElmModule, UInt)) => {
-      let (m, raw) = input
+    (m : ElmModule) => {
       ignore(elm_root(m))
-      let ElmModule(text) = m
+      let text = m.text()
       guard @syntax.Tree::new(parse_result(text)) is Some(tree) else {
         return false
       }
       let root = tree.root()
-      let ps = node_positions(root).filter(p => range_contains(root.range(), p))
-      let p = ps[(raw % ps.length().reinterpret_as_uint()).reinterpret_as_int()]
-      let c = @syntax.TreeCursor::new(root)
-      while c.goto_first_child_for(p) {
-        if !range_contains(c.node().range(), p) {
-          ignore(c.goto_parent())
-          break
+      let ranges = []
+      @syntax.walk(root, n => {
+        ranges.push(n.range())
+        Continue
+      })
+      @lawkit.edge_positions(text, ranges)
+      .iter()
+      .filter(p => range_contains(root.range(), p))
+      .all(p => {
+        let c = @syntax.TreeCursor::new(root)
+        while c.goto_first_child_for(p) {
+          if !range_contains(c.node().range(), p) {
+            ignore(c.goto_parent())
+            break
+          }
         }
-      }
-      guard tree.node_at(p) is Some(found) else { return false }
-      range_contains(c.node().range(), p) &&
-      !c.node().children().iter().any(k => range_contains(k.range(), p)) &&
-      tag(c.node()) == tag(found)
+        guard tree.node_at(p) is Some(found) else { return false }
+        range_contains(c.node().range(), p) &&
+        !c.node().children().iter().any(k => range_contains(k.range(), p)) &&
+        (tag(c.node()) == tag(found) || port_exception(tree, c.node(), found))
+      })
     },
-    count=200,
+    count=100,
     max_size=24,
     seed=139,
   )
