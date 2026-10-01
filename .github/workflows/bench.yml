@@ -1,0 +1,115 @@
+name: Benchmarks
+
+# Manual only: Actions > Benchmarks > Run workflow. Not a CI gate.
+# See AGENTS.md > Benchmarks.
+on:
+  workflow_dispatch:
+    inputs:
+      targets:
+        description: "Targets to measure, comma-separated (native, js, wasm-gc, wasm). Empty: all."
+        required: false
+        default: ""
+      compare_to:
+        description: "Baseline: empty for the latest main run, a commit SHA, run:<id>, or a run file path"
+        required: false
+        default: ""
+      record:
+        description: "Add this run to the history (runs on main only)"
+        type: boolean
+        default: true
+      force_record:
+        description: "Add this run to the history also when it is not on main"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: benchmarks
+  cancel-in-progress: false
+
+env:
+  # Pinned MoonBit toolchain (moon/moonc/core). Keep in step with ci.yml.
+  MOONBIT_VERSION: "0.10.14+7d59c7ec9"
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hustcer/setup-moonbit@v1
+        with:
+          version: ${{ env.MOONBIT_VERSION }}
+          core-version: ${{ env.MOONBIT_VERSION }}
+
+      - uses: jdx/mise-action@v2
+        with:
+          install: true
+          cache: true
+
+      - name: Install dependencies
+        run: moon update
+
+      - name: Cache Elm parity corpus
+        uses: actions/cache@v4
+        with:
+          path: .corpus
+          key: elm-parity-corpus-${{ hashFiles('tests/corpus/manifest.json') }}
+
+      - name: Fetch and verify the corpus
+        run: mise run corpus:fetch
+
+      - name: Measure
+        env:
+          TARGETS: ${{ inputs.targets }}
+        run: |
+          if [ -n "$TARGETS" ]; then
+            mise run bench -- --target "$TARGETS"
+          else
+            mise run bench
+          fi
+
+      - name: Compare
+        env:
+          COMPARE_TO: ${{ inputs.compare_to }}
+        run: |
+          if [ -n "$COMPARE_TO" ]; then
+            mise run bench:compare -- --against "$COMPARE_TO"
+          else
+            mise run bench:compare
+          fi
+
+      - name: Add the summary to the job summary
+        if: always()
+        run: |
+          if [ -f _build/reports/bench/summary.md ]; then
+            cat _build/reports/bench/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload the benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-report
+          path: _build/reports/bench/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Add the run to the history
+        if: (inputs.record && github.ref == 'refs/heads/main') || inputs.force_record
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin benchmarks >/dev/null; then
+            git fetch -q origin +refs/heads/benchmarks:refs/remotes/origin/benchmarks
+            git worktree add -B benchmarks bench-data origin/benchmarks
+          else
+            git worktree add --orphan -b benchmarks bench-data
+          fi
+          moon run -q --target wasm scripts/bench.mbtx -- record --dir bench-data
+          git -C bench-data add -A
+          git -C bench-data commit -q -m "bench: ${GITHUB_SHA} (run ${GITHUB_RUN_ID})"
+          git -C bench-data push origin benchmarks
