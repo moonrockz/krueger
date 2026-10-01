@@ -164,3 +164,20 @@ Feature: Benchmarks
     And the baseline for "1111111" is "runs/a.json"
     And the baseline for "run:3" is "runs/c.json"
     And the baseline for "9999999" is "none"
+
+  Scenario: The HTML report has the tables and a trend per case
+    Given the history:
+      """
+      runs/a.json refs/heads/main 1111111aaaa 1 2026-09-01T00:00:00Z
+      runs/b.json refs/heads/main 2222222bbbb 2 2026-09-15T00:00:00Z
+      """
+    And every history run has "native" "syntax/walk/large" with median 100, q1 95 and q3 105
+    And a results file from "refs/heads/main" at commit "4444444dddd" on "2026-10-01T10:00:00Z" with run id "4"
+    And the current run has "native" "syntax/walk/large" with median 90, q1 85 and q3 95
+    And the current run has "native" "syntax/<new>/large" with median 1, q1 1 and q3 1
+    When I compare the runs with the history
+    Then the HTML report contains "<h2>native</h2>"
+    And the HTML report contains "syntax/walk/large"
+    And the HTML report contains "syntax/&lt;new&gt;/large"
+    And the HTML report contains 1 trend chart
+    And the HTML report loads nothing from the network

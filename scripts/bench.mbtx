@@ -592,6 +592,122 @@ fn render_summary(c : Comparison, threshold : Double) -> String {
 }
 
 ///|
+/// The `main` runs of the history by date, oldest first, the last `limit`
+/// of them, then the current run.
+fn trend_history(
+  history : Array[(String, ResultsFile)],
+  current : ResultsFile,
+  limit : Int,
+) -> Array[ResultsFile] {
+  let main = history
+    .filter(h => {
+      h.1.run.git_ref == "refs/heads/main" &&
+      !(h.1.run.id == current.run.id && h.1.run.sha == current.run.sha)
+    })
+    .map(h => h.1)
+  main.sort_by((a, b) => a.run.date.compare(b.run.date))
+  let start = if main.length() > limit { main.length() - limit } else { 0 }
+  [..main[start:], current]
+}
+
+///|
+/// `run_line` for the HTML page, with the run as a link.
+fn html_run_line(r : ResultsFile) -> String {
+  let run = if r.run.url == "" {
+    "local"
+  } else {
+    "<a href=\"\{escape_html(r.run.url)}\">run \{escape_html(r.run.id)}</a>"
+  }
+  "<code>\{escape_html(short_ref(r.run.git_ref))}</code> @ <code>\{escape_html(short_sha(r.run.sha))}</code> (\{escape_html(r.run.date)}, \{run}) on \{escape_html(r.env.runner_os)}, \{escape_html(r.env.cpu)}"
+}
+
+///|
+fn escape_html(s : String) -> String {
+  s
+  .replace_all(old="&", new="&amp;")
+  .replace_all(old="<", new="&lt;")
+  .replace_all(old=">", new="&gt;")
+  .replace_all(old="\"", new="&quot;")
+}
+
+///|
+/// A line of the medians (oldest left); the last point (this run) is marked.
+fn trend_svg(points : Array[Double]) -> String {
+  let w = 240.0
+  let h = 48.0
+  let lo = points.fold(init=points[0], (a, b) => if b < a { b } else { a })
+  let hi = points.fold(init=points[0], (a, b) => if b > a { b } else { a })
+  let span = if hi - lo == 0.0 { 1.0 } else { hi - lo }
+  let step = w / (points.length() - 1).to_double()
+  let xy = points.mapi((i, p) => {
+    (i.to_double() * step, h - 4.0 - (p - lo) / span * (h - 8.0))
+  })
+  let coords = xy.map(p => "\{fixed(p.0, 1)},\{fixed(p.1, 1)}").join(" ")
+  let last = xy[xy.length() - 1]
+  "<svg class=\"trend\" viewBox=\"0 0 240 48\" width=\"240\" height=\"48\" role=\"img\" aria-label=\"median of the last \{points.length()} runs\"><polyline fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.5\" points=\"\{coords}\"/><circle cx=\"\{fixed(last.0, 1)}\" cy=\"\{fixed(last.1, 1)}\" r=\"3\" class=\"now\"/></svg>"
+}
+
+///|
+let report_style : String =
+  #|body{font:14px/1.4 system-ui,sans-serif;margin:16px;color:#1b1b1b;background:#fff}
+  #|table{border-collapse:collapse;margin-bottom:24px}
+  #|th,td{padding:4px 8px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap}
+  #|td:first-child,th:first-child{text-align:left}
+  #|tr.slower td{background:#fde8e8}tr.faster td{background:#e6f6ea}
+  #|.trend{color:#555}.trend .now{fill:#d33}.warn{color:#a15c00}
+  #|@media (prefers-color-scheme: dark){body{color:#eee;background:#161616}th,td{border-color:#333}tr.slower td{background:#4a1f1f}tr.faster td{background:#1d3b25}.trend{color:#bbb}}
+
+///|
+/// A self-contained page: the comparison tables and, per case, a trend of
+/// the median over `trend` (no scripts, nothing from the network).
+fn render_html(
+  c : Comparison,
+  trend : Array[ResultsFile],
+  threshold : Double,
+) -> String {
+  let body = ["<h1>Benchmarks</h1>"]
+  body.push("<p>Current: \{html_run_line(c.current)}</p>")
+  match c.baseline {
+    Some((_, b)) => body.push("<p>Baseline: \{html_run_line(b)}</p>")
+    None => body.push("<p>Baseline: none (no earlier run in the history)</p>")
+  }
+  for w in c.warnings {
+    body.push("<p class=\"warn\">Warning: \{escape_html(w)}</p>")
+  }
+  if !c.not_run.is_empty() {
+    body.push("<p>Not run: \{escape_html(c.not_run.join(", "))}</p>")
+  }
+  for t in c.current.targets {
+    body.push("<h2>\{escape_html(t)}</h2>")
+    body.push(
+      "<table><thead><tr><th>Case</th><th>Baseline</th><th>Current</th><th>Change</th><th>Mark</th><th>Trend (main)</th></tr></thead><tbody>",
+    )
+    for row in c.rows.filter(r => r.target == t) {
+      let b = row.baseline.map(x => format_us(x.median)).unwrap_or("")
+      let cur = row.current.map(x => format_us(x.median)).unwrap_or("")
+      let change = match (row.baseline, row.current) {
+        (Some(x), Some(y)) => format_change(x, y)
+        _ => ""
+      }
+      let points = trend.filter_map(r => {
+        r.results
+        .iter()
+        .find_first(x => x.target == t && x.id() == row.id)
+        .map(x => x.median)
+      })
+      let chart = if points.length() >= 2 { trend_svg(points) } else { "" }
+      let mark = mark_name(row.mark)
+      body.push(
+        "<tr class=\"\{if mark == "~" { "same" } else { mark }}\"><td>\{escape_html(row.id)}</td><td>\{b}</td><td>\{cur}</td><td>\{change}</td><td>\{mark}</td><td>\{chart}</td></tr>",
+      )
+    }
+    body.push("</tbody></table>")
+  }
+  body.push("<p>\{escape_html(marks_note(threshold))}</p>")
+  "<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>krueger benchmarks</title><style>\{report_style}</style></head><body>\n\{body.join("\n")}\n</body></html>\n"
+}
+
+///|
 async fn main {
   eprintln(usage)
   @sys.exit(2)
@@ -606,6 +722,7 @@ struct BenchWorld {
   mut baseline : ResultsFile?
   history : Array[(String, ResultsFile)]
   mut comparison : Comparison?
+  mut html : String
 }
 
 ///|
@@ -633,6 +750,7 @@ fn BenchWorld::new() -> BenchWorld {
     baseline: None,
     history: [],
     comparison: None,
+    html: "",
   }
 }
 
@@ -821,6 +939,44 @@ impl @moonspec.World for BenchWorld with fn configure(self, setup) {
         ),
       )
     }
+  })
+  setup.given5(
+    "every history run has {string} {string} with median {float}, q1 {float} and q3 {float}",
+    fn(
+      target : String,
+      id : String,
+      median : Double,
+      q1 : Double,
+      q3 : Double,
+    ) raise {
+      let r = case_result(target, id, median, q1, q3)
+      for i, h in self.history {
+        self.history[i] = (h.0, add_result(h.1, r))
+      }
+    },
+  )
+  setup.when0("I compare the runs with the history", fn() {
+    let baseline = select_baseline(self.history, self.current, LatestMain)
+    let c = compare_runs(self.current, baseline, default_threshold)
+    self.html = render_html(
+      c,
+      trend_history(self.history, self.current, 20),
+      default_threshold,
+    )
+  })
+  setup.then1("the HTML report contains {string}", fn(text : String) raise {
+    @expect.expect(self.html).to_contain(text)
+  })
+  setup.then1("the HTML report contains {int} trend chart", fn(n : Int) raise {
+    @expect.expect(self.html.split("<svg class=\"trend\"").count() - 1).to_equal(
+      n,
+    )
+  })
+  setup.then0("the HTML report loads nothing from the network", fn() raise {
+    let h = self.html
+    @expect.expect(
+      h.contains("<script") || h.contains("<link") || h.contains("src=\"http"),
+    ).to_be_false()
   })
   setup.then2("the baseline for {string} is {string}", fn(
     spec : String,
