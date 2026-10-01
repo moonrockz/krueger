@@ -191,7 +191,8 @@ fn char_value(
     SyntaxError(message, _, problem) =>
       raise literal_problem(problem.title, message, token.span)
   }
-  if dialect.has(CharLength) && value.char_length() > 1 {
+  // `iter` takes a lone surrogate as one character (`char_length` aborts).
+  if dialect.has(CharLength) && value.iter().take(2).count() > 1 {
     raise literal_problem(
       "NEEDS DOUBLE QUOTES",
       "a char literal holds one character [rule: char-length]",
