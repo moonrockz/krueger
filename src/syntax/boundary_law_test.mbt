@@ -284,3 +284,46 @@ test "a descent stops at a port's doc comment, which holds the attribute node_at
 test "an empty source has no tree" {
   @expect.expect(@syntax.Tree::new(parse_result("")) is None).to_be_true()
 }
+
+///|
+test "law: for any text with an AST, every node lies inside the source and inside its parent" {
+  // Edges: any ElmText (fragments, cut or changed modules, edge characters);
+  // parses with errors included when they still give an AST.
+  @quickcheck.check(
+    (t : @lawkit.ElmText) => {
+      let text = t.text()
+      let result = @parser.parse_module(
+        @scanner.SourceText::{ module_name: None, text, },
+        @scanner.DefaultScanner::new(),
+      )
+      match @syntax.NodeRef::of_result(result) {
+        None => true
+        Some(root) => {
+          let mut ok = true
+          let open : Array[@syntax.NodeRef] = []
+          @syntax.walk(
+            root,
+            n => {
+              let r = n.range()
+              ok = ok &&
+                @lawkit.offset_of(text, r.start) is Some(_) &&
+                @lawkit.offset_of(text, r.end) is Some(_) &&
+                @lawkit.at_or_before(r.start, r.end) &&
+                (match open.last() {
+                  Some(parent) => @lawkit.within(r, parent.range())
+                  None => true
+                })
+              open.push(n)
+              Continue
+            },
+            leave=_ => ignore(open.pop()),
+          )
+          ok
+        }
+      }
+    },
+    count=200,
+    max_size=24,
+    seed=283,
+  )
+}

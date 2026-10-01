@@ -65,7 +65,7 @@ fn all_nodes(
 
 ///|
 fn before_or_at(a : @ast.Location, b : @ast.Location) -> Bool {
-  a.row < b.row || (a.row == b.row && a.column <= b.column)
+  @lawkit.at_or_before(a, b)
 }
 
 ///|
