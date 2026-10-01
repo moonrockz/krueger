@@ -216,9 +216,10 @@ NESTING`). On wasm, a stack overflows at a few hundred frames. `walk` uses an
 explicit stack, and so does `Json::stringify`, so the converter works for
 every tree that krueger gives.
 
-`field_of` looks at all the children of the parent. For a file with very
-many declarations, use `@krueger.EventReader` instead: each `Enter` event
-has the `field` already.
+`field_of` looks through all the fields of the parent on each call. For a
+file with very many declarations, build a `@krueger.Tree` and use
+`Tree::field_of(node)`, which reads the tree's index, or use
+`@krueger.EventReader`: each `Enter` event has the `field` already.
 
 ## Look at the JSON
 

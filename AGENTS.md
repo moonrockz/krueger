@@ -192,18 +192,22 @@ code blocks byte for byte. So there are three forms:
 result. It is the base for the traversal APIs and queries.
 
 - `NodeRef` points into the typed AST; nothing is copied. `category()`,
-  `kind()`, `range()`, `fields()`, `field(name)`, `children()` (source order)
-  and `field_of(child)` give generic access; typed code matches the cases.
+  `kind()`, `range()`, `fields()`, `field(name)`, `children()` (source order),
+  `children_with_fields()` (each child with its `PathStep`) and
+  `field_of(child)` give generic access; typed code matches the cases.
+  `field_of` looks through all the fields on each call; to get the field of
+  every node, use `children_with_fields` or `Tree::field_of`.
 - Kinds and field names are the elm-syntax JSON vocabulary. elm-syntax reuses
   tags (`record`, `list`, `unit`, …), so `(category, kind)` identifies a node
   type. Values that are not nodes (operator symbols, literal values, name
   qualifiers) are properties of their node, not children.
 - Doc attributes of a declaration are children of that declaration (field
   `attributes`); module attributes and all comments are children of the file.
-- `Tree::new(result)` builds a parent index once. `parent`, `ancestors`
-  (nearest first), `path` (root first), `node_at(location)` (the innermost node
-  that contains it), `node_path(node)` (its `NodePath` from the root) and
-  `tokens_in(range)`.
+- `Tree::new(result)` builds a parent index once. `parent`, `step` (field and
+  index in the parent) and `field_of` read it in constant time; `ancestors`
+  (nearest first), `path` (root first) and `node_path(node)` (its `NodePath`
+  from the root) are linear in the depth. `node_at(location)` (the innermost
+  node that contains it) and `tokens_in(range)`.
 - The walks in `src/syntax` use explicit stacks, not recursion, because wasm
   overflows at a few hundred frames and trees can be 400 levels deep. Nodes from
   the tree compare by identity first (`same`), so `parent` and `ancestors` do not

@@ -93,6 +93,7 @@ pub(all) enum NodeRef {
 } derive(Eq, @debug.Debug)
 pub fn NodeRef::category(Self) -> String
 pub fn NodeRef::children(Self) -> Array[Self]
+pub fn NodeRef::children_with_fields(Self) -> Array[(PathStep, Self)]
 pub fn NodeRef::field(Self, String) -> Array[Self]
 pub fn NodeRef::field_of(Self, Self) -> String?
 pub fn NodeRef::fields(Self) -> Array[String]
@@ -109,12 +110,14 @@ pub struct Tree {
   // private fields
 }
 pub fn Tree::ancestors(Self, NodeRef) -> Array[NodeRef]
+pub fn Tree::field_of(Self, NodeRef) -> String?
 pub fn Tree::new(@parser.ParseResult) -> Self?
 pub fn Tree::node_at(Self, @ast.Location) -> NodeRef?
 pub fn Tree::node_path(Self, NodeRef) -> NodePath?
 pub fn Tree::parent(Self, NodeRef) -> NodeRef?
 pub fn Tree::path(Self, NodeRef) -> Array[NodeRef]
 pub fn Tree::root(Self) -> NodeRef
+pub fn Tree::step(Self, NodeRef) -> PathStep?
 pub fn Tree::tokens_in(Self, @ast.Range) -> Array[@scanner.Token]
 
 pub struct TreeCursor {

@@ -4,8 +4,9 @@
 /// never changes; its indexes are private.
 pub struct Tree {
   priv root : NodeRef
-  /// identity key → (node, parent) for every node below the root.
-  priv parents : Map[String, Array[(NodeRef, NodeRef)]]
+  /// identity key → (node, parent, step in the parent) for every node below
+  /// the root.
+  priv parents : Map[String, Array[(NodeRef, NodeRef, PathStep)]]
   priv tokens : Array[@scanner.Token]
 }
 
@@ -45,15 +46,17 @@ fn identity(n : NodeRef) -> String {
 /// ```
 pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
   guard NodeRef::of_result(result) is Some(root) else { return None }
-  let parents : Map[String, Array[(NodeRef, NodeRef)]] = Map([])
+  let parents : Map[String, Array[(NodeRef, NodeRef, PathStep)]] = Map([])
   // An explicit stack: trees can be deeper than the call stack allows.
   let stack = [root]
   while stack.pop() is Some(node) {
-    for child in node.children() {
+    for entry in node.children_with_fields() {
+      let (step, child) = entry
       let key = identity(child)
+      let item = (child, node, step)
       match parents.get(key) {
-        Some(bucket) => bucket.push((child, node))
-        None => parents[key] = [(child, node)]
+        Some(bucket) => bucket.push(item)
+        None => parents[key] = [item]
       }
       stack.push(child)
     }
@@ -74,13 +77,52 @@ pub fn Tree::root(self : Tree) -> NodeRef {
 ///|
 /// The parent of `n`, or `None` for the root and for nodes not in the tree.
 pub fn Tree::parent(self : Tree, n : NodeRef) -> NodeRef? {
+  self.parent_entry(n).map(e => e.0)
+}
+
+///|
+/// The step from the parent of `n` to `n` (its field and its index in that
+/// field), or `None` for the root and for nodes not in the tree. It reads
+/// the tree's index, so it does not look through the parent's fields.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let tree = @syntax.Tree::new(result).unwrap()
+///   let implementation = tree.root().field("declarations")[0].field("declaration")[0]
+///   let y = implementation.field("arguments")[1]
+///   debug_inspect(
+///     tree.step(y),
+///     content="Some({ field: \"arguments\", index: 1 })",
+///   )
+///   debug_inspect(tree.field_of(y), content="Some(\"arguments\")")
+///   debug_inspect(tree.field_of(tree.root()), content="None")
+/// }
+/// ```
+pub fn Tree::step(self : Tree, n : NodeRef) -> PathStep? {
+  self.parent_entry(n).map(e => e.1)
+}
+
+///|
+/// The field of the parent of `n` that holds `n`, or `None` for the root and
+/// for nodes not in the tree. It gives what `parent.field_of(n)` gives, but
+/// reads the tree's index, so a walk can call it for every node. See `step`
+/// for an example.
+pub fn Tree::field_of(self : Tree, n : NodeRef) -> String? {
+  self.parent_entry(n).map(e => e.1.field)
+}
+
+///|
+/// The parent of `n` and the step from the parent to `n`.
+fn Tree::parent_entry(self : Tree, n : NodeRef) -> (NodeRef, PathStep)? {
   guard self.parents.get(identity(n)) is Some(bucket) else { return None }
-  if bucket.length() == 1 {
-    return if same(bucket[0].0, n) { Some(bucket[0].1) } else { None }
-  }
   for entry in bucket {
     if same(entry.0, n) {
-      return Some(entry.1)
+      return Some((entry.1, entry.2))
     }
   }
   None
@@ -129,15 +171,17 @@ pub fn Tree::path(self : Tree, n : NodeRef) -> Array[NodeRef] {
 /// }
 /// ```
 pub fn Tree::node_path(self : Tree, n : NodeRef) -> NodePath? {
-  let chain = self.path(n)
-  guard same(chain[0], self.root) else { return None }
+  // Up the parent index (the steps nearest first), then down from the root.
+  let steps = []
+  let mut current = n
+  while self.parent_entry(current) is Some((parent, step)) {
+    steps.push(step)
+    current = parent
+  }
+  guard same(current, self.root) else { return None }
   let mut path = NodePath::root()
-  for k in 1..<chain.length() {
-    let child = chain[k]
-    let kids = chain[k - 1].children_with_fields()
-    guard kids.search_by(x => same(x.2, child)) is Some(j) else { return None }
-    let (field, index, _) = kids[j]
-    path = path.child(field, index)
+  for step in steps.rev_iter() {
+    path = path.child(step.field, step.index)
   }
   Some(path)
 }

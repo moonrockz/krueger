@@ -57,19 +57,36 @@ fn[T : Eq] same_value(x : T, y : T) -> Bool {
 }
 
 ///|
+/// `x == y` element by element, with `same_value` for each element. A view
+/// is a value on some targets (`physical_equal` on two copies of one view is
+/// `false` on native), so views are compared by their elements.
+fn[T : Eq] same_view(x : ArrayView[T], y : ArrayView[T]) -> Bool {
+  guard x.length() == y.length() else { return false }
+  for i in 0..<x.length() {
+    if !same_value(x[i], y[i]) {
+      return false
+    }
+  }
+  true
+}
+
+///|
 /// `a == b`, but fast for nodes taken from the same tree: nodes wrap the AST
 /// values themselves, so the same node is usually the same object and the
 /// structural comparison of whole subtrees is not needed.
 fn same(a : NodeRef, b : NodeRef) -> Bool {
+  if physical_equal(a, b) {
+    return true
+  }
   match (a, b) {
-    (File(x, g), File(y, h)) => same_value(x, y) && same_value(g, h)
+    (File(x, g), File(y, h)) => same_value(x, y) && same_view(g, h)
     (Module(x), Module(y)) => same_value(x, y)
     (ModuleName(x), ModuleName(y)) => same_value(x, y)
     (Exposing(x), Exposing(y)) => same_value(x, y)
     (Expose(x), Expose(y)) => same_value(x, y)
     (Import(x), Import(y)) => same_value(x, y)
     (Declaration(x, g), Declaration(y, h)) =>
-      same_value(x, y) && same_value(g, h)
+      same_value(x, y) && same_view(g, h)
     (Documentation(x), Documentation(y)) => same_value(x, y)
     (Signature(x), Signature(y)) => same_value(x, y)
     (Implementation(x), Implementation(y)) => same_value(x, y)

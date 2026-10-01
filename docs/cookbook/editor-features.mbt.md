@@ -106,8 +106,9 @@ test "node_at finds the node under the cursor" {
 
 `Tree::path(node)` returns the nodes from the root down to the node, both
 included. `Tree::ancestors(node)` returns the parents, nearest first, up to
-the root. Use the path for breadcrumbs. Use `field_of` on the parent to name
-the role of each step.
+the root. Use the path for breadcrumbs. Use `Tree::field_of` to name the
+role of each step: it reads the tree's index, so it does not look through
+the parent's fields.
 
 ```mbt check
 ///|
@@ -115,10 +116,8 @@ fn ef_breadcrumbs(tree : @syntax.Tree, node : @syntax.NodeRef) -> String {
   tree
   .path(node)
   .map(n => {
-    let role = match tree.parent(n) {
-      Some(parent) => parent.field_of(n).unwrap_or("?")
-      None => "file"
-    }
+    // The root has no field.
+    let role = tree.field_of(n).unwrap_or("file")
     "\{role}:\{n.kind()}"
   })
   .join(" > ")
@@ -426,7 +425,7 @@ name, although the range of the function starts at the doc comment.
 - [Choose a traversal](traversal.mbt.md): `walk`, `fold`, `accept`,
   `EventReader` and `push_events`.
 - API: `@syntax.Tree` (`node_at`, `path`, `ancestors`, `parent`,
-  `node_path`, `tokens_in`), `@syntax.TreeCursor`, `@syntax.NodePath`,
-  `@syntax.NodeRef::field_of`, `@scanner.Token`, `@scanner.Trivia`.
+  `node_path`, `field_of`, `step`, `tokens_in`), `@syntax.TreeCursor`,
+  `@syntax.NodePath`, `@scanner.Token`, `@scanner.Trivia`.
 - The node model: `@syntax.NodeRef` and `@syntax.kind_table` (every
   category, kind and field).

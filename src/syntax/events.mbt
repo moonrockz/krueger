@@ -62,7 +62,7 @@ pub(open) trait EventSource {
 priv struct ReaderFrame {
   entered : NodeRef
   path : NodePath
-  fields : Array[(String, Int, NodeRef)]
+  fields : Array[(PathStep, NodeRef)]
   mut at : Int
 }
 
@@ -155,11 +155,11 @@ pub impl EventSource for EventReader with fn next(self) {
   }
   guard self.stack.last() is Some(top) else { return None }
   if top.at < top.fields.length() {
-    let (field, index, child) = top.fields[top.at]
+    let (step, child) = top.fields[top.at]
     top.at = top.at + 1
-    let path = top.path.child(field, index)
+    let path = top.path.child(step.field, step.index)
     self.pending = Some((child, path))
-    Some(enter_event(child, Some(field), path))
+    Some(enter_event(child, Some(step.field), path))
   } else {
     ignore(self.stack.pop())
     Some(Leave(LeaveEvent::new(node=top.entered, path=top.path)))

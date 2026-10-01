@@ -219,3 +219,53 @@ test "law: children are in start order, and in list order among equal starts" {
     seed=199,
   )
 }
+
+///|
+test "declaration attributes come from the first group for the range, in any group order" {
+  let src =
+    #|module M exposing (..)
+    #|
+    #|{-| M. -}
+    #|
+    #|
+    #|{-| A.
+    #|
+    #|@a one
+    #|-}
+    #|a =
+    #|    1
+    #|
+    #|
+    #|{-| B.
+    #|
+    #|@b two
+    #|-}
+    #|b =
+    #|    2
+    #|
+  let result = @parser.parse_module(
+    @scanner.SourceText::new(src),
+    @scanner.DefaultScanner::new(),
+  )
+  guard result.ast is Some(file) else { fail("no AST") }
+  let groups = result.attributes
+  // One group each for `a` and `b` (the module doc has no attributes).
+  @expect.expect(groups.length()).to_equal(2)
+  // Reverse the groups and add a later group for `a` that must not win.
+  let extra : @parser.AttributeGroup = {
+    target: groups[0].target,
+    attributes: [],
+  }
+  let shuffled = [groups[1], groups[0], extra]
+  let root = @syntax.NodeRef::File(file, shuffled)
+  let names = root
+    .field("declarations")
+    .map(d => d.field("attributes").map(x => x.field("name")[0]))
+  let text = names.map(ns => {
+    ns.map(n => {
+      guard n is Name(node) else { "?" }
+      node.value
+    })
+  })
+  @expect.expect(text).to_equal([["a"], ["b"]])
+}
