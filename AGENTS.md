@@ -523,8 +523,10 @@ inputs.
   }
   ```
 
-  `src/syntax/gen_elm_test.mbt` has the full generator (`ElmModule`,
-  `Policy`) and `elm_root`. Keep generated depth bounded by `size`, so
+  Shared generators are `pub` types in `src/internal/lawkit`:
+  `elm_module.mbt` has the full `ElmModule` generator, and
+  `src/syntax/gen_elm_test.mbt` has `elm_root` and the traversal `Policy`.
+  Keep generated depth bounded by `size`, so
   generators do not overflow the stack on wasm.
 - **Valid input fails loudly.** A generator of valid input must make the law
   fail on any diagnostic (as `elm_root` does), never skip or filter the case:
@@ -533,6 +535,20 @@ inputs.
   parser never crashes; a diagnostic is reported instead).
 - **Name laws as laws.** Test names start with `law:` and state the rule, for
   example `law: fold with a logging accumulator gives walk's events`.
+- **Boundary values.** Most bugs live at edges, and random input rarely reaches
+  them. A law lists its edge values (in a comment or in its generator), and its
+  generator reaches them: none, one and many; equal, nested, adjacent and empty
+  ranges; the start and end of every range, one column before each; line and
+  file ends; non-ASCII text (surrogate pairs); limits ± 1. A boundary bug found
+  by hand becomes a law, not only an example.
+- **Shared generators.** Use and extend the test-support package
+  `src/internal/lawkit` (`ElmModule`, `edge_positions`, `Ranges`, …), so every
+  package's laws reach the same edges; add a new edge there, not in one
+  package's tests. `lawkit` imports only the MoonBit core library and `@ast`, so
+  black-box tests of any package, and white-box tests of any package except
+  `ast`, can import it. It also has the position helpers `at_or_before`,
+  `contains`, `within`, `end_of_text` and `offset_of` (UTF-16 offset of a
+  row/column position).
 - **Corpus as a law check.** A law that holds for generated input should also
   hold for the pinned corpus; add it to the corpus check where it is cheap.
 - **Run on every target.** Laws run in `mise run test:unit` and
