@@ -706,6 +706,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/coverage.mbtx` | `coverage:ci-gate`, `coverage:ci-warn` | Coverage summary and threshold |
 | `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
 | `scripts/version.mbtx` | `release:version` | Next version from conventional commits |
+| `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
 | `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |
@@ -797,6 +798,13 @@ design is final and meant for readers, write it up in a committed location on pu
 - Trigger: push tag `v*` or workflow_dispatch.
 - Requires `MOONCAKES_USER_TOKEN` org secret for publish.
 - Pre-publish: `moon check`, `moon fmt`, `mise run test:unit`, `mise run test:scripts`.
+- To release: `mise run release:version` gives the next version (git-cliff, pinned in
+  `.mise.toml`; on 0.x a `feat` bumps the minor). Set `version` in `moon.mod` to it in a
+  pull request, merge, then tag the merge commit `v<version>` and push the tag. The
+  publish step fails when the tag does not match `moon.mod`'s version.
+- A release run is safe to repeat: runs for one tag never overlap (a concurrency group),
+  an already published version and an existing GitHub release are skipped (GitHub has
+  started two runs for one tag push).
 
 ## Work Tracking
 

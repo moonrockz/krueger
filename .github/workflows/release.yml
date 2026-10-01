@@ -9,6 +9,13 @@ on:
 permissions:
   contents: write
 
+# One release run per tag at a time. GitHub has started two runs for one tag
+# push (krueger-kbg); the second waits, finds the version published and the
+# GitHub release created, and succeeds without doing either again.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   # Pinned MoonBit toolchain (moon/moonc/core). Bump deliberately; see AGENTS.md.
   MOONBIT_VERSION: "0.10.14+7d59c7ec9"
@@ -76,6 +83,8 @@ jobs:
 
   release:
     needs: [validate, publish]
+    # A manual run from a branch has no tag to name a GitHub release after.
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -87,6 +96,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
-          gh release create "$TAG" \
-            --title "$TAG" \
-            --generate-notes
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "GitHub release $TAG already exists; nothing to do"
+          else
+            gh release create "$TAG" \
+              --title "$TAG" \
+              --generate-notes
+          fi
