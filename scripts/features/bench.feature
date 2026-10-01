@@ -181,3 +181,38 @@ Feature: Benchmarks
     And the HTML report contains "syntax/&lt;new&gt;/large"
     And the HTML report contains 1 trend chart
     And the HTML report loads nothing from the network
+
+  Scenario: The default baseline covers every target of the run
+    Given the history:
+      """
+      runs/full.json refs/heads/main 1111111aaaa 1 2026-09-01T00:00:00Z
+      runs/native.json refs/heads/main 2222222bbbb 2 2026-09-15T00:00:00Z
+      """
+    And history run "runs/full.json" measured "native,js,wasm-gc,wasm"
+    And history run "runs/native.json" measured "native"
+    And a results file from "refs/heads/main" at commit "4444444dddd" on "2026-10-01T10:00:00Z" with run id "4"
+    And the current run has "native" "syntax/walk/large" with median 100, q1 95 and q3 105
+    And the current run has "js" "syntax/walk/large" with median 100, q1 95 and q3 105
+    Then the baseline for "" is "runs/full.json"
+
+  Scenario: A native-only run takes the latest run with native
+    Given the history:
+      """
+      runs/full.json refs/heads/main 1111111aaaa 1 2026-09-01T00:00:00Z
+      runs/native.json refs/heads/main 2222222bbbb 2 2026-09-15T00:00:00Z
+      """
+    And history run "runs/full.json" measured "native,js,wasm-gc,wasm"
+    And history run "runs/native.json" measured "native"
+    And a results file from "refs/heads/main" at commit "4444444dddd" on "2026-10-01T10:00:00Z" with run id "4"
+    And the current run has "native" "syntax/walk/large" with median 100, q1 95 and q3 105
+    Then the baseline for "" is "runs/native.json"
+
+  Scenario: A baseline that matches nothing is an error, not an empty history
+    Given the history:
+      """
+      runs/a.json refs/heads/main 1111111aaaa 1 2026-09-01T00:00:00Z
+      """
+    And a results file from "refs/heads/main" at commit "4444444dddd" on "2026-10-01T10:00:00Z" with run id "4"
+    Then choosing the baseline "main" fails with "no run file for main in the history"
+    And choosing the baseline "run:77" fails with "no run file for run:77 in the history"
+    And choosing the baseline "" gives "runs/a.json"

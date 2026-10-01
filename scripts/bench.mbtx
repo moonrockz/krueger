@@ -330,7 +330,10 @@ fn latest(items : Array[(String, ResultsFile)]) -> (String, ResultsFile)? {
 
 ///|
 /// The baseline run file in `history` for `against` (the caller reads a
-/// `File`). The current run is never its own baseline.
+/// `File`). The current run is never its own baseline. The latest `main`
+/// run is the latest one that measured every target of the current run, or
+/// else the latest `main` run (so a partial run on `main` does not hide the
+/// other targets from the next full run).
 fn select_baseline(
   history : Array[(String, ResultsFile)],
   current : ResultsFile,
@@ -340,11 +343,36 @@ fn select_baseline(
     !(h.1.run.id == current.run.id && h.1.run.sha == current.run.sha)
   })
   match against {
-    LatestMain =>
-      latest(others.filter(h => h.1.run.git_ref == "refs/heads/main"))
+    LatestMain => {
+      let main = others.filter(h => h.1.run.git_ref == "refs/heads/main")
+      let covering = main.filter(h => {
+        current.targets.iter().all(t => h.1.targets.contains(t))
+      })
+      match latest(covering) {
+        Some(found) => Some(found)
+        None => latest(main)
+      }
+    }
     Commit(prefix) => latest(others.filter(h => h.1.run.sha.has_prefix(prefix)))
     RunId(id) => latest(others.filter(h => h.1.run.id == id))
     File(_) => None
+  }
+}
+
+///|
+/// `select_baseline`, but a baseline that the user named and that is not in
+/// the history is an error (an empty history is not: then there is no
+/// baseline).
+fn choose_baseline(
+  history : Array[(String, ResultsFile)],
+  current : ResultsFile,
+  against : Against,
+) -> Result[(String, ResultsFile)?, String] {
+  let found = select_baseline(history, current, against)
+  match (against, found) {
+    (Commit(spec), None) => Err("no run file for \{spec} in the history")
+    (RunId(id), None) => Err("no run file for run:\{id} in the history")
+    _ => Ok(found)
   }
 }
 
@@ -966,12 +994,24 @@ async fn compare_command(
     return
   }
   let history = load_history(data_ref)
-  let baseline = match parse_against(against) {
+  // A path to an existing file is a results file, whatever its name.
+  let spec = match parse_against(against) {
+    Commit(v) if @fs.exists(v) => File(v)
+    other => other
+  }
+  let baseline = match spec {
     File(f) => {
       guard read_results(f) is Some(r) else { return }
       Some((f, r))
     }
-    spec => select_baseline(history, current, spec)
+    _ =>
+      match choose_baseline(history, current, spec) {
+        Ok(found) => found
+        Err(m) => {
+          fail_with("\{m} (\{data_ref})")
+          return
+        }
+      }
   }
   let c = compare_runs(current, baseline, threshold)
   let summary = render_summary(c, threshold)
@@ -1277,6 +1317,41 @@ impl @moonspec.World for BenchWorld with fn configure(self, setup) {
     @expect.expect(
       h.contains("<script") || h.contains("<link") || h.contains("src=\"http"),
     ).to_be_false()
+  })
+  setup.given2("history run {string} measured {string}", fn(
+    path : String,
+    targets : String,
+  ) raise {
+    guard self.history.search_by(h => h.0 == path) is Some(i) else {
+      fail("no history run \{path}")
+    }
+    let h = self.history[i]
+    self.history[i] = (
+      h.0,
+      { ..h.1, targets: targets.split(",").map(t => t.to_owned()).to_array(), },
+    )
+  })
+  setup.then2("choosing the baseline {string} fails with {string}", fn(
+    spec : String,
+    expected : String,
+  ) raise {
+    @expect.expect(
+      choose_baseline(self.history, self.current, parse_against(Some(spec))).map(f => {
+          f.map(x => x.0)
+        },
+      ),
+    ).to_equal(Err(expected))
+  })
+  setup.then2("choosing the baseline {string} gives {string}", fn(
+    spec : String,
+    expected : String,
+  ) raise {
+    @expect.expect(
+      choose_baseline(self.history, self.current, parse_against(Some(spec))).map(f => {
+          f.map(x => x.0)
+        },
+      ),
+    ).to_equal(Ok(Some(expected)))
   })
   setup.then2("the baseline for {string} is {string}", fn(
     spec : String,
