@@ -6,6 +6,7 @@ import {
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
+  "moonbitlang/core/string",
   "moonrockz/moonspec@0.7.1",
   "moonrockz/expect@0.6.0",
 }
@@ -708,9 +709,308 @@ fn render_html(
 }
 
 ///|
+enum Command {
+  Run(Array[String])
+  Compare(String?, String, Double)
+  Record(String)
+} derive(Eq, Debug)
+
+///|
+/// `run [--target t]...`, `compare [--against a] [--data ref] [--threshold x]`
+/// or `record --dir d`; anything else gives the usage text.
+fn parse_command(args : Array[String]) -> Result[Command, String] {
+  guard args.length() > 0 else { return Err(usage) }
+  let opts : Map[String, Array[String]] = Map([])
+  let mut i = 1
+  while i < args.length() {
+    let key = args[i]
+    guard key.has_prefix("--") && i + 1 < args.length() else {
+      return Err(usage)
+    }
+    match opts.get(key) {
+      Some(vs) => vs.push(args[i + 1])
+      None => opts[key] = [args[i + 1]]
+    }
+    i += 2
+  }
+  let one = (k : String) => opts.get(k).bind(vs => vs.last())
+  match args[0] {
+    "run" => Ok(Run(opts.get("--target").unwrap_or([])))
+    "compare" => {
+      let threshold = match one("--threshold") {
+        None => default_threshold
+        Some(t) =>
+          try @string.parse_double(t) catch {
+            _ => return Err(usage)
+          } noraise {
+            x => x
+          }
+      }
+      Ok(
+        Compare(
+          one("--against"),
+          one("--data").unwrap_or("origin/benchmarks"),
+          threshold,
+        ),
+      )
+    }
+    "record" =>
+      match one("--dir") {
+        Some(d) => Ok(Record(d))
+        None => Err(usage)
+      }
+    _ => Err(usage)
+  }
+}
+
+///|
+/// The README of the history branch.
+fn data_readme() -> String {
+  (
+    #|# krueger benchmark history
+    #|
+    #|This branch holds the results of benchmark runs of moonrockz/krueger, one
+    #|JSON file per run under `runs/YYYY/MM/`. The Benchmarks workflow adds a
+    #|file for each run on `main`. Do not merge this branch into another branch.
+    #|
+    #|To compare a local run with the latest `main` run, run `mise run bench`
+    #|and then `mise run bench:compare`. See AGENTS.md > Benchmarks.
+  )
+}
+
+///|
+async fn output_of(cmd : String, args : Array[String]) -> (Int, String) {
+  let (code, out) = @process.collect_stdout(
+    cmd,
+    args,
+    stderr=@process.redirect_to_file("/dev/null"),
+  ) catch {
+    _ => (1, b"")
+  }
+  (code, out.text())
+}
+
+///|
+async fn first_line_of(
+  cmd : String,
+  args : Array[String],
+  fallback : String,
+) -> String {
+  let (code, out) = output_of(cmd, args)
+  guard code == 0 else { return fallback }
+  let line = out.split("\n").next().map(l => l.trim().to_owned()).unwrap_or("")
+  if line == "" {
+    fallback
+  } else {
+    line
+  }
+}
+
+///|
+fn env_or(name : String, fallback : String) -> String {
+  match @env.get_env_var(name) {
+    Some(v) if v != "" => v
+    _ => fallback
+  }
+}
+
+///|
+async fn run_info() -> RunInfo {
+  let server = env_or("GITHUB_SERVER_URL", "")
+  let repo = env_or("GITHUB_REPOSITORY", "")
+  let id = env_or("GITHUB_RUN_ID", "local")
+  let git_ref = match @env.get_env_var("GITHUB_REF") {
+    Some(r) if r != "" => r
+    _ => first_line_of("git", ["symbolic-ref", "-q", "HEAD"], "detached")
+  }
+  let sha = match @env.get_env_var("GITHUB_SHA") {
+    Some(s) if s != "" => s
+    _ => first_line_of("git", ["rev-parse", "HEAD"], "unknown")
+  }
+  {
+    id,
+    url: if server == "" || id == "local" {
+      ""
+    } else {
+      "\{server}/\{repo}/actions/runs/\{id}"
+    },
+    event: env_or("GITHUB_EVENT_NAME", "local"),
+    git_ref,
+    sha,
+    date: first_line_of(
+      "date",
+      ["-u", "+%Y-%m-%dT%H:%M:%SZ"],
+      "1970-01-01T00:00:00Z",
+    ),
+  }
+}
+
+///|
+async fn env_info() -> EnvInfo {
+  let os = match @env.get_env_var("RUNNER_OS") {
+    Some(o) if o != "" => o
+    _ => first_line_of("uname", ["-s"], "unknown")
+  }
+  let cpu = if @fs.exists("/proc/cpuinfo") {
+    parse_cpu(@fs.read_file("/proc/cpuinfo").text())
+  } else {
+    parse_cpu(
+      first_line_of("sysctl", ["-n", "machdep.cpu.brand_string"], "unknown"),
+    )
+  }
+  {
+    runner_os: os,
+    cpu,
+    moon_version: first_line_of("moon", ["version"], "unknown"),
+    toolchain: env_or("MOONBIT_VERSION", ""),
+  }
+}
+
+///|
+fn fail_with(message : String) -> Unit {
+  eprintln("bench: \{message}")
+  @sys.exit(1)
+}
+
+///|
+async fn run_command(values : Array[String]) -> Unit {
+  let targets = match parse_targets(values) {
+    Ok(ts) => ts
+    Err(m) => {
+      eprintln(m)
+      @sys.exit(2)
+      return
+    }
+  }
+  let raw = "\{reports_dir}/raw"
+  @fs.mkdir(raw, recursive=true, allow_exist=true)
+  for f in @fs.readdir(raw) {
+    @fs.remove("\{raw}/\{f}")
+  }
+  let results = []
+  for t in targets {
+    println("bench: measuring \{t}")
+    let code = @process.run(
+      "moon",
+      ["test", "harness/bench/bench_wbtest.mbt", "--release", "--target", t],
+      extra_env={ "KRUEGER_BENCH_MODE": "run", "KRUEGER_BENCH_TARGET": t },
+    )
+    if code != 0 {
+      fail_with("moon test failed for \{t} (exit \{code})")
+      return
+    }
+    match parse_raw(@fs.read_file("\{raw}/\{t}.json").text()) {
+      Ok(rs) => results.append(rs)
+      Err(m) => {
+        fail_with("\{t}: \{m}")
+        return
+      }
+    }
+  }
+  let file : ResultsFile = {
+    schema: 1,
+    run: run_info(),
+    env: env_info(),
+    targets,
+    results,
+  }
+  let path = "\{reports_dir}/\{results_name}"
+  @fs.write_file(path, results_to_json(file).stringify(indent=2) + "\n")
+  println("bench: wrote \{path} (\{results.length()} results)")
+}
+
+///|
+/// Every run file in `data_ref` (none when the ref does not exist).
+async fn load_history(data_ref : String) -> Array[(String, ResultsFile)] {
+  let (code, listing) = output_of("git", [
+    "ls-tree", "-r", "--name-only", data_ref, "runs/",
+  ])
+  guard code == 0 else { return [] }
+  let history = []
+  for line in listing.split("\n") {
+    let p = line.trim().to_owned()
+    if !p.has_suffix(".json") {
+      continue
+    }
+    let (c, text) = output_of("git", ["show", "\{data_ref}:\{p}"])
+    match (c, parse_results(text)) {
+      (0, Ok(r)) => history.push((p, r))
+      _ => eprintln("bench: skipped unreadable run file \{p}")
+    }
+  }
+  history
+}
+
+///|
+async fn read_results(path : String) -> ResultsFile? {
+  guard @fs.exists(path) else {
+    fail_with("no \{path}; run `mise run bench` first")
+    return None
+  }
+  match parse_results(@fs.read_file(path).text()) {
+    Ok(r) => Some(r)
+    Err(m) => {
+      fail_with("\{path}: \{m}")
+      None
+    }
+  }
+}
+
+///|
+async fn compare_command(
+  against : String?,
+  data_ref : String,
+  threshold : Double,
+) -> Unit {
+  guard read_results("\{reports_dir}/\{results_name}") is Some(current) else {
+    return
+  }
+  let history = load_history(data_ref)
+  let baseline = match parse_against(against) {
+    File(f) => {
+      guard read_results(f) is Some(r) else { return }
+      Some((f, r))
+    }
+    spec => select_baseline(history, current, spec)
+  }
+  let c = compare_runs(current, baseline, threshold)
+  let summary = render_summary(c, threshold)
+  @fs.write_file("\{reports_dir}/summary.md", summary + "\n")
+  @fs.write_file(
+    "\{reports_dir}/report.html",
+    render_html(c, trend_history(history, current, 20), threshold),
+  )
+  println(summary)
+}
+
+///|
+async fn record_command(dir : String) -> Unit {
+  guard read_results("\{reports_dir}/\{results_name}") is Some(current) else {
+    return
+  }
+  let relative = run_file_path(current)
+  let target = "\{dir}/\{relative}"
+  let parent = relative.view(end_offset=relative.rev_find("/").unwrap_or(0))
+  @fs.mkdir("\{dir}/\{parent}", recursive=true, allow_exist=true)
+  @fs.write_file(target, results_to_json(current).stringify(indent=2) + "\n")
+  if !@fs.exists("\{dir}/README.md") {
+    @fs.write_file("\{dir}/README.md", data_readme() + "\n")
+  }
+  println("bench: added \{target}")
+}
+
+///|
 async fn main {
-  eprintln(usage)
-  @sys.exit(2)
+  match parse_command(@env.args()[1:].to_owned()) {
+    Ok(Run(values)) => run_command(values)
+    Ok(Compare(against, data_ref, threshold)) =>
+      compare_command(against, data_ref, threshold)
+    Ok(Record(dir)) => record_command(dir)
+    Err(m) => {
+      eprintln(m)
+      @sys.exit(2)
+    }
+  }
 }
 
 ///|
@@ -1071,5 +1371,35 @@ test "law: swapping the runs swaps slower and faster" {
         s.expect(mark_of(b, a, default_threshold)).to_equal(swapped)
       }
     }
+  })
+}
+
+///|
+test "parse_command reads the three commands and their options" {
+  @expect.expect_all(s => {
+    s.expect(parse_command(["run"])).to_equal(Ok(Run([])))
+    s
+    .expect(parse_command(["run", "--target", "native,js", "--target", "wasm"]))
+    .to_equal(Ok(Run(["native,js", "wasm"])))
+    s
+    .expect(parse_command(["compare"]))
+    .to_equal(Ok(Compare(None, "origin/benchmarks", 0.10)))
+    s
+    .expect(
+      parse_command([
+        "compare", "--against", "run:12", "--data", "refs/x", "--threshold", "0.2",
+      ]),
+    )
+    .to_equal(Ok(Compare(Some("run:12"), "refs/x", 0.2)))
+    s
+    .expect(parse_command(["record", "--dir", "bench-data"]))
+    .to_equal(Ok(Record("bench-data")))
+    s.expect(parse_command(["record"])).to_equal(Err(usage))
+    s.expect(parse_command(["run", "--target"])).to_equal(Err(usage))
+    s
+    .expect(parse_command(["compare", "--threshold", "x"]))
+    .to_equal(Err(usage))
+    s.expect(parse_command(["fly"])).to_equal(Err(usage))
+    s.expect(parse_command([])).to_equal(Err(usage))
   })
 }
