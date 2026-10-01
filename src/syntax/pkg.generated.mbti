@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn[V : Visitor] accept(NodeRef, V) -> Unit
+
 pub fn[A] fold(NodeRef, A, (A, NodeRef) -> (A, Control), leave? : (A, NodeRef) -> A) -> A
 
 pub fn kind_table() -> Array[(String, String, Array[String])]
@@ -70,3 +72,16 @@ pub fn Tree::tokens_in(Self, @ast.Range) -> Array[@scanner.Token]
 // Type aliases
 
 // Traits
+pub(open) trait Visitor {
+  fn visit_declaration(Self, NodeRef) -> Control = _
+  fn visit_function(Self, NodeRef) -> Control = _
+  fn visit_expression(Self, NodeRef) -> Control = _
+  fn visit_pattern(Self, NodeRef) -> Control = _
+  fn visit_type(Self, NodeRef) -> Control = _
+  fn visit_case(Self, NodeRef) -> Control = _
+  fn visit_import(Self, NodeRef) -> Control = _
+  fn visit_comment(Self, NodeRef) -> Control = _
+  fn visit_attribute(Self, NodeRef) -> Control = _
+  fn visit_other(Self, NodeRef) -> Control = _
+  fn leave(Self, NodeRef) -> Unit = _
+}

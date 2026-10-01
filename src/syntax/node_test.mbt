@@ -37,7 +37,8 @@ fn t(value : @ast.TypeAnnotation) -> @syntax.NodeRef {
 }
 
 ///|
-test "every kind has its category and elm-syntax tag" {
+/// One synthetic node per kind except `file/file`: (node, category, kind).
+fn kind_cases() -> Array[(@syntax.NodeRef, String, String)] {
   let x : @ast.Node[@ast.Expression] = n(UnitExpr)
   let px : @ast.Node[@ast.Pattern] = n(AllPattern)
   let tx : @ast.Node[@ast.TypeAnnotation] = n(Unit)
@@ -229,7 +230,12 @@ test "every kind has its category and elm-syntax tag" {
     (t(Record([])), "type", "record"),
     (t(GenericRecord(name, n([]))), "type", "genericRecord"),
   ]
-  for c in cases {
+  cases
+}
+
+///|
+test "every kind has its category and elm-syntax tag" {
+  for c in kind_cases() {
     let (node, category, kind) = c
     @expect.expect((node.category(), node.kind())).to_equal((category, kind))
   }
