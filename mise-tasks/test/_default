@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Run all tests"
-#MISE depends=["test:unit", "test:bdd", "test:e2e", "test:scripts", "test:rejection"]
+#MISE depends=["test:unit", "test:bdd", "test:e2e", "test:scripts", "test:rejection", "test:docs"]
 set -euo pipefail
 
 echo "All tests passed."

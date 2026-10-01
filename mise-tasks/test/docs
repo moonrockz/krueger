@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Run the cookbook articles (docs/cookbook/*.mbt.md) as tests"
+set -euo pipefail
+
+moon test docs/cookbook --target js
