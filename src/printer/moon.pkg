@@ -12,5 +12,6 @@ import {
 
 import {
   "moonrockz/expect",
+  "moonrockz/krueger/parser",
   "moonrockz/krueger/syntax",
 } for "test"

@@ -49,3 +49,39 @@ pub fn print_pattern(
     width~,
   )
 }
+
+///|
+/// The Elm source of an expression. Parentheses are added where
+/// precedence needs them; parentheses in the AST stay. `if`, `case` and
+/// `let` are always multi-line (elm-format). Raises `PrintError` for an
+/// expression that cannot print as valid Elm; the error's path starts at
+/// `e`.
+///
+/// ```mbt check
+/// test {
+///   let r : @ast.Range = {
+///     start: { row: 0, column: 0, },
+///     end: { row: 0, column: 0, },
+///   }
+///   fn v(name : String) -> @ast.Node[@ast.Expression] {
+///     { range: r, value: FunctionOrValue([][:], name), }
+///   }
+///   let sum : @ast.Node[@ast.Expression] = {
+///     range: r,
+///     value: OperatorApplication("+", Left, v("a"), v("b")),
+///   }
+///   let product : @ast.Node[@ast.Expression] = {
+///     range: r,
+///     value: OperatorApplication("*", Left, sum, v("c")),
+///   }
+///   inspect(@printer.print_expression(product), content="(a + b) * c")
+/// }
+/// ```
+pub fn print_expression(
+  e : @ast.Node[@ast.Expression],
+  width? : Int = 120,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+) -> String raise PrintError {
+  let ctx : Ctx = { dialect, }
+  @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), 0, e, AnyExpr), width~)
+}

@@ -1,0 +1,307 @@
+///|
+fn expr_of(body : String) -> @ast.Node[@ast.Expression] raise {
+  let text = "module M exposing (..)\n\n\nf =\n    " + body + "\n"
+  let result = @parser.parse_module(
+    @scanner.SourceText::new(text),
+    @scanner.DefaultScanner::new(),
+  )
+  guard result.diagnostics.is_empty() &&
+    result.ast is Some(file) &&
+    file.declarations[0].value is FunctionDeclaration(f) else {
+    fail("does not parse: \{body}")
+  }
+  f.declaration.value.expression
+}
+
+///|
+fn v(name : String) -> @ast.Node[@ast.Expression] {
+  n(FunctionOrValue([][:], name))
+}
+
+///|
+fn op(
+  symbol : String,
+  dir : @ast.InfixDirection,
+  l : @ast.Node[@ast.Expression],
+  r : @ast.Node[@ast.Expression],
+) -> @ast.Node[@ast.Expression] {
+  n(OperatorApplication(symbol, dir, l, r))
+}
+
+///|
+fn app(items : Array[@ast.Node[@ast.Expression]]) -> @ast.Node[@ast.Expression] {
+  n(Application(items[:]))
+}
+
+///|
+fn lam(body : @ast.Node[@ast.Expression]) -> @ast.Node[@ast.Expression] {
+  n(LambdaExpression({ args: [pvar("x")][:], expression: body, }))
+}
+
+///|
+test "parsed one-line expressions print back unchanged" {
+  @expect.expect_all(s => {
+    for
+      src in [
+        "a + b * c", "(a + b) * c", "a ++ b ++ c |> d", "a :: b :: c", "g -x -1",
+        "-(-x)", "f (g x) [ 1, 2 ] { a = 1 }", "List.map .name xs", "\\x y -> x + y",
+        "f <| \\x -> x", "(\\x -> x) 1", "r.a.b", "{ r | a = 1, b = 2 }", "( 1, \"s\", 'c' )",
+        "a == b", "(+) 1 2", "0xFF", "1.5e-7", "Nothing", "()", "[]", "{}", "x |> (\\y -> y) |> z",
+        "f -(g x)",
+      ] {
+      s.expect(@printer.print_expression(expr_of(src))).to_equal(src)
+    }
+  })
+}
+
+///|
+test "missing parentheses are added where precedence needs them" {
+  @expect.expect_all(s => {
+    let (a, b, c) = (v("a"), v("b"), v("c"))
+    s
+    .expect(@printer.print_expression(op("*", Left, op("+", Left, a, b), c)))
+    .to_equal("(a + b) * c")
+    s
+    .expect(@printer.print_expression(op("-", Left, a, op("-", Left, b, c))))
+    .to_equal("a - (b - c)")
+    s
+    .expect(@printer.print_expression(op("-", Left, op("-", Left, a, b), c)))
+    .to_equal("a - b - c")
+    s
+    .expect(@printer.print_expression(op("^", Right, op("^", Right, a, b), c)))
+    .to_equal("(a ^ b) ^ c")
+    s
+    .expect(@printer.print_expression(op("==", Non, op("==", Non, a, b), c)))
+    .to_equal("(a == b) == c")
+    s
+    .expect(@printer.print_expression(app([v("f"), app([v("g"), a])])))
+    .to_equal("f (g a)")
+    s
+    .expect(@printer.print_expression(app([app([v("f"), a]), b])))
+    .to_equal("(f a) b")
+    s
+    .expect(@printer.print_expression(n(Negation(n(Negation(a))))))
+    .to_equal("-(-a)")
+    s
+    .expect(@printer.print_expression(n(Negation(n(Integer(-1L))))))
+    .to_equal("-(-1)")
+    s
+    .expect(
+      @printer.print_expression(op("+", Left, lam(v("x")), n(Integer(1L)))),
+    )
+    .to_equal("(\\x -> x) + 1")
+    s
+    .expect(
+      @printer.print_expression(op("+", Left, n(Integer(1L)), lam(v("x")))),
+    )
+    .to_equal("1 + \\x -> x")
+    s
+    .expect(@printer.print_expression(app([v("f"), lam(v("x"))])))
+    .to_equal("f (\\x -> x)")
+    s
+    .expect(@printer.print_expression(app([v("f"), n(Integer(-3L))])))
+    .to_equal("f -3")
+  })
+}
+
+///|
+test "record access targets get parentheses" {
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_expression(n(RecordAccess(n(Integer(1L)), n("a")))))
+    .to_equal("(1).a")
+    s
+    .expect(@printer.print_expression(n(RecordAccess(v("Just"), n("a")))))
+    .to_equal("(Just).a")
+    s
+    .expect(
+      @printer.print_expression(n(RecordAccess(app([v("f"), v("x")]), n("a")))),
+    )
+    .to_equal("(f x).a")
+    s
+    .expect(@printer.print_expression(n(RecordAccess(v("r"), n("a")))))
+    .to_equal("r.a")
+    s
+    .expect(
+      @printer.print_expression(
+        n(RecordAccess(n(RecordAccessFunction(".f")), n("a"))),
+      ),
+    )
+    .to_equal("(.f).a")
+    s
+    .expect(
+      @printer.print_expression(n(Negation(n(RecordAccessFunction(".f"))))),
+    )
+    .to_equal("-(.f)")
+  })
+}
+
+///|
+test "number edges" {
+  @expect.expect_all(s => {
+    s.expect(@printer.print_expression(n(Floatable(-0.0)))).to_equal("-0.0")
+    s.expect(@printer.print_expression(n(Floatable(1.0e21)))).to_equal("1.0e21")
+    s.expect(@printer.print_expression(n(Hex(-16L)))).to_equal("-0x10")
+    s
+    .expect(@printer.print_expression(n(Integer(9223372036854775807L))))
+    .to_equal("9223372036854775807")
+    s
+    .expect(
+      problem_of(() => {
+        @printer.print_expression(n(Integer(-9223372036854775807L - 1L)))
+      }),
+    )
+    .to_equal(Some((UnrepresentableInt(-9223372036854775807L - 1L), [])))
+    s
+    .expect(
+      problem_of(() => @printer.print_expression(n(Floatable(0.0 / 0.0)))).map(p => {
+        p.0 is NonFiniteFloat(_)
+      }),
+    )
+    .to_equal(Some(true))
+  })
+}
+
+///|
+test "expressions that Elm cannot write raise with their path" {
+  @expect.expect_all(s => {
+    let x = v("x")
+    s
+    .expect(problem_of(() => @printer.print_expression(app([x]))))
+    .to_equal(Some((ShortApplication, [])))
+    s
+    .expect(problem_of(() => @printer.print_expression(op("<=>", Left, x, x))))
+    .to_equal(Some((UnknownOperator("<=>"), [])))
+    s
+    .expect(
+      problem_of(() => @printer.print_expression(n(GLSLExpression("a|]b")))),
+    )
+    .to_equal(Some((InvalidGlsl, [])))
+    s
+    .expect(
+      problem_of(() => @printer.print_expression(n(TupledExpression([x][:])))),
+    )
+    .to_equal(Some((ShortTuple, [])))
+    s
+    .expect(
+      problem_of(() => {
+        @printer.print_expression(n(RecordUpdateExpression(n("r"), [][:])))
+      }),
+    )
+    .to_equal(Some((NoFields, [])))
+    s
+    .expect(
+      problem_of(() => {
+        @printer.print_expression(
+          n(CaseExpression({ expression: x, cases: [][:], })),
+        )
+      }),
+    )
+    .to_equal(Some((EmptyCase, [])))
+    s
+    .expect(
+      problem_of(() => {
+        @printer.print_expression(
+          n(LetExpression({ declarations: [][:], expression: x, })),
+        )
+      }),
+    )
+    .to_equal(Some((EmptyLet, [])))
+    s
+    .expect(
+      problem_of(() => {
+        @printer.print_expression(
+          n(LambdaExpression({ args: [][:], expression: x, })),
+        )
+      }),
+    )
+    .to_equal(Some((NoLambdaArguments, [])))
+    s
+    .expect(
+      problem_of(() => {
+        @printer.print_expression(app([v("f"), n(ListExpr([x, v("if")][:]))]))
+      }),
+    )
+    .to_equal(
+      Some(
+        (
+          InvalidName(Lower, "if"),
+          [{ field: "application", index: 1, }, { field: "list", index: 1, }],
+        ),
+      ),
+    )
+  })
+}
+
+///|
+test "vertical shapes of if, case and let" {
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_expression(expr_of("if a then b else c")))
+    .to_equal("if a then\n    b\n\nelse\n    c")
+    s
+    .expect(
+      @printer.print_expression(expr_of("if a then b else if c then d else e")),
+    )
+    .to_equal("if a then\n    b\n\nelse if c then\n    d\n\nelse\n    e")
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("case x of\n        Just y -> y\n\n        Nothing -> 0"),
+      ),
+    )
+    .to_equal(
+      "case x of\n    Just y ->\n        y\n\n    Nothing ->\n        0",
+    )
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("let\n        a = 1\n        b = 2\n    in\n    a + b"),
+      ),
+    )
+    .to_equal("let\n    a =\n        1\n\n    b =\n        2\nin\na + b")
+  })
+}
+
+///|
+test "groups break in the elm-format shape" {
+  @expect.expect_all(s => {
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("aaaaaaaa |> bbbbbbbb |> cccccccc"),
+        width=20,
+      ),
+    )
+    .to_equal("aaaaaaaa\n    |> bbbbbbbb\n    |> cccccccc")
+    s
+    .expect(@printer.print_expression(expr_of("f aaaaaa bbbbbb"), width=12))
+    .to_equal("f\n    aaaaaa\n    bbbbbb")
+    s
+    .expect(@printer.print_expression(expr_of("[ aaaa, bbbb ]"), width=10))
+    .to_equal("[ aaaa\n, bbbb\n]")
+    s
+    .expect(
+      @printer.print_expression(expr_of("{ r | aaaa = 1, bbbb = 2 }"), width=20),
+    )
+    .to_equal("{ r\n    | aaaa = 1\n    , bbbb = 2\n}")
+    s
+    .expect(@printer.print_expression(expr_of("\\x -> aaaaaaaaaa"), width=10))
+    .to_equal("\\x ->\n    aaaaaaaaaa")
+    s
+    .expect(@printer.print_expression(expr_of("( aaaa, bbbb )"), width=10))
+    .to_equal("( aaaa\n, bbbb\n)")
+  })
+}
+
+///|
+test "a long string literal stays on one line" {
+  let long = "a very long text that does not fit"
+  inspect(
+    @printer.print_expression(
+      n(ListExpr([n(@ast.Expression::Literal(long))][:])),
+      width=10,
+    ),
+    content="[ \"a very long text that does not fit\"\n]",
+  )
+}

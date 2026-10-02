@@ -9,6 +9,8 @@ import {
 }
 
 // Values
+pub fn print_expression(@ast.Node[@ast.Expression], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
 pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 
 pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
