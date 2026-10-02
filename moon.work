@@ -2,5 +2,4 @@ members = [
   ".",
   "./harness",
   "./docs/cookbook",
-  "./pretty",
 ]
