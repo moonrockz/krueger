@@ -6,6 +6,28 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.3.0] - 2026-10-01
+
+The syntax tree answers field and position questions faster, and it has more ways to walk a file. `Tree::field_of` and `Tree::step` read a parent index built once. `TreeCursor::goto_node_at` moves to the node at a position, `EventReader::iter` yields the remaining events, and `NodePath::from_steps` and `NodePath::append` build a path. `SourceText::new` makes a source text from a string. A cookbook of tested articles shows the common tasks: reports, traversal, editor queries and an AST explorer.
+
+### 🚀 Features
+
+- *(release)* A release:status check and a release-manager skill ([#35](https://github.com/moonrockz/krueger/pull/35)) by @DamianReeves
+- Tested API examples, a cookbook and SourceText::new ([#36](https://github.com/moonrockz/krueger/pull/36)) by @DamianReeves
+- *(syntax)* TreeCursor::goto_node_at, EventReader::iter and NodePath helpers; faster children() ([#38](https://github.com/moonrockz/krueger/pull/38)) by @DamianReeves
+- *(bench)* Benchmarks with a saved history, an HTML report and a manual workflow ([#39](https://github.com/moonrockz/krueger/pull/39)) by @DamianReeves
+
+### ⚡ Performance
+
+- *(syntax)* Linear file entries, O(1) field lookup through Tree ([#37](https://github.com/moonrockz/krueger/pull/37)) by @DamianReeves
+
+### 🏗️ Build and CI
+
+- *(release)* Make a repeated release run for one tag succeed ([#33](https://github.com/moonrockz/krueger/pull/33)) by @DamianReeves
+- *(release)* Release pull requests, CHANGELOG.md and release notes from it ([#34](https://github.com/moonrockz/krueger/pull/34)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.2.0...v0.3.0
+
 ## [0.2.0] - 2026-10-01
 
 The published package is smaller. The test harness (moonspec features,
