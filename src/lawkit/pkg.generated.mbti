@@ -61,6 +61,11 @@ pub fn without_ranges(@ast.File) -> Json
 // Errors
 
 // Types and methods
+pub(all) struct Commented(String) derive(@debug.Debug)
+pub fn Commented::text(Self) -> String
+pub impl @quickcheck.Arbitrary for Commented
+pub impl @shrink.Shrink for Commented
+
 pub(all) enum Construct {
   Parens
   List
