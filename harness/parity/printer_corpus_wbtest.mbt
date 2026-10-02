@@ -62,8 +62,9 @@ fn printer_check(key : String, text : String) -> (String?, Array[String]) {
     t => t
   }
   let again = parse(printed)
-  if dialect_errors(key, again) is Some(e) {
-    problems.push("printed source does not parse: \{e}")
+  // The location in `e` is in the printed source, not in the file.
+  if dialect_errors("printed", again) is Some(e) {
+    problems.push("\{key}: the printed source does not parse: \{e}")
   }
   match again.ast {
     Some(second) => {
