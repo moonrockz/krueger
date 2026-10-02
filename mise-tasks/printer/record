@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Print the corpus and record elm-format 0.8.7 verdicts in tests/printer/elm_format.lock (needs corpus:fetch; elm-format via mise)"
+set -euo pipefail
+
+KRUEGER_PARITY_MODE=write-printed moon test harness/parity --target js
+exec moon run -q --target wasm scripts/printer.mbtx -- record .dev/out/printed tests/printer/elm_format.lock "$@"
