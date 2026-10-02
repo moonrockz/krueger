@@ -303,7 +303,7 @@ fn Ctx::expr_plan(
           }
           @pretty.align(
             @pretty.text("let") +
-            @pretty.nest(4, decls) +
+            @pretty.tab(4, decls) +
             @pretty.hardline() +
             @pretty.text("in") +
             @pretty.hardline() +
@@ -340,7 +340,7 @@ fn Ctx::expr_plan(
         docs => {
           let head = @pretty.group(
             @pretty.text("case") +
-            @pretty.nest(4, @pretty.line() + docs[0]) +
+            @pretty.tab(4, @pretty.line() + docs[0]) +
             @pretty.line() +
             @pretty.text("of"),
           )
@@ -356,7 +356,7 @@ fn Ctx::expr_plan(
               @pretty.text(" ->") +
               @pretty.nest(4, @pretty.hardline() + docs[i + 1])
           }
-          @pretty.align(head + @pretty.nest(4, branches))
+          @pretty.align(head + @pretty.tab(4, branches))
         },
       )
     }
@@ -513,16 +513,16 @@ fn if_plan(
         d = d +
           @pretty.group(
             @pretty.text("if") +
-            @pretty.nest(4, @pretty.line() + docs[i]) +
+            @pretty.tab(4, @pretty.line() + docs[i]) +
             @pretty.line() +
             @pretty.text("then"),
           ) +
-          @pretty.nest(4, @pretty.hardline() + docs[i + 1]) +
+          @pretty.tab(4, @pretty.hardline() + docs[i + 1]) +
           @pretty.hardline() +
           @pretty.hardline() +
           @pretty.text("else")
       }
-      @pretty.align(d + @pretty.nest(4, @pretty.hardline() + docs[last]))
+      @pretty.align(d + @pretty.tab(4, @pretty.hardline() + docs[last]))
     },
   )
 }

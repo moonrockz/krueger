@@ -410,7 +410,7 @@ test "a record access target that is not a name, record or parenthesized express
 }
 
 ///|
-test "let, case and if after an operator indent from their keyword" {
+test "let, case and if after an operator indent right of their keyword" {
   // `let` is at column 9 here: its declarations must be right of it.
   @expect.expect_all(s => {
     s
@@ -454,11 +454,82 @@ test "let, case and if after an operator indent from their keyword" {
         #|a
         #|    == (b
         #|        && let
-        #|               y =
-        #|                   1
+        #|            y =
+        #|                1
         #|           in
         #|           y
         #|    )
+      ),
+    )
+  })
+}
+
+///|
+test "if, case and let indent to the next multiple of 4 right of their keyword" {
+  // The elm-format 0.8.7 forms: `in`, `else` and the let body in the
+  // keyword's column, everything inside at the next tab stop.
+  @expect.expect_all(s => {
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("g (case x of A -> 1) (let y = 1 in y) (if c then x else y)"),
+      ),
+    )
+    .to_equal(
+      (
+        #|g
+        #|    (case x of
+        #|        A ->
+        #|            1
+        #|    )
+        #|    (let
+        #|        y =
+        #|            1
+        #|     in
+        #|     y
+        #|    )
+        #|    (if c then
+        #|        x
+        #|
+        #|     else
+        #|        y
+        #|    )
+      ),
+    )
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("[ case x of A -> 1, let y = 1 in y, if c then x else y ]"),
+      ),
+    )
+    .to_equal(
+      (
+        #|[ case x of
+        #|    A ->
+        #|        1
+        #|, let
+        #|    y =
+        #|        1
+        #|  in
+        #|  y
+        #|, if c then
+        #|    x
+        #|
+        #|  else
+        #|    y
+        #|]
+      ),
+    )
+    s
+    .expect(@printer.print_expression(expr_of("a |> let y = 1 in y")))
+    .to_equal(
+      (
+        #|a
+        #|    |> let
+        #|        y =
+        #|            1
+        #|       in
+        #|       y
       ),
     )
   })
