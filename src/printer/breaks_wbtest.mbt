@@ -15,23 +15,83 @@ fn loc(row : Int, column : Int) -> @ast.Location {
 ///|
 test "break_before sees a line break in the gap before a token" {
   let f = facts_of("module A exposing (a)\n\n\na = f x\n    y\n")
+  let x = f.break_before(loc(4, 7))
+  let y = f.break_before(loc(5, 5))
+  let a = f.break_before(loc(4, 1))
   @expect.expect_all(s => {
-    s.expect(f.break_before(loc(4, 7))).to_equal(false) // x
-    s.expect(f.break_before(loc(5, 5))).to_equal(true) // y
+    s.expect(x).to_equal(false) // token x
+    s.expect(y).to_equal(true) // token y
     s
-    .expect(f.break_before(loc(4, 1)))
-    .to_equal(true) // a
+    .expect(a)
+    .to_equal(true) // token a
   })
 }
 
 ///|
-test "a line comment makes a break, a block comment on one line does not" {
+test "a block comment on one line makes no break" {
   let f = facts_of("module A exposing (a)\n\n\na = x {- c -} + y -- d\n")
+  let plus = f.break_before(loc(4, 15))
+  let inner = f.break_within({ start: loc(4, 5), end: loc(4, 18), })
   @expect.expect_all(s => {
-    s.expect(f.break_before(loc(4, 15))).to_equal(false) // +
+    s.expect(plus).to_equal(false) // token +
     s
-    .expect(f.break_within({ start: loc(4, 5), end: loc(4, 18), }))
-    .to_equal(false)
+    .expect(inner)
+    .to_equal(false) // x to y
+  })
+}
+
+///|
+test "a line comment makes a break" {
+  // The scanner puts the line end into the trivia after a line comment, so
+  // the Newline branch also fires here; a gap with only a line comment and no
+  // Newline cannot occur (a line comment at the end of the file has no token
+  // after it).
+  let f = facts_of("module A exposing (a)\n\n\na = x -- c\n    + y\n")
+  let plus = f.break_before(loc(5, 5))
+  let inner = f.break_within({ start: loc(4, 5), end: loc(5, 8), })
+  @expect.expect_all(s => {
+    s.expect(plus).to_equal(true) // token +
+    s
+    .expect(inner)
+    .to_equal(true) // x to the end of y
+  })
+}
+
+///|
+test "break_before at the first token" {
+  let plain = facts_of("module A exposing (a)\n")
+  let blank = facts_of("\n\nmodule A exposing (a)\n")
+  let comment = facts_of("-- c\nmodule A exposing (a)\n")
+  let block = facts_of("{- c -}module A exposing (a)\n")
+  @expect.expect_all(s => {
+    s.expect(plain.break_before(loc(1, 1))).to_equal(false)
+    s.expect(blank.break_before(loc(3, 1))).to_equal(true)
+    s.expect(comment.break_before(loc(2, 1))).to_equal(true)
+    s.expect(block.break_before(loc(1, 8))).to_equal(false)
+  })
+}
+
+///|
+test "queries at and after the end of the file" {
+  let f = facts_of("module A exposing (a)\n\n\na = x\n")
+  let past = f.break_before(loc(9, 1))
+  let to_end = f.break_within({ start: loc(4, 1), end: loc(9, 1), })
+  let after_last = f.break_within({ start: loc(9, 1), end: loc(9, 5), })
+  @expect.expect_all(s => {
+    s.expect(past).to_equal(false)
+    s.expect(to_end).to_equal(false) // no break between a, = and x
+    s.expect(after_last).to_equal(false)
+  })
+}
+
+///|
+test "break_before at a location that is not a token start uses the next token" {
+  let f = facts_of("module A exposing (a)\n\n\na = f x\n    y\n")
+  let inside_x = f.break_before(loc(4, 8)) // next token is y, on a new line
+  let inside_f = f.break_before(loc(4, 6)) // next token is x, same line
+  @expect.expect_all(s => {
+    s.expect(inside_x).to_equal(true)
+    s.expect(inside_f).to_equal(false)
   })
 }
 
