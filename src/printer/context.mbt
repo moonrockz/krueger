@@ -38,3 +38,24 @@ fn SourceFacts::from_tokens(tokens : Array[@scanner.Token]) -> SourceFacts {
   }
   { starts, lexemes, prefix, }
 }
+
+///|
+/// How the formatter chooses line breaks.
+///
+/// - `ElmFormat`: as elm-format 0.8.7: a construct is multi-line when the
+///   source has a line break where elm-format looks, or when a part of it
+///   is multi-line. There is no line width.
+/// - `Width(n)`: a construct is multi-line when it does not fit in `n`
+///   columns (the layout of `print_file`).
+pub(all) enum Layout {
+  ElmFormat
+  Width(Int)
+} derive(Eq, Debug)
+
+///|
+fn Layout::render_width(self : Layout) -> Int {
+  match self {
+    ElmFormat => @int.MAX_VALUE
+    Width(n) => n
+  }
+}

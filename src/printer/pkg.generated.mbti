@@ -5,10 +5,16 @@ import {
   "moonbitlang/core/debug",
   "moonrockz/krueger/ast",
   "moonrockz/krueger/dialect",
+  "moonrockz/krueger/parser",
+  "moonrockz/krueger/scanner",
   "moonrockz/krueger/syntax",
 }
 
 // Values
+pub fn format(String, layout? : Layout, dialect? : @dialect.Dialect) -> String raise FormatError
+
+pub fn format_parsed(@parser.ParseResult, layout? : Layout, dialect? : @dialect.Dialect) -> String raise FormatError
+
 pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 
 pub fn print_expression(@ast.Node[@ast.Expression], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
@@ -20,11 +26,21 @@ pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.
 pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 
 // Errors
+pub suberror FormatError {
+  ParseFailed(Array[@scanner.Diagnostic])
+  Unprintable(PrintError)
+} derive(@debug.Debug)
+
 pub suberror PrintError {
   PrintError(path~ : @syntax.NodePath, problem~ : PrintProblem)
 } derive(@debug.Debug)
 
 // Types and methods
+pub(all) enum Layout {
+  ElmFormat
+  Width(Int)
+} derive(Eq, @debug.Debug)
+
 pub(all) enum NameKind {
   Lower
   Upper

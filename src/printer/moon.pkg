@@ -5,6 +5,7 @@ import {
   "moonrockz/krueger/scanner",
   "moonrockz/krueger/syntax",
   "moonrockz/pretty",
+  "moonbitlang/core/int",
 }
 
 import {

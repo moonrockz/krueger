@@ -30,7 +30,7 @@ pub fn print_type_annotation(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.type_doc(@syntax.NodePath::root(), 0, t, AnyType), width~)
 }
 
@@ -70,7 +70,7 @@ pub fn print_pattern(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(
     ctx.pattern_doc(@syntax.NodePath::root(), 0, p, AnyPattern),
     width~,
@@ -109,7 +109,7 @@ pub fn print_expression(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), 0, e, AnyExpr), width~)
 }
 
@@ -151,7 +151,7 @@ pub fn print_declaration(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.declaration_doc(@syntax.NodePath::root(), 0, d), width~)
 }
 
@@ -185,6 +185,6 @@ pub fn print_file(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.file_doc(file), width~)
 }

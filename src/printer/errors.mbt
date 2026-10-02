@@ -69,6 +69,18 @@ pub suberror PrintError {
 /// Settings for one print call.
 priv struct Ctx {
   dialect : @dialect.Dialect
+  layout : Layout
+  /// The facts of the parsed source; `None` for an AST built by hand.
+  source : SourceFacts?
+}
+
+///|
+fn Ctx::new(
+  dialect : @dialect.Dialect,
+  layout? : Layout = Width(120),
+  source? : SourceFacts? = None,
+) -> Ctx {
+  { dialect, layout, source, }
 }
 
 ///|

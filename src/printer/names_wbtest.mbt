@@ -1,5 +1,5 @@
 ///|
-let elm : Ctx = { dialect: @dialect.Dialect::elm_0_19_1(), }
+let elm : Ctx = Ctx::new(@dialect.Dialect::elm_0_19_1())
 
 ///|
 test "lower names follow the scanner's rules and skip reserved words" {
@@ -10,9 +10,10 @@ test "lower names follow the scanner's rules and skip reserved words" {
     for bad in ["", "X", "if", "type", "port", "where", "x'", "1x", "_x", "a b"] {
       s.expect(elm.is_lower(bad)).to_be_false()
     }
-    let custom : Ctx = {
-      dialect: { ..@dialect.Dialect::elm_0_19_1(), reserved_words: ["forall"], },
-    }
+    let custom = Ctx::new({
+      ..@dialect.Dialect::elm_0_19_1(),
+      reserved_words: ["forall"],
+    })
     s.expect(custom.is_lower("forall")).to_be_false()
   })
 }
