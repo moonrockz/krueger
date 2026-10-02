@@ -6,6 +6,24 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.4.0] - 2026-10-02
+
+<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+### ⚠️ Breaking changes
+
+- Elm printer — Doc engine, AST printer and lossless CST print ([#41](https://github.com/moonrockz/krueger/pull/41))
+
+### 🚀 Features
+
+- [**breaking**] Elm printer — Doc engine, AST printer and lossless CST print ([#41](https://github.com/moonrockz/krueger/pull/41)) by @DamianReeves
+
+### 🏗️ Build and CI
+
+- Use moonrockz/pretty 0.1.0 from mooncakes.io ([#42](https://github.com/moonrockz/krueger/pull/42)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.3.0...v0.4.0
+
 ## [0.3.0] - 2026-10-01
 
 The syntax tree answers field and position questions faster, and it has more ways to walk a file. `Tree::field_of` and `Tree::step` read a parent index built once. `TreeCursor::goto_node_at` moves to the node at a position, `EventReader::iter` yields the remaining events, and `NodePath::from_steps` and `NodePath::append` build a path. `SourceText::new` makes a source text from a string. A cookbook of tested articles shows the common tasks: reports, traversal, editor queries and an AST explorer.
