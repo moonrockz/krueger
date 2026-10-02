@@ -301,12 +301,14 @@ fn Ctx::expr_plan(
               }) +
               docs[i]
           }
-          @pretty.text("let") +
-          @pretty.nest(4, decls) +
-          @pretty.hardline() +
-          @pretty.text("in") +
-          @pretty.hardline() +
-          docs[last]
+          @pretty.align(
+            @pretty.text("let") +
+            @pretty.nest(4, decls) +
+            @pretty.hardline() +
+            @pretty.text("in") +
+            @pretty.hardline() +
+            docs[last],
+          )
         },
       )
     }
@@ -354,7 +356,7 @@ fn Ctx::expr_plan(
               @pretty.text(" ->") +
               @pretty.nest(4, @pretty.hardline() + docs[i + 1])
           }
-          head + @pretty.nest(4, branches)
+          @pretty.align(head + @pretty.nest(4, branches))
         },
       )
     }
@@ -520,7 +522,7 @@ fn if_plan(
           @pretty.hardline() +
           @pretty.text("else")
       }
-      d + @pretty.nest(4, @pretty.hardline() + docs[last])
+      @pretty.align(d + @pretty.nest(4, @pretty.hardline() + docs[last]))
     },
   )
 }

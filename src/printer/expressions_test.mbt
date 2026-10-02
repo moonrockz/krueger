@@ -408,3 +408,58 @@ test "a record access target that is not a name, record or parenthesized express
     s.expect(access(ParenthesizedExpression(v("x")))).to_equal("(x).f")
   })
 }
+
+///|
+test "let, case and if after an operator indent from their keyword" {
+  // `let` is at column 9 here: its declarations must be right of it.
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_expression(expr_of("a </> let y = 1 in y")))
+    .to_equal(
+      (
+        #|a
+        #|    </> let
+        #|            y =
+        #|                1
+        #|        in
+        #|        y
+      ),
+    )
+    s
+    .expect(@printer.print_expression(expr_of("a </> case x of _ -> y")))
+    .to_equal(
+      (
+        #|a
+        #|    </> case x of
+        #|            _ ->
+        #|                y
+      ),
+    )
+    s
+    .expect(@printer.print_expression(expr_of("a </> if c then x else y")))
+    .to_equal(
+      (
+        #|a
+        #|    </> if c then
+        #|            x
+        #|
+        #|        else
+        #|            y
+      ),
+    )
+    s
+    .expect(@printer.print_expression(expr_of("a == (b && let y = 1 in y)")))
+    .to_equal(
+      (
+        #|a
+        #|    == (b
+        #|        && let
+        #|               y =
+        #|                   1
+        #|           in
+        #|           y
+        #|    )
+      ),
+    )
+  })
+}
