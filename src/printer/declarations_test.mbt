@@ -310,3 +310,17 @@ test "an import alias is one name and an infix precedence is 0 to 9" {
     }
   })
 }
+
+///|
+test "doc comments keep their line ends" {
+  // The printer writes LF line ends; text inside doc comments stays as it is.
+  let file = file_of(
+    "module A exposing (f)\r\n\r\n{-| m\r\n-}\r\n\r\n\r\n{-| a\r\nb -}\r\nf =\r\n    1\r\n",
+  )
+  debug_inspect(
+    @printer.print_file(file),
+    content=(
+      #|"module A exposing (f)\n\n{-| m\r\n-}\n\n\n{-| a\r\nb -}\nf =\n    1\n"
+    ),
+  )
+}

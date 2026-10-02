@@ -110,6 +110,8 @@ pub fn print_declaration(
 /// `let`) are always multi-line; other constructs stay on one line when they
 /// fit in `width` columns. Prints documentation and the doc comments of
 /// `File.comments` (module and port documentation), not regular comments.
+/// Text inside doc comments and GLSL is written as it is, line ends
+/// included: a doc comment from a CRLF source keeps its `\r\n`.
 /// Raises `PrintError` for an AST that cannot print as valid Elm; the
 /// error's path starts at the file.
 ///
