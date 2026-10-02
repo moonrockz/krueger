@@ -38,6 +38,11 @@ pub fn print_type_annotation(
 /// The Elm source of a pattern. Raises `PrintError` for a pattern that Elm
 /// cannot write (a negative number, a bad name, a tuple with one item); the
 /// error's path starts at `p`.
+///
+/// `UnConsPattern(a, AsPattern(b, c))` prints as `a :: b as c`, because
+/// krueger and elm-syntax read that text back as the same AST. `elm make`
+/// 0.19.1 and elm-format read `a :: b as c` as `(a :: b) as c`. To bind
+/// only the tail, use `ParenthesizedPattern`: `a :: (b as c)`.
 pub fn print_pattern(
   p : @ast.Node[@ast.Pattern],
   width? : Int = 120,
@@ -107,6 +112,10 @@ pub fn print_declaration(
 /// `File.comments` (module and port documentation), not regular comments.
 /// Raises `PrintError` for an AST that cannot print as valid Elm; the
 /// error's path starts at the file.
+///
+/// `UnConsPattern(a, AsPattern(b, c))` prints as `a :: b as c`, which
+/// `elm make` 0.19.1 and elm-format read as `(a :: b) as c` (see
+/// `print_pattern`).
 ///
 /// ```mbt check
 /// test {

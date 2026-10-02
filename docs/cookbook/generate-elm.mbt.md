@@ -92,6 +92,27 @@ test "print a parsed module" {
 }
 ```
 
+## Bind the tail of a list pattern
+
+krueger and elm-syntax read `a :: b as c` as `a :: (b as c)`: `c` is the
+tail. `elm make` 0.19.1 and elm-format read it as `(a :: b) as c`: `c` is
+the whole list. The printer writes `UnConsPattern(a, AsPattern(b, c))` as
+`a :: b as c`, so that krueger reads it back as the same AST. To bind only
+the tail, use `ParenthesizedPattern`: `a :: (b as c)`.
+
+```mbt check
+///|
+test "bind the tail of a list pattern" {
+  let tail : @krueger.Node[@krueger.Pattern] = ge_n(
+    AsPattern(ge_n(@krueger.Pattern::VarPattern("b")), ge_n("c")),
+  )
+  let p : @krueger.Node[@krueger.Pattern] = ge_n(
+    UnConsPattern(ge_n(VarPattern("a")), ge_n(ParenthesizedPattern(tail))),
+  )
+  inspect(@krueger.print_pattern(p), content="a :: (b as c)")
+}
+```
+
 ## Handle ASTs that Elm cannot write
 
 A name that is not valid Elm, a negative literal pattern or an empty `case`
