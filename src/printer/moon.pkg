@@ -12,6 +12,10 @@ import {
 
 import {
   "moonrockz/expect",
+  "moonrockz/krueger/lawkit",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/syntax",
+  "moonbitlang/core/json",
+  "moonbitlang/core/quickcheck",
+  "moonbitlang/core/quickcheck/splitmix",
 } for "test"
