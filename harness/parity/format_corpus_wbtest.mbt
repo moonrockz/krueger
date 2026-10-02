@@ -229,6 +229,104 @@ fn SetCount::markdown(self : SetCount, name : String) -> String {
 }
 
 ///|
+priv enum SourceSet {
+  ElmFormatTests
+  CorpusUnchanged
+  CorpusChanged
+  CorpusSkipped
+}
+
+///|
+/// The source set of a lock entry. A corpus file is unchanged when
+/// elm-format's output hashes like the source, changed when it hashes
+/// differently, and skipped when elm-format has no output (`expected` is
+/// `None`).
+fn source_set(
+  key : String,
+  expected : String?,
+  source_sha256 : String,
+) -> SourceSet {
+  if key.has_prefix("elm-format/") {
+    ElmFormatTests
+  } else {
+    match expected {
+      None => CorpusSkipped
+      Some(h) =>
+        if h == source_sha256 {
+          CorpusUnchanged
+        } else {
+          CorpusChanged
+        }
+    }
+  }
+}
+
+///|
+/// The problems with the pending list. A pending key must be a compared
+/// key whose output still differs; a skipped key or a key with no lock
+/// entry or changed source has its own message.
+fn pending_problems(
+  pending : Array[String],
+  mismatched : Array[String],
+  compared : Map[String, Bool],
+  skipped : Map[String, Bool],
+) -> Array[String] {
+  let problems = []
+  for key in pending {
+    if skipped.contains(key) {
+      problems.push(
+        "\{key}: listed in \{format_pending_path} but skipped in the lock",
+      )
+    } else if !compared.contains(key) {
+      problems.push(
+        "\{key}: listed in \{format_pending_path} but not compared; see the other problems",
+      )
+    } else if !mismatched.contains(key) {
+      problems.push(
+        "\{key}: listed in \{format_pending_path}, but the output matches elm-format now; remove it",
+      )
+    }
+  }
+  problems
+}
+
+///|
+test "source_set splits corpus files by elm-format's verdict" {
+  @expect.expect_all(s => {
+    s
+    .expect(source_set("elm-format/a.elm", Some("x"), "x") is ElmFormatTests)
+    .to_be_true()
+    s
+    .expect(source_set("a/1/src/A.elm", Some("x"), "x") is CorpusUnchanged)
+    .to_be_true()
+    s
+    .expect(source_set("a/1/src/A.elm", Some("y"), "x") is CorpusChanged)
+    .to_be_true()
+    s
+    .expect(source_set("a/1/src/A.elm", None, "x") is CorpusSkipped)
+    .to_be_true()
+  })
+}
+
+///|
+test "pending_problems names each cause" {
+  let compared : Map[String, Bool] = { "m": true, "ok": true }
+  let skipped : Map[String, Bool] = { "s": true }
+  let problems = pending_problems(
+    ["m", "ok", "s", "u"],
+    ["m"],
+    compared,
+    skipped,
+  )
+  @expect.expect_all(s => {
+    s.expect(problems.length()).to_equal(3)
+    s.expect(problems[0].contains("matches elm-format now")).to_be_true()
+    s.expect(problems[1].contains("skipped in the lock")).to_be_true()
+    s.expect(problems[2].contains("not compared")).to_be_true()
+  })
+}
+
+///|
 fn check_format_corpus() -> Unit raise {
   let lock = read_format_lock()
   let pending = read_format_pending()
@@ -238,6 +336,9 @@ fn check_format_corpus() -> Unit raise {
   let unchanged = SetCount::new()
   let changed = SetCount::new()
   let tests = SetCount::new()
+  let corpus_skipped = SetCount::new()
+  let compared : Map[String, Bool] = Map([])
+  let skipped_keys : Map[String, Bool] = Map([])
   let known = Map([])
   for source in format_sources_unverified() {
     known[source] = true
@@ -266,19 +367,20 @@ fn check_format_corpus() -> Unit raise {
       )
       continue
     }
-    let set = if key.has_prefix("elm-format/") {
-      tests
-    } else if entry.expected is Some(h) && h == entry.source {
-      unchanged
-    } else {
-      changed
+    let set = match source_set(key, entry.expected, entry.source) {
+      ElmFormatTests => tests
+      CorpusUnchanged => unchanged
+      CorpusChanged => changed
+      CorpusSkipped => corpus_skipped
     }
     if entry.skipped is Some(reason) {
       set.skipped[reason] = set.skipped.get(reason).unwrap_or(0) + 1
+      skipped_keys[key] = true
       continue
     }
     guard entry.expected is Some(expected) else { continue }
     set.total += 1
+    compared[key] = true
     let (actual_hash, actual_text) = match
       format_one(key, @fs.read_file_to_string(file)) {
       Ok(output) => (sha256_hex(output), output)
@@ -304,17 +406,12 @@ fn check_format_corpus() -> Unit raise {
       )
     }
   }
-  for key in pending {
-    if !mismatched.contains(key) {
-      problems.push(
-        "\{key}: listed in \{format_pending_path}, but the output matches elm-format now; remove it",
-      )
-    }
-  }
+  problems.append(pending_problems(pending, mismatched, compared, skipped_keys))
   ensure_dir(format_reports_dir)
   let summary = "### Formatter parity with elm-format 0.8.7\n\n| Source set | Matched | Total | Skipped |\n|---|---|---|---|\n" +
     unchanged.markdown("Corpus files elm-format accepts unchanged") +
     changed.markdown("Corpus files elm-format changes") +
+    corpus_skipped.markdown("Corpus files with no elm-format output") +
     tests.markdown("elm-format test files")
   @fs.write_string_to_file("\{format_reports_dir}/summary.md", summary)
   @fs.write_string_to_file(
@@ -322,6 +419,7 @@ fn check_format_corpus() -> Unit raise {
     Json::object({
       "corpus_unchanged": unchanged.to_json(),
       "corpus_changed": changed.to_json(),
+      "corpus_skipped": corpus_skipped.to_json(),
       "elm_format_tests": tests.to_json(),
       "pending": pending.length().to_json(),
     }).stringify(indent=2) +
