@@ -46,15 +46,19 @@ fn needs_parens(e : @ast.Expression, at : ExprAt) -> Bool {
     ExprArg => !is_atom(e) && !(e is Negation(_)) && !is_negative_literal(e)
     Head => !is_atom(e)
     Negated => !is_atom(e) || e is RecordAccessFunction(_)
+    // The parser reads `.f` after a lower-case name, a record, a record
+    // update or a closing parenthesis as a record access; after anything
+    // else (`"s".f`, `[].f`, `( a, b ).f`, `1.f`, `Just.f`) it reads a
+    // record access function or rejects the text.
     Target =>
-      !is_atom(e) ||
-      e
-      is (Integer(_)
-      | Hex(_)
-      | Floatable(_)
-      | RecordAccessFunction(_)
-      | PrefixOperator(_)) ||
-      (e is FunctionOrValue(_, name) && is_upper(name))
+      match e {
+        FunctionOrValue(_, name) => is_upper(name)
+        RecordExpr(_)
+        | RecordUpdateExpression(_, _)
+        | ParenthesizedExpression(_)
+        | RecordAccess(_, _) => false
+        _ => true
+      }
   }
 }
 

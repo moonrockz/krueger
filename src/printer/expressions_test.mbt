@@ -375,3 +375,36 @@ test "a let destructuring pattern that is not a term gets parentheses" {
     .to_equal("let\n    ( a, b ) =\n        x\nin\nw")
   })
 }
+
+///|
+test "a record access target that is not a name, record or parenthesized expression gets parentheses" {
+  let access = (target : @ast.Expression) => {
+    @printer.print_expression(n(RecordAccess(n(target), n("f"))))
+  }
+  @expect.expect_all(s => {
+    s.expect(access(Literal("s"))).to_equal("(\"s\").f")
+    s.expect(access(CharLiteral('c'))).to_equal("('c').f")
+    s.expect(access(UnitExpr)).to_equal("(()).f")
+    s.expect(access(ListExpr([][:]))).to_equal("([]).f")
+    s.expect(access(ListExpr([v("x")][:]))).to_equal("([ x ]).f")
+    s
+    .expect(access(TupledExpression([v("a"), v("b")][:])))
+    .to_equal("(( a, b )).f")
+    s.expect(access(GLSLExpression(" a "))).to_equal("([glsl| a |]).f")
+    s.expect(access(PrefixOperator("+"))).to_equal("((+)).f")
+    // These parse back as a record access without parentheses.
+    s.expect(access(FunctionOrValue(["List"][:], "map"))).to_equal("List.map.f")
+    s.expect(access(RecordExpr([][:]))).to_equal("{}.f")
+    s
+    .expect(
+      access(
+        RecordUpdateExpression(
+          n("r"),
+          [n(@ast.RecordSetter::{ field: n("a"), expression: v("x"), })][:],
+        ),
+      ),
+    )
+    .to_equal("{ r | a = x }.f")
+    s.expect(access(ParenthesizedExpression(v("x")))).to_equal("(x).f")
+  })
+}
