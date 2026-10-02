@@ -8,15 +8,29 @@ is 0.x, a minor release can contain breaking changes.
 
 ## [0.4.0] - 2026-10-02
 
-<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+krueger can now write Elm source. The new printer prints an AST as Elm code
+in the elm-format 0.8.7 layout: `print_file`, `print_declaration`,
+`print_expression`, `print_pattern` and `print_type_annotation`. It fits
+lines to a width of 120 by default and adds only the parentheses that the
+parser needs. When an AST cannot print as valid Elm, the printer raises
+`PrintError` with a `NodePath` to the bad node. `ModuleCst::to_source()`
+prints a concrete syntax tree back to its source text, byte for byte. The
+layout engine is a new dependency,
+[moonrockz/pretty](https://github.com/moonrockz/pretty): a Wadler-style
+engine in its own repository and module. For property tests, lawkit adds the
+`ElmAst` generator and `without_ranges`.
+
+The AST printer prints doc comments, but it does not print regular comments
+yet. On the parity corpus, the output for 150 of 363 files is identical to
+the elm-format output. A formatter that keeps all comments is future work.
 
 ### ⚠️ Breaking changes
 
-- Elm printer — Doc engine, AST printer and lossless CST print ([#41](https://github.com/moonrockz/krueger/pull/41))
+- `ModuleCst` has a new field, `trivia`: the whitespace and comments of a text that has no tokens. Code that builds a `ModuleCst` must set it (`[]` when there are tokens) ([#41](https://github.com/moonrockz/krueger/pull/41))
 
 ### 🚀 Features
 
-- [**breaking**] Elm printer — Doc engine, AST printer and lossless CST print ([#41](https://github.com/moonrockz/krueger/pull/41)) by @DamianReeves
+- [**breaking**] Elm printer: AST printer and lossless CST print ([#41](https://github.com/moonrockz/krueger/pull/41)) by @DamianReeves
 
 ### 🏗️ Build and CI
 
