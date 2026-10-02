@@ -59,6 +59,64 @@ fn needs_parens(e : @ast.Expression, at : ExprAt) -> Bool {
 }
 
 ///|
+/// An item of the expression printer's work stack. The printer does not
+/// recurse per nesting level: `Ctx::run` pops items until the stack is
+/// empty, so deep ASTs do not overflow the call stack (wasm overflows at a
+/// few hundred frames).
+priv enum Work {
+  /// Print this expression: check its level, then push its plan.
+  Expr(@syntax.NodePath, Int, @ast.Node[@ast.Expression], ExprAt)
+  /// Make a doc that has no nested expression (a name, a pattern, a type).
+  /// It runs when it is popped, so errors come in source order.
+  Leaf(() -> @pretty.Doc raise PrintError)
+  /// Run these items in order, then combine their docs into one.
+  Plan(Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc)
+  /// Pop this many docs and push their combination.
+  Build(Int, (Array[@pretty.Doc]) -> @pretty.Doc)
+}
+
+///|
+/// Runs the work stack from `start` and returns its one doc. Items give
+/// their docs in order: each `Plan` and `Expr` pushes a `Build`, then its
+/// items in reverse, so the first item runs first.
+fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
+  let work : Array[Work] = [start]
+  let results : Array[@pretty.Doc] = []
+  fn push_plan(items : Array[Work], combine) {
+    work.push(Build(items.length(), combine))
+    for i = items.length() - 1; i >= 0; i = i - 1 {
+      work.push(items[i])
+    }
+  }
+
+  while work.pop() is Some(item) {
+    match item {
+      Expr(path, level, e, at) => {
+        check_level(path, level)
+        let (items, combine) = self.expr_plan(path, level, e)
+        if needs_parens(e.value, at) {
+          push_plan(items, docs => parens(combine(docs)))
+        } else {
+          push_plan(items, combine)
+        }
+      }
+      Leaf(f) => results.push(f())
+      Plan(items, combine) => push_plan(items, combine)
+      Build(count, combine) => {
+        let start = results.length() - count
+        let docs = []
+        for i in start..<results.length() {
+          docs.push(results[i])
+        }
+        results.truncate(start)
+        results.push(combine(docs))
+      }
+    }
+  }
+  results[0]
+}
+
+///|
 fn Ctx::expr_doc(
   self : Ctx,
   path : @syntax.NodePath,
@@ -66,55 +124,45 @@ fn Ctx::expr_doc(
   e : @ast.Node[@ast.Expression],
   at : ExprAt,
 ) -> @pretty.Doc raise PrintError {
-  check_level(path, level)
-  let d = self.expr_body(path, level, e)
-  if needs_parens(e.value, at) {
-    parens(d)
-  } else {
-    d
-  }
+  self.run(Expr(path, level, e, at))
 }
 
 ///|
-fn Ctx::expr_items(
-  self : Ctx,
-  path : @syntax.NodePath,
-  field_name : String,
-  level : Int,
-  items : ArrayView[@ast.Node[@ast.Expression]],
-) -> Array[@pretty.Doc] raise PrintError {
-  let docs = []
-  for i, x in items {
-    docs.push(self.expr_doc(path.child(field_name, i), level + 1, x, AnyExpr))
-  }
-  docs
+/// A plan with no items: the doc is already known.
+fn done(d : @pretty.Doc) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) {
+  ([], _ => d)
 }
 
 ///|
-fn Ctx::setters(
+/// The items of `label = value` for each setter, two per setter.
+fn Ctx::setter_items(
   self : Ctx,
   path : @syntax.NodePath,
   field_name : String,
   level : Int,
   setters : ArrayView[@ast.Node[@ast.RecordSetter]],
-) -> Array[@pretty.Doc] raise PrintError {
-  let docs = []
+) -> Array[Work] {
+  let items = []
   for i, s in setters {
     let p = path.child(field_name, i)
-    docs.push(
-      field(
-        self.lower_name(p.child("field", 0), s.value.field.value),
-        "=",
-        self.expr_doc(
-          p.child("expression", 0),
-          level + 1,
-          s.value.expression,
-          AnyExpr,
-        ),
-      ),
+    items.push(
+      Leaf(() => self.lower_name(p.child("field", 0), s.value.field.value)),
+    )
+    items.push(
+      Expr(p.child("expression", 0), level + 1, s.value.expression, AnyExpr),
     )
   }
-  docs
+  items
+}
+
+///|
+/// The setter docs from `docs[from]` on, two per setter.
+fn setter_docs(docs : Array[@pretty.Doc], from : Int) -> Array[@pretty.Doc] {
+  let fields = []
+  for i = from; i + 1 < docs.length(); i = i + 2 {
+    fields.push(field(docs[i], "=", docs[i + 1]))
+  }
+  fields
 }
 
 ///|
@@ -134,193 +182,213 @@ fn number_doc(
 }
 
 ///|
-fn Ctx::expr_body(
+/// The work items of an expression's direct parts, in source order, and how
+/// their docs combine. It checks the expression itself (its shape, its
+/// literal text) before any part; nested expressions are `Expr` items.
+fn Ctx::expr_plan(
   self : Ctx,
   path : @syntax.NodePath,
   level : Int,
   e : @ast.Node[@ast.Expression],
-) -> @pretty.Doc raise PrintError {
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   match e.value {
-    UnitExpr => @pretty.text("()")
+    UnitExpr => done(@pretty.text("()"))
     Application(items) => {
       guard items.length() >= 2 else {
         raise PrintError(path~, problem=ShortApplication)
       }
-      let head = self.expr_doc(
-        path.child("application", 0),
-        level + 1,
-        items[0],
-        Head,
-      )
-      let args = []
+      let parts = [
+        Expr(path.child("application", 0), level + 1, items[0], Head),
+      ]
       for i in 1..<items.length() {
-        args.push(
-          self.expr_doc(
-            path.child("application", i),
-            level + 1,
-            items[i],
-            ExprArg,
-          ),
+        parts.push(
+          Expr(path.child("application", i), level + 1, items[i], ExprArg),
         )
       }
-      spaced(head, args)
+      (parts, docs => spaced(docs[0], docs[1:].to_owned()))
     }
-    OperatorApplication(_, _, _, _) => self.chain_doc(path, level, e)
-    FunctionOrValue(module_, name) => self.qualified_value(path, module_, name)
-    IfBlock(c, t, f) => self.if_doc(path, level, c, t, f)
+    OperatorApplication(_, _, _, _) => self.chain_plan(path, level, e)
+    FunctionOrValue(module_, name) =>
+      done(self.qualified_value(path, module_, name))
+    IfBlock(c, t, f) => if_plan(path, level, c, t, f)
     PrefixOperator(symbol) =>
-      @pretty.text("(" + operator_symbol(path, symbol) + ")")
-    Operator(symbol) => @pretty.text(operator_symbol(path, symbol))
-    Integer(x) => number_doc(path, x, n => n.to_string())
-    Hex(x) => number_doc(path, x, hex_text)
+      done(@pretty.text("(" + operator_symbol(path, symbol) + ")"))
+    Operator(symbol) => done(@pretty.text(operator_symbol(path, symbol)))
+    Integer(x) => done(number_doc(path, x, n => n.to_string()))
+    Hex(x) => done(number_doc(path, x, hex_text))
     Floatable(x) => {
       guard !x.is_nan() && !x.is_inf() else {
         raise PrintError(path~, problem=NonFiniteFloat(x))
       }
       if is_negative(x) {
-        @pretty.text("-" + float_text(-x))
+        done(@pretty.text("-" + float_text(-x)))
       } else {
-        @pretty.text(float_text(x))
+        done(@pretty.text(float_text(x)))
       }
     }
     Negation(x) =>
-      @pretty.text("-") +
-      self.expr_doc(path.child("negation", 0), level + 1, x, Negated)
-    Literal(s) => @pretty.text(string_literal(s))
-    CharLiteral(c) => @pretty.text(char_literal(c))
+      (
+        [Expr(path.child("negation", 0), level + 1, x, Negated)],
+        docs => @pretty.text("-") + docs[0],
+      )
+    Literal(s) => done(@pretty.text(string_literal(s)))
+    CharLiteral(c) => done(@pretty.text(char_literal(c)))
     TupledExpression(items) => {
       guard items.length() >= 2 else {
         raise PrintError(path~, problem=ShortTuple)
       }
-      sequence("(", ")", self.expr_items(path, "tupled", level, items))
+      (
+        expr_items(path, "tupled", level, items),
+        docs => sequence("(", ")", docs),
+      )
     }
     ParenthesizedExpression(x) =>
-      parens(
-        self.expr_doc(path.child("parenthesized", 0), level + 1, x, AnyExpr),
+      (
+        [Expr(path.child("parenthesized", 0), level + 1, x, AnyExpr)],
+        docs => parens(docs[0]),
       )
     LetExpression(b) => {
       guard !b.declarations.is_empty() else {
         raise PrintError(path~, problem=EmptyLet)
       }
-      let mut decls = @pretty.empty()
+      let parts = []
       for i, dn in b.declarations {
         let p = path.child("declarations", i)
-        let doc = match dn.value {
-          LetFunction(f) => self.function_doc(p, level + 1, f)
+        match dn.value {
+          LetFunction(f) => parts.push(self.function_plan(p, level + 1, f))
           LetDestructuring(pattern, value) =>
-            self.pattern_doc(
-              p.child("pattern", 0),
-              level + 1,
-              pattern,
-              AnyPattern,
-            ) +
-            @pretty.text(" =") +
-            @pretty.nest(
-              4,
-              @pretty.hardline() +
-              self.expr_doc(p.child("expression", 0), level + 1, value, AnyExpr),
+            parts.push(
+              Plan(
+                [
+                  Leaf(() => {
+                    self.pattern_doc(
+                      p.child("pattern", 0),
+                      level + 1,
+                      pattern,
+                      AnyPattern,
+                    )
+                  }),
+                  Expr(p.child("expression", 0), level + 1, value, AnyExpr),
+                ],
+                docs => {
+                  docs[0] +
+                  @pretty.text(" =") +
+                  @pretty.nest(4, @pretty.hardline() + docs[1])
+                },
+              ),
             )
         }
-        decls = decls +
-          (if i == 0 {
-            @pretty.hardline()
-          } else {
-            @pretty.hardline() + @pretty.hardline()
-          }) +
-          doc
       }
-      @pretty.text("let") +
-      @pretty.nest(4, decls) +
-      @pretty.hardline() +
-      @pretty.text("in") +
-      @pretty.hardline() +
-      self.expr_doc(
-        path.child("expression", 0),
-        level + 1,
-        b.expression,
-        AnyExpr,
+      parts.push(
+        Expr(path.child("expression", 0), level + 1, b.expression, AnyExpr),
+      )
+      (
+        parts,
+        docs => {
+          let last = docs.length() - 1
+          let mut decls = @pretty.empty()
+          for i in 0..<last {
+            decls = decls +
+              (if i == 0 {
+                @pretty.hardline()
+              } else {
+                @pretty.hardline() + @pretty.hardline()
+              }) +
+              docs[i]
+          }
+          @pretty.text("let") +
+          @pretty.nest(4, decls) +
+          @pretty.hardline() +
+          @pretty.text("in") +
+          @pretty.hardline() +
+          docs[last]
+        },
       )
     }
     CaseExpression(b) => {
       guard !b.cases.is_empty() else {
         raise PrintError(path~, problem=EmptyCase)
       }
-      let head = @pretty.group(
-        @pretty.text("case") +
-        @pretty.nest(
-          4,
-          @pretty.line() +
-          self.expr_doc(
-            path.child("expression", 0),
-            level + 1,
-            b.expression,
-            AnyExpr,
-          ),
-        ) +
-        @pretty.line() +
-        @pretty.text("of"),
-      )
-      let mut branches = @pretty.empty()
+      let parts = [
+        Expr(path.child("expression", 0), level + 1, b.expression, AnyExpr),
+      ]
       for i, c in b.cases {
         let p = path.child("cases", i)
-        let branch = self.pattern_doc(
-            p.child("pattern", 0),
-            level + 1,
-            c.pattern,
-            AnyPattern,
-          ) +
-          @pretty.text(" ->") +
-          @pretty.nest(
-            4,
-            @pretty.hardline() +
-            self.expr_doc(
-              p.child("expression", 0),
+        parts.push(
+          Leaf(() => {
+            self.pattern_doc(
+              p.child("pattern", 0),
               level + 1,
-              c.expression,
-              AnyExpr,
-            ),
-          )
-        branches = branches +
-          (if i == 0 {
-            @pretty.hardline()
-          } else {
-            @pretty.hardline() + @pretty.hardline()
-          }) +
-          branch
+              c.pattern,
+              AnyPattern,
+            )
+          }),
+        )
+        parts.push(
+          Expr(p.child("expression", 0), level + 1, c.expression, AnyExpr),
+        )
       }
-      head + @pretty.nest(4, branches)
+      (
+        parts,
+        docs => {
+          let head = @pretty.group(
+            @pretty.text("case") +
+            @pretty.nest(4, @pretty.line() + docs[0]) +
+            @pretty.line() +
+            @pretty.text("of"),
+          )
+          let mut branches = @pretty.empty()
+          for i = 1; i + 1 < docs.length(); i = i + 2 {
+            branches = branches +
+              (if i == 1 {
+                @pretty.hardline()
+              } else {
+                @pretty.hardline() + @pretty.hardline()
+              }) +
+              docs[i] +
+              @pretty.text(" ->") +
+              @pretty.nest(4, @pretty.hardline() + docs[i + 1])
+          }
+          head + @pretty.nest(4, branches)
+        },
+      )
     }
     LambdaExpression(l) => {
       guard !l.args.is_empty() else {
         raise PrintError(path~, problem=NoLambdaArguments)
       }
-      let mut head = @pretty.text("\\")
+      let parts = []
       for i, a in l.args {
-        if i > 0 {
-          head = head + @pretty.text(" ")
-        }
-        head = head +
-          self.pattern_doc(path.child("patterns", i), level + 1, a, PatternArg)
+        let p = path.child("patterns", i)
+        parts.push(Leaf(() => self.pattern_doc(p, level + 1, a, PatternArg)))
       }
-      head +
-      @pretty.text(" ->") +
-      @pretty.group(
-        @pretty.nest(
-          4,
-          @pretty.line() +
-          self.expr_doc(
-            path.child("expression", 0),
-            level + 1,
-            l.expression,
-            AnyExpr,
-          ),
-        ),
+      parts.push(
+        Expr(path.child("expression", 0), level + 1, l.expression, AnyExpr),
+      )
+      (
+        parts,
+        docs => {
+          let last = docs.length() - 1
+          let mut head = @pretty.text("\\")
+          for i in 0..<last {
+            if i > 0 {
+              head = head + @pretty.text(" ")
+            }
+            head = head + docs[i]
+          }
+          head +
+          @pretty.text(" ->") +
+          @pretty.group(@pretty.nest(4, @pretty.line() + docs[last]))
+        },
       )
     }
     RecordExpr(setters) =>
-      sequence("{", "}", self.setters(path, "record", level, setters))
+      (
+        self.setter_items(path, "record", level, setters),
+        docs => sequence("{", "}", setter_docs(docs, 0)),
+      )
     ListExpr(items) =>
-      sequence("[", "]", self.expr_items(path, "list", level, items))
+      (expr_items(path, "list", level, items), docs => sequence("[", "]", docs))
     RecordAccess(_, _) => {
       let names : Array[(@syntax.NodePath, String)] = []
       let mut node = e
@@ -330,12 +398,21 @@ fn Ctx::expr_body(
         p = p.child("expression", 0)
         node = target
       }
-      let mut d = self.expr_doc(p, level + 1, node, Target)
+      let parts = [Expr(p, level + 1, node, Target)]
       for i = names.length() - 1; i >= 0; i = i - 1 {
         let (np, name) = names[i]
-        d = d + @pretty.text(".") + self.lower_name(np, name)
+        parts.push(Leaf(() => self.lower_name(np, name)))
       }
-      d
+      (
+        parts,
+        docs => {
+          let mut d = docs[0]
+          for i in 1..<docs.length() {
+            d = d + @pretty.text(".") + docs[i]
+          }
+          d
+        },
+      )
     }
     RecordAccessFunction(s) => {
       // elm-syntax keeps the dot: ".name".
@@ -348,63 +425,61 @@ fn Ctx::expr_body(
       guard s.has_prefix(".") && self.is_lower(name.to_string()) else {
         raise PrintError(path~, problem=InvalidName(Lower, s))
       }
-      @pretty.text(s)
+      done(@pretty.text(s))
     }
     RecordUpdateExpression(name, setters) => {
       guard !setters.is_empty() else {
         raise PrintError(path~, problem=NoFields)
       }
-      extension(
-        self.lower_name(path.child("name", 0), name.value),
-        self.setters(path, "updates", level, setters),
-      )
+      let parts = [
+        Leaf(() => self.lower_name(path.child("name", 0), name.value)),
+      ]
+      parts.append(self.setter_items(path, "updates", level, setters))
+      (parts, docs => extension(docs[0], setter_docs(docs, 1)))
     }
     GLSLExpression(s) => {
       guard !s.contains("|]") else {
         raise PrintError(path~, problem=InvalidGlsl)
       }
-      @pretty.verbatim("[glsl|" + s + "|]")
+      done(@pretty.verbatim("[glsl|" + s + "|]"))
     }
   }
 }
 
 ///|
+/// An `Expr` item for each item, at `path.child(field_name, i)`.
+fn expr_items(
+  path : @syntax.NodePath,
+  field_name : String,
+  level : Int,
+  items : ArrayView[@ast.Node[@ast.Expression]],
+) -> Array[Work] {
+  let parts = []
+  for i, x in items {
+    parts.push(Expr(path.child(field_name, i), level + 1, x, AnyExpr))
+  }
+  parts
+}
+
+///|
 /// `if c then a else if d then b else e`, the `else if` chain flattened
-/// without recursion.
-fn Ctx::if_doc(
-  self : Ctx,
+/// without recursion: a clause and a branch per `if`, then the last `else`.
+fn if_plan(
   path : @syntax.NodePath,
   level : Int,
   c : @ast.Node[@ast.Expression],
   t : @ast.Node[@ast.Expression],
   f : @ast.Node[@ast.Expression],
-) -> @pretty.Doc raise PrintError {
-  let mut d = @pretty.empty()
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
+  let parts = []
   let mut p = path
   let mut cond = c
   let mut then_ = t
   let mut else_ = f
-  let mut result : @pretty.Doc? = None
-  while result is None {
-    d = d +
-      @pretty.group(
-        @pretty.text("if") +
-        @pretty.nest(
-          4,
-          @pretty.line() +
-          self.expr_doc(p.child("clause", 0), level + 1, cond, AnyExpr),
-        ) +
-        @pretty.line() +
-        @pretty.text("then"),
-      ) +
-      @pretty.nest(
-        4,
-        @pretty.hardline() +
-        self.expr_doc(p.child("then", 0), level + 1, then_, AnyExpr),
-      ) +
-      @pretty.hardline() +
-      @pretty.hardline() +
-      @pretty.text("else")
+  let mut more = true
+  while more {
+    parts.push(Expr(p.child("clause", 0), level + 1, cond, AnyExpr))
+    parts.push(Expr(p.child("then", 0), level + 1, then_, AnyExpr))
     match else_.value {
       IfBlock(c2, t2, f2) => {
         p = p.child("else", 0)
@@ -412,20 +487,37 @@ fn Ctx::if_doc(
         cond = c2
         then_ = t2
         else_ = f2
-        d = d + @pretty.text(" ")
       }
-      _ =>
-        result = Some(
-          d +
-          @pretty.nest(
-            4,
-            @pretty.hardline() +
-            self.expr_doc(p.child("else", 0), level + 1, else_, AnyExpr),
-          ),
-        )
+      _ => {
+        parts.push(Expr(p.child("else", 0), level + 1, else_, AnyExpr))
+        more = false
+      }
     }
   }
-  result.unwrap()
+  (
+    parts,
+    docs => {
+      let last = docs.length() - 1
+      let mut d = @pretty.empty()
+      for i = 0; i + 1 < last; i = i + 2 {
+        if i > 0 {
+          d = d + @pretty.text(" ")
+        }
+        d = d +
+          @pretty.group(
+            @pretty.text("if") +
+            @pretty.nest(4, @pretty.line() + docs[i]) +
+            @pretty.line() +
+            @pretty.text("then"),
+          ) +
+          @pretty.nest(4, @pretty.hardline() + docs[i + 1]) +
+          @pretty.hardline() +
+          @pretty.hardline() +
+          @pretty.text("else")
+      }
+      d + @pretty.nest(4, @pretty.hardline() + docs[last])
+    },
+  )
 }
 
 ///|
@@ -476,13 +568,13 @@ fn Ctx::chain_step(
 /// `a + b * c`: the first operand, then each operator and its operand on a
 /// new line indented by 4 when the chain breaks. elm-format treats the
 /// whole binary-operator expression as one chain. Flattened with an
-/// explicit stack.
-fn Ctx::chain_doc(
+/// explicit stack; every operator is checked before any operand.
+fn Ctx::chain_plan(
   self : Ctx,
   path : @syntax.NodePath,
   level : Int,
   e : @ast.Node[@ast.Expression],
-) -> @pretty.Doc raise PrintError {
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   let steps : Array[ChainStep] = []
   let stack : Array[ChainStep] = [Expand(path, e)]
   while stack.pop() is Some(step) {
@@ -498,35 +590,33 @@ fn Ctx::chain_doc(
     }
   }
   let last = steps.length() - 1
-  let mut first = @pretty.empty()
-  let mut rest = @pretty.empty()
-  let mut symbol = ""
+  let parts = []
+  let symbols = []
   for i, step in steps {
     match step {
-      Symbol(s) => symbol = s
-      Operand(p, node, wrapped) => {
-        let doc = if wrapped {
-          parens(self.expr_doc(p, level + 1, node, AnyExpr))
-        } else {
-          self.expr_doc(
-            p,
-            level + 1,
-            node,
-            if i == last {
-              AnyExpr
-            } else {
-              Operand
-            },
-          )
-        }
-        if i == 0 {
-          first = doc
-        } else {
-          rest = rest + @pretty.line() + @pretty.text(symbol + " ") + doc
-        }
-      }
+      Symbol(s) => symbols.push(s)
+      Operand(p, node, wrapped) =>
+        parts.push(
+          if wrapped {
+            Plan([Expr(p, level + 1, node, AnyExpr)], docs => parens(docs[0]))
+          } else {
+            Expr(p, level + 1, node, if i == last { AnyExpr } else { Operand })
+          },
+        )
       Expand(_, _) => ()
     }
   }
-  @pretty.group(first + @pretty.nest(4, rest))
+  (
+    parts,
+    docs => {
+      let mut rest = @pretty.empty()
+      for i in 1..<docs.length() {
+        rest = rest +
+          @pretty.line() +
+          @pretty.text(symbols[i - 1] + " ") +
+          docs[i]
+      }
+      @pretty.group(docs[0] + @pretty.nest(4, rest))
+    },
+  )
 }

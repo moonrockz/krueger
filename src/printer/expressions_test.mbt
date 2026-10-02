@@ -305,3 +305,45 @@ test "a long string literal stays on one line" {
     content="[ \"a very long text that does not fit\"\n]",
   )
 }
+
+///|
+test "the first problem in print order is reported" {
+  let bad = app([v("x")])
+  let negative : @ast.Node[@ast.Pattern] = n(IntPattern(-1L))
+  let case_ : @ast.Node[@ast.Expression] = n(
+    CaseExpression({
+      expression: bad,
+      cases: [({ pattern: negative, expression: v("x"), } : @ast.Case)][:],
+    }),
+  )
+  let let_ : @ast.Node[@ast.Expression] = n(
+    LetExpression({
+      declarations: [
+        (
+          n(
+            LetFunction({
+              documentation: Some(n("not a doc")),
+              signature: None,
+              declaration: n({
+                name: n("f"),
+                arguments: [negative][:],
+                expression: bad,
+              }),
+            }),
+          ) : @ast.Node[@ast.LetDeclaration]),
+      ][:],
+      expression: bad,
+    }),
+  )
+  let access : @ast.Node[@ast.Expression] = n(RecordAccess(bad, n("X")))
+  let chain = op("+", Left, bad, op("<=>", Left, v("a"), v("b")))
+  let problem = (e : @ast.Node[@ast.Expression]) => {
+    problem_of(() => @printer.print_expression(e)).map(p => p.0)
+  }
+  @expect.expect_all(s => {
+    s.expect(problem(case_)).to_equal(Some(ShortApplication))
+    s.expect(problem(let_)).to_equal(Some(InvalidDocumentation))
+    s.expect(problem(access)).to_equal(Some(ShortApplication))
+    s.expect(problem(chain)).to_equal(Some(UnknownOperator("<=>")))
+  })
+}

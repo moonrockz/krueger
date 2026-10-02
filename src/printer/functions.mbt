@@ -37,37 +37,72 @@ fn Ctx::signature_doc(
 ///|
 /// Documentation, signature and `name args =` with the body on the next
 /// line, indented by 4. Fields: `documentation`, `signature`, `declaration`.
+/// A `let` uses `function_plan` (one work stack for the whole expression);
+/// top-level function declarations use this entry.
+#warnings("-unused_value")
 fn Ctx::function_doc(
   self : Ctx,
   path : @syntax.NodePath,
   level : Int,
   f : @ast.Function,
 ) -> @pretty.Doc raise PrintError {
-  let mut d = @pretty.empty()
+  self.run(self.function_plan(path, level, f))
+}
+
+///|
+/// The work items of `function_doc`, in the order it checks them: the
+/// documentation, the signature, the name, the arguments, the body.
+fn Ctx::function_plan(
+  self : Ctx,
+  path : @syntax.NodePath,
+  level : Int,
+  f : @ast.Function,
+) -> Work {
+  let parts = []
+  let has_doc = f.documentation is Some(_)
+  let has_sig = f.signature is Some(_)
   if f.documentation is Some(doc) {
-    d = d +
-      documentation_doc(path.child("documentation", 0), doc.value) +
-      @pretty.hardline()
+    parts.push(
+      Leaf(() => documentation_doc(path.child("documentation", 0), doc.value)),
+    )
   }
   if f.signature is Some(sig) {
-    d = d +
-      self.signature_doc(path.child("signature", 0), level + 1, sig.value) +
-      @pretty.hardline()
+    parts.push(
+      Leaf(() => {
+        self.signature_doc(path.child("signature", 0), level + 1, sig.value)
+      }),
+    )
   }
   let p = path.child("declaration", 0)
   let imp = f.declaration.value
-  let mut head = self.lower_name(p.child("name", 0), imp.name.value)
+  parts.push(Leaf(() => self.lower_name(p.child("name", 0), imp.name.value)))
   for i, a in imp.arguments {
-    head = head +
-      @pretty.text(" ") +
-      self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg)
+    parts.push(
+      Leaf(() => {
+        self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg)
+      }),
+    )
   }
-  d +
-  head +
-  @pretty.text(" =") +
-  @pretty.nest(
-    4,
-    @pretty.hardline() +
-    self.expr_doc(p.child("expression", 0), level + 1, imp.expression, AnyExpr),
-  )
+  parts.push(Expr(p.child("expression", 0), level + 1, imp.expression, AnyExpr))
+  Plan(parts, docs => {
+    let mut d = @pretty.empty()
+    let mut k = 0
+    if has_doc {
+      d = d + docs[k] + @pretty.hardline()
+      k = k + 1
+    }
+    if has_sig {
+      d = d + docs[k] + @pretty.hardline()
+      k = k + 1
+    }
+    let last = docs.length() - 1
+    let mut head = docs[k]
+    for i in (k + 1)..<last {
+      head = head + @pretty.text(" ") + docs[i]
+    }
+    d +
+    head +
+    @pretty.text(" =") +
+    @pretty.nest(4, @pretty.hardline() + docs[last])
+  })
 }
