@@ -79,8 +79,11 @@ test "print a generated function" {
 ## Print a parsed module
 
 `print_file` also takes the AST that `parse_module` returns. The output has
-the elm-format layout, so a module that elm-format already formats comes
-back unchanged.
+the elm-format layout. A module with no regular comments, in the layout that
+the printer chooses, prints back unchanged. The printer does not print
+regular comments yet, and elm-format keeps some layouts that the printer
+changes (for example, a list that fits on one line but is written on
+several lines).
 
 ```mbt check
 ///|

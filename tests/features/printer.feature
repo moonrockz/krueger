@@ -1,9 +1,10 @@
 Feature: Elm printer
-  krueger prints an AST as Elm source in the elm-format layout. Source in
-  that layout prints back unchanged; a construct that does not fit the
-  line width breaks in the elm-format shape.
+  krueger prints an AST as Elm source in the elm-format layout. A module
+  with no regular comments, in the layout that the printer chooses, prints
+  back unchanged; a construct that does not fit the line width breaks in
+  the elm-format shape.
 
-  Scenario: A module in elm-format layout prints unchanged
+  Scenario: A module in the printer's layout prints unchanged
     Given the Elm module:
       """elm
       module Main exposing (main)
