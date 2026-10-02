@@ -9,7 +9,11 @@ import {
 }
 
 // Values
+pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
 pub fn print_expression(@ast.Node[@ast.Expression], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+pub fn print_file(@ast.File, width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 
 pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 

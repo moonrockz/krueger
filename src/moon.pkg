@@ -5,6 +5,7 @@ import {
   "moonrockz/krueger/dialect",
   "moonrockz/krueger/scanner",
   "moonrockz/krueger/parser",
+  "moonrockz/krueger/printer",
   "moonrockz/krueger/report",
   "moonrockz/krueger/syntax",
 }

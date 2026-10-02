@@ -39,7 +39,6 @@ fn Ctx::signature_doc(
 /// line, indented by 4. Fields: `documentation`, `signature`, `declaration`.
 /// A `let` uses `function_plan` (one work stack for the whole expression);
 /// top-level function declarations use this entry.
-#warnings("-unused_value")
 fn Ctx::function_doc(
   self : Ctx,
   path : @syntax.NodePath,

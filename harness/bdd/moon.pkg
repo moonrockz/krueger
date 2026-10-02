@@ -6,4 +6,5 @@ import {
   "moonbitlang/async",
   "moonbitlang/x/fs",
   "moonbitlang/core/json",
+  "moonbitlang/core/debug",
 } for "wbtest"

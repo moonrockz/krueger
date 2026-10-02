@@ -85,3 +85,44 @@ pub fn print_expression(
   let ctx : Ctx = { dialect, }
   @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), 0, e, AnyExpr), width~)
 }
+
+///|
+/// The Elm source of a declaration, without a trailing line feed. A port's
+/// doc comment is not part of its declaration (elm-syntax keeps it in
+/// `File.comments`), so only `print_file` prints it.
+pub fn print_declaration(
+  d : @ast.Node[@ast.Declaration],
+  width? : Int = 120,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+) -> String raise PrintError {
+  let ctx : Ctx = { dialect, }
+  @pretty.render(ctx.declaration_doc(@syntax.NodePath::root(), 0, d), width~)
+}
+
+///|
+/// The Elm source of a file in the elm-format layout, ending with one line
+/// feed. Fixed shapes (declaration bodies, custom types, `if`, `case`,
+/// `let`) are always multi-line; other constructs stay on one line when they
+/// fit in `width` columns. Prints documentation and the doc comments of
+/// `File.comments` (module and port documentation), not regular comments.
+/// Raises `PrintError` for an AST that cannot print as valid Elm; the
+/// error's path starts at the file.
+///
+/// ```mbt check
+/// test {
+///   let text = "module Main exposing (main)\n\n\nmain =\n    1 + 2\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(text),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   inspect(@printer.print_file(result.ast.unwrap()) == text, content="true")
+/// }
+/// ```
+pub fn print_file(
+  file : @ast.File,
+  width? : Int = 120,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+) -> String raise PrintError {
+  let ctx : Ctx = { dialect, }
+  @pretty.render(ctx.file_doc(file), width~)
+}
