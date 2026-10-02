@@ -176,3 +176,29 @@ test "declarations that Elm cannot write raise" {
     )
   })
 }
+
+///|
+test "a long import exposing list breaks in the elm-format import form" {
+  // elm-format 0.8.7 puts `exposing` of an import on its own line.
+  let file = file_of(
+    "module A exposing (..)\n\nimport Dict exposing (Dict, empty, insert)\n\n\nf =\n    1\n",
+  )
+  inspect(
+    @printer.print_file(file, width=30),
+    content=(
+      #|module A exposing (..)
+      #|
+      #|import Dict
+      #|    exposing
+      #|        ( Dict
+      #|        , empty
+      #|        , insert
+      #|        )
+      #|
+      #|
+      #|f =
+      #|    1
+      #|
+    ),
+  )
+}

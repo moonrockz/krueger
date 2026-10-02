@@ -128,14 +128,18 @@ fn Ctx::expose_doc(
 }
 
 ///|
-/// `exposing (a, b)`, or `exposing\n    ( a\n    , b\n    )` (elm-format).
+/// ` exposing (a, b)`, or ` exposing\n    ( a\n    , b\n    )` after a
+/// module header. After an import (`import_ = true`), the broken form puts
+/// `exposing` on its own line, as elm-format 0.8.7 does:
+/// `\n    exposing\n        ( a\n        , b\n        )`.
 fn Ctx::exposing_doc(
   self : Ctx,
   path : @syntax.NodePath,
   e : @ast.Node[@ast.Exposing],
+  import_? : Bool = false,
 ) -> @pretty.Doc raise PrintError {
   match e.value {
-    All(_) => @pretty.text("exposing (..)")
+    All(_) => @pretty.text(" exposing (..)")
     Explicit(items) => {
       guard !items.is_empty() else {
         raise PrintError(path~, problem=EmptyExposing)
@@ -144,8 +148,7 @@ fn Ctx::exposing_doc(
       for i, x in items {
         docs.push(self.expose_doc(path.child("explicit", i), x.value))
       }
-      @pretty.group(
-        @pretty.text("exposing") +
+      let list = @pretty.text("exposing") +
         @pretty.nest(
           4,
           @pretty.line() +
@@ -154,8 +157,12 @@ fn Ctx::exposing_doc(
           @pretty.join(docs, @pretty.softline() + @pretty.text(", ")) +
           @pretty.softline() +
           @pretty.text(")"),
-        ),
-      )
+        )
+      if import_ {
+        @pretty.group(@pretty.nest(4, @pretty.line() + list))
+      } else {
+        @pretty.group(@pretty.text(" ") + list)
+      }
     }
   }
 }
@@ -174,9 +181,7 @@ fn Ctx::module_doc(
         "module "
       }
       @pretty.text(
-        keyword +
-        module_name(path.child("moduleName", 0), d.module_name.value) +
-        " ",
+        keyword + module_name(path.child("moduleName", 0), d.module_name.value),
       ) +
       self.exposing_doc(path.child("exposingList", 0), d.exposing_list)
     }
@@ -208,7 +213,7 @@ fn Ctx::module_doc(
         module_name(path.child("moduleName", 0), d.module_name.value) +
         " where { " +
         fields.join(", ") +
-        " } ",
+        " }",
       ) +
       self.exposing_doc(path.child("exposingList", 0), d.exposing_list)
     }
@@ -230,9 +235,7 @@ fn Ctx::import_doc(
       @pretty.text(" as " + module_name(path.child("moduleAlias", 0), a.value))
   }
   if i.value.exposing_list is Some(x) {
-    d = d +
-      @pretty.text(" ") +
-      self.exposing_doc(path.child("exposingList", 0), x)
+    d = d + self.exposing_doc(path.child("exposingList", 0), x, import_=true)
   }
   d
 }
