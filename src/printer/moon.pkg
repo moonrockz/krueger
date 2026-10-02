@@ -9,3 +9,8 @@ import {
 import {
   "moonrockz/expect",
 } for "wbtest"
+
+import {
+  "moonrockz/expect",
+  "moonrockz/krueger/syntax",
+} for "test"

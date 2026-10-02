@@ -3,10 +3,15 @@ package "moonrockz/krueger/printer"
 
 import {
   "moonbitlang/core/debug",
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/dialect",
   "moonrockz/krueger/syntax",
 }
 
 // Values
+pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 
 // Errors
 pub suberror PrintError {
