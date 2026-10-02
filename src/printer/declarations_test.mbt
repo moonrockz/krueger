@@ -202,3 +202,56 @@ test "a long import exposing list breaks in the elm-format import form" {
     ),
   )
 }
+
+///|
+test "exposed and declared operators must be in the dialect's operator table" {
+  @expect.expect_all(s => {
+    let file = file_of("module A exposing ((+), f)\n\n\nf =\n    1\n")
+    s
+    .expect(@printer.print_file(file))
+    .to_equal("module A exposing ((+), f)\n\n\nf =\n    1\n")
+    let bad_expose = {
+      ..file,
+      module_definition: n(
+        NormalModule({
+          module_name: n(["A"][:]),
+          exposing_list: n(
+            Explicit([n(@ast.TopLevelExpose::InfixExpose("-->"))][:]),
+          ),
+        }),
+      ),
+    }
+    s
+    .expect(problem_of(() => @printer.print_file(bad_expose)))
+    .to_equal(
+      Some(
+        (
+          InvalidName(Operator, "-->"),
+          [
+            { field: "moduleDefinition", index: 0, },
+            { field: "exposingList", index: 0, },
+            { field: "explicit", index: 0, },
+          ],
+        ),
+      ),
+    )
+    let infix = fn(symbol : String) -> @ast.Node[@ast.Declaration] {
+      n(
+        InfixDeclaration({
+          direction: n(Left),
+          precedence: n(5),
+          operator: n(symbol),
+          function: n("f"),
+        }),
+      )
+    }
+    s
+    .expect(@printer.print_declaration(infix("|="), dialect=core_dialect()))
+    .to_equal("infix left  5 (|=) = f")
+    s
+    .expect(problem_of(() => @printer.print_declaration(infix("="))))
+    .to_equal(
+      Some((InvalidName(Operator, "="), [{ field: "operator", index: 0, }])),
+    )
+  })
+}

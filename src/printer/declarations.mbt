@@ -86,7 +86,10 @@ fn Ctx::declaration_doc(
         Right => "right"
         Non => "non  "
       }
-      let symbol = operator_symbol(path.child("operator", 0), i.operator.value)
+      let symbol = self.operator_symbol(
+        path.child("operator", 0),
+        i.operator.value,
+      )
       @pretty.text(
         "infix " +
         direction +
@@ -118,7 +121,7 @@ fn Ctx::expose_doc(
 ) -> @pretty.Doc raise PrintError {
   match x {
     InfixExpose(symbol) =>
-      @pretty.text("(" + operator_symbol(path, symbol) + ")")
+      @pretty.text("(" + self.operator_symbol(path, symbol) + ")")
     FunctionExpose(name) => self.lower_name(path, name)
     TypeOrAliasExpose(name) => upper_name(path, name)
     TypeExpose(t) =>

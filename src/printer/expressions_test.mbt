@@ -600,3 +600,26 @@ test "broken items indent to the next tab stop" {
     )
   })
 }
+
+///|
+test "operator symbols must be in the dialect's operator table" {
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_expression(n(PrefixOperator("|>"))))
+    .to_equal("(|>)")
+    s
+    .expect(@printer.print_expression(n(PrefixOperator("::"))))
+    .to_equal("(::)")
+    s.expect(@printer.print_expression(n(Operator("+")))).to_equal("+")
+    for bad in ["--", "-->", ".", "=", "<=>", ""] {
+      s
+      .expect(
+        problem_of(() => @printer.print_expression(n(PrefixOperator(bad)))),
+      )
+      .to_equal(Some((InvalidName(Operator, bad), [])))
+      s
+      .expect(problem_of(() => @printer.print_expression(n(Operator(bad)))))
+      .to_equal(Some((InvalidName(Operator, bad), [])))
+    }
+  })
+}

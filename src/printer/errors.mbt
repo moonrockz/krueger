@@ -12,7 +12,9 @@ pub(all) enum NameKind {
 ///|
 /// Why an AST cannot print as valid Elm.
 pub(all) enum PrintProblem {
-  /// A name that the scanner does not accept, or a reserved word.
+  /// A name that the scanner does not accept, a reserved word, or an
+  /// operator symbol that is not in the dialect's operator table (Elm 0.19
+  /// has no user-defined operators).
   InvalidName(NameKind, String)
   /// A module name with no segments.
   EmptyModuleName

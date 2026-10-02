@@ -216,8 +216,8 @@ fn Ctx::expr_plan(
       done(self.qualified_value(path, module_, name))
     IfBlock(c, t, f) => if_plan(path, level, c, t, f)
     PrefixOperator(symbol) =>
-      done(@pretty.text("(" + operator_symbol(path, symbol) + ")"))
-    Operator(symbol) => done(@pretty.text(operator_symbol(path, symbol)))
+      done(@pretty.text("(" + self.operator_symbol(path, symbol) + ")"))
+    Operator(symbol) => done(@pretty.text(self.operator_symbol(path, symbol)))
     Integer(x) => done(number_doc(path, x, n => n.to_string()))
     Hex(x) => done(number_doc(path, x, hex_text))
     Floatable(x) => {

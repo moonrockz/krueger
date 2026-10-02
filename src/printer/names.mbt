@@ -34,35 +34,6 @@ fn is_upper(s : String) -> Bool {
 }
 
 ///|
-fn is_operator(s : String) -> Bool {
-  if s.is_empty() {
-    return false
-  }
-  for c in s {
-    match c {
-      '+'
-      | '-'
-      | '/'
-      | '*'
-      | '='
-      | '.'
-      | '<'
-      | '>'
-      | ':'
-      | '&'
-      | '|'
-      | '^'
-      | '?'
-      | '%'
-      | '!'
-      | '~' => ()
-      _ => return false
-    }
-  }
-  true
-}
-
-///|
 fn Ctx::lower_name(
   self : Ctx,
   path : @syntax.NodePath,
@@ -86,11 +57,15 @@ fn upper_name(
 }
 
 ///|
-fn operator_symbol(
+/// An operator symbol in a prefix operator, an exposing list or an infix
+/// declaration. Elm 0.19 has no user-defined operators, so a symbol is
+/// valid only when the dialect's operator table has it.
+fn Ctx::operator_symbol(
+  self : Ctx,
   path : @syntax.NodePath,
   s : String,
 ) -> String raise PrintError {
-  guard is_operator(s) else {
+  guard self.dialect.operator(s) is Some(_) else {
     raise PrintError(path~, problem=InvalidName(Operator, s))
   }
   s

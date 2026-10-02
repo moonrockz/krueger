@@ -18,16 +18,24 @@ test "lower names follow the scanner's rules and skip reserved words" {
 }
 
 ///|
-test "upper names and operator symbols" {
+test "upper names, and operator symbols from the dialect's table" {
   @expect.expect_all(s => {
     s.expect(is_upper("Maybe")).to_be_true()
     s.expect(is_upper("Ärger")).to_be_true()
     s.expect(is_upper("maybe")).to_be_false()
     s.expect(is_upper("")).to_be_false()
-    s.expect(is_operator("|>")).to_be_true()
-    s.expect(is_operator("</>")).to_be_true()
-    s.expect(is_operator("")).to_be_false()
-    s.expect(is_operator("a+")).to_be_false()
+    let root = @syntax.NodePath::root()
+    s
+    .expect(problem_of(() => elm.operator_symbol(root, "|>")).map(x => x.0))
+    .to_equal(None)
+    s
+    .expect(problem_of(() => elm.operator_symbol(root, "</>")).map(x => x.0))
+    .to_equal(None)
+    for bad in ["", "a+", "--", "-->", ".", "=", "<=>"] {
+      s
+      .expect(problem_of(() => elm.operator_symbol(root, bad)).map(x => x.0))
+      .to_equal(Some(InvalidName(Operator, bad)))
+    }
   })
 }
 

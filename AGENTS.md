@@ -389,6 +389,10 @@ and `print_type_annotation`, each with `width?` (default 120) and
   comments (both in `File.comments`) print; regular comments do not yet.
 - An AST that cannot print as valid Elm raises `PrintError(path~,
   problem~)`. `path` is a `NodePath` from the printed node.
+- Operator symbols (prefix operators, exposed operators, infix
+  declarations) must be in the dialect's operator table; Elm 0.19 has no
+  user-defined operators. Any other symbol raises `InvalidName(Operator,
+  symbol)`.
 - Expression printing uses an explicit work stack, so it is stack-safe on
   all targets. More than 400 nested printer levels raise `TooDeep`.
 - The layout engine is the workspace module `pretty/` (`moonrockz/pretty`):
