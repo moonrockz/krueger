@@ -87,6 +87,16 @@ test "count expressions" {
 }
 ```
 
+## Print Elm source
+
+```moonbit
+let result = @krueger.parse_module(@krueger.SourceText::new(source))
+let text = @krueger.print_file(result.ast.unwrap()) // elm-format layout, width 120
+```
+
+See [Generate Elm code](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/generate-elm.mbt.md)
+for ASTs built in code.
+
 ## Documentation
 
 - [Cookbook](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/README.md):
