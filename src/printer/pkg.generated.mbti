@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/printer"
+
+import {
+  "moonbitlang/core/debug",
+  "moonrockz/krueger/syntax",
+}
+
+// Values
+
+// Errors
+pub suberror PrintError {
+  PrintError(path~ : @syntax.NodePath, problem~ : PrintProblem)
+} derive(@debug.Debug)
+
+// Types and methods
+pub(all) enum NameKind {
+  Lower
+  Upper
+  Operator
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PrintProblem {
+  InvalidName(NameKind, String)
+  EmptyModuleName
+  NonFiniteFloat(Double)
+  UnrepresentableInt(Int64)
+  NegativePattern
+  ShortApplication
+  ShortTuple
+  NoFields
+  EmptyExposing
+  EmptyCase
+  EmptyLet
+  NoConstructors
+  NoLambdaArguments
+  UnknownOperator(String)
+  InvalidGlsl
+  InvalidDocumentation
+  TooDeep
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

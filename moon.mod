@@ -4,6 +4,7 @@ version = "0.3.0"
 
 import {
   "moonrockz/expect@0.6.0",
+  "moonrockz/pretty@0.1.0",
 }
 
 readme = "README.mbt.md"
