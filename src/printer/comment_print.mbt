@@ -46,6 +46,28 @@ fn Ctx::take(
 }
 
 ///|
+/// Whether comment `c` ends its line: it is a line comment, or the text
+/// after it starts at `next` on a later row.
+fn ends_line(c : @ast.Node[String], next : @ast.Location) -> Bool {
+  is_line_comment(c) || next.row > c.range.end.row
+}
+
+///|
+/// Comments each on its own line, joined by line breaks. With `before`, a
+/// line break comes first; with `after`, one comes last. Nothing when there
+/// are no comments.
+fn comment_block(
+  cs : Array[@ast.Node[String]],
+  before? : Bool = false,
+  after? : Bool = false,
+) -> @pretty.Doc {
+  guard !cs.is_empty() else { return @pretty.empty() }
+  (if before { @pretty.hardline() } else { @pretty.empty() }) +
+  @pretty.join(cs.map(comment_doc), @pretty.hardline()) +
+  (if after { @pretty.hardline() } else { @pretty.empty() })
+}
+
+///|
 /// Comments before the text that starts at `next`. A line comment ends its
 /// line. A block comment ends its line when the source has a line break
 /// after it; else one space follows it.
@@ -56,20 +78,9 @@ fn comments_before(
   let mut d = @pretty.empty()
   for i, c in cs {
     let after = if i + 1 < cs.length() { cs[i + 1].range.start } else { next }
-    let own_line = is_line_comment(c) || after.row > c.range.end.row
     d = d +
       comment_doc(c) +
-      (if own_line { @pretty.hardline() } else { @pretty.text(" ") })
-  }
-  d
-}
-
-///|
-/// Comments each on its own line, each followed by a line break.
-fn comment_lines(cs : Array[@ast.Node[String]]) -> @pretty.Doc {
-  let mut d = @pretty.empty()
-  for c in cs {
-    d = d + comment_doc(c) + @pretty.hardline()
+      (if ends_line(c, after) { @pretty.hardline() } else { @pretty.text(" ") })
   }
   d
 }
@@ -122,9 +133,7 @@ fn Ctx::inner(
   }
   cs.append(self.take(Inner, owner))
   guard !cs.is_empty() else { return @pretty.empty() }
-  @pretty.hardline() +
-  @pretty.hardline() +
-  @pretty.join(cs.map(comment_doc), @pretty.hardline())
+  @pretty.hardline() + comment_block(cs, before=true)
 }
 
 ///|
@@ -144,12 +153,15 @@ fn Ctx::inner_alone(
   }
   for i, c in cs {
     d = d + comment_doc(c)
-    let last = i + 1 == cs.length()
-    if is_line_comment(c) ||
-      (!last && cs[i + 1].range.start.row > c.range.end.row) {
-      d = d + @pretty.hardline()
-    } else if !last {
-      d = d + @pretty.text(" ")
+    match cs.get(i + 1) {
+      Some(next) =>
+        d = d +
+          (if ends_line(c, next.range.start) {
+            @pretty.hardline()
+          } else {
+            @pretty.text(" ")
+          })
+      None => if is_line_comment(c) { d = d + @pretty.hardline() }
     }
   }
   d
@@ -211,15 +223,22 @@ fn Ctx::inner_for(self : Ctx, owner : @ast.Range, count : Int) -> @pretty.Doc {
 }
 
 ///|
-/// The start of the token before the token at `loc`, when there is source.
-fn Ctx::token_before(self : Ctx, loc : @ast.Location) -> @ast.Location? {
+/// The start of the token `n` tokens before the token at `loc`, when there
+/// is source.
+fn Ctx::token_back(self : Ctx, loc : @ast.Location, n : Int) -> @ast.Location? {
   guard self.source is Some(facts) else { return None }
   let i = facts.first_at_or_after(loc)
-  if i > 0 {
-    Some(facts.starts[i - 1])
+  if i >= n {
+    Some(facts.starts[i - n])
   } else {
     None
   }
+}
+
+///|
+/// The start of the token before the token at `loc`, when there is source.
+fn Ctx::token_before(self : Ctx, loc : @ast.Location) -> @ast.Location? {
+  self.token_back(loc, 1)
 }
 
 ///|
@@ -250,8 +269,7 @@ fn Ctx::before_item(
     None => []
   }
   cs.append(self.take_if(Leading, r, c => ends_before(c, comma)))
-  guard !cs.is_empty() else { return @pretty.empty() }
-  @pretty.hardline() + comment_lines(cs)
+  comment_block(cs, before=true, after=true)
 }
 
 ///|
@@ -308,4 +326,60 @@ fn Ctx::has_comment(
 ) -> Bool {
   guard self.comments is Some(t) else { return false }
   t.matching(role, r).iter().any(i => keep(t.placed[i].comment))
+}
+
+///|
+/// The comments before item `r` of a `let` or `case`: the trailing comments
+/// of the item before it (at `previous`), which elm-format moves here, on
+/// lines of their own, then the leading comments of `r`.
+fn Ctx::moved_then_leading(
+  self : Ctx,
+  previous : @ast.Range?,
+  r : @ast.Range,
+) -> @pretty.Doc {
+  let moved = match previous {
+    Some(p) => self.take(Trailing, p)
+    None => []
+  }
+  comment_block(moved, after=true) + self.leading(r)
+}
+
+///|
+/// The start of the nearest token `lexeme` at most `n` tokens before the
+/// token at `loc`, when there is source.
+fn Ctx::token_back_to(
+  self : Ctx,
+  loc : @ast.Location,
+  lexeme : String,
+  n : Int,
+) -> @ast.Location? {
+  guard self.source is Some(facts) else { return None }
+  let i = facts.first_at_or_after(loc)
+  for k in 1..<=n {
+    if i - k >= 0 && facts.lexeme_at(facts.starts[i - k]) == Some(lexeme) {
+      return Some(facts.starts[i - k])
+    }
+  }
+  None
+}
+
+///|
+/// The start of the first token at or after `loc`, when there is source.
+fn Ctx::token_after(self : Ctx, loc : @ast.Location) -> @ast.Location? {
+  guard self.source is Some(facts) else { return None }
+  facts.starts.get(facts.first_at_or_after(loc))
+}
+
+///|
+/// The trailing comments of the node at `r` that come before the next
+/// token, then those after it (marks both printed).
+fn Ctx::trailing_split(
+  self : Ctx,
+  r : @ast.Range,
+) -> (Array[@ast.Node[String]], Array[@ast.Node[String]]) {
+  let next = self.token_after(r.end)
+  let before = self.take_if(Trailing, r, c => {
+    next is None || ends_before(c, next)
+  })
+  (before, self.take(Trailing, r))
 }

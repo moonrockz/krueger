@@ -313,15 +313,7 @@ fn Ctx::expr_plan(
         } else {
           None
         }
-        parts.push(
-          Leaf(() => {
-            let moved = match previous {
-              Some(r) => self.take(Trailing, r)
-              None => []
-            }
-            comment_lines(moved) + self.leading(dn.range)
-          }),
-        )
+        parts.push(Leaf(() => self.moved_then_leading(previous, dn.range)))
         match dn.value {
           LetFunction(f) =>
             parts.push(self.function_plan(p, level + 1, f, in_let=true))
@@ -366,7 +358,7 @@ fn Ctx::expr_plan(
           if cs.is_empty() {
             @pretty.empty()
           } else {
-            @pretty.hardline() + @pretty.hardline() + comment_block(cs)
+            @pretty.hardline() + comment_block(cs, before=true)
           }
         }),
       )
@@ -414,15 +406,7 @@ fn Ctx::expr_plan(
         } else {
           None
         }
-        parts.push(
-          Leaf(() => {
-            let moved = match previous {
-              Some(r) => self.take(Trailing, r)
-              None => []
-            }
-            comment_lines(moved) + self.leading(case_range(c))
-          }),
-        )
+        parts.push(Leaf(() => self.moved_then_leading(previous, case_range(c))))
         parts.push(
           Leaf(() => {
             @pretty.nest(

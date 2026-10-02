@@ -131,3 +131,13 @@ fn flat_sequence(
 fn flat_parens(d : @pretty.Doc) -> @pretty.Doc {
   @pretty.text("(") + d + @pretty.text(")")
 }
+
+///|
+/// `n` line breaks.
+fn line_breaks(n : Int) -> @pretty.Doc {
+  let mut d = @pretty.empty()
+  for _ in 0..<n {
+    d = d + @pretty.hardline()
+  }
+  d
+}

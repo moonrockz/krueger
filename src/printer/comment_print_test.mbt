@@ -399,6 +399,188 @@ test "elm-format: a line comment in an empty record or list" {
 }
 
 ///|
+test "elm-format: effect module: a line comment after a where field" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Task where { command = MyCmd -- c
+    #| , subscription = MySub } exposing (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  let expected =
+    #|effect module Task
+    #|    where
+    #|        { command =
+    #|            MyCmd
+    #|            -- c
+    #|        , subscription = MySub
+    #|        }
+    #|    exposing
+    #|    (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+}
+
+///|
+test "elm-format: effect module: a line comment before a where field" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Task where { -- c
+    #| command = MyCmd } exposing (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  let expected =
+    #|effect module Task
+    #|    where
+    #|        { -- c
+    #|          command = MyCmd
+    #|        }
+    #|    exposing
+    #|    (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+}
+
+///|
+test "elm-format: effect module: comments break the header before an exposing list" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Task where { -- c
+    #| command = MyCmd } exposing (a, b)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  let expected =
+    #|effect module Task
+    #|    where
+    #|        { -- c
+    #|          command = MyCmd
+    #|        }
+    #|    exposing
+    #|    (a, b)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+}
+
+///|
+test "elm-format: effect module: a line comment after the name" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Task -- n
+    #| where { command = MyCmd, subscription = MySub } exposing (a, b)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  let expected =
+    #|effect module Task
+    #|    -- n
+    #|    where
+    #|        { command = MyCmd, subscription = MySub }
+    #|    exposing
+    #|    (a, b)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+}
+
+///|
+test "elm-format: effect module: a line comment before exposing" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Task where { command = MyCmd } -- e
+    #| exposing (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  let expected =
+    #|effect module Task
+    #|    where { command = MyCmd }
+    #|    -- e
+    #|    exposing
+    #|    (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+}
+
+///|
+test "elm-format: effect module: block comments stay on the line" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Task where { command = MyCmd {- c -}, subscription = MySub {- d -} } exposing (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(source)
+}
+
+///|
+test "elm-format: infix declaration with comments" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|module Basics exposing ((|>))
+    #|
+    #|
+    #|infix left  0 -- a
+    #|    (|>) = -- b
+    #|    apR
+    #|
+    #|
+    #|apR x f =
+    #|    f x
+    #|
+  let expected =
+    #|module Basics exposing ((|>))
+    #|
+    #|
+    #|infix
+    #|    left
+    #|    0
+    #|    -- a
+    #|    (|>)
+    #|    =
+    #|    -- b
+    #|    apR
+    #|
+    #|
+    #|apR x f =
+    #|    f x
+    #|
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+}
+
+///|
 test "law: format prints every regular comment once, in source order" {
   @quickcheck.check(
     (m : @lawkit.Commented) => {

@@ -11,11 +11,8 @@ fn Ctx::space_before(
   indent : Int,
 ) -> (@pretty.Doc, Bool) {
   let cs = self.take(Leading, r)
-  let own_line = cs
-    .iter()
-    .any(c => is_line_comment(c) || c.range.end.row < r.start.row)
-  if own_line {
-    (@pretty.nest(indent, @pretty.hardline() + comment_lines(cs)), true)
+  if cs.iter().any(c => ends_line(c, r.start)) {
+    (@pretty.nest(indent, comment_block(cs, before=true, after=true)), true)
   } else {
     let space = match previous {
       Some(p) => self.after(p, " ")
@@ -155,7 +152,7 @@ fn Ctx::declaration_doc(
         let bar = self.token_before(c.range.start)
         let before = self.take_if(Leading, c.range, x => ends_before(x, bar))
         let lead = if i == 0 {
-          @pretty.hardline() + comment_lines(before)
+          @pretty.hardline() + comment_block(before, after=true)
         } else {
           let mut d = @pretty.empty()
           for x in before {
@@ -166,10 +163,7 @@ fn Ctx::declaration_doc(
         // The comments after the `=` or `|`: on the line, or each followed
         // by a line break to the column of the name.
         let after = self.take(Leading, c.range)
-        let own_line = after
-          .iter()
-          .any(x => is_line_comment(x) || x.range.end.row < c.range.start.row)
-        let after_bar = if own_line {
+        let after_bar = if after.iter().any(x => ends_line(x, c.range.start)) {
           let mut d = @pretty.empty()
           for x in after {
             d = d + comment_doc(x) + @pretty.nest(2, @pretty.hardline())
@@ -224,13 +218,50 @@ fn Ctx::declaration_doc(
         path.child("operator", 0),
         i.operator.value,
       )
-      @pretty.text("infix " + direction + " " + precedence.to_string() + " ") +
-      self.with_comments(i.operator.range, @pretty.text("(" + symbol + ")")) +
-      self.after(i.operator.range, " = ") +
-      self.with_comments(
-        i.function.range,
-        self.lower_name(path.child("function", 0), i.function.value),
+      let function = self.lower_name(
+        path.child("function", 0),
+        i.function.value,
       )
+      let before_operator = self.take(Leading, i.operator.range)
+      // The comments after the `=` go before the function.
+      let (after_operator, after_equals) = self.trailing_split(i.operator.range)
+      let before_function = [
+        ..after_equals,
+        ..self.take(Leading, i.function.range),
+      ]
+      if before_operator.is_empty() &&
+        after_operator.is_empty() &&
+        before_function.is_empty() {
+        @pretty.text(
+          "infix " +
+          direction +
+          " " +
+          precedence.to_string() +
+          " (" +
+          symbol +
+          ") = ",
+        ) +
+        function
+      } else {
+        // With comments, elm-format puts each part on its own line.
+        @pretty.text("infix") +
+        @pretty.nest(
+          4,
+          @pretty.hardline() +
+          @pretty.text(direction.trim_end().to_owned()) +
+          @pretty.hardline() +
+          @pretty.text(precedence.to_string()) +
+          @pretty.hardline() +
+          comment_block(before_operator, after=true) +
+          @pretty.text("(" + symbol + ")") +
+          comment_block(after_operator, before=true) +
+          @pretty.hardline() +
+          @pretty.text("=") +
+          @pretty.hardline() +
+          comment_block(before_function, after=true) +
+          function,
+        )
+      }
     }
     Destructuring(pattern, value) =>
       // As in a let: a destructuring pattern is a term.
@@ -274,36 +305,24 @@ fn Ctx::expose_doc(
 }
 
 ///|
-/// ` exposing (a, b)`, or ` exposing\n    ( a\n    , b\n    )` after a
-/// module header. After an import (`import_ = true`), the broken form puts
-/// `exposing` on its own line, as elm-format 0.8.7 does:
-/// `\n    exposing\n        ( a\n        , b\n        )`. `previous` is
-/// the range of the name before it.
-fn Ctx::exposing_doc(
+/// The list of an exposing list without a group: `(..)`, or `(a, b)` with
+/// its comments (`(` then `( ` when it breaks). Also the comments before the
+/// `(`, which go after `exposing`.
+fn Ctx::exposing_list(
   self : Ctx,
   path : @syntax.NodePath,
   e : @ast.Node[@ast.Exposing],
-  previous : @ast.Range,
-  import_? : Bool = false,
-) -> @pretty.Doc raise PrintError {
-  // The comments before `exposing` go on lines of their own.
-  let cs = self.take(Leading, e.range)
-  let lead = if cs.is_empty() {
-    None
-  } else {
-    Some(@pretty.nest(4, @pretty.hardline() + comment_lines(cs)))
-  }
+) -> (@pretty.Doc, @pretty.Doc) raise PrintError {
   match e.value {
     All(_) =>
-      lead.unwrap_or(self.after(previous, " ")) +
-      @pretty.text("exposing (") +
-      self.inner_alone(e.range) +
-      @pretty.text("..)")
+      (
+        @pretty.empty(),
+        @pretty.text("(") + self.inner_alone(e.range) + @pretty.text("..)"),
+      )
     Explicit(items) => {
       guard !items.is_empty() else {
         raise PrintError(path~, problem=EmptyExposing)
       }
-      // The comments before the `(` go after `exposing`.
       let paren = self.token_before(items[0].range.start)
       let before_paren = comments_after(
         self.take_if(Leading, items[0].range, c => ends_before(c, paren)),
@@ -325,18 +344,49 @@ fn Ctx::exposing_doc(
             items.get(i + 1).map(n => n.range),
           )
       }
+      (
+        before_paren,
+        @pretty.text("(") +
+        @pretty.if_break(@pretty.text(" "), @pretty.empty()) +
+        docs +
+        self.inner(e.range) +
+        @pretty.softline() +
+        @pretty.text(")"),
+      )
+    }
+  }
+}
+
+///|
+/// ` exposing (a, b)`, or ` exposing\n    ( a\n    , b\n    )` after a
+/// module header. After an import (`import_ = true`), the broken form puts
+/// `exposing` on its own line, as elm-format 0.8.7 does:
+/// `\n    exposing\n        ( a\n        , b\n        )`. `previous` is
+/// the range of the name before it.
+fn Ctx::exposing_doc(
+  self : Ctx,
+  path : @syntax.NodePath,
+  e : @ast.Node[@ast.Exposing],
+  previous : @ast.Range,
+  import_? : Bool = false,
+) -> @pretty.Doc raise PrintError {
+  // The comments before `exposing` go on lines of their own.
+  let cs = self.take(Leading, e.range)
+  let lead = if cs.is_empty() {
+    None
+  } else {
+    Some(@pretty.nest(4, comment_block(cs, before=true, after=true)))
+  }
+  let (before_paren, items) = self.exposing_list(path, e)
+  match e.value {
+    All(_) =>
+      lead.unwrap_or(self.after(previous, " ")) +
+      @pretty.text("exposing ") +
+      items
+    Explicit(_) => {
       let list = @pretty.text("exposing") +
         before_paren +
-        @pretty.nest(
-          4,
-          @pretty.line() +
-          @pretty.text("(") +
-          @pretty.if_break(@pretty.text(" "), @pretty.empty()) +
-          docs +
-          self.inner(e.range) +
-          @pretty.softline() +
-          @pretty.text(")"),
-        )
+        @pretty.nest(4, @pretty.line() + items)
       match (lead, import_) {
         (Some(l), true) => l + @pretty.group(@pretty.nest(4, list))
         (Some(l), false) => l + @pretty.group(list)
@@ -345,6 +395,44 @@ fn Ctx::exposing_doc(
       }
     }
   }
+}
+
+///|
+/// `command = MyCmd` in the `where` record of an effect module, after the
+/// comments `carried` from before it. A line comment after the name puts
+/// the name and its comments on lines of their own (elm-format). Also gives
+/// whether a comment of the field ends its line, and the comments after the
+/// `,` or `}` that follows it.
+fn Ctx::effect_field(
+  self : Ctx,
+  path : @syntax.NodePath,
+  label : String,
+  name : @ast.Node[String],
+  carried : Array[@ast.Node[String]],
+) -> (@pretty.Doc, Bool, Array[@ast.Node[String]]) raise PrintError {
+  guard is_upper(name.value) else {
+    raise PrintError(path~, problem=InvalidName(Upper, name.value))
+  }
+  let before = [..carried, ..self.take(Leading, name.range)]
+  let (after, moved) = self.trailing_split(name.range)
+  let breaks = after.iter().any(is_line_comment)
+  let value = if breaks {
+    @pretty.tab(
+      4,
+      @pretty.hardline() +
+      @pretty.text(name.value) +
+      comment_block(after, before=true),
+    )
+  } else {
+    @pretty.text(" " + name.value) + comments_after(after)
+  }
+  (
+    comments_before(before, name.range.start) +
+    @pretty.text(label + " =") +
+    value,
+    breaks || before.iter().any(c => ends_line(c, name.range.start)),
+    moved,
+  )
 }
 
 ///|
@@ -373,51 +461,109 @@ fn Ctx::module_doc(
         name.range,
       )
     }
+    // `effect module A where { command = C } exposing (a)` on one line. A
+    // comment that ends its line in the header puts `where`, the record and
+    // `exposing` with its list each on lines of their own, indented by 4
+    // (elm-format).
     EffectModule(d) => {
-      let fields = []
+      let name = d.module_name
+      let head = @pretty.text("effect module") +
+        self.space_before(None, name.range, 4).0 +
+        @pretty.text(module_name(path.child("moduleName", 0), name.value))
+      let names = []
       if d.command is Some(c) {
-        guard is_upper(c.value) else {
-          raise PrintError(
-            path=path.child("command", 0),
-            problem=InvalidName(Upper, c.value),
-          )
-        }
-        fields.push(
-          @pretty.text("command = ") +
-          self.with_comments(c.range, @pretty.text(c.value)),
-        )
+        names.push(("command", c))
       }
       if d.subscription is Some(s) {
-        guard is_upper(s.value) else {
-          raise PrintError(
-            path=path.child("subscription", 0),
-            problem=InvalidName(Upper, s.value),
-          )
-        }
-        fields.push(
-          @pretty.text("subscription = ") +
-          self.with_comments(s.range, @pretty.text(s.value)),
-        )
+        names.push(("subscription", s))
       }
-      guard !fields.is_empty() else {
+      guard names.get(0) is Some((_, first)) else {
         raise PrintError(path~, problem=NoFields)
       }
-      let name = d.module_name
-      @pretty.text("effect module") +
-      self.space_before(None, name.range, 4).0 +
-      self.with_comments(
-        name.range,
-        @pretty.text(module_name(path.child("moduleName", 0), name.value)),
-      ) +
-      @pretty.text(" where { ") +
-      @pretty.join(fields, @pretty.text(", ")) +
-      @pretty.text(" }") +
-      self.exposing_doc(
+      // The comments after the name: before `where` they stay with the
+      // name; between `where` and `{` they go before `where`; after `{`
+      // they go before the first field.
+      let where_at = self.token_after(name.range.end)
+      let brace = self.token_back_to(first.range.start, "{", 3)
+      let after_name = []
+      let before_where = []
+      let carried = []
+      for c in self.take(Trailing, name.range) {
+        if ends_before(c, where_at) {
+          after_name.push(c)
+        } else if ends_before(c, brace) {
+          before_where.push(c)
+        } else {
+          carried.push(c)
+        }
+      }
+      before_where.append(
+        self.take_if(Leading, first.range, c => ends_before(c, brace)),
+      )
+      let fields = []
+      let mut breaks = false
+      let mut carried = carried
+      for x in names {
+        let (label, n) = x
+        let (field, field_breaks, moved) = self.effect_field(
+          path.child(label, 0),
+          label,
+          n,
+          carried,
+        )
+        fields.push(field)
+        breaks = breaks || field_breaks
+        carried = moved
+      }
+      // The comments after the `}` go before `exposing`.
+      let e = d.exposing_list
+      let before_exposing = [..carried, ..self.take(Leading, e.range)]
+      let name_breaks = after_name.iter().any(is_line_comment)
+      if !name_breaks &&
+        before_where.is_empty() &&
+        !breaks &&
+        before_exposing.is_empty() {
+        let (_, last) = names[names.length() - 1]
+        return head +
+          comments_after(after_name) +
+          @pretty.text(" where { ") +
+          @pretty.join(fields, @pretty.text(", ")) +
+          @pretty.text(" }") +
+          self.exposing_doc(path.child("exposingList", 0), e, last.range)
+      }
+      let name_comments = if name_breaks {
+        comment_block(after_name, before=true)
+      } else {
+        comments_after(after_name)
+      }
+      // The record follows `where` on its line unless it breaks, or a
+      // comment comes before `where`.
+      let record = sequence(Fit, "{", "}", fields)
+      let where_clause = if name_breaks || !before_where.is_empty() {
+        @pretty.text("where") + @pretty.nest(4, @pretty.hardline() + record)
+      } else {
+        @pretty.text("where") +
+        @pretty.group(@pretty.nest(4, @pretty.line() + record))
+      }
+      let (before_paren, list) = self.exposing_list(
         path.child("exposingList", 0),
-        d.exposing_list,
-        // `}` comes before `exposing`, not a name. No comment trails the
-        // exposing list inside the header, so this gives a space.
-        d.exposing_list.range,
+        e,
+      )
+      head +
+      @pretty.group(
+        @pretty.nest(
+          4,
+          name_comments +
+          comment_block(before_where, before=true) +
+          @pretty.line() +
+          where_clause +
+          comment_block(before_exposing, before=true) +
+          @pretty.line() +
+          @pretty.text("exposing") +
+          before_paren +
+          @pretty.line() +
+          @pretty.group(list),
+        ),
       )
     }
   }
@@ -485,21 +631,6 @@ fn blank_lines_between(a : BodyEntry, b : BodyEntry) -> Int {
         2
       }
   }
-}
-
-///|
-fn line_breaks(n : Int) -> @pretty.Doc {
-  let mut d = @pretty.empty()
-  for _ in 0..<n {
-    d = d + @pretty.hardline()
-  }
-  d
-}
-
-///|
-/// Comments each on its own line, joined by line breaks.
-fn comment_block(cs : Array[@ast.Node[String]]) -> @pretty.Doc {
-  @pretty.join(cs.map(comment_doc), @pretty.hardline())
 }
 
 ///|
