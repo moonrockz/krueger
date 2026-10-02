@@ -234,7 +234,7 @@ fn check_format_corpus() -> Unit raise {
   let pending = read_format_pending()
   let problems = []
   let mismatched = []
-  let details = []
+  let details : Map[String, String] = Map([])
   let unchanged = SetCount::new()
   let changed = SetCount::new()
   let tests = SetCount::new()
@@ -288,13 +288,12 @@ fn check_format_corpus() -> Unit raise {
       set.matched += 1
     } else {
       mismatched.push(key)
-      if details.length() < max_reported_mismatches {
-        let path = "\{format_out_dir}/expected/\{key}"
-        if @fs.path_exists(path) {
-          details.push(
-            "\{key}: \{first_text_difference(@fs.read_file_to_string(path), actual_text)}",
-          )
-        }
+      let path = "\{format_out_dir}/expected/\{key}"
+      if @fs.path_exists(path) {
+        details[key] = first_text_difference(
+          @fs.read_file_to_string(path),
+          actual_text,
+        )
       }
     }
   }
@@ -329,8 +328,19 @@ fn check_format_corpus() -> Unit raise {
     "\n",
   )
   println(summary)
-  for d in details {
-    println("format: \{d}")
+  // Regressions (mismatches not in the pending list) come first, so the
+  // budget does not fill with known differences.
+  let shown = mismatched.filter(k => !pending.contains(k))
+  shown.append(mismatched.filter(k => pending.contains(k)))
+  let mut count = 0
+  for key in shown {
+    if count >= max_reported_mismatches {
+      break
+    }
+    if details.get(key) is Some(d) {
+      println("format: \{key}: \{d}")
+      count += 1
+    }
   }
   if !problems.is_empty() {
     fail("format corpus:\n" + problems.iter().take(20).collect().join("\n"))
