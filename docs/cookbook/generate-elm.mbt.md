@@ -8,7 +8,7 @@ width (120 by default).
 
 ## Build an AST
 
-The printer ignores ranges. A generator can use one empty range for every
+The printer ignores ranges. A generator can use one zero range for every
 node.
 
 ```mbt check
