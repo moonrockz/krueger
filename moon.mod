@@ -1,6 +1,6 @@
 name = "moonrockz/krueger"
 
-version = "0.3.0"
+version = "0.4.0"
 
 import {
   "moonrockz/expect@0.6.0",

@@ -6,6 +6,38 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.4.0] - 2026-10-02
+
+krueger can now write Elm source. The new printer prints an AST as Elm code
+in the elm-format 0.8.7 layout: `print_file`, `print_declaration`,
+`print_expression`, `print_pattern` and `print_type_annotation`. It fits
+lines to a width of 120 by default and adds only the parentheses that the
+parser needs. When an AST cannot print as valid Elm, the printer raises
+`PrintError` with a `NodePath` to the bad node. `ModuleCst::to_source()`
+prints a concrete syntax tree back to its source text, byte for byte. The
+layout engine is a new dependency,
+[moonrockz/pretty](https://github.com/moonrockz/pretty): a Wadler-style
+engine in its own repository and module. For property tests, lawkit adds the
+`ElmAst` generator and `without_ranges`.
+
+The AST printer prints doc comments, but it does not print regular comments
+yet. On the parity corpus, the output for 150 of 363 files is identical to
+the elm-format output. A formatter that keeps all comments is future work.
+
+### ⚠️ Breaking changes
+
+- `ModuleCst` has a new field, `trivia`: the whitespace and comments of a text that has no tokens. Code that builds a `ModuleCst` must set it (`[]` when there are tokens) ([#41](https://github.com/moonrockz/krueger/pull/41))
+
+### 🚀 Features
+
+- [**breaking**] Elm printer: AST printer and lossless CST print ([#41](https://github.com/moonrockz/krueger/pull/41)) by @DamianReeves
+
+### 🏗️ Build and CI
+
+- Use moonrockz/pretty 0.1.0 from mooncakes.io ([#42](https://github.com/moonrockz/krueger/pull/42)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.3.0...v0.4.0
+
 ## [0.3.0] - 2026-10-01
 
 The syntax tree answers field and position questions faster, and it has more ways to walk a file. `Tree::field_of` and `Tree::step` read a parent index built once. `TreeCursor::goto_node_at` moves to the node at a position, `EventReader::iter` yields the remaining events, and `NodePath::from_steps` and `NodePath::append` build a path. `SourceText::new` makes a source text from a string. A cookbook of tested articles shows the common tasks: reports, traversal, editor queries and an AST explorer.
