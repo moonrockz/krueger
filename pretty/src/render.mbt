@@ -72,12 +72,7 @@ fn Out::newline(self : Out, indent : Int) -> Unit {
 /// }
 /// ```
 pub fn render(doc : Doc, width? : Int = 80) -> String {
-  let out : Out = {
-    buf: StringBuilder::new(),
-    column: 0,
-    indent: None,
-    spaces: 0,
-  }
+  let out : Out = { buf: StringBuilder(), column: 0, indent: None, spaces: 0, }
   let stack : Array[Cmd] = [{ indent: 0, mode: Break, doc, }]
   while stack.pop() is Some(cmd) {
     match cmd.doc.node {
@@ -124,10 +119,10 @@ pub fn render(doc : Doc, width? : Int = 80) -> String {
 /// mode ends the check: the line can break there.
 fn fits(remaining : Int, first : Cmd, rest : Array[Cmd]) -> Bool {
   let mut left = remaining
-  let local = [first]
+  let pending = [first]
   let mut next = rest.length() - 1
   while left >= 0 {
-    let cmd = match local.pop() {
+    let cmd = match pending.pop() {
       Some(c) => c
       None => {
         if next < 0 {
@@ -147,9 +142,9 @@ fn fits(remaining : Int, first : Cmd, rest : Array[Cmd]) -> Bool {
           Break => return true
         }
       HardLine | VerbatimLine => return true
-      Nest(_, d) | Align(d) => local.push({ ..cmd, doc: d, })
+      Nest(_, d) | Align(d) => pending.push({ ..cmd, doc: d, })
       Group(d) =>
-        local.push({
+        pending.push({
           ..cmd,
           mode: if d.has_hardline {
             Break
@@ -159,7 +154,7 @@ fn fits(remaining : Int, first : Cmd, rest : Array[Cmd]) -> Bool {
           doc: d,
         })
       IfBreak(broken, flat) =>
-        local.push({
+        pending.push({
           ..cmd,
           doc: match cmd.mode {
             Flat => flat
@@ -167,8 +162,8 @@ fn fits(remaining : Int, first : Cmd, rest : Array[Cmd]) -> Bool {
           },
         })
       Concat(a, b) => {
-        local.push({ ..cmd, doc: b, })
-        local.push({ ..cmd, doc: a, })
+        pending.push({ ..cmd, doc: b, })
+        pending.push({ ..cmd, doc: a, })
       }
     }
   }

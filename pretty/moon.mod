@@ -2,6 +2,8 @@ name = "moonrockz/pretty"
 
 version = "0.1.0"
 
+readme = "README.mbt.md"
+
 import {
   "moonrockz/expect@0.6.0",
 }
