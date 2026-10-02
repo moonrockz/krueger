@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Download and verify the elm-format 0.8.7 test files into .corpus/elm-format/"
+set -euo pipefail
+
+exec moon run -q --target wasm scripts/format.mbtx -- fetch tests/format/sources.json .corpus/elm-format

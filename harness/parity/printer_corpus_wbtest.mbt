@@ -213,6 +213,7 @@ test "printer corpus" {
   match parity_mode() {
     None | Some(WriteLock) => ()
     Some(WritePrinted) => write_printed()
+    Some(WriteFormatted) | Some(CheckFormat) => ()
     Some(_) => check_printer_corpus()
   }
 }

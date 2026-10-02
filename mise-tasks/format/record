@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Record elm-format 0.8.7 output hashes for the corpus and the elm-format test files (needs corpus:fetch, format:fetch; elm-format via mise)"
+set -euo pipefail
+
+KRUEGER_PARITY_MODE=write-formatted moon test harness/parity --target js
+exec moon run -q --target wasm scripts/format.mbtx -- record .corpus .dev/out/format tests/format/elm_format.lock "$@"

@@ -1,0 +1,2038 @@
+{
+  "TSFoster/elm-bytes-extra@1.3.0/src/Bytes/Decode/Extra.elm": {
+    "source": "a1ccb986d1b46ef3eae7dd98a351ebda9dbaa763a10f3cf39383147d10be0080",
+    "expected": "a1ccb986d1b46ef3eae7dd98a351ebda9dbaa763a10f3cf39383147d10be0080"
+  },
+  "TSFoster/elm-bytes-extra@1.3.0/src/Bytes/Encode/Extra.elm": {
+    "source": "a8423055eab2926734e2544380218f296e1691484ebcb1009d7146efecfd4392",
+    "expected": "a8423055eab2926734e2544380218f296e1691484ebcb1009d7146efecfd4392"
+  },
+  "TSFoster/elm-bytes-extra@1.3.0/src/Bytes/Extra.elm": {
+    "source": "b9bebdc778ed53762ad33c16c52e47c0cb2d4a8ffcd26d972ecbaf52758efa02",
+    "expected": "b9bebdc778ed53762ad33c16c52e47c0cb2d4a8ffcd26d972ecbaf52758efa02"
+  },
+  "TSFoster/elm-md5@2.0.1/src/MD5.elm": {
+    "source": "e2084d84eea4e40cbf36bd5ad71de9cbabb53ac7baa259f8e228179664bb7d9e",
+    "expected": "e2084d84eea4e40cbf36bd5ad71de9cbabb53ac7baa259f8e228179664bb7d9e"
+  },
+  "TSFoster/elm-sha1@2.1.1/src/SHA1.elm": {
+    "source": "b3809fe85c612a906d4a7171f47354fea954da2abdb9841185d650c4adf881c6",
+    "expected": "b3809fe85c612a906d4a7171f47354fea954da2abdb9841185d650c4adf881c6"
+  },
+  "TSFoster/elm-uuid@4.3.1/src/UUID.elm": {
+    "source": "865bcb7df476c052c91fe3c78662fb9af4e64bbc77ec4f1373c146de6fe236fc",
+    "expected": "865bcb7df476c052c91fe3c78662fb9af4e64bbc77ec4f1373c146de6fe236fc"
+  },
+  "avh4/elm-color@1.0.0/src/Color.elm": {
+    "source": "557499a8fda931acd45f96fd62a765b5876632792c2ee3727c3b7249b1195251",
+    "expected": "557499a8fda931acd45f96fd62a765b5876632792c2ee3727c3b7249b1195251"
+  },
+  "avh4/elm-fifo@1.0.4/src/Fifo.elm": {
+    "source": "59cd391df4fc320cb162626df4a41ec30b33881ea22a9e8d3c5ace1f885a47b5",
+    "expected": "59cd391df4fc320cb162626df4a41ec30b33881ea22a9e8d3c5ace1f885a47b5"
+  },
+  "chain-partners/elm-bignum@1.0.1/src/Decimal.elm": {
+    "source": "60e4a11de3a5ecf1c479fdad471812a3ed6541aa5354b4bd1606ffbc33cf1d60",
+    "expected": "df20e8ab1b96d463cac93261dba51441c35b33ee0913ee4cb45dad1a28debb99"
+  },
+  "chain-partners/elm-bignum@1.0.1/src/Integer.elm": {
+    "source": "160b7a0e35210fff7e670650a00a6a868cf2d04b0ad4ea7a5c4ff925e36c8941",
+    "expected": "160b7a0e35210fff7e670650a00a6a868cf2d04b0ad4ea7a5c4ff925e36c8941"
+  },
+  "cmditch/elm-bigint@1.0.1/src/BigInt.elm": {
+    "source": "3ec199c85e63a9dc19f8bd06d89deade017e91d4ffbd3dcd3be26049104f7f05",
+    "expected": "68a07e9e0b8a7cf23c9c7d32a09ad1204aa803de779c91a62655e58f67877cb5"
+  },
+  "cmditch/elm-bigint@1.0.1/src/Constants.elm": {
+    "source": "5d016bfc82a7e20a7a5e91a2d2e335867ab7caf7a2c85b7d794b6030a552d263",
+    "expected": "5d016bfc82a7e20a7a5e91a2d2e335867ab7caf7a2c85b7d794b6030a552d263"
+  },
+  "cuducos/elm-format-number@9.0.1/src/FormatNumber.elm": {
+    "source": "f94aa584e3350d0ee811e576d959f3ca1275b4b431f8024736ba0a2558d82d3d",
+    "expected": "f94aa584e3350d0ee811e576d959f3ca1275b4b431f8024736ba0a2558d82d3d"
+  },
+  "cuducos/elm-format-number@9.0.1/src/FormatNumber/Locales.elm": {
+    "source": "659c9394b147bbc112f1d3ee846361ea297b6240dcbc4971728c2562e6d40594",
+    "expected": "659c9394b147bbc112f1d3ee846361ea297b6240dcbc4971728c2562e6d40594"
+  },
+  "cuducos/elm-format-number@9.0.1/src/FormatNumber/Parser.elm": {
+    "source": "63ae2457a16941272da6fa68c2e579f8e450a1798c7801439ed68d15f43ffd2e",
+    "expected": "63ae2457a16941272da6fa68c2e579f8e450a1798c7801439ed68d15f43ffd2e"
+  },
+  "cuducos/elm-format-number@9.0.1/src/FormatNumber/Stringfy.elm": {
+    "source": "a698a1e683dfcad6701eb630291f366a032edc21d5a1191ac77ac65388cb0a52",
+    "expected": "a698a1e683dfcad6701eb630291f366a032edc21d5a1191ac77ac65388cb0a52"
+  },
+  "danfishgold/base64-bytes@1.1.0/src/Base64.elm": {
+    "source": "a63205d33844c7e70139e07dea28f49ea6a67bf57d64e88fd4a1fa3addfda093",
+    "expected": "a63205d33844c7e70139e07dea28f49ea6a67bf57d64e88fd4a1fa3addfda093"
+  },
+  "danfishgold/base64-bytes@1.1.0/src/Decode.elm": {
+    "source": "0d0312f6866522b3b84765b640e38fd0c30a775899221c4f110bc03bda0ee18e",
+    "expected": "0d0312f6866522b3b84765b640e38fd0c30a775899221c4f110bc03bda0ee18e"
+  },
+  "danfishgold/base64-bytes@1.1.0/src/Encode.elm": {
+    "source": "b8a03ff9def7fd2e9de41bfa23c59c9f24d1da2e113e65c72465dcdb887a73b2",
+    "expected": "b8a03ff9def7fd2e9de41bfa23c59c9f24d1da2e113e65c72465dcdb887a73b2"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/GithubSlugs.elm": {
+    "source": "153af8d5cd788fb636503c0dd0f9a6bc1babd2b735dbd564517faa0ae4a9b04f",
+    "expected": "153af8d5cd788fb636503c0dd0f9a6bc1babd2b735dbd564517faa0ae4a9b04f"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Helpers.elm": {
+    "source": "454d83251238100d46ca7c913863a368f23d45c64ce692e93b6664d451972905",
+    "expected": "454d83251238100d46ca7c913863a368f23d45c64ce692e93b6664d451972905"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/HtmlParser.elm": {
+    "source": "88a9b036839078d9792e5b497e02db24b2a99db6ac3ba6f8fc17d19452d6bf76",
+    "expected": "88a9b036839078d9792e5b497e02db24b2a99db6ac3ba6f8fc17d19452d6bf76"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/List/Helpers.elm": {
+    "source": "ca65bb7ddd7d52746b928a9f342090327f6d8444f50906488a1aefeaccb12077",
+    "expected": "ca65bb7ddd7d52746b928a9f342090327f6d8444f50906488a1aefeaccb12077"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Block.elm": {
+    "source": "c955b203cf21a197ec55f50802e06eba71a0ec79985d76c0facd482f16488997",
+    "expected": "c955b203cf21a197ec55f50802e06eba71a0ec79985d76c0facd482f16488997"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/CodeBlock.elm": {
+    "source": "7e7cd2264e44b9119005a68326234b332aebddfd4010440528575ce02e9214a3",
+    "expected": "7e7cd2264e44b9119005a68326234b332aebddfd4010440528575ce02e9214a3"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Entity.elm": {
+    "source": "4979620b319b69ad1920ccd05ae0de8b26679018775328e880a7fc8648d51a8b",
+    "expected": "4979620b319b69ad1920ccd05ae0de8b26679018775328e880a7fc8648d51a8b"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Heading.elm": {
+    "source": "5e74a704fae350270597f793fb680b2f0603424ab03370df856414f263c314dd",
+    "expected": "5e74a704fae350270597f793fb680b2f0603424ab03370df856414f263c314dd"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Helpers.elm": {
+    "source": "e56040c3450facc80270d8b7f92544f3d06a1bdd8484eb45a6ffa1f58444bdc7",
+    "expected": "e56040c3450facc80270d8b7f92544f3d06a1bdd8484eb45a6ffa1f58444bdc7"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Html.elm": {
+    "source": "fa6a48b27bb5690860c9f3c292e57df606ff12a96970a0703ab82a6c6e604932",
+    "expected": "fa6a48b27bb5690860c9f3c292e57df606ff12a96970a0703ab82a6c6e604932"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/HtmlRenderer.elm": {
+    "source": "28dc88e7564c4fa2305885d1d5e5ac01c063bd8eb9c3d868a6c89f6f87c61e22",
+    "expected": "28dc88e7564c4fa2305885d1d5e5ac01c063bd8eb9c3d868a6c89f6f87c61e22"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Inline.elm": {
+    "source": "ac23a2943f99944f8353f25a470344c20a189bdc34db15bc87dadc67d6517c7e",
+    "expected": "ac23a2943f99944f8353f25a470344c20a189bdc34db15bc87dadc67d6517c7e"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/InlineParser.elm": {
+    "source": "5d454c534e37fcbc8038f63af25f5da5b0b5935b223a5f333491c4637d368313",
+    "expected": "5d454c534e37fcbc8038f63af25f5da5b0b5935b223a5f333491c4637d368313"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/LinkReferenceDefinition.elm": {
+    "source": "6bb781fd6d7982b6632889aa4dbfa26f2e8d45fa5246bf2e86e4c4eefdc4dd03",
+    "expected": "6bb781fd6d7982b6632889aa4dbfa26f2e8d45fa5246bf2e86e4c4eefdc4dd03"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/ListItem.elm": {
+    "source": "8c0df4efd0a7b620de8f5340280da3dad3e7fbd0ff85106d356f310f2fbc0508",
+    "expected": "8c0df4efd0a7b620de8f5340280da3dad3e7fbd0ff85106d356f310f2fbc0508"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/OrderedList.elm": {
+    "source": "173415fd3709a8628f748aef339c42a6027409ae23373936aff07bbe271513e3",
+    "expected": "173415fd3709a8628f748aef339c42a6027409ae23373936aff07bbe271513e3"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Parser.elm": {
+    "source": "ceac9851029453b02077afc30d89220ba9736e1fb9e5fe73384868209b8a03b1",
+    "expected": "ceac9851029453b02077afc30d89220ba9736e1fb9e5fe73384868209b8a03b1"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/RawBlock.elm": {
+    "source": "b1b1ad1159be6d58e232451235691857a59bd8d429d9b7a2295ae984110a4d98",
+    "expected": "b1b1ad1159be6d58e232451235691857a59bd8d429d9b7a2295ae984110a4d98"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Renderer.elm": {
+    "source": "32839b13db88fead42a2fbb42d7f2a6290040a996c09f6c45e43fca86d5e5491",
+    "expected": "32839b13db88fead42a2fbb42d7f2a6290040a996c09f6c45e43fca86d5e5491"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Table.elm": {
+    "source": "48834bce00fe686efdf58333aa59fb6b1482e50af7b5ecaee590c0f7dd86226a",
+    "expected": "48834bce00fe686efdf58333aa59fb6b1482e50af7b5ecaee590c0f7dd86226a"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/TableParser.elm": {
+    "source": "86c41628b51e67966a28b8bd9a4863fe7da69f5d614f2aed91fd77401695c819",
+    "expected": "86c41628b51e67966a28b8bd9a4863fe7da69f5d614f2aed91fd77401695c819"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Markdown/UnorderedList.elm": {
+    "source": "abf81f7738a54e8359c29fd79cde86fb0688c24e0d3530f4ab45e8e3e64d3e7c",
+    "expected": "abf81f7738a54e8359c29fd79cde86fb0688c24e0d3530f4ab45e8e3e64d3e7c"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Parser/Extra.elm": {
+    "source": "5f8e35bcd215d2a73a75f75e449ac1ec30249ee5f23cb9b4c2ddbe3a974e3543",
+    "expected": "5f8e35bcd215d2a73a75f75e449ac1ec30249ee5f23cb9b4c2ddbe3a974e3543"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Parser/Token.elm": {
+    "source": "f2cc17b78034f7f92e7ddb5c1af95a5bb0899ef310ae48d113b2f2d8a014d5c6",
+    "expected": "f2cc17b78034f7f92e7ddb5c1af95a5bb0899ef310ae48d113b2f2d8a014d5c6"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/ThematicBreak.elm": {
+    "source": "c9ca60fe7b2cd49152d749fc1fbf3506d60ce84fcf258ff363f736b0a09d0604",
+    "expected": "c9ca60fe7b2cd49152d749fc1fbf3506d60ce84fcf258ff363f736b0a09d0604"
+  },
+  "dillonkearns/elm-markdown@7.0.1/src/Whitespace.elm": {
+    "source": "6a83dae855367721a0e7d2cf6cd1794961ab8cf8cbfd45a212931d1ac77fc2a8",
+    "expected": "6a83dae855367721a0e7d2cf6cd1794961ab8cf8cbfd45a212931d1ac77fc2a8"
+  },
+  "dosarf/elm-tree-view@3.0.0/src/Tree.elm": {
+    "source": "c12849cc5b741c34257d6670e43d2033a5bf40ed81351ad9c52947397fc2b841",
+    "expected": "3e43d6d2b32aad602ef5133444edfe8aa90b91b550823f7581494fea1a0ab65e"
+  },
+  "dosarf/elm-tree-view@3.0.0/src/TreeView.elm": {
+    "source": "0e57737f2dbc910a06babd8c20e3d4fcff1b89ebaf45fd243d21b2ffeea69a32",
+    "expected": "0247c50401feaf665e6b3f231e115aa693b1f972d70008f0634fd017a12d85ac"
+  },
+  "elm-community/array-extra@2.6.0/src/Array/Extra.elm": {
+    "source": "73d4b387310ddc9827afbb64978927ec0cd5ba6da9f997787290f55a578c999e",
+    "expected": "73d4b387310ddc9827afbb64978927ec0cd5ba6da9f997787290f55a578c999e"
+  },
+  "elm-community/graph@6.0.0/src/Graph.elm": {
+    "source": "874a9c16172da19d25086c8a26bbeacf01f041bcbafb39fde8f0cabfff637796",
+    "expected": "697b916d95a83aca3c09dde97342bb01d87116b354f561865128d3018fa359b0"
+  },
+  "elm-community/graph@6.0.0/src/Graph/DOT.elm": {
+    "source": "20920c88ac7f59a6d99182556240116a87b37ec36cd0a99938a8e482f4c0ab81",
+    "expected": "20920c88ac7f59a6d99182556240116a87b37ec36cd0a99938a8e482f4c0ab81"
+  },
+  "elm-community/graph@6.0.0/src/Graph/TGF.elm": {
+    "source": "05e9da12cdd88e405d906324a386600b8df8a661a7699476687ccb96bd9113f0",
+    "expected": "05e9da12cdd88e405d906324a386600b8df8a661a7699476687ccb96bd9113f0"
+  },
+  "elm-community/graph@6.0.0/src/Graph/Tree.elm": {
+    "source": "e3b518ed6203288eeda2ca160034aa56b45e0deebd21430411759047ef81e863",
+    "expected": "e3b518ed6203288eeda2ca160034aa56b45e0deebd21430411759047ef81e863"
+  },
+  "elm-community/intdict@3.1.0/src/IntDict.elm": {
+    "source": "b422411b7a872e3aaaed24392f9597461b0e947643024ed4a827f0748f210fff",
+    "expected": "b422411b7a872e3aaaed24392f9597461b0e947643024ed4a827f0748f210fff"
+  },
+  "elm-community/intdict@3.1.0/src/IntDict/Safe.elm": {
+    "source": "231c8d46a0f38ba6a23f59a4b8eb50c073b96c6cbd04a16eab056bf81ae77d68",
+    "expected": "231c8d46a0f38ba6a23f59a4b8eb50c073b96c6cbd04a16eab056bf81ae77d68"
+  },
+  "elm-community/json-extra@4.2.0/src/Json/Decode/Extra.elm": {
+    "source": "6a7fb8f8c9c297cb3c2af28a9b9c1ba66ea1512a27845883220324eadf443bec",
+    "expected": "6a7fb8f8c9c297cb3c2af28a9b9c1ba66ea1512a27845883220324eadf443bec"
+  },
+  "elm-community/json-extra@4.2.0/src/Json/Encode/Extra.elm": {
+    "source": "5e456413bbc3b02a4db88da1d1c2a008e0a2adbcdd61309ebccb7cda78cf71cd",
+    "expected": "5e456413bbc3b02a4db88da1d1c2a008e0a2adbcdd61309ebccb7cda78cf71cd"
+  },
+  "elm-community/list-extra@8.7.0/src/List/Extra.elm": {
+    "source": "4cae98623b9caec456986b7c399fc0b11e02d618d8421be2e23fe2e339aa0278",
+    "expected": "4cae98623b9caec456986b7c399fc0b11e02d618d8421be2e23fe2e339aa0278"
+  },
+  "elm-community/maybe-extra@5.3.0/src/Maybe/Extra.elm": {
+    "source": "92553db78747b9e9481f4af2c25e93e9c94b88e6645233eda0c6214dcb3b572f",
+    "expected": "92553db78747b9e9481f4af2c25e93e9c94b88e6645233eda0c6214dcb3b572f"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Array.elm": {
+    "source": "c6dc429f5819572a67643e87537a3502705e7272356d765dcc1a8b6e2b6ba9b3",
+    "expected": "c6dc429f5819572a67643e87537a3502705e7272356d765dcc1a8b6e2b6ba9b3"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Char.elm": {
+    "source": "67509bbb236e3d3f6a582b07d0260c9a58cfbccb4a1d4a79ad27dd222257e4bb",
+    "expected": "67509bbb236e3d3f6a582b07d0260c9a58cfbccb4a1d4a79ad27dd222257e4bb"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Date.elm": {
+    "source": "bfe183ab5ae1d2725b70f0071a97c2c104ad2b0f23f525ffa90fdd2b9a21a7b6",
+    "expected": "bfe183ab5ae1d2725b70f0071a97c2c104ad2b0f23f525ffa90fdd2b9a21a7b6"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Dict.elm": {
+    "source": "8d74fa2f8638385c7c6a91b0e3dc91aa25c3c071a2575710ef37645d1d6520b6",
+    "expected": "8d74fa2f8638385c7c6a91b0e3dc91aa25c3c071a2575710ef37645d1d6520b6"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Extra.elm": {
+    "source": "8514b557eecb509c139f4bd334f9ecf3b674241f66e2f874a6be2538a47b34c0",
+    "expected": "8514b557eecb509c139f4bd334f9ecf3b674241f66e2f874a6be2538a47b34c0"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Float.elm": {
+    "source": "6e37a597a7f056450b189694e8d88f9e1d9af4276c10f20af85da3b07e406fdd",
+    "expected": "6e37a597a7f056450b189694e8d88f9e1d9af4276c10f20af85da3b07e406fdd"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Int.elm": {
+    "source": "93f0a87c39f3c1d9bf05bb19f4a7d4dc409a2ca374c30903b25c524d304b2023",
+    "expected": "93f0a87c39f3c1d9bf05bb19f4a7d4dc409a2ca374c30903b25c524d304b2023"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/List.elm": {
+    "source": "1f9211893731e6e6ce8eb3bd0b453574455af8abad2c053ca31a6dfdaaa250c4",
+    "expected": "1f9211893731e6e6ce8eb3bd0b453574455af8abad2c053ca31a6dfdaaa250c4"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Order.elm": {
+    "source": "b5db9e9454004800e673500e1b11d63f0bbfcc831f86f99a7ed5ca88c9a86281",
+    "expected": "b5db9e9454004800e673500e1b11d63f0bbfcc831f86f99a7ed5ca88c9a86281"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/Set.elm": {
+    "source": "81a7da6b128227b4b2bfec3ec88426b9c3d56f18591deae741bbebf68b18ab4f",
+    "expected": "81a7da6b128227b4b2bfec3ec88426b9c3d56f18591deae741bbebf68b18ab4f"
+  },
+  "elm-community/random-extra@3.2.0/src/Random/String.elm": {
+    "source": "80a8c9b31b84ca8c7fade737d04aaa0329571331604e6b406983a03fc8c72644",
+    "expected": "80a8c9b31b84ca8c7fade737d04aaa0329571331604e6b406983a03fc8c72644"
+  },
+  "elm-explorations/markdown@1.0.0/src/Markdown.elm": {
+    "source": "ab1d08ff9f0a1f1e0464890548045785aef276ff78bd102bd1e8410bb7c5c3ca",
+    "expected": "462b1eba2e12f825153a07f82d052a05318f46899aab7fc24e372d6206bb6095"
+  },
+  "elm-explorations/test@2.2.1/src/AsciiTable.elm": {
+    "source": "11359463fa63e6e8c5b0494bc9ada2262a067aff7e2a7a4d15370d07330691bf",
+    "expected": "11359463fa63e6e8c5b0494bc9ada2262a067aff7e2a7a4d15370d07330691bf"
+  },
+  "elm-explorations/test@2.2.1/src/Expect.elm": {
+    "source": "32965a7d2580b8e24d0ae3e4074ef193f2820686fc169a7b72608315dbec5512",
+    "expected": "32965a7d2580b8e24d0ae3e4074ef193f2820686fc169a7b72608315dbec5512"
+  },
+  "elm-explorations/test@2.2.1/src/Fuzz.elm": {
+    "source": "ef5e44f4a3bea2094a892f33b511fc9fe5e497de8557027b2a7217f15e6e6500",
+    "expected": "ef5e44f4a3bea2094a892f33b511fc9fe5e497de8557027b2a7217f15e6e6500"
+  },
+  "elm-explorations/test@2.2.1/src/Fuzz/Float.elm": {
+    "source": "f3d4e964a769fa964e9472a02a96c5aa086350fab7bfe8efcd2a3e399ec84e87",
+    "expected": "f3d4e964a769fa964e9472a02a96c5aa086350fab7bfe8efcd2a3e399ec84e87"
+  },
+  "elm-explorations/test@2.2.1/src/Fuzz/Internal.elm": {
+    "source": "b8f5e02d4ede79d29b1880a03851dd0848a2002da70409d30ed404548b237685",
+    "expected": "b8f5e02d4ede79d29b1880a03851dd0848a2002da70409d30ed404548b237685"
+  },
+  "elm-explorations/test@2.2.1/src/GenResult.elm": {
+    "source": "5ea27678e1da9adde28079081040b95ab18816462a63505040ff00461f30a23d",
+    "expected": "5ea27678e1da9adde28079081040b95ab18816462a63505040ff00461f30a23d"
+  },
+  "elm-explorations/test@2.2.1/src/MicroBitwiseExtra.elm": {
+    "source": "ceca4d0f816e2f9eb4b8b28a219a30b9d44419268bc890ba24fcedec340d0d07",
+    "expected": "ceca4d0f816e2f9eb4b8b28a219a30b9d44419268bc890ba24fcedec340d0d07"
+  },
+  "elm-explorations/test@2.2.1/src/MicroDictExtra.elm": {
+    "source": "715f19e1467807e6e560eaebff8e3e2051343ee6f03ea1d0f9dc573d54788bf4",
+    "expected": "715f19e1467807e6e560eaebff8e3e2051343ee6f03ea1d0f9dc573d54788bf4"
+  },
+  "elm-explorations/test@2.2.1/src/MicroListExtra.elm": {
+    "source": "cebbfd54b35877cd5543fe7d0b2b8b7a90edc05e467a0f15324649c05f77a6eb",
+    "expected": "cebbfd54b35877cd5543fe7d0b2b8b7a90edc05e467a0f15324649c05f77a6eb"
+  },
+  "elm-explorations/test@2.2.1/src/MicroMaybeExtra.elm": {
+    "source": "74888329abd1558d6c0c123f3a933973c2c69192299e420ffbe6363c8dcd56bc",
+    "expected": "74888329abd1558d6c0c123f3a933973c2c69192299e420ffbe6363c8dcd56bc"
+  },
+  "elm-explorations/test@2.2.1/src/PRNG.elm": {
+    "source": "086feed0832f14bc09bf841638d88e8486b1530e8bc2ab2cbe9233c217aad602",
+    "expected": "086feed0832f14bc09bf841638d88e8486b1530e8bc2ab2cbe9233c217aad602"
+  },
+  "elm-explorations/test@2.2.1/src/Queue.elm": {
+    "source": "ae01d4c1ba50198f10e35b46681360a8df1407058ce016c8155c165190f8b05d",
+    "expected": "ae01d4c1ba50198f10e35b46681360a8df1407058ce016c8155c165190f8b05d"
+  },
+  "elm-explorations/test@2.2.1/src/RandomRun.elm": {
+    "source": "0b9a905394fd741dec206fc3b84303e333ae6b49df7a9f59473ae70b87b7166c",
+    "expected": "0b9a905394fd741dec206fc3b84303e333ae6b49df7a9f59473ae70b87b7166c"
+  },
+  "elm-explorations/test@2.2.1/src/Simplify.elm": {
+    "source": "510dce8abe49de56c425515358454f456b78a812df4141c0bc9949b28afdd71e",
+    "expected": "510dce8abe49de56c425515358454f456b78a812df4141c0bc9949b28afdd71e"
+  },
+  "elm-explorations/test@2.2.1/src/Simplify/Cmd.elm": {
+    "source": "ce61733a706da785599bf947e1bdad3c8a00532f885802497bfd3fc83a2e274e",
+    "expected": "ce61733a706da785599bf947e1bdad3c8a00532f885802497bfd3fc83a2e274e"
+  },
+  "elm-explorations/test@2.2.1/src/Test.elm": {
+    "source": "89537ee1f3cb9a3e0782a1979687f3457fba37510877bb2c68b0f58ea29109b1",
+    "expected": "89537ee1f3cb9a3e0782a1979687f3457fba37510877bb2c68b0f58ea29109b1"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Distribution.elm": {
+    "source": "815027e48f1ae723333aa8b263dd1aa2ee743ce73e611ada9bbd04d2d7f1bf6a",
+    "expected": "815027e48f1ae723333aa8b263dd1aa2ee743ce73e611ada9bbd04d2d7f1bf6a"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Distribution/Internal.elm": {
+    "source": "1ba0fea8483ef4a8372f9617022b840d31de55b9420af0d2e353353188df3b56",
+    "expected": "1ba0fea8483ef4a8372f9617022b840d31de55b9420af0d2e353353188df3b56"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Expectation.elm": {
+    "source": "438654516acbaace5926cc136d794c9a1772e217a2fef83968e906738ae202c7",
+    "expected": "438654516acbaace5926cc136d794c9a1772e217a2fef83968e906738ae202c7"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Fuzz.elm": {
+    "source": "7f151a8e3169b85884fde2d4e92a1e4528697d5993bc915134ed6354b659138a",
+    "expected": "7f151a8e3169b85884fde2d4e92a1e4528697d5993bc915134ed6354b659138a"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Descendant.elm": {
+    "source": "5655faa4afbb5f9d353b86c689e3ef86c27ee8855ef5b243e7709e8310643b98",
+    "expected": "5655faa4afbb5f9d353b86c689e3ef86c27ee8855ef5b243e7709e8310643b98"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Event.elm": {
+    "source": "50ffa824aea795305de7be60beeb49a46dc86029aa3659a7e2c6269a5ea2a068",
+    "expected": "50ffa824aea795305de7be60beeb49a46dc86029aa3659a7e2c6269a5ea2a068"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/Constants.elm": {
+    "source": "8929e96da7572ef8c27832767a3a05321e4ac0b2b8616680f39b72d47ed2c45b",
+    "expected": "8929e96da7572ef8c27832767a3a05321e4ac0b2b8616680f39b72d47ed2c45b"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/Helpers.elm": {
+    "source": "def271351e166332684779934bf99a40c69c3bb6ba2db5569f480655b1f4da35",
+    "expected": "def271351e166332684779934bf99a40c69c3bb6ba2db5569f480655b1f4da35"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/InternalTypes.elm": {
+    "source": "946f1717b19c39bf4ecb84dd9823822619227c26c83a0978b3fa14b5d4a8c440",
+    "expected": "946f1717b19c39bf4ecb84dd9823822619227c26c83a0978b3fa14b5d4a8c440"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/Markdown.elm": {
+    "source": "0be4170ac91d6915d951def87b7e7a67959f3201c10f0779898978e181e68e8a",
+    "expected": "0be4170ac91d6915d951def87b7e7a67959f3201c10f0779898978e181e68e8a"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/Query.elm": {
+    "source": "93118dd2daf6a967205b44ece1a1ab77950c8c99bdeb6c859e0a712faa4d39b2",
+    "expected": "93118dd2daf6a967205b44ece1a1ab77950c8c99bdeb6c859e0a712faa4d39b2"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/ToString.elm": {
+    "source": "1e3677826d74a588dc4983b133e5fae824e4a572879efa28d6c95dc297403e6b",
+    "expected": "1e3677826d74a588dc4983b133e5fae824e4a572879efa28d6c95dc297403e6b"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Internal/Inert.elm": {
+    "source": "bcbebab89d84a2b66198a3723ab2b75ca7e24e552a585455cf062ec7218b4ccb",
+    "expected": "bcbebab89d84a2b66198a3723ab2b75ca7e24e552a585455cf062ec7218b4ccb"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Query.elm": {
+    "source": "e8a7fa1aeb5affe1bf30a3bf83ea3c26162345f7c7f971e03ca65848bd03556c",
+    "expected": "e8a7fa1aeb5affe1bf30a3bf83ea3c26162345f7c7f971e03ca65848bd03556c"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Query/Internal.elm": {
+    "source": "79f053e5eeda8989eab8ad9133e7214fd6ac204fcf190bffcb061c2e0e0f1969",
+    "expected": "79f053e5eeda8989eab8ad9133e7214fd6ac204fcf190bffcb061c2e0e0f1969"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Selector.elm": {
+    "source": "f0cefd876fc17e5d4ce0a78f9171719f37f0a3e1928b68a453b0f636ee8e83d2",
+    "expected": "f0cefd876fc17e5d4ce0a78f9171719f37f0a3e1928b68a453b0f636ee8e83d2"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Html/Selector/Internal.elm": {
+    "source": "85dcff2118fbbed28d2d0cc9c5cb5a9b69b99c083b7166a5c8080054fe0ec2ca",
+    "expected": "85dcff2118fbbed28d2d0cc9c5cb5a9b69b99c083b7166a5c8080054fe0ec2ca"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Internal.elm": {
+    "source": "8dbfde1292b02b7722bb442daf1b271ba4e55bfa893e5b6e186ba66ea2906fe7",
+    "expected": "8dbfde1292b02b7722bb442daf1b271ba4e55bfa893e5b6e186ba66ea2906fe7"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Internal/KernelConstants.elm": {
+    "source": "037695cd96d876274c999a2404bb57dcfb1ec9f7b4c13ad8a8bdada4a75ddaf1",
+    "expected": "037695cd96d876274c999a2404bb57dcfb1ec9f7b4c13ad8a8bdada4a75ddaf1"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Runner.elm": {
+    "source": "287945b396572616feb65b4e99879f209b971aed0633a7148734cdc3722cdf19",
+    "expected": "287945b396572616feb65b4e99879f209b971aed0633a7148734cdc3722cdf19"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Runner/Distribution.elm": {
+    "source": "e2fd49a6f7a3e9a16b854f8488431c4abde36913688c6ebbfd0c6eeb4197ff4a",
+    "expected": "e2fd49a6f7a3e9a16b854f8488431c4abde36913688c6ebbfd0c6eeb4197ff4a"
+  },
+  "elm-explorations/test@2.2.1/src/Test/Runner/Failure.elm": {
+    "source": "c1b16477b83c17b97d346d1f692f7805ab6202eb50a35d6d2038da1267edda38",
+    "expected": "c1b16477b83c17b97d346d1f692f7805ab6202eb50a35d6d2038da1267edda38"
+  },
+  "elm-format/bad/Elm-0.19/UnexpectedComma.elm": {
+    "source": "85378a979e30860f25dda959e6877dba3ffab52861feb94fb68d47e182c58ca6",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/bad/Elm-0.19/UnexpectedEndOfInput.elm": {
+    "source": "17ebc28038e483f51ce28ede22f69c88e0c1004296759cf34024f3804bee3275",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/directory/invalid.elm": {
+    "source": "1c02e41e5edc360e83edaa797098bbeee74573e738e152f41f74cf5cd7caae96",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/directory/valid.elm": {
+    "source": "0b667d82181a7b61f895abbb0688bc184b2749ca3f09d20afcac7dff7c2b40c6",
+    "expected": "0b667d82181a7b61f895abbb0688bc184b2749ca3f09d20afcac7dff7c2b40c6"
+  },
+  "elm-format/from-json/Elm-0.19/Declarations.elm": {
+    "source": "15e3c9596f97477925945ca130f27637236d0dd9428a89caa8205b039bd64a30",
+    "expected": "15e3c9596f97477925945ca130f27637236d0dd9428a89caa8205b039bd64a30"
+  },
+  "elm-format/from-json/Elm-0.19/Expressions.elm": {
+    "source": "de63b3402a66175eef867b86253dbc38084631df9fb26cb4fd19f8a5d2e0770b",
+    "expected": "de63b3402a66175eef867b86253dbc38084631df9fb26cb4fd19f8a5d2e0770b"
+  },
+  "elm-format/from-json/Elm-0.19/ModuleComments.elm": {
+    "source": "605843f59fb017e255362001944a98357ecde09b0e0a8491b2b7d3bc06a7ec20",
+    "expected": "d00fa4877767a83b062df718cb668d663650df6f1c56a5d67154431027ddf078"
+  },
+  "elm-format/from-json/Elm-0.19/ModuleImports.elm": {
+    "source": "0e483b7f8b0093a48e5053ed9c04d5ce3fc1f48bb1c3e587edafb670189590e4",
+    "expected": "0e483b7f8b0093a48e5053ed9c04d5ce3fc1f48bb1c3e587edafb670189590e4"
+  },
+  "elm-format/from-json/Elm-0.19/Patterns.elm": {
+    "source": "fc2f2f742d25baa08b297379906221721210cd2222e4b9990deca369e82422c0",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/from-json/Elm-0.19/Simple.elm": {
+    "source": "f9b150906e86fb5e3eb94b9ff691471c4ad22a6f50f558bfc7d48353142033af",
+    "expected": "f9b150906e86fb5e3eb94b9ff691471c4ad22a6f50f558bfc7d48353142033af"
+  },
+  "elm-format/from-json/Elm-0.19/Types.elm": {
+    "source": "0e3a547c3626846dc6e3302442d6b63b5ba0070f9bbb078566b71c00fd773d6e",
+    "expected": "0e3a547c3626846dc6e3302442d6b63b5ba0070f9bbb078566b71c00fd773d6e"
+  },
+  "elm-format/good/Elm-0.16/AllSyntax/PatternsRequireParens.elm": {
+    "source": "03bf8128d687139f950de97e3f54c1de762b5c066612e06a89572f4bc45018fd",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax.elm": {
+    "source": "0fc88f524f046301a0f6e7117f9e5aa4d9ee00a6c2c7efa36014a4be44e89e75",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/BlockComments/Module.elm": {
+    "source": "4ec988a1c449ccf44767367c52c63ffea77aa2ba312669265d6c186083ce2db4",
+    "expected": "4ec988a1c449ccf44767367c52c63ffea77aa2ba312669265d6c186083ce2db4"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/BlockComments/ModuleEffect.elm": {
+    "source": "2da7c077260ec79d93097bcbb5e97716986147011f97a6ef33192b4244a3e820",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/InfixOperators.elm": {
+    "source": "be6cc59b067907a40ab5c69569f42eb25507de2c3e9fa3064102c7414d6e9acf",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/LineComments/Module.elm": {
+    "source": "bd9119678d0cb07f32a1a7f3fa0df67dbcb9f6b7b9454b97cb6e7a06815fa229",
+    "expected": "bd9119678d0cb07f32a1a7f3fa0df67dbcb9f6b7b9454b97cb6e7a06815fa229"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/LineComments/ModuleEffect.elm": {
+    "source": "09f2aa909da2384f4db9d343d41079a58a2210610b451cfc3c0fffc958950305",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/Module.elm": {
+    "source": "4736fbc968a175008c9c620f4c7cfb429fdd56faeb0bcb3fd1af78575aef4351",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/ModuleEffect.elm": {
+    "source": "39c1b2679529160e4849b99e349110c96ad8c3088b9d135c35000723298b70c1",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/OldKeywords.elm": {
+    "source": "17efbe156ab587b5f0014761d007097ff6e5d163ec0b673579bb85b5f2874426",
+    "expected": "17efbe156ab587b5f0014761d007097ff6e5d163ec0b673579bb85b5f2874426"
+  },
+  "elm-format/good/Elm-0.17/AllSyntax/Range.elm": {
+    "source": "047324820299ea5be0b2898a2722367c99b091b3e0a5311260f0c464eea82e58",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/Export.elm": {
+    "source": "b5f2c670a286368d7dcb4d0f52bf6b9ffc7f66c0271e853798448a69ba53a866",
+    "expected": "b5f2c670a286368d7dcb4d0f52bf6b9ffc7f66c0271e853798448a69ba53a866"
+  },
+  "elm-format/good/Elm-0.17/TopLevelSpacing.elm": {
+    "source": "609d8a0a4324e8074df2d90e2bab13c00a7d7cc476fc1b330af3cc9ac749acb4",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/WorkaroundNegativeCasePatterns.elm": {
+    "source": "3f7d8983302774fde7bd14ec21531832a220e626c2a596243feebaa294269f84",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.17/elm-lang/examples/Spelling.elm": {
+    "source": "374d6949d5557f399866532a4686dab1d0458a272b48aae850f4610f4d9c1f10",
+    "expected": "374d6949d5557f399866532a4686dab1d0458a272b48aae850f4610f4d9c1f10"
+  },
+  "elm-format/good/Elm-0.17/elm-lang/examples/http.elm": {
+    "source": "dab07809465da6a3b1566a78cc71a3dc828f24b711d44ffc35ddba332e44a94b",
+    "expected": "dab07809465da6a3b1566a78cc71a3dc828f24b711d44ffc35ddba332e44a94b"
+  },
+  "elm-format/good/Elm-0.17/elm-lang/examples/random.elm": {
+    "source": "1c5f7aa8a157f167cd824129b9cb7300af1b8bfa485eea3923eeaf7395981069",
+    "expected": "1c5f7aa8a157f167cd824129b9cb7300af1b8bfa485eea3923eeaf7395981069"
+  },
+  "elm-format/good/Elm-0.17/elm-lang/examples/time.elm": {
+    "source": "27d98fcd444663486471abc37947f4ad5d2634890a5fbfa12523b6fbb89ff0e7",
+    "expected": "27d98fcd444663486471abc37947f4ad5d2634890a5fbfa12523b6fbb89ff0e7"
+  },
+  "elm-format/good/Elm-0.17/elm-lang/examples/websockets.elm": {
+    "source": "0bdd0616df65962bf9005512849c40cdf651312f22526fc2e05510a3a8be671c",
+    "expected": "0bdd0616df65962bf9005512849c40cdf651312f22526fc2e05510a3a8be671c"
+  },
+  "elm-format/good/Elm-0.17/elm-lang/websocket/WebSocket.elm": {
+    "source": "3dbc42566f87f6690142e2050d4ffde392a47feb1e3d94f07b464aa5d45d82d8",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/AllSyntax.elm": {
+    "source": "a8bd2c4a28972bc792d537e6c80af4ca8b09faede17fb8131eb4cbe02f8810f0",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/BlockComments/Module.elm": {
+    "source": "e84728a43df5d50ad5f03a85a137396c855d2644e3b9078aa7e88185923f3b54",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/BlockComments/Patterns.elm": {
+    "source": "8dde616135d56f229ed2e221ba86b48a0034381b3adb1b6a9aebc1583593dd2b",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/BlockComments/Types.elm": {
+    "source": "a4166850ab8db887f7cae07bf0dd94d9a997d1c68e229f7db7a32193da96f4af",
+    "expected": "a4166850ab8db887f7cae07bf0dd94d9a997d1c68e229f7db7a32193da96f4af"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Comments.elm": {
+    "source": "63e405ce0099eee316cf9629b4228899d045debc487fe2c3c23f61c20e01c511",
+    "expected": "63e405ce0099eee316cf9629b4228899d045debc487fe2c3c23f61c20e01c511"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/DeclaraionSpacing.elm": {
+    "source": "f02ab4654c42f74d7bb4ebf734f058afd5d571e361209fe937183bbddcf2b217",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Declarations.elm": {
+    "source": "fb015373321b91196f741dff0c6d1813c74884b6eb6d67182c068f66528479a9",
+    "expected": "fb015373321b91196f741dff0c6d1813c74884b6eb6d67182c068f66528479a9"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/DocComments.elm": {
+    "source": "2d57eff4ffd425a98fda0d9e283dae30347f2e26aab3e8dd86f416a04085d17f",
+    "expected": "2d57eff4ffd425a98fda0d9e283dae30347f2e26aab3e8dd86f416a04085d17f"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/DocCommentsStartingWtihAtDocs.elm": {
+    "source": "73d9ca36981a97bf68893a5428db100b45f518698907535711ea10e329c0c853",
+    "expected": "73d9ca36981a97bf68893a5428db100b45f518698907535711ea10e329c0c853"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Expressions.elm": {
+    "source": "844188cdd44d9dfda79b95aae3bdc84715c94492a847d4b9bc0fee9cd770e76d",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Expressions/BinaryOperators.elm": {
+    "source": "c75e7e946abf2942fdd56ca929a53487b9bfd719fdc7e3da3f8fca221e9a9f4c",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Expressions/Unary.elm": {
+    "source": "d7894422ff6a56e2443fc11635b98b181a1e2a147778774ac6d3148fd5d1d6ac",
+    "expected": "d7894422ff6a56e2443fc11635b98b181a1e2a147778774ac6d3148fd5d1d6ac"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/GLShader.elm": {
+    "source": "17ad56d150d5c6571f84754af9ee7d84fdfba7fa9ec0a94b31b1238602c01e1a",
+    "expected": "17ad56d150d5c6571f84754af9ee7d84fdfba7fa9ec0a94b31b1238602c01e1a"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/LineComments/Module.elm": {
+    "source": "d84f2bb613b84ce4d59440aa01385a4018eb35160a90dfd62e7ddd9c0199b766",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/LineComments/Patterns.elm": {
+    "source": "ee43b574738207c27d96740214d11edf425c1392f07431784e0ebc596c412c00",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/LineComments/Types.elm": {
+    "source": "97c9f2a1806c175cd1dedec928fbb3c89aed01923aae27ec14648fa19eb11932",
+    "expected": "97c9f2a1806c175cd1dedec928fbb3c89aed01923aae27ec14648fa19eb11932"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Literals.elm": {
+    "source": "4879d23a0c25fff0aa04d668e31a87f29cb6bc1021e1098924b6bc820dc6b05f",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Module.elm": {
+    "source": "9d0f2c1e85465d17bdaa0b55825ec0dc017d9279f3b3ab95ea7e16bef38ca059",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/ModuleMultiline.elm": {
+    "source": "80c18b6714e29ac182973ace6b14beb027f85b806c7a37c5fd32976ef5820494",
+    "expected": "80c18b6714e29ac182973ace6b14beb027f85b806c7a37c5fd32976ef5820494"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/ModuleWithDocs.elm": {
+    "source": "f8c9c500fa12ab1ea8549d6cd1530a3ff8330f4e64197d7cfea9197252c35a6d",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/OldKeywords.elm": {
+    "source": "17efbe156ab587b5f0014761d007097ff6e5d163ec0b673579bb85b5f2874426",
+    "expected": "17efbe156ab587b5f0014761d007097ff6e5d163ec0b673579bb85b5f2874426"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Patterns.elm": {
+    "source": "335d7f2441697992d7633ae813f8d0955259534a3e0e79232aace92efd8d294e",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/AllSyntax/Types.elm": {
+    "source": "bff28bd33cdbeb7b05f70d371fb25d0bf7e14d40b5b6a54fe9b631538ffe6abc",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/ApiSketch.elm": {
+    "source": "b55d73d0002e249bae0ce3624ca9ea56b886d8973de4910f217c3793fcf5dc02",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/Comments.elm": {
+    "source": "fce9ccf526563f70bf0678f300c29b0a2e324393c72968f778960e2498d2d571",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/Export.elm": {
+    "source": "b5f2c670a286368d7dcb4d0f52bf6b9ffc7f66c0271e853798448a69ba53a866",
+    "expected": "b5f2c670a286368d7dcb4d0f52bf6b9ffc7f66c0271e853798448a69ba53a866"
+  },
+  "elm-format/good/Elm-0.18/Simple.elm": {
+    "source": "cdbdba427651436e9b40a3182780b042ddb186f338a04e4775e6c2e754dcd96f",
+    "expected": "cdbdba427651436e9b40a3182780b042ddb186f338a04e4775e6c2e754dcd96f"
+  },
+  "elm-format/good/Elm-0.18/TheSeamau5/elm-check/Check.elm": {
+    "source": "8fda287f92bdda22dc836d9f0e0fe6e29a791c4290b5b9735e495b6127b43d5d",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/TopLevelSpacing.elm": {
+    "source": "609d8a0a4324e8074df2d90e2bab13c00a7d7cc476fc1b330af3cc9ac749acb4",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/TrueFalseInIdentifiers.elm": {
+    "source": "ea9a08f52f7539ac0be4f26446147d4687be6cc25280be3c66135a0179bfe6d3",
+    "expected": "ea9a08f52f7539ac0be4f26446147d4687be6cc25280be3c66135a0179bfe6d3"
+  },
+  "elm-format/good/Elm-0.18/WorkaroundNegativeCasePatterns.elm": {
+    "source": "3f7d8983302774fde7bd14ec21531832a220e626c2a596243feebaa294269f84",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/avh4/elm-fifo/Fifo.elm": {
+    "source": "4b57d378e4b76249d95311ad18dd02e6e29f12641d2b11806973a1d28b3fa646",
+    "expected": "4b57d378e4b76249d95311ad18dd02e6e29f12641d2b11806973a1d28b3fa646"
+  },
+  "elm-format/good/Elm-0.18/elm/core/Basics.elm": {
+    "source": "c13a6da2deb03fdc044bf0c659446763b06963bae0ae1a921d3fde3b7316eb4f",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.18/evancz/start-app/StartApp.elm": {
+    "source": "3b0667d0b8de1e3689bd4d9b2b0287b019ec5a12b1185bebe43b36c978ebcd42",
+    "expected": "3b0667d0b8de1e3689bd4d9b2b0287b019ec5a12b1185bebe43b36c978ebcd42"
+  },
+  "elm-format/good/Elm-0.18/mdgriffith/style-elements/Element.elm": {
+    "source": "7c2d94733c689393d14988392914026de7884d054188f22965eded2d422e2fa1",
+    "expected": "7c2d94733c689393d14988392914026de7884d054188f22965eded2d422e2fa1"
+  },
+  "elm-format/good/Elm-0.18/rtfeldman/dreamwriter/Editor.elm": {
+    "source": "8529bb7aa2b42c004ebbb0dfd2c5c9707a28a664efbf0a05a367e455d74e0332",
+    "expected": "be619fa42fce9e34106a867324cad04fee28bbdf22c49e5db3660e0b0b461867"
+  },
+  "elm-format/good/Elm-0.18/rtfeldman/dreamwriter/LeftSidebar.elm": {
+    "source": "ffbc8283e53ceedd5f0dba84438af143d02ebe0892177df4ca8ea1a109a84070",
+    "expected": "ffbc8283e53ceedd5f0dba84438af143d02ebe0892177df4ca8ea1a109a84070"
+  },
+  "elm-format/good/Elm-0.18/rtfeldman/dreamwriter/RightSidebar.elm": {
+    "source": "05e4fddbe26d3e6dd2dbf8b03cf7735e6eb2ecdad2c137aae1758d238d5642cd",
+    "expected": "05e4fddbe26d3e6dd2dbf8b03cf7735e6eb2ecdad2c137aae1758d238d5642cd"
+  },
+  "elm-format/good/Elm-0.18/rtfeldman/dreamwriter/WordGraph.elm": {
+    "source": "ba624af9efa8a509466898a97569d63f6ca0c58e809857190a09b6481ace56b8",
+    "expected": "ba624af9efa8a509466898a97569d63f6ca0c58e809857190a09b6481ace56b8"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/Declarations.elm": {
+    "source": "7488a02f2bff5f143df4728295a8e9da8bd9562d8d369794fcaff008ea3c6be3",
+    "expected": "7488a02f2bff5f143df4728295a8e9da8bd9562d8d369794fcaff008ea3c6be3"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/Expressions.elm": {
+    "source": "6ff4e2fc609017f743e634dbd058e4be4d307fabe3b5379a973710e6643e2a9a",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/InfixDeclaration.elm": {
+    "source": "5c869ec651aa5ce88fffac57afb2b07dc41d8ce0d442c92c04749809f4cb430e",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/Literals.elm": {
+    "source": "ded340a99b8dc708cb935056309d48f4407e866ab75d6ac8cbacb54a323a0ac6",
+    "expected": "ded340a99b8dc708cb935056309d48f4407e866ab75d6ac8cbacb54a323a0ac6"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/Module.elm": {
+    "source": "7b9b7f3e2105e327e77a24322103efd0fcd41e115c3e9607480b6cda0fd8c6b4",
+    "expected": "7b9b7f3e2105e327e77a24322103efd0fcd41e115c3e9607480b6cda0fd8c6b4"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/Patterns.elm": {
+    "source": "33f1d583f11d5de078a5e8e8f8cfd5b3508c4ea74779e0966f299b9033ada7f6",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.19/AllSyntax/Types.elm": {
+    "source": "7533aa7ce8653314f8d8018ce48966f59d2659d3e6ef2b9829228390857bd291",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.19/GLShader.elm": {
+    "source": "17ad56d150d5c6571f84754af9ee7d84fdfba7fa9ec0a94b31b1238602c01e1a",
+    "expected": "17ad56d150d5c6571f84754af9ee7d84fdfba7fa9ec0a94b31b1238602c01e1a"
+  },
+  "elm-format/good/Elm-0.19/InfixAsVariableName.elm": {
+    "source": "10d7cb323f78a3f421454482c90850c57284f6768f1fff3feb478935b2e3b1c4",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.19/TopLevelSpacing.elm": {
+    "source": "609d8a0a4324e8074df2d90e2bab13c00a7d7cc476fc1b330af3cc9ac749acb4",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/Elm-0.19/WorkaroundNegativeCasePatterns.elm": {
+    "source": "3f7d8983302774fde7bd14ec21531832a220e626c2a596243feebaa294269f84",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/good/json/ExternalReferences.elm": {
+    "source": "9990473ca7d8c3c38db719072c6a6a76496a02e9bd783d8260c9da383b7a7da2",
+    "expected": "9990473ca7d8c3c38db719072c6a6a76496a02e9bd783d8260c9da383b7a7da2"
+  },
+  "elm-format/recursive-directory/nested/invalid.elm": {
+    "source": "b995ad4eed107a5ab2a48bebf905d000ec7bb832dc7656af7e104e45dcf1bd01",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/recursive-directory/valid.elm": {
+    "source": "40a15e073d95954ce588231c8c3feace2eeea379423cda17425fb10b095febfe",
+    "expected": "40a15e073d95954ce588231c8c3feace2eeea379423cda17425fb10b095febfe"
+  },
+  "elm-format/transform/Elm-0.16/github-avh4-elm-format-184.elm": {
+    "source": "7702ac22c013413f8f12d6b0bb7c5e27bda977ad21c144b8ffcff9dbbbe769a2",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.16/github-avh4-elm-format-184.formatted.elm": {
+    "source": "84939c85cdf03b04f259806cc9345b4cd1e7ae11ed7ec2df02bcf4def7655e57",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/AllSyntax/Patterns.elm": {
+    "source": "97a5c11a83d77e95e5b26a1ae9e1a897f114045930033b33ba863c943e622449",
+    "expected": "e083a41e07be8809ca89e9b1dd88d291e606d4153b74956727c6fa515943eb22"
+  },
+  "elm-format/transform/Elm-0.18/AllSyntax/Patterns.formatted.elm": {
+    "source": "e083a41e07be8809ca89e9b1dd88d291e606d4153b74956727c6fa515943eb22",
+    "expected": "e083a41e07be8809ca89e9b1dd88d291e606d4153b74956727c6fa515943eb22"
+  },
+  "elm-format/transform/Elm-0.18/AllSyntax/Types.elm": {
+    "source": "650729c819ff41b998254a949aa3b3ff521884d6c042275b7101e9e23097c079",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/AllSyntax/Types.formatted.elm": {
+    "source": "5403385f9893084adfa5ed3a385476061dfa68850e2c797b449694477d8538cc",
+    "expected": "5403385f9893084adfa5ed3a385476061dfa68850e2c797b449694477d8538cc"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentAtDocs.elm": {
+    "source": "ef71de55b5198c48ac08d5a958d2f1e94dbb84df05ac4ac083e9678112ec05a3",
+    "expected": "086e81b349fc65a1e4145dc5856ee35ed81ce9fac8b46b47cf4373e466660800"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentAtDocs.formatted.elm": {
+    "source": "086e81b349fc65a1e4145dc5856ee35ed81ce9fac8b46b47cf4373e466660800",
+    "expected": "086e81b349fc65a1e4145dc5856ee35ed81ce9fac8b46b47cf4373e466660800"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentCheapskateReferenceBug.elm": {
+    "source": "c74bdaf1d4ba3337157c863209d660fd05e6fc0d9c7ee92242ddd44775611097",
+    "expected": "0dff3a76ed746f4add1f160c319e97a3d33f6037aceea6c8d97c5ab913533e33"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentCheapskateReferenceBug.formatted.elm": {
+    "source": "0dff3a76ed746f4add1f160c319e97a3d33f6037aceea6c8d97c5ab913533e33",
+    "expected": "0dff3a76ed746f4add1f160c319e97a3d33f6037aceea6c8d97c5ab913533e33"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentCodeExample.elm": {
+    "source": "5b01fe4212809f74351e14c4c999073b17ed72f845d7e7c92436078fa4fd64c2",
+    "expected": "a46269b7c78008f4667829572795a96f658f5ca6ed55dbd7ee845a871635ef82"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentCodeExample.formatted.elm": {
+    "source": "a46269b7c78008f4667829572795a96f658f5ca6ed55dbd7ee845a871635ef82",
+    "expected": "a46269b7c78008f4667829572795a96f658f5ca6ed55dbd7ee845a871635ef82"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentMarkdownSafety.elm": {
+    "source": "db8b6c54354c200d9d5ab3183a14d1f972f8be7043de3c20744b7ce4bc4468ab",
+    "expected": "eaaba02d368ad3f08e2a0b34074d0b15e626b01a0682e528fa91929282a97850"
+  },
+  "elm-format/transform/Elm-0.18/DocCommentMarkdownSafety.formatted.elm": {
+    "source": "eaaba02d368ad3f08e2a0b34074d0b15e626b01a0682e528fa91929282a97850",
+    "expected": "eaaba02d368ad3f08e2a0b34074d0b15e626b01a0682e528fa91929282a97850"
+  },
+  "elm-format/transform/Elm-0.18/Empty.elm": {
+    "source": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/Empty.formatted.elm": {
+    "source": "0d580678a018e37a998b444d2a6dfbfd1573345d76b131980d3183e9e6ac385f",
+    "expected": "0d580678a018e37a998b444d2a6dfbfd1573345d76b131980d3183e9e6ac385f"
+  },
+  "elm-format/transform/Elm-0.18/Examples.elm": {
+    "source": "768ab23b1690a346279d4a196df5a90061151d052acfbf76f6e36bfb59e37787",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/Examples.formatted.elm": {
+    "source": "38d31570c8451cfc85cb8d2a1413d26057a22e2742ea9c099ccaa720b600cedd",
+    "expected": "38d31570c8451cfc85cb8d2a1413d26057a22e2742ea9c099ccaa720b600cedd"
+  },
+  "elm-format/transform/Elm-0.18/LenientEqualsColon.elm": {
+    "source": "618888ed4398f86569e3a76207d25ffce63f8e3e672b6c0c01fe629a9006ac8a",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/LenientEqualsColon.formatted.elm": {
+    "source": "a383f4d6e6455fbdba1ddd1ad0160cb6108f4f3fc564d64365ffdcc5aabe0bbb",
+    "expected": "a383f4d6e6455fbdba1ddd1ad0160cb6108f4f3fc564d64365ffdcc5aabe0bbb"
+  },
+  "elm-format/transform/Elm-0.18/MissingImportParens.elm": {
+    "source": "e0ed004f995a1cb84c857499208337cc8aaadd6d49ffe0cff4bb8c2dd3abe7a5",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/MissingImportParens.formatted.elm": {
+    "source": "fb8ef294f123d71df885f7680816ef932829604450884f85a125934a1ca20f36",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/QuickCheck-4562ebccb71ea9f622fb99cdf32b2923f6f9d34f-2529668492575674138.elm": {
+    "source": "1cdef1ac05bdf05c2651729fc1a8c1bb9bbf9da50c0178620d3e7633adefea68",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/QuickCheck-4562ebccb71ea9f622fb99cdf32b2923f6f9d34f-2529668492575674138.formatted.elm": {
+    "source": "0a38bd9136fef81570f24fa830abe50eddef28e19db2404c321a0f42cabd1b5d",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/QuickCheck-94f37da84c1310f03dcfa1059ce870b73c94a825--6449652945938213463.elm": {
+    "source": "661ca666fa5fff2fc638d196f1ae17aaa14dbfc6f6a603e022e54858d1d55e49",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/QuickCheck-94f37da84c1310f03dcfa1059ce870b73c94a825--6449652945938213463.formatted.elm": {
+    "source": "bb0ab607b9c42cdb2287e112007008bcd28dfd78b58bd531287fac7999cc6867",
+    "expected": "bb0ab607b9c42cdb2287e112007008bcd28dfd78b58bd531287fac7999cc6867"
+  },
+  "elm-format/transform/Elm-0.18/Sorting.elm": {
+    "source": "4b4bb3d0431b8cd0c985eefa801f5372e0035b920d48ebc41934a95066e57356",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/Sorting.formatted.elm": {
+    "source": "1879b532006ac769ef71c52392933bd81bcd09348cf95b84ed976a1fc2c8bb48",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule1.elm": {
+    "source": "982cbbbbe872e5e71309fef3c674a036bfa0012403a7960e33aa7d7430dfbc5e",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule1.formatted.elm": {
+    "source": "a49cfc89679906ca43515cc2bab05cff10df6e7178a297718b87ffe41983df7e",
+    "expected": "a49cfc89679906ca43515cc2bab05cff10df6e7178a297718b87ffe41983df7e"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule2.elm": {
+    "source": "d31fb00ab541de1cd0b04fdb7c9418c045f76ed0cd412cbec5c22247ae6f4323",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule2.formatted.elm": {
+    "source": "f5f02b0c4c1fec95aead4759319bdf591bfe5771a5d329e4bb1c89b89914613c",
+    "expected": "f5f02b0c4c1fec95aead4759319bdf591bfe5771a5d329e4bb1c89b89914613c"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule3.elm": {
+    "source": "375731bbe94cc94d6587e583ddd15438c5c0fc9da62f820d81071ef222610961",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule3.formatted.elm": {
+    "source": "29c1c986cb7d755f1ef1cee557924a7f547523f3090a90007800c0fbe5ac8334",
+    "expected": "29c1c986cb7d755f1ef1cee557924a7f547523f3090a90007800c0fbe5ac8334"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule4.elm": {
+    "source": "cd810a59bb075994b6d65321abe34c44920468f7d70880b3d7ca219dada6355f",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/TrickyModule4.formatted.elm": {
+    "source": "d93ea78b5bef30e36861b134dcebc50ea43df079d3c50f23bda635a0a33c1963",
+    "expected": "d93ea78b5bef30e36861b134dcebc50ea43df079d3c50f23bda635a0a33c1963"
+  },
+  "elm-format/transform/Elm-0.18/UnnecessaryParens.elm": {
+    "source": "8385e1b2aecd51b300522ae68777a77df860dfb87044fa9e837b1bdb3e5aef0e",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/UnnecessaryParens.formatted.elm": {
+    "source": "5d63d9376c0d01de603a905c291043bffae34eb278b1860187a5dfc0896bdc73",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/WindowsEol.elm": {
+    "source": "a2dd520f4a48054d3bb7d8641dbbebe360599f5581aa1c3295232be8b0cee607",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.18/WindowsEol.formatted.elm": {
+    "source": "4d77bba1f5c4561702d3227bf3db5548db5c4ea89a04fdc23c8fa8072baff1ae",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/AddMissingExposingForImport.elm": {
+    "source": "6a50a54800f0e931228134b05e2ff361587453ce2e99fdea0bf4b0cfbfbf059f",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/AddMissingExposingForImport.formatted.elm": {
+    "source": "0b4877ac045896b4d1f5fde473a1318685b3d5b86028b6095c2b6ee2d4c1247c",
+    "expected": "0b4877ac045896b4d1f5fde473a1318685b3d5b86028b6095c2b6ee2d4c1247c"
+  },
+  "elm-format/transform/Elm-0.19/AddMissingExposingForModule.elm": {
+    "source": "4ce13d29bd0950d8089277509fa0a026f7a28f23bbf2a562f3567c2382153750",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/AddMissingExposingForModule.formatted.elm": {
+    "source": "3a21dad3ecfcba394341b18071ca477a70d12a5110ce297afbe689f24bb1d762",
+    "expected": "3a21dad3ecfcba394341b18071ca477a70d12a5110ce297afbe689f24bb1d762"
+  },
+  "elm-format/transform/Elm-0.19/ClarifyNegativeExponentiationPrecedence.elm": {
+    "source": "8d925606f884a5001185b422ebd521553457f3a933a4067bf6d2109ff99b2aa2",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ClarifyNegativeExponentiationPrecedence.formatted.elm": {
+    "source": "6bfdba057010de65834e4f7cd26df6733573c73e352dc9e7a743dc6517c70e74",
+    "expected": "6bfdba057010de65834e4f7cd26df6733573c73e352dc9e7a743dc6517c70e74"
+  },
+  "elm-format/transform/Elm-0.19/DistinguishCharStartFromRef.elm": {
+    "source": "9358a1267773f581d4dfdd32c95c7c701135d7ef8507fd4df870ae8e2809dddc",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/DistinguishCharStartFromRef.formatted.elm": {
+    "source": "85fca0dcc9fe8699ce40d1c7cfa261921a00ad3b82d197bf10add9b272dc66d2",
+    "expected": "85fca0dcc9fe8699ce40d1c7cfa261921a00ad3b82d197bf10add9b272dc66d2"
+  },
+  "elm-format/transform/Elm-0.19/ExplicitlyListExposedValues.elm": {
+    "source": "9d7e2538acec3618256f38f03d1f8f27130e42de620b2c1c1b88c83f4023ee0b",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ExplicitlyListExposedValues.formatted.elm": {
+    "source": "55241ade648a6b171908e0965549b4ee5b703e27f81928cec22f32b7e9ae7a6f",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ListAllExportsNoExposing.elm": {
+    "source": "58c9c567b5f7f864e754dc44d91a99d1480abf5e84e1ad2a6010e22774db4a31",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ListAllExportsNoExposing.formatted.elm": {
+    "source": "54c66923a75ea4314c50ee1777afc99220c2b90409de1433909e56518601c3e2",
+    "expected": "54c66923a75ea4314c50ee1777afc99220c2b90409de1433909e56518601c3e2"
+  },
+  "elm-format/transform/Elm-0.19/ListAllExportsNoModuleLine.elm": {
+    "source": "c66eeb58c7c2c00df76beabd6ccd60d5b3edabf2427e22924eb85b98972292ac",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ListAllExportsNoModuleLine.formatted.elm": {
+    "source": "6245ad666fff7bb08c3934e1956f8d0eead278b20890f994948d8744dd34dcf6",
+    "expected": "6245ad666fff7bb08c3934e1956f8d0eead278b20890f994948d8744dd34dcf6"
+  },
+  "elm-format/transform/Elm-0.19/ListDocumentedExportsNoExposing.elm": {
+    "source": "14026f0f76b6075193851bcfe5614f49684a7a898ff33c9b11d6fb1c6d39929e",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ListDocumentedExportsNoExposing.formatted.elm": {
+    "source": "2532f85e6eaf890f10411dc8127605367399c9f8c72b04e312f81dae56264cc8",
+    "expected": "2532f85e6eaf890f10411dc8127605367399c9f8c72b04e312f81dae56264cc8"
+  },
+  "elm-format/transform/Elm-0.19/ParseTabsInLiterals.elm": {
+    "source": "ec95290de0916ada34fa9cd9ff1d83c38c4e66b24eca2858408f3ad0786eae2c",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ParseTabsInLiterals.formatted.elm": {
+    "source": "535e680409876960f152b9ba4c2dba5413cb015c598eaca2416a1f51f27cbdf5",
+    "expected": "535e680409876960f152b9ba4c2dba5413cb015c598eaca2416a1f51f27cbdf5"
+  },
+  "elm-format/transform/Elm-0.19/ReplaceThenByOfInCase.elm": {
+    "source": "4fae862225bb0cdddc0dfc2ecc1b1440e20b713de894b01234b4da1d690607a7",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/ReplaceThenByOfInCase.formatted.elm": {
+    "source": "ebb9ea566cef4260f0299cbb994feeb83ae643e3b6dff172255eb3caf5730af2",
+    "expected": "ebb9ea566cef4260f0299cbb994feeb83ae643e3b6dff172255eb3caf5730af2"
+  },
+  "elm-format/transform/Elm-0.19/TransformFatArrow.elm": {
+    "source": "1a1e6c55b080201661e162eb58a3d43151ff92db85507db290568bc39f7f7891",
+    "skipped": "krueger rejects the file"
+  },
+  "elm-format/transform/Elm-0.19/TransformFatArrow.formatted.elm": {
+    "source": "4c7c71d807d0f5cfe4630a2022396b70ed02c82399caa2c6a2346486caa9945a",
+    "expected": "4c7c71d807d0f5cfe4630a2022396b70ed02c82399caa2c6a2346486caa9945a"
+  },
+  "elm/browser@1.0.2/src/Browser.elm": {
+    "source": "2722873214de2d381a02e037dd56f764c522c0b4ccbbfb3edccce69e0c3c32a5",
+    "expected": "2722873214de2d381a02e037dd56f764c522c0b4ccbbfb3edccce69e0c3c32a5"
+  },
+  "elm/browser@1.0.2/src/Browser/AnimationManager.elm": {
+    "source": "b5eec62b6f9e2e94f5f1b573228e332784580fddc5898c732c4f5c48f4a5a854",
+    "expected": "b5eec62b6f9e2e94f5f1b573228e332784580fddc5898c732c4f5c48f4a5a854"
+  },
+  "elm/browser@1.0.2/src/Browser/Dom.elm": {
+    "source": "03bee2960770cea5b6ee2a208f33622432b8a1ae12e77412cf84b67a453ac2a7",
+    "expected": "03bee2960770cea5b6ee2a208f33622432b8a1ae12e77412cf84b67a453ac2a7"
+  },
+  "elm/browser@1.0.2/src/Browser/Events.elm": {
+    "source": "b72f8970ee085dab3c7e5504f661e21ed6cefaea21890899d9cd32ebc7f2bd4f",
+    "expected": "8240eeb2c57615b59c75ad934ef49ef946e903d52a97313a444feedb9d58fd5b"
+  },
+  "elm/browser@1.0.2/src/Browser/Navigation.elm": {
+    "source": "329085431ef02615190706903d090364097ed3ddaf466370918af69379354706",
+    "expected": "329085431ef02615190706903d090364097ed3ddaf466370918af69379354706"
+  },
+  "elm/browser@1.0.2/src/Debugger/Expando.elm": {
+    "source": "c93b00af7bf99c8929db06cdfaf7c6b26b955ac576e62ee4fe2c0be6e4f01a6b",
+    "expected": "4dc3f0c8cf59b7327cb4baed58c3a8adc5b8ba6aaf0bcc74a5dca5d9a0691a94"
+  },
+  "elm/browser@1.0.2/src/Debugger/History.elm": {
+    "source": "4ef4701403e4b960a902a12f20f5feb3ac8881850ba7a71ca6c50f363c60caa9",
+    "expected": "1901f5d7d3245189631ba4ab8e96a6589eda89d0b15e309bbbb4579b19dd379f"
+  },
+  "elm/browser@1.0.2/src/Debugger/Main.elm": {
+    "source": "4513896c62d0ba2f3f27bae3cf39145af8e5ccf428abde16db782ed1c7db3b6a",
+    "expected": "830ec32c99b28567dfbd603dca01dee2038c70bc7db283e55f1422445c8ee608"
+  },
+  "elm/browser@1.0.2/src/Debugger/Metadata.elm": {
+    "source": "733be27ac5b7651c55b62161f24c508c9a62cf69a481672f17a0c58068591cd8",
+    "expected": "733be27ac5b7651c55b62161f24c508c9a62cf69a481672f17a0c58068591cd8"
+  },
+  "elm/browser@1.0.2/src/Debugger/Overlay.elm": {
+    "source": "cbb5380cc49af503a462d4e1c0112fe6d46653fc34d8948243f5782591094b47",
+    "expected": "aed110b496b180664220bb8e2433e782beaa19ed7b97fcaa64c65e86501d78d7"
+  },
+  "elm/browser@1.0.2/src/Debugger/Report.elm": {
+    "source": "2323bbd81acaaf3b6077d66fda4fd12a15b1d9c21e9571ab21f0b7c069a5d096",
+    "expected": "2323bbd81acaaf3b6077d66fda4fd12a15b1d9c21e9571ab21f0b7c069a5d096"
+  },
+  "elm/bytes@1.0.8/src/Bytes.elm": {
+    "source": "3a40eb753082a46a555d8169cb87c551f1a10e48876592c69a25a5e5ccf3bd41",
+    "expected": "6eba476fca76eb8fccef6f59e85bbbc0055fd10a314f2c75f514b283ec463d8e"
+  },
+  "elm/bytes@1.0.8/src/Bytes/Decode.elm": {
+    "source": "0081a9ec6a859589b689aad1cd1cb401d8f89f6b71f7dd26a243bcf6cc1a6a4d",
+    "expected": "8f3b6c43995e62664bb4e0da16d5dba8ed79d701c468bf8e829576b3523664e1"
+  },
+  "elm/bytes@1.0.8/src/Bytes/Encode.elm": {
+    "source": "fbad353e50263bc3e8d0a563fad68ab919df0bfd249bf66697031dca033a8607",
+    "expected": "feee391542c71cfa47feed1ca1e0f48216cbab5d9f84b58158795ae6812a3f3a"
+  },
+  "elm/core@1.0.5/src/Array.elm": {
+    "source": "1f60be42ecfeaae7dab6e5f6887c49ecdc4089e4348b6f9694e095bd0f434eac",
+    "expected": "acd2ab8b9439770d2e82e551999c73a6907ded96bc0e9f3ac429140c9dab72e4"
+  },
+  "elm/core@1.0.5/src/Basics.elm": {
+    "source": "649e41513480066f951eef04931a1caea463d3b052cb4a86182c6fcd87e980f2",
+    "expected": "0fc46695c3980fec6e6b0a2e60e97461a169f6e83e4459d091dc745ece25bf2d"
+  },
+  "elm/core@1.0.5/src/Bitwise.elm": {
+    "source": "0b3c9aef28504672f08209b26e24390aa65ee8a7ae97e71ba84770ff56d25978",
+    "expected": "faddf512a2e184931ae7c42f477eaed15de868145b8da98274dd39bec6f6a596"
+  },
+  "elm/core@1.0.5/src/Char.elm": {
+    "source": "90db4547054916b2e71b364e3253f50f551e03627ce7e8ae53d1fb1ae667e387",
+    "expected": "3dc7a9fe93a4989e2ec086ab62c8cd7a2a7961504173e220b0b5d63afa0425e4"
+  },
+  "elm/core@1.0.5/src/Debug.elm": {
+    "source": "1407cfff0d9882dc4b6557c7b99f8bbb6f19dbf345ae919c87daf0ca979fd4fe",
+    "expected": "43f0559d2cfcde013ad73defbecff6a2c6584d01ee087029af5aafab56cd3abf"
+  },
+  "elm/core@1.0.5/src/Dict.elm": {
+    "source": "2afc5fcbc080b98903d9b05a98eb0efbf65265eb42ed076b2d442d9e4aca14e5",
+    "expected": "8bbd76f9567bc74b5b3a627c750a5d157c3aee43b91513bbd5716fd706f2c9bb"
+  },
+  "elm/core@1.0.5/src/Elm/JsArray.elm": {
+    "source": "bfa0bc6ae1b5b5786f1224b9c0eb476380e9818af53523fdda4b0c30eb60a0d2",
+    "expected": "84b6d8ee39692dd0dc692133c100939f46f0a910ad572de7f981156b6eaccaf8"
+  },
+  "elm/core@1.0.5/src/List.elm": {
+    "source": "79e513a52ab45ab98f3a5ad9c87779c2cb29519c5adcf91ab3b70fb5de234f41",
+    "expected": "6fd94b83d1eb2d87d110b19d960e1c629295c9bf85c0dfd2c9338440a5c9fb51"
+  },
+  "elm/core@1.0.5/src/Maybe.elm": {
+    "source": "35aa285d930a4da6d918717209f230667ab127d357f69d6ea3dbab31e567f5aa",
+    "expected": "ca34e9abbbb71513f105238d4ecfdebbdc5d47ac478966c07169a202b799c78f"
+  },
+  "elm/core@1.0.5/src/Platform.elm": {
+    "source": "71d83575a51451379e81fc2712e925a5fc242286c5c971259ff1740274f7e527",
+    "expected": "ea23b0c1528cab39f39bd9d5421c55e213d1ec3e8b68dd7ee4cd935b5f947852"
+  },
+  "elm/core@1.0.5/src/Platform/Cmd.elm": {
+    "source": "015c3c2469abeb1cfcf757017d4448c0e453da972fb846f93a91768488e7dfd5",
+    "expected": "ceae3096b06e6cfb6b2af0af93c62b307c32ccfc57da42146206420892d4482c"
+  },
+  "elm/core@1.0.5/src/Platform/Sub.elm": {
+    "source": "fdb296916f45f3ed0096959e5d727b32a05e7459ef5cc95f00e76951221499dd",
+    "expected": "aa3ed49ab355cb30d4119be4048333734627be942c1781f0ff59c46912c8a963"
+  },
+  "elm/core@1.0.5/src/Process.elm": {
+    "source": "a6af86afca70423a8ec9092c34f5b4b4247cb25dc67074864cdcab8c895d0455",
+    "expected": "78a136c16f2bf93bb6e6307190cc1d3113dcb101c1e1a90cb26a538dd8cbbc33"
+  },
+  "elm/core@1.0.5/src/Result.elm": {
+    "source": "1efa7ed54dfcfc31c35ffae770afc6b9b095e063b325d80f5e5550600ded746b",
+    "expected": "05ad42d113a5f61e342b0d277af08c7d880f0941042265b1a5e5b84b18b26c72"
+  },
+  "elm/core@1.0.5/src/Set.elm": {
+    "source": "765ce399f1ed4c92bb47fe0af07808875a2377fdc89f951d513b6f55e5744f85",
+    "expected": "9ccb6d8f139e80732bc970c40121b809ae70daacee5f1d3c43cdad42cac8cbd8"
+  },
+  "elm/core@1.0.5/src/String.elm": {
+    "source": "e7300d71211211e5e0b8b1b3bcd0d6407416a498bcfb682b26a8642fa965e4a0",
+    "expected": "34d87212b9425355a26adfa68e7a804cdc52bb7a1b39639ba61ef309d880af9b"
+  },
+  "elm/core@1.0.5/src/Task.elm": {
+    "source": "f546ccb07a58b26fcf791ed45a6236e80e45aaed00c29cbaeced5dcd6da034fa",
+    "expected": "36831b0fa165e344c4abe47af97229a8fed924272bd5f8e1f5e6f3065bf7bb3e"
+  },
+  "elm/core@1.0.5/src/Tuple.elm": {
+    "source": "b970211ee185cf3184634702aa54f6ec33e2aafb8930caead713ee7929236b46",
+    "expected": "4c492084cd1dcae42fe6996f2ed6405880a9805ecd984cef14d309669fb32104"
+  },
+  "elm/file@1.0.5/src/File.elm": {
+    "source": "87e2d28653ec162f589d5fec45ec9d0aa0f4a040aa9d58419ac56ed15519dbd6",
+    "expected": "6aaed8487a76ea2c626a97d437b11125e99a11a4734e2697ea9b6dc0c771f148"
+  },
+  "elm/file@1.0.5/src/File/Download.elm": {
+    "source": "9516bec7c52dd9aba7d781410af88a63cd9e36cc3a07cd0d8d843870049f342a",
+    "expected": "3cb46c51c7a63eba9746f465af54bdaaf604f2d56c007216db51efed4d86c12e"
+  },
+  "elm/file@1.0.5/src/File/Select.elm": {
+    "source": "c7d40566987ed90ab8735c16f2d6c1eb813c73e78aaa4fde18fff331e35f4a5d",
+    "expected": "e52bbc6ac79c08e2843a394626864362b8137b78685656b02f153d801ee8b7da"
+  },
+  "elm/html@1.0.1/src/Html.elm": {
+    "source": "786dd0ee8617af3c9f2734e8ab4436cf51a8e78c7ab14ae53d5b604e0a018a0c",
+    "expected": "7a6fefe339d835150eef5af748904d576b40d6a61c8da6ad7c1c6966fe852c45"
+  },
+  "elm/html@1.0.1/src/Html/Attributes.elm": {
+    "source": "337c5fd650f3928a9c58f9f155ea49b7c70543fcbd2e7c3d1d6e10a1baf2e2f2",
+    "expected": "6c329fd4f2e0af4f7c04ec518a8c647ac12cc22adf01632adfe1372d94dec6d0"
+  },
+  "elm/html@1.0.1/src/Html/Events.elm": {
+    "source": "294468ac7bf6fabb0b1aa49969fa4c66f7fa185e63323efcf901a26dc21ba34b",
+    "expected": "8a976fdc9700f413ed1c735ca4604f9668a4f6588afd35ddda6ecb1c741d282f"
+  },
+  "elm/html@1.0.1/src/Html/Keyed.elm": {
+    "source": "346e9fe65945ccedc250e5d5cc739fe3505dc9be37bcb93fd311527964b55ff7",
+    "expected": "52617ea3e516ed899f6ac0d2469df5bb6b1383d4720f2462b54a7e119fa6473d"
+  },
+  "elm/html@1.0.1/src/Html/Lazy.elm": {
+    "source": "e6ec7de40a8c6318a055898a144e8cc56b2c9b32f7694be1bf223e98db6cd031",
+    "expected": "833ff4ec02906c96933ef9d855f3bfde057e00716f7740327a4618f34bdd376b"
+  },
+  "elm/http@2.0.0/src/Http.elm": {
+    "source": "791023f4674eedb81e09d4509b5b642006f216b076480b4dac76ce49ea065009",
+    "expected": "73a7ac22d491a5d6e9f986d0d8444dd98622175f1022c5645ad4b060a89301ea"
+  },
+  "elm/json@1.1.4/src/Json/Decode.elm": {
+    "source": "52054aede61fafa06bf3722703b9ca26510d225a027681ed88e72f1e51464a8e",
+    "expected": "509071112891ccf9c46cb3878765f71d0e7c3b0d86fea88d1ff73c59dcddbafc"
+  },
+  "elm/json@1.1.4/src/Json/Encode.elm": {
+    "source": "9cdf3d660f182aed97117205e72388e2bb0d0ad795b4749975fa2c639b808a2a",
+    "expected": "7c7b35514bb50e383599c8929b1981151c5b7d27e92b27e16b04eaad9a15973f"
+  },
+  "elm/parser@1.1.0/src/Parser.elm": {
+    "source": "70634dfc528ec45617b52ecded7a8f0a5d339211db4c8d159b94ffd878557f4e",
+    "expected": "8ea92d2a87e17963b9fbe9416c54b8875747de76519c0e8105c446cb120334bc"
+  },
+  "elm/parser@1.1.0/src/Parser/Advanced.elm": {
+    "source": "ca653aa79db42cd6d26db8d23682d80a77bcf55ffde925e3fe02297ade486a5a",
+    "expected": "3818578ac312cfc75ee012386903e340fefce62259ca473054bf2e7f852a52b4"
+  },
+  "elm/random@1.0.0/src/Random.elm": {
+    "source": "62bc5496b27a6bebfe5ad208f4b10e4d41a849a50e7bc17c7686d238e80eb98c",
+    "expected": "ee0b61d760ad3d74eee5970640b47cc254e7f060d842874deb5867edafd5390e"
+  },
+  "elm/regex@1.0.0/src/Regex.elm": {
+    "source": "748c81050fa699ae4692d2af3b514fab286392728a637585b7175878cc446f34",
+    "expected": "e97a333dd7e61067c7f9f2a694dd37b4e13784a91e62cdff6e16811c9f1d6fd5"
+  },
+  "elm/svg@1.0.1/src/Svg.elm": {
+    "source": "181ecb9c536a31b309069651243868faddf2485d50dd0e108a012746cb54207c",
+    "expected": "247be5dd2980ec969ea856effb0c7393c2a5bea52faeb10551194d5bf9d8df7a"
+  },
+  "elm/svg@1.0.1/src/Svg/Attributes.elm": {
+    "source": "45ebba3826dbcd28909b8297c46f87e47f6da9adc1224e4647abe8b82049cc01",
+    "expected": "8de3950469ec3523f7e13f2118a092ac83af6f4d2ba744054bea370c64787210"
+  },
+  "elm/svg@1.0.1/src/Svg/Events.elm": {
+    "source": "612b0ed785cfabb6ca63786063a59f02861283c4a6b2d626b8d1b3e5c2f97458",
+    "expected": "716df2611300931205c543696694670b2e3d20d0049a82be64460600bf1d848c"
+  },
+  "elm/svg@1.0.1/src/Svg/Keyed.elm": {
+    "source": "01f8ab6cdc8b614b06bf2f1f61b5efc92e41a25f965f7cd690c55f2cfb342e9c",
+    "expected": "723e35f18c5446ab1265d8ac9def34903cc79b84411126c8d5e43e8589d1912d"
+  },
+  "elm/svg@1.0.1/src/Svg/Lazy.elm": {
+    "source": "b44c83642f82153fa19711b937c4cf88b652c09d388348df4a94acdc9033f4ab",
+    "expected": "3974b495d1b9dcfd4a454f3b1f07301ed90fcf608c3a914b55028d5226bf5619"
+  },
+  "elm/time@1.0.0/src/Time.elm": {
+    "source": "e4c55a925c664c25b8ffcd1510c827793d670ec159dc18af3ebd7f642ee4e638",
+    "expected": "afebd23e4db049a861d8ae9dd91165f739e43df869828bac966e5dccda634841"
+  },
+  "elm/url@1.0.0/src/Url.elm": {
+    "source": "c1dad01869f5a4fe29406b3409508ec4754bf8125cc01ef5106b2e369c5c647c",
+    "expected": "27cb94285d584c4e3f5a0a3d3defd78b241215076f7215033409c3334f2f695a"
+  },
+  "elm/url@1.0.0/src/Url/Builder.elm": {
+    "source": "e4922467375bcedd187bbd811b5dfd49b7f9b6a08063b7ef411f2ad0aa6e8dad",
+    "expected": "bdd015ea615a8421c6827f8698099e02d2af377a1dcbebb23a2a2a43f8917db3"
+  },
+  "elm/url@1.0.0/src/Url/Parser.elm": {
+    "source": "0a42ac79944c28778c0e32510cd089e7d80e6d202937238f829d4de2d942d028",
+    "expected": "ba227b0583483376c044cbf985fa0e35031c2b71108dc8eb33a4aa6f2485a757"
+  },
+  "elm/url@1.0.0/src/Url/Parser/Internal.elm": {
+    "source": "91cec106bc5eb47ae5b1ff86ac1589989785080805bc4e38dd187ec22dbbfc26",
+    "expected": "156db7744f8b08f1a4be958d99eec5555a5d8d73e99d7fe7f0850fd5242fa652"
+  },
+  "elm/url@1.0.0/src/Url/Parser/Query.elm": {
+    "source": "2b14aab77b663bef2b9434fccc3ca6c102990b9cf87dea650ae8341a9325bf4e",
+    "expected": "7c1ac71f1509c1e4f438ee60938edcd5053765e5185bb38fd2a4182d72c73459"
+  },
+  "elm/virtual-dom@1.0.5/src/VirtualDom.elm": {
+    "source": "85f06afbc5f418f69c424ecc9b61969cc460444f97987054fb14d2a944d3bba8",
+    "expected": "e7acabc6ad899932211eb22a9a1fcdf9486e23006af301dc969841b3c9504146"
+  },
+  "erlandsona/assoc-set@1.1.3/src/AssocSet.elm": {
+    "source": "7f36c5a0ee0e304c9a82b31fa1c9dc38c7e9dd2f31ae6d2909922d36810dfe0d",
+    "expected": "7f36c5a0ee0e304c9a82b31fa1c9dc38c7e9dd2f31ae6d2909922d36810dfe0d"
+  },
+  "fabhof/elm-ui-datepicker@5.0.0/src/DatePicker.elm": {
+    "source": "bc3ec49377089b759885bedff31e7d5513e13d3d9b8f92ab2f3f2c214c57e80c",
+    "expected": "bc3ec49377089b759885bedff31e7d5513e13d3d9b8f92ab2f3f2c214c57e80c"
+  },
+  "fabhof/elm-ui-datepicker@5.0.0/src/Internal/Date.elm": {
+    "source": "57eb78c33ea277ff62c50938fd026c2e315f0af085505bc9c1536df109c31243",
+    "expected": "881c4f290ba2ccce987ac626ce062b7eb8fe7acd1a7c4527cb6add4e33017a61"
+  },
+  "fabhof/elm-ui-datepicker@5.0.0/src/Internal/TestHelper.elm": {
+    "source": "05a19cdcddf1f26ae600d7e20f23fe04d7c1ccd06088b722999177658c97a03e",
+    "expected": "05a19cdcddf1f26ae600d7e20f23fe04d7c1ccd06088b722999177658c97a03e"
+  },
+  "fabhof/elm-ui-datepicker@5.0.0/src/Internal/Week.elm": {
+    "source": "66e5479c93fc5e28f9274d29db52e9b31b5d267908efbfbbb0f4a5697a3abd7c",
+    "expected": "66e5479c93fc5e28f9274d29db52e9b31b5d267908efbfbbb0f4a5697a3abd7c"
+  },
+  "justinmimbs/date@4.0.1/src/Date.elm": {
+    "source": "2a209daf72d99aa4e4c173c9c2648da43b7a8f7bfc4d85428f864145b5a527cd",
+    "expected": "2a209daf72d99aa4e4c173c9c2648da43b7a8f7bfc4d85428f864145b5a527cd"
+  },
+  "justinmimbs/date@4.0.1/src/Pattern.elm": {
+    "source": "60e6750d86abb8924351bb5601163d7c3d82edaa275b90f2228a1186cfb29018",
+    "expected": "60e6750d86abb8924351bb5601163d7c3d82edaa275b90f2228a1186cfb29018"
+  },
+  "justinmimbs/timezone-data@2.1.4/src/RataDie.elm": {
+    "source": "fec245a0c00358b70e2bcee4ee7c1b63f99c5c78375e3426faec5cadb5f4f0e8",
+    "expected": "7b43dd2dbff4956b579fe76961b41f3f20201a17e0826de877ea26fa7b034cb4"
+  },
+  "justinmimbs/timezone-data@2.1.4/src/TimeZone.elm": {
+    "source": "fc2da7de4b77bb76e7856da8e2583b06c8f3bfbd025e59a4eb40ed1cab02337c",
+    "expected": "fc2da7de4b77bb76e7856da8e2583b06c8f3bfbd025e59a4eb40ed1cab02337c"
+  },
+  "justinmimbs/timezone-data@2.1.4/src/TimeZone/Specification.elm": {
+    "source": "471aed4a2b893ddca2a499582c308f57ba98753c70d70f04aee3d8c158b5cf72",
+    "expected": "471aed4a2b893ddca2a499582c308f57ba98753c70d70f04aee3d8c158b5cf72"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome.elm": {
+    "source": "8cacb5e71c5b503e90ed81584b6718a4a6cd1015c2a1230f7873999118c59945",
+    "expected": "8cacb5e71c5b503e90ed81584b6718a4a6cd1015c2a1230f7873999118c59945"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Attributes.elm": {
+    "source": "91f44cde164f2b54009c749fb770d8792b43995fa76b00f2ec297225ced715da",
+    "expected": "91f44cde164f2b54009c749fb770d8792b43995fa76b00f2ec297225ced715da"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Brands.elm": {
+    "source": "e17f3429cce6b5d379d7fe4f2f25d1bde4cfbbdc5e7197856d6a389b50152b0a",
+    "expected": "e17f3429cce6b5d379d7fe4f2f25d1bde4cfbbdc5e7197856d6a389b50152b0a"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Brands/Definitions.elm": {
+    "source": "67f335830af92d199cfe340c7960b7a21875a6ab279f9008c022ca0b93a1a3fc",
+    "expected": "67f335830af92d199cfe340c7960b7a21875a6ab279f9008c022ca0b93a1a3fc"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Internal.elm": {
+    "source": "4eb34696883a123a4fa7bbba4ea1d8c10c712e4948f213f234d07a350341d265",
+    "expected": "4eb34696883a123a4fa7bbba4ea1d8c10c712e4948f213f234d07a350341d265"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Layering.elm": {
+    "source": "a916c2c7636fc3a4ec7bee1a3648d0750238184d2eb67bc53f6857180c8b6148",
+    "expected": "a916c2c7636fc3a4ec7bee1a3648d0750238184d2eb67bc53f6857180c8b6148"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Regular.elm": {
+    "source": "58a6797b70710717db9d2fa7c31f5d483131df21df4ae05c1218525c4223ca22",
+    "expected": "58a6797b70710717db9d2fa7c31f5d483131df21df4ae05c1218525c4223ca22"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Regular/Definitions.elm": {
+    "source": "99dfa02801af4db6ae76d4b8eb2d84c2510d2506ca64b19cd29801f1c7acb234",
+    "expected": "99dfa02801af4db6ae76d4b8eb2d84c2510d2506ca64b19cd29801f1c7acb234"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Solid.elm": {
+    "source": "0b8db04ae18be76850e7d29f3bea53d8b1f97ccc6b244df06b25dba46ecb6b58",
+    "expected": "0b8db04ae18be76850e7d29f3bea53d8b1f97ccc6b244df06b25dba46ecb6b58"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Solid/Definitions.elm": {
+    "source": "e5eabde64c85fcab1e422c564af3f087cd4e2cf7eb9d665ee00c844542b6bb79",
+    "expected": "e5eabde64c85fcab1e422c564af3f087cd4e2cf7eb9d665ee00c844542b6bb79"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Styles.elm": {
+    "source": "83dce0c7f30c3b06ff09dde013368bfe3e67ab5c998723f6214b3032902d7817",
+    "expected": "83dce0c7f30c3b06ff09dde013368bfe3e67ab5c998723f6214b3032902d7817"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Svg.elm": {
+    "source": "8efb5ff0b1c067d55b659c5f03912f423e395a18ac3525fa4d70f5cf6a4592c0",
+    "expected": "8efb5ff0b1c067d55b659c5f03912f423e395a18ac3525fa4d70f5cf6a4592c0"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Transforms.elm": {
+    "source": "3e65d0a40707416315fd975b298fc742d978c862f1dbfd033e17ec370a20c813",
+    "expected": "3e65d0a40707416315fd975b298fc742d978c862f1dbfd033e17ec370a20c813"
+  },
+  "lattyware/elm-fontawesome@6.0.0/src/FontAwesome/Transforms/Internal.elm": {
+    "source": "f845ce7965216ec6b4f1b159e62c85c698fa45c04e645a5107526db93af80478",
+    "expected": "f845ce7965216ec6b4f1b159e62c85c698fa45c04e645a5107526db93af80478"
+  },
+  "matthewsj/elm-ordering@2.0.0/src/Ordering.elm": {
+    "source": "abf1f03e628d62bf6fb1d24690694fa42ef339fc4ed4296a730a8d4e8acead0b",
+    "expected": "4777cf55c64e61d01815999c068b42fe20debc0e0afe8366c3f3c53718c52833"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element.elm": {
+    "source": "6f797b99dd3d1d6ff1f8498850bb4b8b960de2499672cbf7f86c2c40f6768e75",
+    "expected": "6f797b99dd3d1d6ff1f8498850bb4b8b960de2499672cbf7f86c2c40f6768e75"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Background.elm": {
+    "source": "78a96f16c743961e0dfec4915873cf915a4f9b6382ff287e3c7b9e307c7ae513",
+    "expected": "78a96f16c743961e0dfec4915873cf915a4f9b6382ff287e3c7b9e307c7ae513"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Border.elm": {
+    "source": "1cbea164b59ab5fc93a501761ca3e973489923e5e77ab2cc8d004ac2e7d7b12a",
+    "expected": "1cbea164b59ab5fc93a501761ca3e973489923e5e77ab2cc8d004ac2e7d7b12a"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Events.elm": {
+    "source": "1f8050dc9bd572366187980dca6bc0b48300b5521b60ff536afa168dd263e4b3",
+    "expected": "1f8050dc9bd572366187980dca6bc0b48300b5521b60ff536afa168dd263e4b3"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Font.elm": {
+    "source": "31d5566e1257ff62532c47b5f3f2dcb4ae826693c6ab678780c0b13a7a083638",
+    "expected": "31d5566e1257ff62532c47b5f3f2dcb4ae826693c6ab678780c0b13a7a083638"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Input.elm": {
+    "source": "2ef63faa892478055d7bc2b906eb24c50f0f5711b04d51091af3af19eec635e5",
+    "expected": "2ef63faa892478055d7bc2b906eb24c50f0f5711b04d51091af3af19eec635e5"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Keyed.elm": {
+    "source": "101e6089636d2a028b5597305815b150cd44d1c3941fdd91716a7f2c22216550",
+    "expected": "101e6089636d2a028b5597305815b150cd44d1c3941fdd91716a7f2c22216550"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Lazy.elm": {
+    "source": "4ec07fde711f818f79c8f7d4d01554c72e43980c8cc7399232be46ab47a7a13f",
+    "expected": "4ec07fde711f818f79c8f7d4d01554c72e43980c8cc7399232be46ab47a7a13f"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Element/Region.elm": {
+    "source": "53b98fc578bd63e70efd1101e7d1dcc0097326d45ecc3465d48ffe52927be9a3",
+    "expected": "53b98fc578bd63e70efd1101e7d1dcc0097326d45ecc3465d48ffe52927be9a3"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Internal/Flag.elm": {
+    "source": "81e633801ab2f0feb781038a3c644f7c1df993e17ebdf136b39ad966bc592bda",
+    "expected": "81e633801ab2f0feb781038a3c644f7c1df993e17ebdf136b39ad966bc592bda"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Internal/Grid.elm": {
+    "source": "50279400d5a76f3e24e0cbb965828645b3045a31d4dde90b533c9ef9ea243c30",
+    "expected": "50279400d5a76f3e24e0cbb965828645b3045a31d4dde90b533c9ef9ea243c30"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Internal/Model.elm": {
+    "source": "7e5da5dfaa70f63be1213ece514d6aab01ebbbb1199ff7d7931bb488567543ad",
+    "expected": "7e5da5dfaa70f63be1213ece514d6aab01ebbbb1199ff7d7931bb488567543ad"
+  },
+  "mdgriffith/elm-ui@1.1.8/src/Internal/Style.elm": {
+    "source": "13040599cd8f913e685c9fb85d90a7f4f16f2e2164cb1d462b289900e5e71c17",
+    "expected": "13040599cd8f913e685c9fb85d90a7f4f16f2e2164cb1d462b289900e5e71c17"
+  },
+  "miniBill/elm-unicode@1.0.3/src/Unicode.elm": {
+    "source": "647dbef6411fc2a7b2bc310a088ec19c91a476ce57f193e22729a4ee90c4b8d9",
+    "expected": "647dbef6411fc2a7b2bc310a088ec19c91a476ce57f193e22729a4ee90c4b8d9"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Failure.elm": {
+    "source": "2ba614b516a6f3239049e92c1223cc83bc608110653707ec4a79d5392f7cb7c8",
+    "expected": "2ba614b516a6f3239049e92c1223cc83bc608110653707ec4a79d5392f7cb7c8"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter.elm": {
+    "source": "1601fa2cfa1ec81a43f538655f7e4017beedc328e32603fc16b78a8bad9f2668",
+    "expected": "1601fa2cfa1ec81a43f538655f7e4017beedc328e32603fc16b78a8bad9f2668"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/ConsoleColor.elm": {
+    "source": "6a9a82f903d3fe40a8baf4bc2d626c212b618b6f5bb603cf4e6209eb91b47094",
+    "expected": "6a9a82f903d3fe40a8baf4bc2d626c212b618b6f5bb603cf4e6209eb91b47094"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/ConsoleDebug.elm": {
+    "source": "24d9ad4518d79ece9f1b4bd79bdc097fc2bed46ecc7603a9a4b1e25e15a163db",
+    "expected": "24d9ad4518d79ece9f1b4bd79bdc097fc2bed46ecc7603a9a4b1e25e15a163db"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/Exercism.elm": {
+    "source": "ac3a4c41f22d696875de0349d6850d0f8765811c22606976cce9ecd0f21bf970",
+    "expected": "ac3a4c41f22d696875de0349d6850d0f8765811c22606976cce9ecd0f21bf970"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/Interface.elm": {
+    "source": "7d2f39a2a783bc0cec37a1b8a2bead9661554687905b4c6ecfd7defa9aa3c85b",
+    "expected": "7d2f39a2a783bc0cec37a1b8a2bead9661554687905b4c6ecfd7defa9aa3c85b"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/Json.elm": {
+    "source": "3cbf47ba5fd1ea125da747433c0d215812f5f1ca0c6e55a6989a987e87a20a27",
+    "expected": "3cbf47ba5fd1ea125da747433c0d215812f5f1ca0c6e55a6989a987e87a20a27"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/Junit.elm": {
+    "source": "c4d9031db4e78c73ddb505f573445c31c419b6879e9e417a7e9a0f34f64a68c8",
+    "expected": "c4d9031db4e78c73ddb505f573445c31c419b6879e9e417a7e9a0f34f64a68c8"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Result.elm": {
+    "source": "07434ea576e24893cd4c9d1e683e6f3f3b4c1254d2dbb2c4cfbf653a06d5e0b6",
+    "expected": "07434ea576e24893cd4c9d1e683e6f3f3b4c1254d2dbb2c4cfbf653a06d5e0b6"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Runner.elm": {
+    "source": "cf4fb28b951aef597d1ca09314509ef51917619e466cd76fb4db0c4ef3c040f5",
+    "expected": "cf4fb28b951aef597d1ca09314509ef51917619e466cd76fb4db0c4ef3c040f5"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/SeededRunners.elm": {
+    "source": "34add69bce145a5b197e5e91b3d3790b8e73aa01758ea8bc41f91029e2298608",
+    "expected": "34add69bce145a5b197e5e91b3d3790b8e73aa01758ea8bc41f91029e2298608"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/ConsoleFormat.elm": {
+    "source": "61a8052bed03bfef6e9d2d24e3a2083166ec0ad7364e794e63b7cde7b898845a",
+    "expected": "61a8052bed03bfef6e9d2d24e3a2083166ec0ad7364e794e63b7cde7b898845a"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/ConsoleText.elm": {
+    "source": "f6318c5749753ad44a6c95e3149f7b95f2672296a85969817b8a155bf53e9f66",
+    "expected": "f6318c5749753ad44a6c95e3149f7b95f2672296a85969817b8a155bf53e9f66"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/Diff.elm": {
+    "source": "fc9c5be112096bb1c49d0ed7793de8b1ed6a34b391eb1e2fe8f3fea72c24bc0b",
+    "expected": "fc9c5be112096bb1c49d0ed7793de8b1ed6a34b391eb1e2fe8f3fea72c24bc0b"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/FormatColor.elm": {
+    "source": "bdc1a6dec3c730999426ecd2246e7bfbb70651e351c9f1b6b436219787348153",
+    "expected": "bdc1a6dec3c730999426ecd2246e7bfbb70651e351c9f1b6b436219787348153"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/FormatMonochrome.elm": {
+    "source": "f5e894404a99f8864957742f8696a115e3636655e7a866245641a0db23263c7a",
+    "expected": "f5e894404a99f8864957742f8696a115e3636655e7a866245641a0db23263c7a"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/Highlightable.elm": {
+    "source": "f929699f63bf0ff1f831996f02e690bd3811f70577d00bb65ac00cf0bea1d9b8",
+    "expected": "f929699f63bf0ff1f831996f02e690bd3811f70577d00bb65ac00cf0bea1d9b8"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/NodeConsole.elm": {
+    "source": "a09f1ad02edc04ac56f2e92e26bc3c8bf2f7b6dd638d7d9e1be7e9d2197f2ecf",
+    "expected": "a09f1ad02edc04ac56f2e92e26bc3c8bf2f7b6dd638d7d9e1be7e9d2197f2ecf"
+  },
+  "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/XmlEncode.elm": {
+    "source": "b3cb8ed67095f0cb89fe0fcb15c47d1bc1932b8aa81d30cf19fa97d5de7d9283",
+    "expected": "b3cb8ed67095f0cb89fe0fcb15c47d1bc1932b8aa81d30cf19fa97d5de7d9283"
+  },
+  "myrho/elm-round@1.0.5/src/Round.elm": {
+    "source": "55f204fd618a001020d47f6ffc437a730cd9b3c8ae352a5c1c2294216b07deb5",
+    "expected": "5d86ed44ed6e7b80942b553efc03753f2882d24db11db4ff5ee1fb0cbf31e4bb"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading.elm": {
+    "source": "2c1a20569bd482ee9d9557b06f6b20d5b791d838625a6a1da257e4d78e5500c3",
+    "expected": "2c1a20569bd482ee9d9557b06f6b20d5b791d838625a6a1da257e4d78e5500c3"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading/Bars.elm": {
+    "source": "4fec7b332de403602ec506b12d3a11d333cadd5b2fad451024ff901524493dc1",
+    "expected": "4fec7b332de403602ec506b12d3a11d333cadd5b2fad451024ff901524493dc1"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading/BouncingBalls.elm": {
+    "source": "4ea6d92ba1a0c7ae33537be5acf77edfb11f97788c8107513e839cf8b56b19ac",
+    "expected": "4ea6d92ba1a0c7ae33537be5acf77edfb11f97788c8107513e839cf8b56b19ac"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading/Circle.elm": {
+    "source": "087d4cc84dbee844a7fa4e9cd57fc1aa24a34a29b75ffd2fe567a3a213f242a9",
+    "expected": "087d4cc84dbee844a7fa4e9cd57fc1aa24a34a29b75ffd2fe567a3a213f242a9"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading/DoubleBounce.elm": {
+    "source": "9074cc4e9f92ab27766b66d3ce06138f69b07fe6793f7e24ee6971645fd6b4f7",
+    "expected": "9074cc4e9f92ab27766b66d3ce06138f69b07fe6793f7e24ee6971645fd6b4f7"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading/Sonar.elm": {
+    "source": "255d4be084da048ce87d3e8253caad4202049f0c319ecdaadf0decb8a302994f",
+    "expected": "255d4be084da048ce87d3e8253caad4202049f0c319ecdaadf0decb8a302994f"
+  },
+  "perzanko/elm-loading@2.0.5/src/Loading/Spinner.elm": {
+    "source": "a30d09b88889adb0628b2c239d9409de752aec01a093b85a78ea532ea22b8f10",
+    "expected": "a30d09b88889adb0628b2c239d9409de752aec01a093b85a78ea532ea22b8f10"
+  },
+  "pzp1997/assoc-list@1.0.0/src/AssocList.elm": {
+    "source": "d0ebf6e5f8e094ae951af33257e1fb492e03e7c4a546dbd20b1dabab1950c189",
+    "expected": "d0ebf6e5f8e094ae951af33257e1fb492e03e7c4a546dbd20b1dabab1950c189"
+  },
+  "robinheghan/murmur3@1.0.0/src/Murmur3.elm": {
+    "source": "e3edf55f8b28158e0d6b1c948b3d5c60120aa6d9537236679cf3e09b9d32ed4e",
+    "expected": "e3edf55f8b28158e0d6b1c948b3d5c60120aa6d9537236679cf3e09b9d32ed4e"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css.elm": {
+    "source": "a7fd2d9c0fe4a3ccd121eaf507332a4c54ecf7f38158315efa11d658f9182884",
+    "expected": "a7fd2d9c0fe4a3ccd121eaf507332a4c54ecf7f38158315efa11d658f9182884"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Animations.elm": {
+    "source": "5e802770dee09f3f9dea33df39d788035f29f7ebb013af10f13e339fd94db1e4",
+    "expected": "5e802770dee09f3f9dea33df39d788035f29f7ebb013af10f13e339fd94db1e4"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Global.elm": {
+    "source": "a5986459ea0a54abcabd2b872e292820aa60fe9b1a2a0108d33c4b5072467288",
+    "expected": "a5986459ea0a54abcabd2b872e292820aa60fe9b1a2a0108d33c4b5072467288"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Internal.elm": {
+    "source": "38e21fb5f842f3f4d7d145ff529239204981c5d61c8e68b3d25a278de8f5acb4",
+    "expected": "38e21fb5f842f3f4d7d145ff529239204981c5d61c8e68b3d25a278de8f5acb4"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Media.elm": {
+    "source": "dece9d8fa67d9c345379b7e3d47bb0710eeeda8fce41f9843ff718b8827e9df4",
+    "expected": "dece9d8fa67d9c345379b7e3d47bb0710eeeda8fce41f9843ff718b8827e9df4"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Preprocess.elm": {
+    "source": "15cf269e5c793da0bf9dc5d807b3c96e553c0a5919221162cebac7c6e29a81cd",
+    "expected": "15cf269e5c793da0bf9dc5d807b3c96e553c0a5919221162cebac7c6e29a81cd"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Preprocess/Resolve.elm": {
+    "source": "1981bcc9ead684540a6b32d1e46340ec83d9cff078288209c6a8146e6d176d19",
+    "expected": "1981bcc9ead684540a6b32d1e46340ec83d9cff078288209c6a8146e6d176d19"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/String.elm": {
+    "source": "a4fbfd33060854542638001aef3b1feb2a424740f1875c14be2e995dc89cd148",
+    "expected": "a4fbfd33060854542638001aef3b1feb2a424740f1875c14be2e995dc89cd148"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Structure.elm": {
+    "source": "dca4c8b0f0e43c8300d95d495abad8f71f8bfd1f05ffdf62edf94b21cc3a5109",
+    "expected": "dca4c8b0f0e43c8300d95d495abad8f71f8bfd1f05ffdf62edf94b21cc3a5109"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Structure/Output.elm": {
+    "source": "5df59debd6a56ad131b08f0675d8925db98d189c864610671ed4c32456f7f8ad",
+    "expected": "5df59debd6a56ad131b08f0675d8925db98d189c864610671ed4c32456f7f8ad"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Css/Transitions.elm": {
+    "source": "878031d5251185fa1676a165e97636608a16680ba5e0a67ef238231ea86741ca",
+    "expected": "878031d5251185fa1676a165e97636608a16680ba5e0a67ef238231ea86741ca"
+  },
+  "rtfeldman/elm-css@17.1.1/src/DEPRECATED/Css/File.elm": {
+    "source": "37aa6bce8cdce41aaa1dfbae1383baa75f745c26ada429c5df56400a9f61dca0",
+    "expected": "37aa6bce8cdce41aaa1dfbae1383baa75f745c26ada429c5df56400a9f61dca0"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Hash.elm": {
+    "source": "dfe3dcfaf9a982b8f7c7264342c86f88838867c6f4847ccaa664e905dce6daaa",
+    "expected": "dfe3dcfaf9a982b8f7c7264342c86f88838867c6f4847ccaa664e905dce6daaa"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Html/Styled.elm": {
+    "source": "52593242bba1d70a3418256ddb09a9909178a77041dba54d8d56483461214cdc",
+    "expected": "52593242bba1d70a3418256ddb09a9909178a77041dba54d8d56483461214cdc"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Html/Styled/Attributes.elm": {
+    "source": "2eb0a2d57efa925621ee08802ec5868bc5820de889cdc0a1e0dc15c8e27f5bab",
+    "expected": "2eb0a2d57efa925621ee08802ec5868bc5820de889cdc0a1e0dc15c8e27f5bab"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Html/Styled/Events.elm": {
+    "source": "bb7a1c79d4670af09abcfbc21ca876ddd88a382c88da4bc32a6cbc8fe6138dfe",
+    "expected": "bb7a1c79d4670af09abcfbc21ca876ddd88a382c88da4bc32a6cbc8fe6138dfe"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Html/Styled/Internal.elm": {
+    "source": "28655cfb6bfbf36232008060685f6527bf3329d4e6a27d67d742a7223dc422a0",
+    "expected": "28655cfb6bfbf36232008060685f6527bf3329d4e6a27d67d742a7223dc422a0"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Html/Styled/Keyed.elm": {
+    "source": "d6e45ae232447b9bfab3b35cdf1a35b80b8e1a8bde6209b075bd715d5c31796a",
+    "expected": "d6e45ae232447b9bfab3b35cdf1a35b80b8e1a8bde6209b075bd715d5c31796a"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Html/Styled/Lazy.elm": {
+    "source": "8275ab3f6ec0f756521f67d91b6780710d5179ec0c974dedc0387e9e1457a219",
+    "expected": "8275ab3f6ec0f756521f67d91b6780710d5179ec0c974dedc0387e9e1457a219"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Svg/Styled.elm": {
+    "source": "063408ff9adff7a3e039836e1ebbc76428c5299e768fcb888ac7c71208bab290",
+    "expected": "063408ff9adff7a3e039836e1ebbc76428c5299e768fcb888ac7c71208bab290"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Svg/Styled/Attributes.elm": {
+    "source": "cce20701a8b8087e92f816be92b4c13dfa73864424a2d26b5a9952092f6156f4",
+    "expected": "cce20701a8b8087e92f816be92b4c13dfa73864424a2d26b5a9952092f6156f4"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Svg/Styled/Events.elm": {
+    "source": "22f6d947602f98bc9ccfbcb1ea92504de3fb0a3d8f2130c6c9191509f95ab295",
+    "expected": "22f6d947602f98bc9ccfbcb1ea92504de3fb0a3d8f2130c6c9191509f95ab295"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Svg/Styled/Internal.elm": {
+    "source": "f348e01ff1c1461a110dd7b516f66a2894c4b12272907e74323d32c28e9c58e7",
+    "expected": "f348e01ff1c1461a110dd7b516f66a2894c4b12272907e74323d32c28e9c58e7"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Svg/Styled/Keyed.elm": {
+    "source": "a9847c62eb543b570562dd3ba2904a4a5a2a45714c50c39daf47e390174a907d",
+    "expected": "a9847c62eb543b570562dd3ba2904a4a5a2a45714c50c39daf47e390174a907d"
+  },
+  "rtfeldman/elm-css@17.1.1/src/Svg/Styled/Lazy.elm": {
+    "source": "8e7352fead4055d00754c22366bc98dc998bed67495d9381ea6cac9171f13db2",
+    "expected": "8e7352fead4055d00754c22366bc98dc998bed67495d9381ea6cac9171f13db2"
+  },
+  "rtfeldman/elm-css@17.1.1/src/VirtualDom/Styled.elm": {
+    "source": "3d0d4c2f62534e0e8bcace550b38b47b91ab14bca099a4a811e0d3b274a90604",
+    "expected": "3d0d4c2f62534e0e8bcace550b38b47b91ab14bca099a4a811e0d3b274a90604"
+  },
+  "rtfeldman/elm-hex@1.0.0/src/Hex.elm": {
+    "source": "3cb6192357870de305afbf9240cca28ad377d94dfc47672bbc7986a16d973ed1",
+    "expected": "950f86930205c2d3fdb5fef29aa3dad0b6b173ab03b920bf5efee57d62f5fc9c"
+  },
+  "rtfeldman/elm-iso8601-date-strings@1.1.4/src/DeadEnds.elm": {
+    "source": "9646ad16e0a81c6d8fab774970b93ffb7c07795042104da57a33cf2a456c672c",
+    "expected": "9646ad16e0a81c6d8fab774970b93ffb7c07795042104da57a33cf2a456c672c"
+  },
+  "rtfeldman/elm-iso8601-date-strings@1.1.4/src/Iso8601.elm": {
+    "source": "7e9dffa266063f9f6318fbe972e6e89c1fcb8ea79d657ba4e01e52589107366c",
+    "expected": "7e9dffa266063f9f6318fbe972e6e89c1fcb8ea79d657ba4e01e52589107366c"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Accordion.elm": {
+    "source": "2b4ce0608ddbb6878709d6bb37f923e38b87400ea33592861d201dc81309d07f",
+    "expected": "2b4ce0608ddbb6878709d6bb37f923e38b87400ea33592861d201dc81309d07f"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Alert.elm": {
+    "source": "8f6f557fbc1bbd7a1aaa27bc4be538605b574327991c5c3ec16575f645b0f476",
+    "expected": "8f6f557fbc1bbd7a1aaa27bc4be538605b574327991c5c3ec16575f645b0f476"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Badge.elm": {
+    "source": "357b7d01cb63a787444c290d862c6758af81e9f61e01ecd1298dd5ce10d70ec5",
+    "expected": "357b7d01cb63a787444c290d862c6758af81e9f61e01ecd1298dd5ce10d70ec5"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Breadcrumb.elm": {
+    "source": "65c5035a9887ecdfb3f4180d0d44188aabca71de4fed8f228036eaede8525e28",
+    "expected": "65c5035a9887ecdfb3f4180d0d44188aabca71de4fed8f228036eaede8525e28"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Button.elm": {
+    "source": "231588d38f36734e80919212a05afa69582ebb41b5803f4351397638d5237b94",
+    "expected": "231588d38f36734e80919212a05afa69582ebb41b5803f4351397638d5237b94"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/ButtonGroup.elm": {
+    "source": "52943e6eb127a848534479a6f17cce4e150d34742d97dae6299e1be9ba778c42",
+    "expected": "52943e6eb127a848534479a6f17cce4e150d34742d97dae6299e1be9ba778c42"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/CDN.elm": {
+    "source": "47fe7838c2a26354ed230d8c9abe72751b6073944a8677417f43594047650e24",
+    "expected": "47fe7838c2a26354ed230d8c9abe72751b6073944a8677417f43594047650e24"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Card.elm": {
+    "source": "4ce4ce6d3d09a4113c38950223239fbc6b468d688d8909e0d54074febf954f24",
+    "expected": "4ce4ce6d3d09a4113c38950223239fbc6b468d688d8909e0d54074febf954f24"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Card/Block.elm": {
+    "source": "c9deb282c897de6b0b83daf1ffc070aec5456ea26a10be5e211fba42ae74e149",
+    "expected": "c9deb282c897de6b0b83daf1ffc070aec5456ea26a10be5e211fba42ae74e149"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Card/Internal.elm": {
+    "source": "0616c2ed0af6f2b5e1c95cb9306dc5196f6ee61caea6a16ad5fbe4009cc649f1",
+    "expected": "0616c2ed0af6f2b5e1c95cb9306dc5196f6ee61caea6a16ad5fbe4009cc649f1"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Carousel.elm": {
+    "source": "52dced8c2cce4728ea5d9b644b7ae0e84400897633b64b8cfff1801fb029f227",
+    "expected": "52dced8c2cce4728ea5d9b644b7ae0e84400897633b64b8cfff1801fb029f227"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Carousel/Slide.elm": {
+    "source": "c65fc8577d3f53f5e23488235b1f8793fff0315b6eaba01ae815971824b2a9a1",
+    "expected": "c65fc8577d3f53f5e23488235b1f8793fff0315b6eaba01ae815971824b2a9a1"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Carousel/SlideInternal.elm": {
+    "source": "bcdfdcb5268e7d62a07ee72bef1fb2b6be820fe85c51a8d2d5b58fe50d43505a",
+    "expected": "bcdfdcb5268e7d62a07ee72bef1fb2b6be820fe85c51a8d2d5b58fe50d43505a"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Dropdown.elm": {
+    "source": "65c61f6ab12441aad27d3fcb1da89008d34980ee9b3039d82a16aa706317803a",
+    "expected": "65c61f6ab12441aad27d3fcb1da89008d34980ee9b3039d82a16aa706317803a"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form.elm": {
+    "source": "0158ef9baf33e05773a92076c96ba9c479ba58a59efda3f7208bbdcbb17ff0ab",
+    "expected": "0158ef9baf33e05773a92076c96ba9c479ba58a59efda3f7208bbdcbb17ff0ab"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Checkbox.elm": {
+    "source": "8da37453d34317749c88809e062bcf7646f0519a0852b269053f17356b6490ad",
+    "expected": "8da37453d34317749c88809e062bcf7646f0519a0852b269053f17356b6490ad"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Fieldset.elm": {
+    "source": "ff8055f3fc4f37cdcd9c9b409d62c3fe70de25377d0144e03cf8083c081bcfa4",
+    "expected": "ff8055f3fc4f37cdcd9c9b409d62c3fe70de25377d0144e03cf8083c081bcfa4"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/FormInternal.elm": {
+    "source": "e9cd1651dc01c481c6ae6c44cf25130f8618b8bb0160b39a06d5b16b88260230",
+    "expected": "e9cd1651dc01c481c6ae6c44cf25130f8618b8bb0160b39a06d5b16b88260230"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Input.elm": {
+    "source": "cc540f265875e65b50ff5a4985bf1dd0fbc54259825e3e61395634ffe5b4c44f",
+    "expected": "cc540f265875e65b50ff5a4985bf1dd0fbc54259825e3e61395634ffe5b4c44f"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/InputGroup.elm": {
+    "source": "df2fd6fc4cd0edbb66ce683c5f1203a1b81be981173e8ee488beac5004444e59",
+    "expected": "df2fd6fc4cd0edbb66ce683c5f1203a1b81be981173e8ee488beac5004444e59"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Radio.elm": {
+    "source": "8be60f36651e93a87f10a7cd20e9319244923c6aa47167e887fd3420eafe07d4",
+    "expected": "8be60f36651e93a87f10a7cd20e9319244923c6aa47167e887fd3420eafe07d4"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Range.elm": {
+    "source": "95b369e82d4ddf0e9f7e45655ff24076cd1e0b797bbcec8e170e6fb74f41a2c9",
+    "expected": "95b369e82d4ddf0e9f7e45655ff24076cd1e0b797bbcec8e170e6fb74f41a2c9"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Select.elm": {
+    "source": "143ebfdd58134aa489aed8545e9b3eed0a3f2e01cc6762e2a14b4e1968302b62",
+    "expected": "143ebfdd58134aa489aed8545e9b3eed0a3f2e01cc6762e2a14b4e1968302b62"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Textarea.elm": {
+    "source": "20ff517192216c557538a6eb0967b597d8e6526b06770ef725036ac3967a27d0",
+    "expected": "20ff517192216c557538a6eb0967b597d8e6526b06770ef725036ac3967a27d0"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/General/HAlign.elm": {
+    "source": "98fab1d012d4a4cbbc2b943af085a998b21c7666858c02e533b3b021c94cc33c",
+    "expected": "98fab1d012d4a4cbbc2b943af085a998b21c7666858c02e533b3b021c94cc33c"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/General/Internal.elm": {
+    "source": "01359bf45e4cffc5143cbe0b1b49a4ae917b005b4788f525c870b02538c8aabc",
+    "expected": "01359bf45e4cffc5143cbe0b1b49a4ae917b005b4788f525c870b02538c8aabc"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Grid.elm": {
+    "source": "bbfb962a5d6184792b66b91546d553948ae3304aff9fb9e3d609307281a8643c",
+    "expected": "bbfb962a5d6184792b66b91546d553948ae3304aff9fb9e3d609307281a8643c"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Grid/Col.elm": {
+    "source": "dce1b9b9a6a61fff74e88b5305be2332cd7ff768783e81f0eda3c3326a9ae0f1",
+    "expected": "dce1b9b9a6a61fff74e88b5305be2332cd7ff768783e81f0eda3c3326a9ae0f1"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Grid/Internal.elm": {
+    "source": "d50447a25b2a6c133d3c4acf394741f818516fe707efb8f5c2e8d159977272c4",
+    "expected": "d50447a25b2a6c133d3c4acf394741f818516fe707efb8f5c2e8d159977272c4"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Grid/Row.elm": {
+    "source": "0f7cc9390035ad1a46932e32673cb0505a0adcbad7857d1953edae4b5664e06d",
+    "expected": "0f7cc9390035ad1a46932e32673cb0505a0adcbad7857d1953edae4b5664e06d"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Internal/Button.elm": {
+    "source": "c8bfb85b01a0c3aebccfa6f0e07b29823751618bb60bdc05c83d4073894f3126",
+    "expected": "c8bfb85b01a0c3aebccfa6f0e07b29823751618bb60bdc05c83d4073894f3126"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Internal/ListGroup.elm": {
+    "source": "3ce679c79a463a5d7ab6b90853a58187d2a1e50ae10873495441dcb8ca4bc712",
+    "expected": "3ce679c79a463a5d7ab6b90853a58187d2a1e50ae10873495441dcb8ca4bc712"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Internal/Role.elm": {
+    "source": "0ad155f24a88b6b45d2b519e092384b8e52eec454c5cdd090ca5129eed1a030e",
+    "expected": "0ad155f24a88b6b45d2b519e092384b8e52eec454c5cdd090ca5129eed1a030e"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Internal/Text.elm": {
+    "source": "991ca77ee4a5688caa4ad237f42c707e205ecdd5fc5258a27dc369464a6c879d",
+    "expected": "991ca77ee4a5688caa4ad237f42c707e205ecdd5fc5258a27dc369464a6c879d"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/ListGroup.elm": {
+    "source": "2e4d63dfc945c2ec6230d88eb169489c47c674cb3f547eff27c6093e53dfd98e",
+    "expected": "2e4d63dfc945c2ec6230d88eb169489c47c674cb3f547eff27c6093e53dfd98e"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Modal.elm": {
+    "source": "96a69edc1d96a595e4a2f518324ba414ee20a661f612cc3b85b87e6b482defcc",
+    "expected": "96a69edc1d96a595e4a2f518324ba414ee20a661f612cc3b85b87e6b482defcc"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Navbar.elm": {
+    "source": "ef6fd57a55933ed9c840c0d7b0fa9a2e7ced343932fab35a97249dc0646dd87d",
+    "expected": "ef6fd57a55933ed9c840c0d7b0fa9a2e7ced343932fab35a97249dc0646dd87d"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Pagination.elm": {
+    "source": "77cbb0156bd80ffe2eca5028030aec6011ae7dd376ce676120bb3a43286452aa",
+    "expected": "77cbb0156bd80ffe2eca5028030aec6011ae7dd376ce676120bb3a43286452aa"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Pagination/Internal.elm": {
+    "source": "5ab60b33433496637dff93af6302d8105a276c5d5224917783c8a4f49f659e5a",
+    "expected": "5ab60b33433496637dff93af6302d8105a276c5d5224917783c8a4f49f659e5a"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Pagination/Item.elm": {
+    "source": "777e26b55a6d48a8e1c557106cb4fafe5271d26852ce66b5e2adf00d764a6456",
+    "expected": "777e26b55a6d48a8e1c557106cb4fafe5271d26852ce66b5e2adf00d764a6456"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Popover.elm": {
+    "source": "cfcd63cfac91aaa8fcd2b39ee502cefacc871c072ec148e248810a79cd3febde",
+    "expected": "cfcd63cfac91aaa8fcd2b39ee502cefacc871c072ec148e248810a79cd3febde"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Progress.elm": {
+    "source": "0fb5586faa87521d3e53b5a38b010d22556b74c6df99c9670e4708009771a72c",
+    "expected": "0fb5586faa87521d3e53b5a38b010d22556b74c6df99c9670e4708009771a72c"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Spinner.elm": {
+    "source": "406746c1d7335d708368feed26163060ef7b9e8370cee6f4aa9220e7a4e172d2",
+    "expected": "406746c1d7335d708368feed26163060ef7b9e8370cee6f4aa9220e7a4e172d2"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Tab.elm": {
+    "source": "8aba111e10d928180a2ac1b240c91e4beb3335ea7284a2b8313a0e05ab4dd5e8",
+    "expected": "8aba111e10d928180a2ac1b240c91e4beb3335ea7284a2b8313a0e05ab4dd5e8"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Table.elm": {
+    "source": "4e8a9f69bbd4ec171384b59faaab20514433afa15086901111cd779fb55eec8c",
+    "expected": "4e8a9f69bbd4ec171384b59faaab20514433afa15086901111cd779fb55eec8c"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Text.elm": {
+    "source": "cf66fedb47c0763ffaf1ddde3b124106e3fce74638fc0c73b9d33cd1a213a09f",
+    "expected": "cf66fedb47c0763ffaf1ddde3b124106e3fce74638fc0c73b9d33cd1a213a09f"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Utilities/Border.elm": {
+    "source": "5e55baa93ed4404e8855038d2f9dcf0b3d7a941d4c12cdb24ac96ff5eea1fc95",
+    "expected": "5e55baa93ed4404e8855038d2f9dcf0b3d7a941d4c12cdb24ac96ff5eea1fc95"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Utilities/Display.elm": {
+    "source": "4d6ac6a3a6c98d756be72a6b1b6259ca9111658c887a4af0dfd01dc7e67ba539",
+    "expected": "4d6ac6a3a6c98d756be72a6b1b6259ca9111658c887a4af0dfd01dc7e67ba539"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Utilities/DomHelper.elm": {
+    "source": "19500f025230508e6882222add70124f4dbfbfcd9c59a88f7b80945f9061f80b",
+    "expected": "19500f025230508e6882222add70124f4dbfbfcd9c59a88f7b80945f9061f80b"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Utilities/Flex.elm": {
+    "source": "db1fbdd0f191f5a686c3792dce9e92a3f563101babdaf6b2de8b21cb2375a606",
+    "expected": "db1fbdd0f191f5a686c3792dce9e92a3f563101babdaf6b2de8b21cb2375a606"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Utilities/Size.elm": {
+    "source": "a87ef80f3a1c2ae817c2a0022618ec13efad2ea3a301af2eef59ef6ef5d4ccde",
+    "expected": "a87ef80f3a1c2ae817c2a0022618ec13efad2ea3a301af2eef59ef6ef5d4ccde"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Utilities/Spacing.elm": {
+    "source": "de8c8f7e8bd65130637420fcff703333d5a97bdc4b35ed9299dbebbbe3c105a9",
+    "expected": "de8c8f7e8bd65130637420fcff703333d5a97bdc4b35ed9299dbebbbe3c105a9"
+  },
+  "rundis/elm-bootstrap@5.2.0/src/Main.elm": {
+    "source": "285e7b5e64110388264063a72123ca01909cca216306a23c88b8826847e22700",
+    "expected": "285e7b5e64110388264063a72123ca01909cca216306a23c88b8826847e22700"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Char/Extra.elm": {
+    "source": "56605a112b162ef62b42fb04902423be3c8c284489096cb2ab8ebb49adac3957",
+    "expected": "56605a112b162ef62b42fb04902423be3c8c284489096cb2ab8ebb49adac3957"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Dependency.elm": {
+    "source": "f422a0b17b5131e8d2c022c19d7a3b34e26bc46a63ef6b8ad45c58fb03e31967",
+    "expected": "f422a0b17b5131e8d2c022c19d7a3b34e26bc46a63ef6b8ad45c58fb03e31967"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Interface.elm": {
+    "source": "24997077ec58c07b65da06b8b6ea08e5970278571331f8378379c53e2d361683",
+    "expected": "24997077ec58c07b65da06b8b6ea08e5970278571331f8378379c53e2d361683"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Internal/RawFile.elm": {
+    "source": "85ab4026988ea5569e4204b0a226ea9c79a9315de28038e121e57c7e5376aed0",
+    "expected": "85ab4026988ea5569e4204b0a226ea9c79a9315de28038e121e57c7e5376aed0"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Json/Util.elm": {
+    "source": "f8412bfed802d396f8a137dc709ca1dc5c8c3459f67c38adfaa446702c14919f",
+    "expected": "f8412bfed802d396f8a137dc709ca1dc5c8c3459f67c38adfaa446702c14919f"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser.elm": {
+    "source": "48a10f0380bfca746613044f8c688bc4fcad1295655100abd123440c497407d4",
+    "expected": "48a10f0380bfca746613044f8c688bc4fcad1295655100abd123440c497407d4"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Base.elm": {
+    "source": "6b5259942da6788bb70dfcad099e7de09ceeb0d44aaa0d2b426cab76b7504733",
+    "expected": "6b5259942da6788bb70dfcad099e7de09ceeb0d44aaa0d2b426cab76b7504733"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Comments.elm": {
+    "source": "6c8a18523b7cdfd0f7c98f3762176bbd782a65ea2b2f0696f9323bfdd4652a35",
+    "expected": "6c8a18523b7cdfd0f7c98f3762176bbd782a65ea2b2f0696f9323bfdd4652a35"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Declarations.elm": {
+    "source": "31f007ccbb20cf45af44dd743a9e5b4c21215bebce01da07034c388d4abd319b",
+    "expected": "31f007ccbb20cf45af44dd743a9e5b4c21215bebce01da07034c388d4abd319b"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Expose.elm": {
+    "source": "71fc6b91bc51d68ad429fd9bfe447523e9043a7c07b1d6fe62682bcaba4bd276",
+    "expected": "71fc6b91bc51d68ad429fd9bfe447523e9043a7c07b1d6fe62682bcaba4bd276"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Expression.elm": {
+    "source": "25cad8d86b68d44625e6f3a3274251248e352714263a96f0c70b5de3699d784e",
+    "expected": "25cad8d86b68d44625e6f3a3274251248e352714263a96f0c70b5de3699d784e"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/File.elm": {
+    "source": "be0499526438505383a1159a420bba07e0482b936bb62cb9090f0717b7169763",
+    "expected": "be0499526438505383a1159a420bba07e0482b936bb62cb9090f0717b7169763"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Imports.elm": {
+    "source": "c6a836592d92ec8b2fbf4453fdffaf85ab45225454998d9e28786504d95ce19b",
+    "expected": "c6a836592d92ec8b2fbf4453fdffaf85ab45225454998d9e28786504d95ce19b"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Layout.elm": {
+    "source": "d34e7a7b2e8eadf6689ed813375d4816552bbd4f554aa492b48aecc942cd55f9",
+    "expected": "d34e7a7b2e8eadf6689ed813375d4816552bbd4f554aa492b48aecc942cd55f9"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Modules.elm": {
+    "source": "307bd7316632c28aed30e0413642c77327c43ed9b7e465d19bf1ef142a4a093f",
+    "expected": "307bd7316632c28aed30e0413642c77327c43ed9b7e465d19bf1ef142a4a093f"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Patterns.elm": {
+    "source": "d36e80df48c8639730bf08642232148e98664d12f550d8ace52cfafe27722553",
+    "expected": "d36e80df48c8639730bf08642232148e98664d12f550d8ace52cfafe27722553"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Tokens.elm": {
+    "source": "8e84d9b7c89b4b78b7c7f1803f1fc4a82906b3de3c5d9572dae9ac61245e89c0",
+    "expected": "8e84d9b7c89b4b78b7c7f1803f1fc4a82906b3de3c5d9572dae9ac61245e89c0"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Parser/TypeAnnotation.elm": {
+    "source": "f5cee49948165bbadc19b675a740813f57c8d1c78e4229756105947204f8bffb",
+    "expected": "f5cee49948165bbadc19b675a740813f57c8d1c78e4229756105947204f8bffb"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Processing.elm": {
+    "source": "4e3853bb16788634a1fdc188c7bf7b8dbf134afa8611cbb593122fcd180885bf",
+    "expected": "4e3853bb16788634a1fdc188c7bf7b8dbf134afa8611cbb593122fcd180885bf"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/RawFile.elm": {
+    "source": "872f17b3405c4a3e50990ac80e701fa72b88742aee77fc161a8cb3aa891e1278",
+    "expected": "872f17b3405c4a3e50990ac80e701fa72b88742aee77fc161a8cb3aa891e1278"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Comments.elm": {
+    "source": "0774255d02bbaffd803c2130dc96d9361542325dbc0b85cf3939164a1b3057aa",
+    "expected": "0774255d02bbaffd803c2130dc96d9361542325dbc0b85cf3939164a1b3057aa"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Declaration.elm": {
+    "source": "831132d54834c2531f0017c6064b85b2785dcf43149f59a7820b0a6ba0b66c75",
+    "expected": "831132d54834c2531f0017c6064b85b2785dcf43149f59a7820b0a6ba0b66c75"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Documentation.elm": {
+    "source": "d31bc0a2bbd4f70579b0953092e920f2dcdf1aa7ee37afc6e105421b0e0c694c",
+    "expected": "d31bc0a2bbd4f70579b0953092e920f2dcdf1aa7ee37afc6e105421b0e0c694c"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Exposing.elm": {
+    "source": "ade38581e4c08bf157889a81ad6efe264a5cebfefba2cf79ab5c3dca4b2b957c",
+    "expected": "ade38581e4c08bf157889a81ad6efe264a5cebfefba2cf79ab5c3dca4b2b957c"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Expression.elm": {
+    "source": "8de12e17766f943b98e3d59636a8708d79d08a38185a80d20082e0e224432887",
+    "expected": "8de12e17766f943b98e3d59636a8708d79d08a38185a80d20082e0e224432887"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/File.elm": {
+    "source": "47c24f8cdb0f12cd0473f821e59750707683faf81a52698e30ee09e1fb47a504",
+    "expected": "47c24f8cdb0f12cd0473f821e59750707683faf81a52698e30ee09e1fb47a504"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Import.elm": {
+    "source": "ea40298055bf3bf92c3e41b2308d6befbe619fe595da3abe43e7e6d603dd468f",
+    "expected": "ea40298055bf3bf92c3e41b2308d6befbe619fe595da3abe43e7e6d603dd468f"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Infix.elm": {
+    "source": "2f365278a065a94bdb5463c67eb56d6e6b726add90182f0d7f9c00417c0d7689",
+    "expected": "2f365278a065a94bdb5463c67eb56d6e6b726add90182f0d7f9c00417c0d7689"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Module.elm": {
+    "source": "f2a9393bf3d09545493a81f3345648142376eee91843afe1a32702194ac8883d",
+    "expected": "f2a9393bf3d09545493a81f3345648142376eee91843afe1a32702194ac8883d"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/ModuleName.elm": {
+    "source": "ae96dad9ca64bbea5072ae1cccaae2bfdbf5db5edd83139e33661adbfc9e6c93",
+    "expected": "ae96dad9ca64bbea5072ae1cccaae2bfdbf5db5edd83139e33661adbfc9e6c93"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Node.elm": {
+    "source": "7b7c14d5b962e4b6fd97c734ca6f32ceeef3e15696a4cfa61089af1bd47bc2cd",
+    "expected": "7b7c14d5b962e4b6fd97c734ca6f32ceeef3e15696a4cfa61089af1bd47bc2cd"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Pattern.elm": {
+    "source": "e526faf6fa60061ff48b3d65dd3c9ce7da8d46b4643659e5f7340e3326d4ea0c",
+    "expected": "e526faf6fa60061ff48b3d65dd3c9ce7da8d46b4643659e5f7340e3326d4ea0c"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Range.elm": {
+    "source": "ad5815011a29cdd34d955acfcc524d49a4e1ee8b6478d330eb202f4bab819d85",
+    "expected": "ad5815011a29cdd34d955acfcc524d49a4e1ee8b6478d330eb202f4bab819d85"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Signature.elm": {
+    "source": "13d71f3900f7f90b6978bf49b0d332500f6fd68935fb13281b82c8de5cfbe1f3",
+    "expected": "13d71f3900f7f90b6978bf49b0d332500f6fd68935fb13281b82c8de5cfbe1f3"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/Type.elm": {
+    "source": "5ad33fdd74a15d3c380cdf48b431845c0918910cef3e4009110807ff4bf0b96c",
+    "expected": "5ad33fdd74a15d3c380cdf48b431845c0918910cef3e4009110807ff4bf0b96c"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/TypeAlias.elm": {
+    "source": "affd7932d404d60d0e6658df4efc4a753424fc15ae2de341aeb1e46b40394cd3",
+    "expected": "affd7932d404d60d0e6658df4efc4a753424fc15ae2de341aeb1e46b40394cd3"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/TypeAnnotation.elm": {
+    "source": "ca123353c704555261d2afa08f0d22289e46976f933761e75b8827f93cb30741",
+    "expected": "ca123353c704555261d2afa08f0d22289e46976f933761e75b8827f93cb30741"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Elm/Writer.elm": {
+    "source": "84505a148b81d7267d8dc96a57a23fb2ffbc65d20b8562376e4724c327fccefb",
+    "expected": "84505a148b81d7267d8dc96a57a23fb2ffbc65d20b8562376e4724c327fccefb"
+  },
+  "stil4m/elm-syntax@7.3.9/src/List/Extra.elm": {
+    "source": "cb705b5c2b9770772dd30b52adb3aa7af2c3981bae5b56b728958bd649c84af8",
+    "expected": "cb705b5c2b9770772dd30b52adb3aa7af2c3981bae5b56b728958bd649c84af8"
+  },
+  "stil4m/elm-syntax@7.3.9/src/ParserFast.elm": {
+    "source": "f3c0694b3a8be8ad2fc3e1260869a44d14df4ef6a256a928e15af2c2e78c0dbb",
+    "expected": "f3c0694b3a8be8ad2fc3e1260869a44d14df4ef6a256a928e15af2c2e78c0dbb"
+  },
+  "stil4m/elm-syntax@7.3.9/src/ParserWithComments.elm": {
+    "source": "8424ed188e6157ab295768265575ae44293604c3d4d8ad9fb11a0a66ec8cd3c1",
+    "expected": "8424ed188e6157ab295768265575ae44293604c3d4d8ad9fb11a0a66ec8cd3c1"
+  },
+  "stil4m/elm-syntax@7.3.9/src/Rope.elm": {
+    "source": "8c52ace1efcbab750532a0b6edd1a84559d0524f6bd4001399ab80c10092be3e",
+    "expected": "8c52ace1efcbab750532a0b6edd1a84559d0524f6bd4001399ab80c10092be3e"
+  },
+  "stil4m/structured-writer@1.0.3/src/StructuredWriter.elm": {
+    "source": "0dc44788fdbbc42ab671cce6da1e22ba77a43ab1398eafbf65bf0828cad84489",
+    "expected": "0dc44788fdbbc42ab671cce6da1e22ba77a43ab1398eafbf65bf0828cad84489"
+  },
+  "waratuman/json-extra@1.0.2/src/Json/Decode/Extra.elm": {
+    "source": "e721a6f551b5524f0f92311665ec03ab69d74719552e32551a506c439498182a",
+    "expected": "e721a6f551b5524f0f92311665ec03ab69d74719552e32551a506c439498182a"
+  },
+  "waratuman/json-extra@1.0.2/src/Json/Encode/Extra.elm": {
+    "source": "b597ffb26f24b26cd8137111413c64655980efa546935135ca27785abda2046e",
+    "expected": "b597ffb26f24b26cd8137111413c64655980efa546935135ca27785abda2046e"
+  },
+  "waratuman/time-extra@1.1.0/src/Time/Extra.elm": {
+    "source": "054f32ec90f878c883fe2779a5b84cdbb74fd2eb7c0a659d19a2eab710c9b4be",
+    "expected": "054f32ec90f878c883fe2779a5b84cdbb74fd2eb7c0a659d19a2eab710c9b4be"
+  }
+}

@@ -1,0 +1,477 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/x@0.5.5/crypto",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/hex",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.6.0",
+}
+
+///|
+/// Formatter oracle: fetch the elm-format 0.8.7 test files and record the
+/// output of elm-format 0.8.7 for the corpus and for those files.
+///
+/// Usage:
+///   format.mbtx pin <url> <prefix> <sources.json>
+///   format.mbtx fetch <sources.json> <out-dir>
+///   format.mbtx record <corpus-dir> <out-dir> <lock> [<pending.json>]
+///
+/// `sources.json` pins the archive URL, the path prefix of the test files
+/// and the SHA-256 of every selected `.elm` file (GitHub archives are not
+/// byte-stable, so the archive itself is not pinned). `record` reads
+/// `<out-dir>/keys.json` (written by `KRUEGER_PARITY_MODE=write-formatted`),
+/// runs elm-format on every key that krueger parses, writes
+/// `<out-dir>/expected/<key>` and the lock. With `<pending.json>`, it also
+/// writes the keys whose krueger output differs from elm-format's; use that
+/// only to start or reset the list.
+
+///|
+let usage : String = "Usage: format.mbtx pin <url> <prefix> <sources.json> | fetch <sources.json> <out-dir> | record <corpus-dir> <out-dir> <lock> [<pending.json>]"
+
+///|
+/// The corpus key of an archive entry below `prefix`, for `.elm` files.
+fn test_file_key(prefix : String, entry : String) -> String? {
+  guard entry.has_prefix(prefix) && entry.has_suffix(".elm") else {
+    return None
+  }
+  Some("elm-format/" + entry.view(start_offset=prefix.length()).to_owned())
+}
+
+///|
+/// The problem with a fetched file: it is missing or its hash differs from
+/// the pinned hash.
+fn file_problem(key : String, pinned : String, actual : String?) -> String? {
+  match actual {
+    None => Some("missing: \{key}")
+    Some(hash) =>
+      if hash == pinned {
+        None
+      } else {
+        Some("sha256 mismatch: \{key}")
+      }
+  }
+}
+
+///|
+priv struct Verdict {
+  key : String
+  source : String
+  parsed : Bool
+  exit_code : Int
+  output : String
+}
+
+///|
+fn hex(digest : FixedArray[Byte]) -> String {
+  @hex.encode(Bytes::from_array(digest))
+}
+
+///|
+/// Lowercase hex SHA-256 of the UTF-8 bytes of `text`.
+fn sha256_hex(text : String) -> String {
+  hex(@crypto.sha256(@utf8.encode(text)))
+}
+
+///|
+/// Compare strings by code unit (`String::compare` compares length first).
+fn compare_lexical(a : String, b : String) -> Int {
+  let n = if a.length() < b.length() { a.length() } else { b.length() }
+  for i in 0..<n {
+    let c = a.code_unit_at(i).compare(b.code_unit_at(i))
+    if c != 0 {
+      return c
+    }
+  }
+  a.length().compare(b.length())
+}
+
+///|
+fn lock_json(verdicts : Array[Verdict]) -> Json {
+  let sorted = verdicts.copy()
+  sorted.sort_by((a, b) => compare_lexical(a.key, b.key))
+  let entries : Map[String, Json] = Map([])
+  for v in sorted {
+    entries[v.key] = if !v.parsed {
+      {
+        "source": v.source.to_json(),
+        "skipped": "krueger rejects the file".to_json(),
+      }
+    } else if v.exit_code != 0 {
+      {
+        "source": v.source.to_json(),
+        "skipped": "elm-format exited with code \{v.exit_code}".to_json(),
+      }
+    } else {
+      {
+        "source": v.source.to_json(),
+        "expected": sha256_hex(v.output).to_json(),
+      }
+    }
+  }
+  Json::object(entries)
+}
+
+///|
+/// The keys whose hashes differ, sorted. Each item is `(key, expected, actual)`.
+fn pending_keys(hashes : Array[(String, String, String)]) -> Array[String] {
+  let keys = hashes.filter(h => h.1 != h.2).map(h => h.0)
+  keys.sort_by(compare_lexical)
+  keys
+}
+
+///|
+fn keys_text(keys : Array[String]) -> String {
+  Json::array(keys.map(k => k.to_json())).stringify(indent=2) + "\n"
+}
+
+///|
+async fn run_or_exit(cmd : String, args : Array[String]) -> Unit {
+  let code = @process.run(cmd, args)
+  if code != 0 {
+    eprintln("\{cmd} failed with exit code \{code}")
+    @sys.exit(code)
+  }
+}
+
+///|
+/// Create `path` and its parents.
+async fn ensure_dir(path : String) -> Unit {
+  @fs.mkdir(path, recursive=true, allow_exist=true)
+}
+
+///|
+fn parent_dir(path : String) -> String {
+  let parts = path.split("/").map(p => p.to_owned()).collect()
+  parts[:parts.length() - 1].iter().collect().join("/")
+}
+
+///|
+async fn download(url : String, zip : String) -> Unit {
+  ensure_dir(parent_dir(zip))
+  run_or_exit("curl", ["-fsSL", "-o", zip, url])
+}
+
+///|
+/// The bytes of one archive entry.
+async fn entry_bytes(zip : String, entry : String) -> Bytes {
+  let (code, out) = @process.collect_stdout("unzip", ["-p", zip, entry])
+  if code != 0 {
+    eprintln("unzip failed for \{entry} in \{zip}")
+    @sys.exit(1)
+  }
+  out.binary()
+}
+
+///|
+struct Sources {
+  url : String
+  prefix : String
+  files : Array[(String, String)]
+}
+
+///|
+fn sources_json(s : Sources) -> Json {
+  let files : Map[String, Json] = Map([])
+  for f in s.files {
+    files[f.0] = f.1.to_json()
+  }
+  {
+    "url": s.url.to_json(),
+    "prefix": s.prefix.to_json(),
+    "files": Json::object(files),
+  }
+}
+
+///|
+fn parse_sources(json : Json) -> Sources raise {
+  guard json is Object(root) &&
+    root.get("url") is Some(String(url)) &&
+    root.get("prefix") is Some(String(prefix)) &&
+    root.get("files") is Some(Object(files)) else {
+    fail("sources.json: missing url, prefix or files")
+  }
+  let list = []
+  for key, hash in files {
+    guard hash is String(h) else { fail("sources.json: bad hash for \{key}") }
+    list.push((key, h))
+  }
+  { url, prefix, files: list, }
+}
+
+///|
+/// Build the pin: download the archive and hash every selected file.
+async fn pin(url : String, prefix : String, out : String) -> Unit {
+  let zip = ".dev/out/format/elm-format.zip"
+  download(url, zip)
+  let (code, listing) = @process.collect_stdout("unzip", ["-Z1", zip])
+  if code != 0 {
+    eprintln("unzip -Z1 failed")
+    @sys.exit(1)
+  }
+  let files = []
+  for entry in listing.text().split("\n") {
+    let entry = entry.to_owned()
+    if test_file_key(prefix, entry) is Some(key) {
+      files.push((key, hex(@crypto.sha256(entry_bytes(zip, entry)))))
+    }
+  }
+  files.sort_by((a, b) => compare_lexical(a.0, b.0))
+  @fs.write_file(
+    out,
+    sources_json({ url, prefix, files, }).stringify(indent=2) + "\n",
+  )
+  println("format: pinned \{files.length()} files in \{out}")
+}
+
+///|
+/// The problems with the files already below `dir` (an empty list when all
+/// are present and match).
+async fn fetched_problems(dir : String, s : Sources) -> Array[String] {
+  let problems = []
+  for f in s.files {
+    let (key, pinned) = f
+    let path = "\{dir}/\{key.view(start_offset="elm-format/".length())}"
+    let actual = if @fs.exists(path) {
+      Some(hex(@crypto.sha256(@fs.read_file(path).binary())))
+    } else {
+      None
+    }
+    if file_problem(key, pinned, actual) is Some(p) {
+      problems.push(p)
+    }
+  }
+  problems
+}
+
+///|
+async fn fetch(sources : String, dir : String) -> Unit {
+  let s = parse_sources(@fs.read_file(sources).json())
+  if fetched_problems(dir, s).is_empty() {
+    println("format: \{s.files.length()} test files ok")
+    return
+  }
+  let zip = ".dev/out/format/elm-format.zip"
+  download(s.url, zip)
+  for f in s.files {
+    let rel = f.0.view(start_offset="elm-format/".length())
+    let path = "\{dir}/\{rel}"
+    ensure_dir(parent_dir(path))
+    @fs.write_file(path, entry_bytes(zip, s.prefix + rel.to_owned()))
+  }
+  let problems = fetched_problems(dir, s)
+  if !problems.is_empty() {
+    for p in problems {
+      eprintln(p)
+    }
+    @sys.exit(1)
+  }
+  println("format: \{s.files.length()} test files ok")
+}
+
+///|
+async fn record(
+  corpus : String,
+  out : String,
+  lock : String,
+  pending : String?,
+) -> Unit {
+  guard @fs.read_file("\{out}/keys.json").json() is Array(items) else {
+    eprintln("format: bad \{out}/keys.json")
+    @sys.exit(1)
+    return
+  }
+  let verdicts = []
+  for item in items {
+    guard item is Object(o) &&
+      o.get("key") is Some(String(key)) &&
+      o.get("source") is Some(String(source)) &&
+      o.get("krueger") is Some(String(krueger)) else {
+      eprintln("format: malformed entry in \{out}/keys.json")
+      @sys.exit(1)
+      return
+    }
+    let parsed = krueger == "parsed"
+    let mut exit_code = 0
+    let mut output = ""
+    if parsed {
+      let (code, stdout) = @process.collect_stdout(
+        "mise",
+        [
+          "x", "github:avh4/elm-format@0.8.7", "--", "elm-format", "--stdin", "--elm-version=0.19",
+        ],
+        stdin=@process.redirect_from_file("\{corpus}/\{key}"),
+        stderr=@process.redirect_to_file("/dev/null"),
+      )
+      exit_code = code
+      if code == 0 {
+        output = stdout.text()
+        let path = "\{out}/expected/\{key}"
+        ensure_dir(parent_dir(path))
+        @fs.write_file(path, output)
+      }
+    }
+    verdicts.push({ key, source, parsed, exit_code, output, })
+  }
+  @fs.write_file(lock, lock_json(verdicts).stringify(indent=2) + "\n")
+  let recorded = verdicts.filter(v => v.parsed && v.exit_code == 0)
+  println(
+    "format: \{recorded.length()} recorded, \{verdicts.length() - recorded.length()} skipped; wrote \{lock}",
+  )
+  if pending is Some(p) {
+    let hashes = []
+    for v in recorded {
+      let actual = read_text_or_missing("\{out}/actual/\{v.key}")
+      hashes.push((v.key, sha256_hex(v.output), sha256_hex(actual)))
+    }
+    @fs.write_file(p, keys_text(pending_keys(hashes)))
+    println("format: wrote \{p}")
+  }
+}
+
+///|
+/// The text of a file, or a marker no formatter output can equal when the
+/// file is missing (krueger raised an error).
+async fn read_text_or_missing(path : String) -> String {
+  if @fs.exists(path) {
+    @fs.read_file(path).text()
+  } else {
+    "\u{0}missing"
+  }
+}
+
+///|
+async fn main {
+  match @env.args()[1:] {
+    ["pin", url, prefix, out] => pin(url, prefix, out)
+    ["fetch", sources, dir] => fetch(sources, dir)
+    ["record", corpus, out, lock] => record(corpus, out, lock, None)
+    ["record", corpus, out, lock, pending] =>
+      record(corpus, out, lock, Some(pending))
+    _ => {
+      eprintln(usage)
+      @sys.exit(2)
+    }
+  }
+}
+
+///|
+/// Scenario state for `features/format.feature`.
+struct FormatWorld {
+  entries : Array[String]
+  mut keys : Array[String]
+  files : Array[(String, String, String)]
+  verdicts : Array[Verdict]
+  hashes : Array[(String, String, String)]
+  mut lock : String
+  mut pending : Array[String]
+}
+
+///|
+fn FormatWorld::new() -> FormatWorld {
+  {
+    entries: [],
+    keys: [],
+    files: [],
+    verdicts: [],
+    hashes: [],
+    lock: "",
+    pending: [],
+  }
+}
+
+///|
+impl @moonspec.World for FormatWorld with fn configure(self, setup) {
+  setup.given1("the archive entries:", fn(table : @moonspec.DataTable) {
+    for row in table.as_maps() {
+      self.entries.push(row.get("entry").unwrap_or(""))
+    }
+  })
+  setup.when0("I select the test files", fn() {
+    self.keys = self.entries.filter_map(e => {
+      test_file_key("elm-format-0.8.7/tests/test-files/", e)
+    })
+  })
+  setup.then1("the keys are:", fn(table : @moonspec.DataTable) raise {
+    let expected = table.as_maps().map(r => r.get("key").unwrap_or(""))
+    @expect.expect(self.keys).to_equal(expected)
+  })
+  setup.given1("the pinned files:", fn(table : @moonspec.DataTable) {
+    for row in table.as_maps() {
+      self.files.push(
+        (
+          row.get("key").unwrap_or(""),
+          row.get("pinned").unwrap_or(""),
+          row.get("actual").unwrap_or(""),
+        ),
+      )
+    }
+  })
+  setup.then1("the verification problems are:", fn(
+    table : @moonspec.DataTable,
+  ) raise {
+    let found = self.files.filter_map(f => {
+      let actual = if f.2 == "-" { None } else { Some(f.2) }
+      file_problem(f.0, f.1, actual).map(p => (f.0, p))
+    })
+    let expected = table
+      .as_maps()
+      .map(r => (r.get("key").unwrap_or(""), r.get("problem").unwrap_or("")))
+    @expect.expect(found).to_equal(expected)
+  })
+  setup.given1("the verdicts:", fn(table : @moonspec.DataTable) {
+    for row in table.as_maps() {
+      self.verdicts.push({
+        key: row.get("key").unwrap_or(""),
+        source: row.get("source").unwrap_or(""),
+        parsed: row.get("krueger") == Some("parsed"),
+        exit_code: @string.parse_int(row.get("elm_format_exit").unwrap_or("0")) catch {
+          _ => 0
+        },
+        output: row.get("output").unwrap_or(""),
+      })
+    }
+  })
+  setup.when0("I build the lock", fn() {
+    self.lock = lock_json(self.verdicts).stringify(indent=2)
+  })
+  setup.then1("the lock is:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(self.lock).to_equal(doc.content)
+  })
+  setup.given1("the expected and actual hashes:", fn(
+    table : @moonspec.DataTable,
+  ) {
+    for row in table.as_maps() {
+      self.hashes.push(
+        (
+          row.get("key").unwrap_or(""),
+          row.get("expected").unwrap_or(""),
+          row.get("actual").unwrap_or(""),
+        ),
+      )
+    }
+  })
+  setup.when0("I build the pending list", fn() {
+    self.pending = pending_keys(self.hashes)
+  })
+  setup.then1("the pending list is {string}", fn(expected : String) raise {
+    @expect.expect(self.pending.join(",")).to_equal(expected)
+  })
+}
+
+///|
+async test "format feature" {
+  @moonspec.run_or_fail(
+    FormatWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/format.feature"),
+    ]),
+  )
+  |> ignore
+}
