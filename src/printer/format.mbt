@@ -57,11 +57,18 @@ pub fn format_parsed(
   guard errors.is_empty() && result.ast is Some(file) && result.cst is Some(cst) else {
     raise ParseFailed(errors)
   }
+  let comments = place_comments(file)
   let ctx = Ctx::new(
     dialect,
     layout~,
     source=Some(SourceFacts::from_tokens(cst.tokens)),
+    comments=Some(comments),
   )
   let doc = ctx.file_doc(file) catch { e => raise Unprintable(e) }
+  if comments.unprinted() is Some(r) {
+    raise Unprintable(
+      PrintError(path=@syntax.NodePath::root(), problem=UnplacedComment(r)),
+    )
+  }
   @pretty.render(doc, width=layout.render_width())
 }

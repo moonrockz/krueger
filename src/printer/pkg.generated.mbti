@@ -67,6 +67,7 @@ pub(all) enum PrintProblem {
   InvalidDocumentation
   LetDocumentation
   TooDeep
+  UnplacedComment(@ast.Range)
 } derive(Eq, @debug.Debug)
 
 // Type aliases

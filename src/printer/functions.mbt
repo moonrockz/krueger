@@ -19,9 +19,13 @@ fn Ctx::signature_doc(
   level : Int,
   s : @ast.Signature,
 ) -> @pretty.Doc raise PrintError {
+  let name = self.with_comments(
+    s.name.range,
+    self.lower_name(path.child("name", 0), s.name.value),
+  )
   @pretty.group(
-    self.lower_name(path.child("name", 0), s.name.value) +
-    @pretty.text(" :") +
+    name +
+    self.after(s.name.range, " :") +
     @pretty.nest(
       4,
       @pretty.line() +
@@ -49,10 +53,23 @@ fn Ctx::function_doc(
 }
 
 ///|
+/// A part of a function declaration: the documentation, the signature or
+/// the implementation, or the comments between them.
+priv enum FunctionPart {
+  Main
+  Between(Int)
+}
+
+///|
 /// The work items of `function_doc`, in the order it checks them: the
 /// documentation, the signature, the name, the arguments, the body. Elm has
 /// no doc comments in a `let` (`in_let = true`), so documentation there
 /// raises `LetDocumentation`.
+///
+/// The comments between the documentation, the signature and the
+/// implementation go on their own lines. At the top level they are blocks
+/// between blank lines, as elm-format makes them body comments
+/// (`formatTopLevelBody`).
 fn Ctx::function_plan(
   self : Ctx,
   path : @syntax.NodePath,
@@ -61,56 +78,96 @@ fn Ctx::function_plan(
   in_let? : Bool = false,
 ) -> Work {
   let parts = []
-  let has_doc = f.documentation is Some(_)
-  let has_sig = f.signature is Some(_)
+  let kinds = []
+  // Whether each block of comments has comments, set when its item runs.
+  let found = [false, false, false]
+  let comments = (k : Int, take : () -> Array[@ast.Node[String]]) => {
+    kinds.push(Between(k))
+    parts.push(
+      Leaf(() => {
+        let cs = take()
+        found[k] = !cs.is_empty()
+        comment_block(cs)
+      }),
+    )
+  }
   if f.documentation is Some(doc) {
     let p = path.child("documentation", 0)
+    kinds.push(Main)
     parts.push(
       Leaf(() => {
         if in_let {
           raise PrintError(path=p, problem=LetDocumentation)
         }
-        documentation_doc(p, doc.value)
+        documentation_doc(p, doc.value) + self.trailing(doc.range)
       }),
     )
   }
   if f.signature is Some(sig) {
+    comments(0, () => self.take(Leading, sig.range))
+    kinds.push(Main)
     parts.push(
       Leaf(() => {
         self.signature_doc(path.child("signature", 0), level + 1, sig.value)
       }),
     )
+    comments(1, () => self.take(Trailing, sig.range))
   }
   let p = path.child("declaration", 0)
-  let imp = f.declaration.value
-  parts.push(Leaf(() => self.lower_name(p.child("name", 0), imp.name.value)))
-  for i, a in imp.arguments {
+  let imp = f.declaration
+  comments(2, () => self.take(Leading, imp.range))
+  let name = imp.value.name
+  let args = imp.value.arguments
+  let head_start = parts.length()
+  kinds.push(Main)
+  parts.push(
+    Leaf(() => {
+      self.with_comments(
+        name.range,
+        self.lower_name(p.child("name", 0), name.value),
+      ) +
+      self.after(name.range, if args.is_empty() { " =" } else { " " })
+    }),
+  )
+  for i, a in args {
     parts.push(
       Leaf(() => {
-        self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg)
+        @pretty.nest(
+          4,
+          self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg) +
+          self.after(a.range, if i + 1 == args.length() { " =" } else { " " }),
+        )
       }),
     )
   }
-  parts.push(Expr(p.child("expression", 0), level + 1, imp.expression, AnyExpr))
+  parts.push(
+    Expr(p.child("expression", 0), level + 1, imp.value.expression, AnyExpr),
+  )
   Plan(parts, docs => {
+    // The head and the body are one main part.
+    let mut head = @pretty.empty()
+    for i in head_start..<(docs.length() - 1) {
+      head = head + docs[i]
+    }
+    let main = head +
+      @pretty.nest(4, @pretty.hardline() + docs[docs.length() - 1])
     let mut d = @pretty.empty()
-    let mut k = 0
-    if has_doc {
-      d = d + docs[k] + @pretty.hardline()
-      k = k + 1
+    let mut previous : FunctionPart? = None
+    for i, kind in kinds {
+      let doc = if i + 1 == kinds.length() { main } else { docs[i] }
+      match kind {
+        Between(k) if !found[k] => continue
+        _ => ()
+      }
+      let breaks = match (previous, kind) {
+        (None, _) => 0
+        (Some(Main), Between(_)) if !in_let => 4
+        (Some(Between(_)), Main) if !in_let => 3
+        _ => 1
+      }
+      d = d + line_breaks(breaks) + doc
+      previous = Some(kind)
     }
-    if has_sig {
-      d = d + docs[k] + @pretty.hardline()
-      k = k + 1
-    }
-    let last = docs.length() - 1
-    let mut head = docs[k]
-    for i in (k + 1)..<last {
-      head = head + @pretty.text(" ") + docs[i]
-    }
-    d +
-    head +
-    @pretty.text(" =") +
-    @pretty.nest(4, @pretty.hardline() + docs[last])
+    d
   })
 }

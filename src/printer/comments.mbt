@@ -1,15 +1,11 @@
 ///|
-// Task 6 is the first non-test user; it removes this suppression.
-#warnings("-unused_value-unused_field")
 priv enum Role {
   Leading
   Trailing
   Inner
-} derive(Eq, Debug)
+}
 
 ///|
-// Task 6 is the first non-test user; it removes this suppression.
-#warnings("-unused_value-unused_field")
 priv struct Placed {
   comment : @ast.Node[String]
   owner : @ast.Range
@@ -20,8 +16,6 @@ priv struct Placed {
 ///|
 /// The placed comments and a lookup by role and range. `printed` marks the
 /// comments that the printer has written.
-// Task 6 is the first non-test user; it removes this suppression.
-#warnings("-unused_value-unused_field")
 priv struct CommentTable {
   placed : Array[Placed]
   printed : Array[Bool]
@@ -62,8 +56,6 @@ fn is_skipped(node : @syntax.NodeRef) -> Bool {
 /// `Trailing` when a child ends on the comment's row before it, else
 /// `Leading` of the next child, else `Inner` of the owner. Doc comments are
 /// not placed.
-// Task 6 is the first non-test user; it removes this suppression.
-#warnings("-unused_value")
 fn place_comments(file : @ast.File) -> CommentTable {
   let root : @syntax.NodeRef = File(file, [][:])
   let placed = []
@@ -101,13 +93,14 @@ fn place_comments(file : @ast.File) -> CommentTable {
       (_, Some(n)) => (Leading, Some(n.range()))
       _ => (Inner, None)
     }
-    let owner_range = owner.range()
-    let key = index_key(role, child.unwrap_or(owner_range))
+    placed.push({ comment: c, owner: owner.range(), child, role, })
+  }
+  for i, p in placed {
+    let key = index_key(p.role, p.child.unwrap_or(p.owner))
     match index.get(key) {
-      Some(list) => list.push(placed.length())
-      None => index[key] = [placed.length()]
+      Some(list) => list.push(i)
+      None => index[key] = [i]
     }
-    placed.push({ comment: c, owner: owner_range, child, role, })
   }
   { placed, printed: Array::make(placed.length(), false), index, }
 }
@@ -116,8 +109,6 @@ fn place_comments(file : @ast.File) -> CommentTable {
 /// The indices of the not yet printed comments with this role at this
 /// range, in source order. For `Inner` the range is the owner's; otherwise
 /// it is the child's.
-// Task 6 is the first non-test user; it removes this suppression.
-#warnings("-unused_value")
 fn CommentTable::matching(
   self : CommentTable,
   role : Role,
