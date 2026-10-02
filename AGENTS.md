@@ -390,7 +390,8 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - An AST that cannot print as valid Elm raises `PrintError(path~,
   problem~)`. `path` is a `NodePath` from the printed node. Elm has no
   doc comments in a `let`, so documentation on a `let` function raises
-  `LetDocumentation`.
+  `LetDocumentation`. An infix declaration's precedence must be 0 to 9
+  (`InvalidPrecedence`), and an import alias is one upper-case name.
 - Operator symbols (prefix operators, exposed operators, infix
   declarations) must be in the dialect's operator table; Elm 0.19 has no
   user-defined operators. Any other symbol raises `InvalidName(Operator,

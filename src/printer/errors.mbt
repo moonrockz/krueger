@@ -45,6 +45,8 @@ pub(all) enum PrintProblem {
   NoLambdaArguments
   /// An operator that is not in the dialect's operator table.
   UnknownOperator(String)
+  /// An infix declaration whose precedence is not 0 to 9.
+  InvalidPrecedence(Int)
   /// GLSL text that holds `|]`.
   InvalidGlsl
   /// Documentation that does not start with `{-|` and end with `-}`.

@@ -86,6 +86,12 @@ fn Ctx::declaration_doc(
         Right => "right"
         Non => "non  "
       }
+      let precedence = i.precedence.value
+      // The precedence is not a node of the syntax tree (`NodeRef`), so the
+      // path is the declaration's.
+      guard precedence >= 0 && precedence <= 9 else {
+        raise PrintError(path~, problem=InvalidPrecedence(precedence))
+      }
       let symbol = self.operator_symbol(
         path.child("operator", 0),
         i.operator.value,
@@ -94,7 +100,7 @@ fn Ctx::declaration_doc(
         "infix " +
         direction +
         " " +
-        i.precedence.value.to_string() +
+        precedence.to_string() +
         " (" +
         symbol +
         ") = ",
@@ -234,8 +240,13 @@ fn Ctx::import_doc(
     module_name(path.child("moduleName", 0), i.value.module_name.value),
   )
   if i.value.module_alias is Some(a) {
-    d = d +
-      @pretty.text(" as " + module_name(path.child("moduleAlias", 0), a.value))
+    // An alias is one upper-case name: `import Html.Events as E`.
+    let p = path.child("moduleAlias", 0)
+    let name = module_name(p, a.value)
+    guard a.value.length() == 1 else {
+      raise PrintError(path=p, problem=InvalidName(Upper, name))
+    }
+    d = d + @pretty.text(" as " + name)
   }
   if i.value.exposing_list is Some(x) {
     d = d + self.exposing_doc(path.child("exposingList", 0), x, import_=true)

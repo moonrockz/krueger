@@ -46,6 +46,7 @@ pub(all) enum PrintProblem {
   NoConstructors
   NoLambdaArguments
   UnknownOperator(String)
+  InvalidPrecedence(Int)
   InvalidGlsl
   InvalidDocumentation
   LetDocumentation

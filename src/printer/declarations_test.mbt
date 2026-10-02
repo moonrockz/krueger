@@ -255,3 +255,58 @@ test "exposed and declared operators must be in the dialect's operator table" {
     )
   })
 }
+
+///|
+test "an import alias is one name and an infix precedence is 0 to 9" {
+  @expect.expect_all(s => {
+    let file = file_of(
+      "module A exposing (f)\n\nimport Html.Events as E\n\n\nf =\n    1\n",
+    )
+    s
+    .expect(@printer.print_file(file))
+    .to_equal(
+      "module A exposing (f)\n\nimport Html.Events as E\n\n\nf =\n    1\n",
+    )
+    let imp = file.imports[0]
+    let long_alias = {
+      ..file,
+      imports: [
+        {
+          ..imp,
+          value: { ..imp.value, module_alias: Some(n(["Html", "E"][:])), },
+        },
+      ][:],
+    }
+    s
+    .expect(problem_of(() => @printer.print_file(long_alias)))
+    .to_equal(
+      Some(
+        (
+          InvalidName(Upper, "Html.E"),
+          [{ field: "imports", index: 0, }, { field: "moduleAlias", index: 0, }],
+        ),
+      ),
+    )
+    let infix = fn(precedence : Int) -> @ast.Node[@ast.Declaration] {
+      n(
+        InfixDeclaration({
+          direction: n(Right),
+          precedence: n(precedence),
+          operator: n("<|"),
+          function: n("apL"),
+        }),
+      )
+    }
+    s
+    .expect(@printer.print_declaration(infix(0)))
+    .to_equal("infix right 0 (<|) = apL")
+    s
+    .expect(@printer.print_declaration(infix(9)))
+    .to_equal("infix right 9 (<|) = apL")
+    for bad in [-1, 10] {
+      s
+      .expect(problem_of(() => @printer.print_declaration(infix(bad))))
+      .to_equal(Some((InvalidPrecedence(bad), [])))
+    }
+  })
+}
