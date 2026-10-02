@@ -21,6 +21,7 @@ This module (`moonrockz/krueger`) is a **parser and parsing utilities** library 
 - **Parser** — grammar-driven parsing into an AST
 - **AST** — an exact mirror of [stil4m/elm-syntax](https://package.elm-lang.org/packages/stil4m/elm-syntax/7.3.9/) 7.3.9, with a JSON encoder and decoder that match elm-syntax byte for byte
 - **CST** — every token and top-level declaration, with trivia (whitespace and comments)
+- **Printer** — Elm source from the AST (elm-format 0.8.7 layout, width fit at 120, minimal parentheses) and from the CST (lossless, `ModuleCst::to_source`)
 - **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.), planned
 
 The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax output
@@ -30,7 +31,7 @@ The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax outp
 
 ```
 moonrockz/krueger
-├── moon.work             # Workspace: the library (.), the test harness (harness/) and the cookbook (docs/cookbook/)
+├── moon.work             # Workspace: the library (.), the test harness (harness/), the cookbook (docs/cookbook/) and the layout engine (pretty/)
 ├── src/                  # The library (the only published module)
 │   ├── lib.mbt           # Package entry point; re-exports the public types
 │   ├── dialect/          # Dialect: rejection rules, operator table, extension hooks
@@ -39,9 +40,11 @@ moonrockz/krueger
 │   ├── report/           # Renders diagnostics like elm make (terminal, plain, JSON)
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
+│   ├── printer/          # AST to Elm source: elm-format shapes, parentheses, PrintError
 │   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor, events, NodePath, TreeCursor
 │   ├── lawkit/           # Property-test generators and position/report helpers (public test support)
 │   └── e2e/              # End-to-end tests (test-only)
+├── pretty/               # Workspace module moonrockz/pretty: Wadler-style Doc engine (to be published on its own)
 ├── harness/              # Unpublished module moonrockz/krueger_harness (test-only dependencies)
 │   ├── bdd/              # MoonSpec step definitions for tests/features
 │   ├── bench/            # Benchmarks (mise run bench; smoke check in mise run test)
@@ -366,6 +369,50 @@ The kind table below is checked against `kind_table()` by
   parse result's read-only AST.
 - Laws: `src/syntax/*_law_test.mbt` (see "Property-Based Testing (Laws)").
 
+### Printer
+
+`src/printer` (re-exported from the root) prints an AST as Elm source:
+`print_file`, `print_declaration`, `print_expression`, `print_pattern`
+and `print_type_annotation`, each with `width?` (default 120) and
+`dialect?` (default `elm-0.19.1`).
+
+- Layout: the elm-format 0.8.7 shapes. Declaration bodies, custom types,
+  `if`, `case` and `let` are always on several lines; lists, tuples,
+  records, applications, operator chains, lambdas, signatures and
+  exposing lists stay on one line when they fit in `width`.
+- Parentheses: the printer adds only the parentheses that the parser
+  needs (operator precedence and associativity from the dialect,
+  arguments, negations, record access targets) and keeps the ones in the
+  AST. For a parsed AST, `print_file` then `parse_module` gives the same
+  AST without ranges and regular comments.
+- Comments: documentation fields, the module documentation and port doc
+  comments (both in `File.comments`) print; regular comments do not yet.
+- An AST that cannot print as valid Elm raises `PrintError(path~,
+  problem~)`. `path` is a `NodePath` from the printed node.
+- Expression printing uses an explicit work stack, so it is stack-safe on
+  all targets. More than 400 nested printer levels raise `TooDeep`.
+- The layout engine is the workspace module `pretty/` (`moonrockz/pretty`):
+  `Doc`, the `Doc` builders (`text`, `verbatim`, `line`, `nest`, `tab`,
+  `align`, `group`, `if_break`, ...) and `render`. It has no Elm
+  knowledge. Krueger cannot publish a release that imports it until
+  `moonrockz/pretty` is on mooncakes.io.
+- `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
+- `mise run test:parity` checks the round trip, idempotence and the
+  lossless CST on the corpus, and compares the printed text with
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 150 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 213 files
+  that elm-format still changes; 196 of them differ because elm-format
+  groups the module exposing list by the `@docs` lines (bd `krueger-iji`).
+  Each pending file has a bd issue, and the list only shrinks: a fix
+  removes entries, and the check fails when a listed file becomes stable.
+  Differences that are known and not yet fixed are in bd `krueger-sou`
+  (elm-format adds parentheses around a multi-line operand after an
+  operator) and in the issues that the pending list names.
+- After a printer change, run `mise run printer:record` (needs
+  elm-format through `mise x`) and commit the lock. Give a pending path to
+  reset the list: `mise run printer:record tests/printer/pending.json`. Use
+  that only to start or reset the list.
+
 ### Dialects
 
 A `Dialect` (`src/dialect`) selects what krueger accepts and rejects, and carries
@@ -612,6 +659,7 @@ inputs.
   text: fragments, unclosed literals and comments, edge characters, valid
   modules cut short or changed; it shrinks), `Nesting` and `nested(construct,
   depth)` (each nesting construct at any depth, biased to the limits ± 2),
+  `ElmAst` (an AST built directly, for printer laws; every range is zero),
   `DocAttributes` (doc-comment attributes with Unicode names and values,
   continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
   `Ranges`, and `units` (a string of UTF-16 units, for lone surrogates). Edge
@@ -625,7 +673,9 @@ inputs.
   (the excerpts number the expected lines and show those source lines),
   `source_lines`, `line_count`, `strip_ansi`, `range_in_source` and
   `elm_json_problems` (the regions and messages of an `elm make` JSON
-  report).
+  report). `without_ranges` gives an AST's elm-syntax JSON with every range
+  removed (`all` and `open` ranges become `true`), to compare ASTs that
+  differ only in ranges.
 - **Reach the success branch.** A law that returns `true` on an error (`Err(_)
   => true`) tests nothing for inputs that fail. Measure how often its
   generator reaches the success branch for each edge, and add a generator or
@@ -719,6 +769,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `corpus:goldens`    | Regenerate elm-syntax goldens and `goldens.lock` (needs Elm and Node) |
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
 | `unicode:generate`  | Regenerate the Unicode identifier table from UnicodeData.txt |
+| `printer:record`    | Print the corpus and record elm-format verdicts in `tests/printer/elm_format.lock` |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
 | `test:bench`        | Run every benchmark case once on small input (smoke check) |
 | `bench`             | Measure the benchmarks (`--target t[,t...]`; all targets by default) |
@@ -759,6 +810,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
 | `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes`, `release:status` | Release pull request, next version, release decision in CI, release notes, release health check |
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
+| `scripts/printer.mbtx` | `printer:record` | Record elm-format 0.8.7 verdicts for the printed corpus |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
 | `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |
