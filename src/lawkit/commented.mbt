@@ -35,32 +35,132 @@ fn is_name_char(c : UInt16) -> Bool {
 }
 
 ///|
+/// Whether each line starts and ends outside a block comment and a
+/// multi-line string. A comment goes only after or in a line that does.
+fn line_states(lines : Array[String]) -> (Array[Bool], Array[Bool]) {
+  let starts = []
+  let ends = []
+  let mut depth = 0
+  let mut triple = false
+  for line in lines {
+    starts.push(depth == 0 && !triple)
+    let n = line.length()
+    let mut i = 0
+    while i < n {
+      if triple {
+        if line[i] == '\\' {
+          i += 2
+        } else if has_at(line, i, "\"\"\"") {
+          triple = false
+          i += 3
+        } else {
+          i += 1
+        }
+      } else if depth > 0 {
+        if has_at(line, i, "{-") {
+          depth += 1
+          i += 2
+        } else if has_at(line, i, "-}") {
+          depth -= 1
+          i += 2
+        } else {
+          i += 1
+        }
+      } else if has_at(line, i, "--") {
+        break
+      } else if has_at(line, i, "{-") {
+        depth = 1
+        i += 2
+      } else if has_at(line, i, "\"\"\"") {
+        triple = true
+        i += 3
+      } else if line[i] == '"' {
+        i += 1
+        while i < n && line[i] != '"' {
+          i += if line[i] == '\\' { 2 } else { 1 }
+        }
+        i += 1
+      } else if line[i] == '\'' {
+        // A char literal holds at least one unit.
+        i += 2
+        while i < n && line[i] != '\'' {
+          i += 1
+        }
+        i += 1
+      } else {
+        i += 1
+      }
+    }
+    ends.push(depth == 0 && !triple)
+  }
+  (starts, ends)
+}
+
+///|
+fn has_at(line : String, i : Int, s : String) -> Bool {
+  i + s.length() <= line.length() && line.view(start_offset=i).has_prefix(s)
+}
+
+///|
+/// A multi-line construct that holds a comment before its closing bracket,
+/// so that the comment is `Inner` to the construct.
+fn closing_bracket_lines(n : Int, rs : @splitmix.RandomState) -> Array[String] {
+  let (open, close, first) = match pick(rs, 3) {
+    0 => ("[", "]", "1")
+    1 => ("{", "}", "a = 1")
+    _ => ("(", ")", "1")
+  }
+  [
+    "",
+    "",
+    "br\{n} =",
+    "    \{open} \{first}",
+    "    -- in\u{A7}\{n}",
+    "    \{close}",
+  ]
+}
+
+///|
+/// Every comment that this generator adds holds the marker `\u{A7}` once, so
+/// that a test can count them. The base module has none.
 pub impl @quickcheck.Arbitrary for Commented with fn arbitrary(size, rs) {
   let ElmModule(base) = ElmModule::arbitrary(size, rs)
-  let crlf = base.contains("\r\n")
-  let eol = if crlf { "\r\n" } else { "\n" }
+  let eol = if base.contains("\r\n") { "\r\n" } else { "\n" }
   let lines : Array[String] = base
     .replace_all(old="\r\n", new="\n")
     .split("\n")
     .map(l => l.to_owned())
     .collect()
+  // Edge value: a comment before a closing bracket.
+  for n in 0..<pick(rs, 3) {
+    for l in closing_bracket_lines(n, rs) {
+      lines.push(l)
+    }
+  }
+  let (starts, ends) = line_states(lines)
   let out : Array[String] = []
   for i, line in lines {
     let mut l = line
     // Block comment: replace one separating space between two tokens.
-    if pick(rs, 5) == 0 && is_plain(line) {
+    if starts[i] && pick(rs, 5) == 0 && is_plain(line) {
       l = block_comment(line, rs)
     }
     // Line comment at the end of a safe line, after the header.
-    if i > 0 && pick(rs, 4) == 0 && is_plain(l) && ends_safely(l) {
-      l = l + " -- c\{i}"
+    if i > 0 &&
+      starts[i] &&
+      ends[i] &&
+      pick(rs, 4) == 0 &&
+      is_plain(l) &&
+      ends_safely(l) {
+      l = l + " -- c\u{A7}\{i}"
     }
     out.push(l)
     // A comment on its own line after an empty line or the last line.
     if i > 0 &&
+      ends[i] &&
       (line.trim() == "" || i == lines.length() - 1) &&
       pick(rs, 3) == 0 {
-      out.push("-- own \{i}")
+      out.push("-- own\u{A7}\{i}")
     }
   }
   Commented(out.join(eol))
@@ -88,7 +188,7 @@ fn block_comment(line : String, rs : @splitmix.RandomState) -> String {
   }
   guard candidates.length() > 0 else { return line }
   let at = candidates[pick(rs, candidates.length())]
-  let comment = one(rs, ["{- b -}", "{- {- n -} -}", "{-b-}"])
+  let comment = one(rs, ["{- b\u{A7} -}", "{- {- n\u{A7} -} -}", "{-b\u{A7}-}"])
   line.view(end_offset=at).to_owned() +
   " " +
   comment +

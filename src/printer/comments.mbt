@@ -1,5 +1,5 @@
 ///|
-// Task 6 reads these; until then only the tests do.
+// Task 6 is the first non-test user; it removes this suppression.
 #warnings("-unused_value-unused_field")
 priv enum Role {
   Leading
@@ -8,6 +8,7 @@ priv enum Role {
 } derive(Eq, Debug)
 
 ///|
+// Task 6 is the first non-test user; it removes this suppression.
 #warnings("-unused_value-unused_field")
 priv struct Placed {
   comment : @ast.Node[String]
@@ -19,6 +20,7 @@ priv struct Placed {
 ///|
 /// The placed comments and a lookup by role and range. `printed` marks the
 /// comments that the printer has written.
+// Task 6 is the first non-test user; it removes this suppression.
 #warnings("-unused_value-unused_field")
 priv struct CommentTable {
   placed : Array[Placed]
@@ -60,6 +62,7 @@ fn is_skipped(node : @syntax.NodeRef) -> Bool {
 /// `Trailing` when a child ends on the comment's row before it, else
 /// `Leading` of the next child, else `Inner` of the owner. Doc comments are
 /// not placed.
+// Task 6 is the first non-test user; it removes this suppression.
 #warnings("-unused_value")
 fn place_comments(file : @ast.File) -> CommentTable {
   let root : @syntax.NodeRef = File(file, [][:])
@@ -113,6 +116,7 @@ fn place_comments(file : @ast.File) -> CommentTable {
 /// The indices of the not yet printed comments with this role at this
 /// range, in source order. For `Inner` the range is the owner's; otherwise
 /// it is the child's.
+// Task 6 is the first non-test user; it removes this suppression.
 #warnings("-unused_value")
 fn CommentTable::matching(
   self : CommentTable,
