@@ -28,12 +28,12 @@ fn without_final_newlines(s : String) -> String {
 
 ///|
 impl @moonspec.World for PrinterWorld with fn configure(self, setup) {
-  setup.given("the Elm module:", fn(ctx) {
-    match ctx[0] {
-      { value: @moonspec.StepValue::DocStringVal(doc), .. } =>
-        self.source = doc.content
-      _ => ()
+  setup.given("the Elm module:", fn(ctx) raise {
+    guard ctx.args()
+      is [{ value: @moonspec.StepValue::DocStringVal(doc), .. }, ..] else {
+      fail("the step needs a doc string")
     }
+    self.source = doc.content
   })
   setup.when("I print its AST", fn(_ctx) {
     self.printed = printed_source(self.source, 120)
@@ -47,7 +47,8 @@ impl @moonspec.World for PrinterWorld with fn configure(self, setup) {
     )
   })
   setup.then("the printed source is:", fn(ctx) raise {
-    guard ctx[0] is { value: @moonspec.StepValue::DocStringVal(doc), .. } else {
+    guard ctx.args()
+      is [{ value: @moonspec.StepValue::DocStringVal(doc), .. }, ..] else {
       fail("the step needs a doc string")
     }
     @expect.expect(self.printed.map(without_final_newlines)).to_equal(
