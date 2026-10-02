@@ -347,3 +347,31 @@ test "the first problem in print order is reported" {
     s.expect(problem(chain)).to_equal(Some(UnknownOperator("<=>")))
   })
 }
+
+///|
+test "a let destructuring pattern that is not a term gets parentheses" {
+  let let_with = (p : @ast.Node[@ast.Pattern]) => {
+    @printer.print_expression(
+      n(
+        LetExpression({
+          declarations: [n(@ast.LetDeclaration::LetDestructuring(p, v("x")))][:],
+          expression: v("w"),
+        }),
+      ),
+    )
+  }
+  @expect.expect_all(s => {
+    s
+    .expect(let_with(ctor("Wrap", [pvar("w")])))
+    .to_equal("let\n    (Wrap w) =\n        x\nin\nw")
+    s
+    .expect(let_with(n(UnConsPattern(pvar("a"), pvar("b")))))
+    .to_equal("let\n    (a :: b) =\n        x\nin\nw")
+    s
+    .expect(let_with(n(AsPattern(pvar("a"), n("b")))))
+    .to_equal("let\n    (a as b) =\n        x\nin\nw")
+    s
+    .expect(let_with(n(TuplePattern([pvar("a"), pvar("b")][:]))))
+    .to_equal("let\n    ( a, b ) =\n        x\nin\nw")
+  })
+}

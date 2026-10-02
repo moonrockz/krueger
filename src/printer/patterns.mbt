@@ -5,7 +5,7 @@ priv enum PatternAt {
   AnyPattern // case branch, let, tuple and list item, inside parentheses, right of `::`
   ConsLeft // left of `::`: `::` and `as` patterns need parentheses
   AsInner // the pattern of an `as`: `::` and `as` patterns need parentheses
-  PatternArg // argument: also a constructor with arguments
+  PatternArg // argument or destructuring pattern: also a constructor with arguments
 }
 
 ///|

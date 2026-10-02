@@ -99,7 +99,8 @@ fn Ctx::declaration_doc(
       self.lower_name(path.child("function", 0), i.function.value)
     }
     Destructuring(pattern, value) =>
-      self.pattern_doc(path.child("pattern", 0), level + 1, pattern, AnyPattern) +
+      // As in a let: a destructuring pattern is a term.
+      self.pattern_doc(path.child("pattern", 0), level + 1, pattern, PatternArg) +
       @pretty.text(" =") +
       @pretty.nest(
         4,

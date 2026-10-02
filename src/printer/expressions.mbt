@@ -261,11 +261,12 @@ fn Ctx::expr_plan(
               Plan(
                 [
                   Leaf(() => {
+                    // Elm reads a destructuring pattern as a term: `(Wrap w) =`.
                     self.pattern_doc(
                       p.child("pattern", 0),
                       level + 1,
                       pattern,
-                      AnyPattern,
+                      PatternArg,
                     )
                   }),
                   Expr(p.child("expression", 0), level + 1, value, AnyExpr),
