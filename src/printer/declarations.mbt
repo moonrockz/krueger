@@ -68,7 +68,7 @@ fn Ctx::declaration_doc(
         ctors = ctors +
           @pretty.hardline() +
           @pretty.text(if i == 0 { "= " } else { "| " }) +
-          spaced(upper_name(p.child("name", 0), c.value.name.value), args)
+          spaced(Fit, upper_name(p.child("name", 0), c.value.name.value), args)
       }
       documentation_line(path, t.documentation) +
       @pretty.text("type ") +

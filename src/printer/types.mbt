@@ -26,9 +26,9 @@ fn Ctx::type_doc(
       for i, a in args {
         docs.push(self.type_doc(path.child("args", i), level + 1, a, TypeArg))
       }
-      let d = spaced(head, docs)
+      let d = spaced(Fit, head, docs)
       if at is TypeArg {
-        parens(d)
+        parens(Fit, d)
       } else {
         d
       }
@@ -41,15 +41,16 @@ fn Ctx::type_doc(
       for i, x in items {
         docs.push(self.type_doc(path.child("values", i), level + 1, x, AnyType))
       }
-      sequence("(", ")", docs)
+      sequence(Fit, "(", ")", docs)
     }
     Record(fields) =>
-      sequence("{", "}", self.record_fields(path, "value", level, fields))
+      sequence(Fit, "{", "}", self.record_fields(path, "value", level, fields))
     GenericRecord(name, fields) => {
       guard !fields.value.is_empty() else {
         raise PrintError(path~, problem=NoFields)
       }
       extension(
+        Fit,
         self.lower_name(path.child("name", 0), name.value),
         self.record_fields(path, "values", level, fields.value),
       )
@@ -59,7 +60,7 @@ fn Ctx::type_doc(
       if at is AnyType {
         d
       } else {
-        parens(d)
+        parens(Fit, d)
       }
     }
   }
@@ -79,6 +80,7 @@ fn Ctx::record_fields(
     let p = path.child(field_name, i)
     docs.push(
       field(
+        Fit,
         self.lower_name(p.child("name", 0), f.value.name.value),
         ":",
         self.type_doc(

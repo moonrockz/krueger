@@ -99,7 +99,7 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         check_level(path, level)
         let (items, combine) = self.expr_plan(path, level, e)
         if needs_parens(e.value, at) {
-          push_plan(items, docs => parens(combine(docs)))
+          push_plan(items, docs => parens(Fit, combine(docs)))
         } else {
           push_plan(items, combine)
         }
@@ -164,7 +164,7 @@ fn Ctx::setter_items(
 fn setter_docs(docs : Array[@pretty.Doc], from : Int) -> Array[@pretty.Doc] {
   let fields = []
   for i = from; i + 1 < docs.length(); i = i + 2 {
-    fields.push(field(docs[i], "=", docs[i + 1]))
+    fields.push(field(Fit, docs[i], "=", docs[i + 1]))
   }
   fields
 }
@@ -209,7 +209,7 @@ fn Ctx::expr_plan(
           Expr(path.child("application", i), level + 1, items[i], ExprArg),
         )
       }
-      (parts, docs => spaced(docs[0], docs[1:].to_owned()))
+      (parts, docs => spaced(Fit, docs[0], docs[1:].to_owned()))
     }
     OperatorApplication(_, _, _, _) => self.chain_plan(path, level, e)
     FunctionOrValue(module_, name) =>
@@ -243,13 +243,13 @@ fn Ctx::expr_plan(
       }
       (
         expr_items(path, "tupled", level, items),
-        docs => sequence("(", ")", docs),
+        docs => sequence(Fit, "(", ")", docs),
       )
     }
     ParenthesizedExpression(x) =>
       (
         [Expr(path.child("parenthesized", 0), level + 1, x, AnyExpr)],
-        docs => parens(docs[0]),
+        docs => parens(Fit, docs[0]),
       )
     LetExpression(b) => {
       guard !b.declarations.is_empty() else {
@@ -396,10 +396,13 @@ fn Ctx::expr_plan(
     RecordExpr(setters) =>
       (
         self.setter_items(path, "record", level, setters),
-        docs => sequence("{", "}", setter_docs(docs, 0)),
+        docs => sequence(Fit, "{", "}", setter_docs(docs, 0)),
       )
     ListExpr(items) =>
-      (expr_items(path, "list", level, items), docs => sequence("[", "]", docs))
+      (
+        expr_items(path, "list", level, items),
+        docs => sequence(Fit, "[", "]", docs),
+      )
     RecordAccess(_, _) => {
       let names : Array[(@syntax.NodePath, String)] = []
       let mut node = e
@@ -446,7 +449,7 @@ fn Ctx::expr_plan(
         Leaf(() => self.lower_name(path.child("name", 0), name.value)),
       ]
       parts.append(self.setter_items(path, "updates", level, setters))
-      (parts, docs => extension(docs[0], setter_docs(docs, 1)))
+      (parts, docs => extension(Fit, docs[0], setter_docs(docs, 1)))
     }
     GLSLExpression(s) => {
       guard !s.contains("|]") else {
@@ -609,7 +612,9 @@ fn Ctx::chain_plan(
       Operand(p, node, wrapped) =>
         parts.push(
           if wrapped {
-            Plan([Expr(p, level + 1, node, AnyExpr)], docs => parens(docs[0]))
+            Plan([Expr(p, level + 1, node, AnyExpr)], docs => {
+              parens(Fit, docs[0])
+            })
           } else {
             Expr(p, level + 1, node, if i == last { AnyExpr } else { Operand })
           },
