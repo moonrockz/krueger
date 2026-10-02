@@ -26,3 +26,15 @@ Feature: Printer elm-format lock
         "b/1.0.0/src/B.elm"
       ]
       """
+
+  Scenario: Only exit codes 0 and 1 are verdicts
+    elm-format --validate exits with 1 when it would change the file. Any
+    other non-zero code means that elm-format did not run or failed.
+
+    Then the elm-format exit codes give:
+      | code | verdict |
+      | 0    | stable  |
+      | 1    | changed |
+      | 2    | error   |
+      | 127  | error   |
+      | -1   | error   |

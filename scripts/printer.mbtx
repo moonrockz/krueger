@@ -9,6 +9,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/hex",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
   "moonrockz/moonspec@0.7.1",
   "moonrockz/expect@0.6.0",
 }
@@ -21,8 +22,10 @@ import {
 /// For each `.elm` file under `<printed-dir>` (written by
 /// `KRUEGER_PARITY_MODE=write-printed`), the lock holds the file's SHA-256
 /// and whether `elm-format --validate` accepts it (`stable`) or would change
-/// it (`changed`). With `<pending.json>`, the script also writes the changed
-/// files there; use it only to start or reset the list.
+/// it (`changed`). Any other elm-format exit code, or a directory with no
+/// `.elm` file, stops the script with an error and writes nothing. With
+/// `<pending.json>`, the script also writes the changed files there; use it
+/// only to start or reset the list.
 
 ///|
 let usage : String = "Usage: printer.mbtx record <printed-dir> <lock> [<pending.json>]"
@@ -57,6 +60,18 @@ fn pending_text(verdicts : Array[Verdict]) -> String {
     }
   }
   Json::array(keys).stringify(indent=2) + "\n"
+}
+
+///|
+/// The verdict for an `elm-format --validate` exit code: 0 is stable
+/// (`Some(true)`) and 1 is changed (`Some(false)`). Any other code means
+/// that elm-format did not run or failed (`None`).
+fn validate_verdict(code : Int) -> Bool? {
+  match code {
+    0 => Some(true)
+    1 => Some(false)
+    _ => None
+  }
 }
 
 ///|
@@ -100,15 +115,28 @@ fn compare_lexical(a : String, b : String) -> Int {
 ///|
 async fn record(dir : String, lock : String, pending : String?) -> Unit {
   let verdicts = []
-  for file in elm_files(dir) {
+  let files = elm_files(dir)
+  if files.is_empty() {
+    eprintln(
+      "printer: no .elm file under \{dir}; run mise run corpus:fetch, then mise run printer:record",
+    )
+    @sys.exit(1)
+  }
+  for file in files {
     let path = "\{dir}/\{file}"
-    let (code, _, _) = @process.collect_output("mise", [
+    let (code, _, err) = @process.collect_output("mise", [
       "x", "github:avh4/elm-format@0.8.7", "--", "elm-format", "--validate", path,
     ])
+    guard validate_verdict(code) is Some(stable) else {
+      eprintln(
+        "printer: elm-format exited with code \{code} for \{path}:\n\{err.text()}",
+      )
+      @sys.exit(1)
+    }
     verdicts.push({
       key: file,
       sha256: sha256_hex(@fs.read_file(path).text()),
-      stable: code == 0,
+      stable,
     })
   }
   @fs.write_file(lock, lock_text(verdicts))
@@ -162,6 +190,23 @@ impl @moonspec.World for PrinterLockWorld with fn configure(self, setup) {
   })
   setup.then1("the pending list is:", fn(doc : @moonspec.DocString) raise {
     @expect.expect(pending_text(self.verdicts)).to_equal(doc.content + "\n")
+  })
+  setup.then1("the elm-format exit codes give:", fn(
+    table : @moonspec.DataTable,
+  ) raise {
+    @expect.expect_all(s => {
+      for row in table.as_maps() {
+        let code = @string.parse_int(row.get("code").unwrap_or(""))
+        let verdict = match validate_verdict(code) {
+          Some(true) => "stable"
+          Some(false) => "changed"
+          None => "error"
+        }
+        s
+        .expect((code, verdict))
+        .to_equal((code, row.get("verdict").unwrap_or("")))
+      }
+    })
   })
 }
 
