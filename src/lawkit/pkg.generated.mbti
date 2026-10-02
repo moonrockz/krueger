@@ -56,6 +56,8 @@ pub fn units(Array[Int]) -> String
 
 pub fn within(@ast.Range, @ast.Range) -> Bool
 
+pub fn without_ranges(@ast.File) -> Json
+
 // Errors
 
 // Types and methods
