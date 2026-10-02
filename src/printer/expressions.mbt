@@ -383,9 +383,12 @@ fn Ctx::expr_plan(
             }
             head = head + docs[i]
           }
-          head +
-          @pretty.text(" ->") +
-          @pretty.group(@pretty.nest(4, @pretty.line() + docs[last]))
+          // The body indents to the next tab stop right of the `\\`.
+          @pretty.align(
+            head +
+            @pretty.text(" ->") +
+            @pretty.group(@pretty.tab(4, @pretty.line() + docs[last])),
+          )
         },
       )
     }
@@ -613,17 +616,54 @@ fn Ctx::chain_plan(
       Expand(_, _) => ()
     }
   }
-  (
-    parts,
-    docs => {
-      let mut rest = @pretty.empty()
-      for i in 1..<docs.length() {
-        rest = rest +
-          @pretty.line() +
-          @pretty.text(symbols[i - 1] + " ") +
-          docs[i]
+  (parts, docs => @pretty.group(binary_doc(docs, symbols)))
+}
+
+///|
+/// The operands and operators of a chain in the elm-format 0.8.7 layout
+/// (its `formatBinary`), without the group. Each operator other than `<|`
+/// starts a line at the next tab stop. A `<|` ends its line (`f x <|`), or
+/// goes on its own line when operators come before it in its segment; the
+/// rest of the chain is a new chain at the next tab stop:
+/// `f x <|\n    g y <|\n        h z`. Built from the last segment back,
+/// without recursion.
+fn binary_doc(
+  docs : Array[@pretty.Doc],
+  symbols : Array[String],
+) -> @pretty.Doc {
+  // A segment starts at the first operand and after each `<|`.
+  let starts = [0]
+  for i, s in symbols {
+    if s == "<|" {
+      starts.push(i + 1)
+    }
+  }
+  let mut result = @pretty.empty()
+  for k = starts.length() - 1; k >= 0; k = k - 1 {
+    let start = starts[k]
+    let end = if k + 1 < starts.length() {
+      starts[k + 1] - 1
+    } else {
+      symbols.length()
+    }
+    let mut rest = @pretty.empty()
+    for i in start..<end {
+      rest = rest +
+        @pretty.line() +
+        @pretty.text(symbols[i] + " ") +
+        docs[i + 1]
+    }
+    let segment = docs[start] + @pretty.tab(4, rest)
+    result = if k + 1 == starts.length() {
+      segment
+    } else {
+      let pipe = if end > start {
+        @pretty.line() + @pretty.text("<|")
+      } else {
+        @pretty.text(" <|")
       }
-      @pretty.group(docs[0] + @pretty.nest(4, rest))
-    },
-  )
+      segment + pipe + @pretty.tab(4, @pretty.line() + result)
+    }
+  }
+  result
 }

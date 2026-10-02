@@ -453,12 +453,12 @@ test "let, case and if after an operator indent right of their keyword" {
       (
         #|a
         #|    == (b
-        #|        && let
-        #|            y =
-        #|                1
-        #|           in
-        #|           y
-        #|    )
+        #|            && let
+        #|                y =
+        #|                    1
+        #|               in
+        #|               y
+        #|       )
       ),
     )
   })
@@ -530,6 +530,72 @@ test "if, case and let indent to the next multiple of 4 right of their keyword" 
         #|            1
         #|       in
         #|       y
+      ),
+    )
+  })
+}
+
+///|
+test "a broken <| ends its line" {
+  // elm-format 0.8.7 (`formatBinary`): `<|` ends the line, or stands on its
+  // own line after other operators; the rest is a new chain one tab stop in.
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_expression(expr_of("f x <| g y"), width=8))
+    .to_equal("f x <|\n    g y")
+    s
+    .expect(@printer.print_expression(expr_of("f x <| g y <| h z"), width=12))
+    .to_equal("f x <|\n    g y <|\n        h z")
+    s
+    .expect(@printer.print_expression(expr_of("f x <| g y ++ h z"), width=14))
+    .to_equal("f x <|\n    g y\n        ++ h z")
+    s
+    .expect(@printer.print_expression(expr_of("f x ++ g y <| h z"), width=14))
+    .to_equal("f x\n    ++ g y\n<|\n    h z")
+    s
+    .expect(@printer.print_expression(expr_of("f x <| g y")))
+    .to_equal("f x <| g y")
+  })
+}
+
+///|
+test "broken items indent to the next tab stop" {
+  // elm-format indents to multiples of 4: inside `[ ` (2 columns) an
+  // application's arguments go to column 4, not 6.
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_expression(expr_of("[ f aaaa bbbb, g ]"), width=12))
+    .to_equal("[ f\n    aaaa\n    bbbb\n, g\n]")
+    s
+    .expect(
+      @printer.print_expression(expr_of("[ a |> bbbb |> cccc ]"), width=12),
+    )
+    .to_equal("[ a\n    |> bbbb\n    |> cccc\n]")
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("( { r | aaaa = 1, bbbb = 2 }, x )"),
+        width=20,
+      ),
+    )
+    .to_equal("( { r\n    | aaaa = 1\n    , bbbb = 2\n  }\n, x\n)")
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("x |> (\\str -> if a then b else c)"),
+        width=24,
+      ),
+    )
+    .to_equal(
+      (
+        #|x
+        #|    |> (\str ->
+        #|            if a then
+        #|                b
+        #|
+        #|            else
+        #|                c
+        #|       )
       ),
     )
   })

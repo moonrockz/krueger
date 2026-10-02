@@ -32,7 +32,7 @@ fn extension(base : @pretty.Doc, fields : Array[@pretty.Doc]) -> @pretty.Doc {
     @pretty.align(
       @pretty.text("{ ") +
       base +
-      @pretty.nest(4, @pretty.line() + body) +
+      @pretty.tab(4, @pretty.line() + body) +
       @pretty.line() +
       @pretty.text("}"),
     ),
@@ -41,7 +41,8 @@ fn extension(base : @pretty.Doc, fields : Array[@pretty.Doc]) -> @pretty.Doc {
 
 ///|
 /// `label = value` (or `label : value`) inside a record. A value that does
-/// not fit goes on the next line, 4 columns right of the `{`.
+/// not fit goes on the next line, at the next tab stop (a multiple of 4)
+/// right of the indentation of the field.
 fn field(
   label : @pretty.Doc,
   separator : String,
@@ -49,23 +50,33 @@ fn field(
 ) -> @pretty.Doc {
   label +
   @pretty.text(" " + separator) +
-  @pretty.group(@pretty.nest(2, @pretty.line() + value))
+  @pretty.group(@pretty.tab(4, @pretty.line() + value))
 }
 
 ///|
-/// `(d)`; when `d` breaks, the `)` goes on its own line.
+/// `(d)`; when `d` breaks, the `)` goes on its own line in the column of
+/// the `(`, and the lines of `d` are indented from the column after the `(`
+/// (the elm-format form).
 fn parens(d : @pretty.Doc) -> @pretty.Doc {
-  @pretty.group(@pretty.text("(") + d + @pretty.softline() + @pretty.text(")"))
+  @pretty.group(
+    @pretty.align(
+      @pretty.text("(") +
+      @pretty.nest(1, d) +
+      @pretty.softline() +
+      @pretty.text(")"),
+    ),
+  )
 }
 
 ///|
-/// `head a b` on one line, or each item on its own line, indented by 4.
+/// `head a b` on one line, or each item on its own line at the next tab
+/// stop (a multiple of 4), as elm-format indents.
 fn spaced(head : @pretty.Doc, items : Array[@pretty.Doc]) -> @pretty.Doc {
   let mut rest = @pretty.empty()
   for x in items {
     rest = rest + @pretty.line() + x
   }
-  @pretty.group(head + @pretty.nest(4, rest))
+  @pretty.group(head + @pretty.tab(4, rest))
 }
 
 ///|
