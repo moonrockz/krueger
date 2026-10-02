@@ -114,3 +114,29 @@ test "patterns that Elm cannot write raise" {
     .to_equal(Some((InvalidName(Lower, "X"), [{ field: "value", index: 1, }])))
   })
 }
+
+///|
+test "a pattern stays on one line, also when it is wider than the width" {
+  // A broken pattern in a case branch puts `,` in the branch column, which
+  // starts a new branch. elm-format keeps patterns on one line.
+  let pair = n(
+    @ast.Pattern::TuplePattern(
+      [
+        n(@ast.Pattern::ListPattern([pvar("a"), pvar("b")][:])),
+        n(
+          @ast.Pattern::ParenthesizedPattern(
+            n(@ast.Pattern::RecordPattern([n("c"), n("d")][:])),
+          ),
+        ),
+      ][:],
+    ),
+  )
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_pattern(pair, width=5))
+    .to_equal("( [ a, b ], ({ c, d }) )")
+    s
+    .expect(@printer.print_pattern(ctor("Just", [pair]), width=5))
+    .to_equal("Just ( [ a, b ], ({ c, d }) )")
+  })
+}

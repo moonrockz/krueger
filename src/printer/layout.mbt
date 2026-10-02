@@ -67,3 +67,26 @@ fn spaced(head : @pretty.Doc, items : Array[@pretty.Doc]) -> @pretty.Doc {
   }
   @pretty.group(head + @pretty.nest(4, rest))
 }
+
+///|
+/// `[ a, b ]` always on one line: a pattern never breaks (elm-format keeps
+/// patterns on one line, and a broken pattern in a case branch puts `,` in
+/// the branch column). With no items: `[]`.
+fn flat_sequence(
+  open : String,
+  close : String,
+  items : Array[@pretty.Doc],
+) -> @pretty.Doc {
+  guard !items.is_empty() else { return @pretty.text(open + close) }
+  let mut body = @pretty.text(open + " ") + items[0]
+  for i in 1..<items.length() {
+    body = body + @pretty.text(", ") + items[i]
+  }
+  body + @pretty.text(" " + close)
+}
+
+///|
+/// `(d)` always on one line (see `flat_sequence`).
+fn flat_parens(d : @pretty.Doc) -> @pretty.Doc {
+  @pretty.text("(") + d + @pretty.text(")")
+}

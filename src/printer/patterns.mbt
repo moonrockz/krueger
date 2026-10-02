@@ -43,16 +43,16 @@ fn Ctx::pattern_doc(
       guard items.length() >= 2 else {
         raise PrintError(path~, problem=ShortTuple)
       }
-      sequence("(", ")", self.pattern_items(path, level, items))
+      flat_sequence("(", ")", self.pattern_items(path, level, items))
     }
     ListPattern(items) =>
-      sequence("[", "]", self.pattern_items(path, level, items))
+      flat_sequence("[", "]", self.pattern_items(path, level, items))
     RecordPattern(names) => {
       let docs = []
       for i, x in names {
         docs.push(self.lower_name(path.child("value", i), x.value))
       }
-      sequence("{", "}", docs)
+      flat_sequence("{", "}", docs)
     }
     VarPattern(name) => self.lower_name(path, name)
     NamedPattern(name_ref, args) => {
@@ -65,7 +65,7 @@ fn Ctx::pattern_doc(
           self.pattern_doc(path.child("patterns", i), level + 1, a, PatternArg)
       }
       match at {
-        PatternArg => parens(d)
+        PatternArg => flat_parens(d)
         AnyPattern | ConsLeft | AsInner => d
       }
     }
@@ -83,7 +83,7 @@ fn Ctx::pattern_doc(
       d = d + self.pattern_doc(q, level + 1, node, AnyPattern)
       match at {
         AnyPattern => d
-        ConsLeft | AsInner | PatternArg => parens(d)
+        ConsLeft | AsInner | PatternArg => flat_parens(d)
       }
     }
     AsPattern(inner, name) => {
@@ -97,11 +97,13 @@ fn Ctx::pattern_doc(
         self.lower_name(path.child("name", 0), name.value)
       match at {
         AnyPattern => d
-        ConsLeft | AsInner | PatternArg => parens(d)
+        ConsLeft | AsInner | PatternArg => flat_parens(d)
       }
     }
     ParenthesizedPattern(x) =>
-      parens(self.pattern_doc(path.child("value", 0), level + 1, x, AnyPattern))
+      flat_parens(
+        self.pattern_doc(path.child("value", 0), level + 1, x, AnyPattern),
+      )
   }
 }
 
