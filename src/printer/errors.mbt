@@ -49,6 +49,8 @@ pub(all) enum PrintProblem {
   InvalidGlsl
   /// Documentation that does not start with `{-|` and end with `-}`.
   InvalidDocumentation
+  /// Documentation on a function in a `let`; Elm has no doc comments there.
+  LetDocumentation
   /// More than 400 nested printer levels.
   TooDeep
 } derive(Eq, Debug)

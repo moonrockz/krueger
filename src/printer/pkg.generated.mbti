@@ -48,6 +48,7 @@ pub(all) enum PrintProblem {
   UnknownOperator(String)
   InvalidGlsl
   InvalidDocumentation
+  LetDocumentation
   TooDeep
 } derive(Eq, @debug.Debug)
 

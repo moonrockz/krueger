@@ -388,7 +388,9 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - Comments: documentation fields, the module documentation and port doc
   comments (both in `File.comments`) print; regular comments do not yet.
 - An AST that cannot print as valid Elm raises `PrintError(path~,
-  problem~)`. `path` is a `NodePath` from the printed node.
+  problem~)`. `path` is a `NodePath` from the printed node. Elm has no
+  doc comments in a `let`, so documentation on a `let` function raises
+  `LetDocumentation`.
 - Operator symbols (prefix operators, exposed operators, infix
   declarations) must be in the dialect's operator table; Elm 0.19 has no
   user-defined operators. Any other symbol raises `InvalidName(Operator,

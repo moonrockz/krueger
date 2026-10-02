@@ -259,7 +259,8 @@ fn Ctx::expr_plan(
       for i, dn in b.declarations {
         let p = path.child("declarations", i)
         match dn.value {
-          LetFunction(f) => parts.push(self.function_plan(p, level + 1, f))
+          LetFunction(f) =>
+            parts.push(self.function_plan(p, level + 1, f, in_let=true))
           LetDestructuring(pattern, value) =>
             parts.push(
               Plan(

@@ -342,7 +342,7 @@ test "the first problem in print order is reported" {
   }
   @expect.expect_all(s => {
     s.expect(problem(case_)).to_equal(Some(ShortApplication))
-    s.expect(problem(let_)).to_equal(Some(InvalidDocumentation))
+    s.expect(problem(let_)).to_equal(Some(LetDocumentation))
     s.expect(problem(access)).to_equal(Some(ShortApplication))
     s.expect(problem(chain)).to_equal(Some(UnknownOperator("<=>")))
   })
@@ -621,5 +621,39 @@ test "operator symbols must be in the dialect's operator table" {
       .expect(problem_of(() => @printer.print_expression(n(Operator(bad)))))
       .to_equal(Some((InvalidName(Operator, bad), [])))
     }
+  })
+}
+
+///|
+test "documentation on a let function raises LetDocumentation" {
+  let f : @ast.Function = {
+    documentation: Some(n("{-| d -}")),
+    signature: None,
+    declaration: n({ name: n("y"), arguments: [][:], expression: v("x"), }),
+  }
+  let e : @ast.Node[@ast.Expression] = n(
+    LetExpression({
+      declarations: [n(@ast.LetDeclaration::LetFunction(f))][:],
+      expression: v("y"),
+    }),
+  )
+  @expect.expect_all(s => {
+    s
+    .expect(problem_of(() => @printer.print_expression(e)))
+    .to_equal(
+      Some(
+        (
+          LetDocumentation,
+          [
+            { field: "declarations", index: 0, },
+            { field: "documentation", index: 0, },
+          ],
+        ),
+      ),
+    )
+    // The same function prints at the top level.
+    s
+    .expect(@printer.print_declaration(n(FunctionDeclaration(f))))
+    .to_equal("{-| d -}\ny =\n    x")
   })
 }

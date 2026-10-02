@@ -50,19 +50,28 @@ fn Ctx::function_doc(
 
 ///|
 /// The work items of `function_doc`, in the order it checks them: the
-/// documentation, the signature, the name, the arguments, the body.
+/// documentation, the signature, the name, the arguments, the body. Elm has
+/// no doc comments in a `let` (`in_let = true`), so documentation there
+/// raises `LetDocumentation`.
 fn Ctx::function_plan(
   self : Ctx,
   path : @syntax.NodePath,
   level : Int,
   f : @ast.Function,
+  in_let? : Bool = false,
 ) -> Work {
   let parts = []
   let has_doc = f.documentation is Some(_)
   let has_sig = f.signature is Some(_)
   if f.documentation is Some(doc) {
+    let p = path.child("documentation", 0)
     parts.push(
-      Leaf(() => documentation_doc(path.child("documentation", 0), doc.value)),
+      Leaf(() => {
+        if in_let {
+          raise PrintError(path=p, problem=LetDocumentation)
+        }
+        documentation_doc(p, doc.value)
+      }),
     )
   }
   if f.signature is Some(sig) {
