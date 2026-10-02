@@ -31,7 +31,7 @@ The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax outp
 
 ```
 moonrockz/krueger
-├── moon.work             # Workspace: the library (.), the test harness (harness/), the cookbook (docs/cookbook/) and the layout engine (pretty/)
+├── moon.work             # Workspace: the library (.), the test harness (harness/) and the cookbook (docs/cookbook/)
 ├── src/                  # The library (the only published module)
 │   ├── lib.mbt           # Package entry point; re-exports the public types
 │   ├── dialect/          # Dialect: rejection rules, operator table, extension hooks
@@ -44,7 +44,6 @@ moonrockz/krueger
 │   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor, events, NodePath, TreeCursor
 │   ├── lawkit/           # Property-test generators and position/report helpers (public test support)
 │   └── e2e/              # End-to-end tests (test-only)
-├── pretty/               # Workspace module moonrockz/pretty: Wadler-style Doc engine (to be published on its own)
 ├── harness/              # Unpublished module moonrockz/krueger_harness (test-only dependencies)
 │   ├── bdd/              # MoonSpec step definitions for tests/features
 │   ├── bench/            # Benchmarks (mise run bench; smoke check in mise run test)
@@ -398,11 +397,12 @@ and `print_type_annotation`, each with `width?` (default 120) and
   symbol)`.
 - Expression printing uses an explicit work stack, so it is stack-safe on
   all targets. More than 400 nested printer levels raise `TooDeep`.
-- The layout engine is the workspace module `pretty/` (`moonrockz/pretty`):
-  `Doc`, the `Doc` builders (`text`, `verbatim`, `line`, `nest`, `tab`,
-  `align`, `group`, `if_break`, ...) and `render`. It has no Elm
-  knowledge. Krueger cannot publish a release that imports it until
-  `moonrockz/pretty` is on mooncakes.io.
+- The layout engine is the module
+  [`moonrockz/pretty`](https://github.com/moonrockz/pretty) (on
+  mooncakes.io): `Doc`, the `Doc` builders (`text`, `verbatim`, `line`,
+  `nest`, `tab`, `align`, `group`, `if_break`, ...) and `render`. It has
+  no Elm knowledge. Change the engine in its own repository, release it,
+  then bump the import in `moon.mod`.
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
@@ -492,6 +492,7 @@ versioned on mooncakes.io, so keep them on the latest release when you bump the 
 |--------|---------|
 | [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`harness/bdd`, test-only) |
 | [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect) | Fluent test assertions (scripts; new tests) |
+| [moonrockz/pretty](https://mooncakes.io/docs/moonrockz/pretty) | Wadler-style layout engine (`src/printer`) |
 
 Module dependencies are declared in the `import` block of `moon.mod`. Each package lists
 what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"` for
@@ -499,7 +500,8 @@ test-only dependencies.
 
 MoonBit has no module-level test-only dependencies: every module in `moon.mod` is
 downloaded by every user of krueger. So the published module (`moon.mod` at the root)
-depends only on `moonrockz/expect` (used by the library packages' own tests); `expect`
+depends only on `moonrockz/pretty` (the printer's layout engine) and `moonrockz/expect`
+(used by the library packages' own tests); `expect`
 itself imports `moonbitlang/async` and `moonbitlang/x`, so users still download those
 two. Test
 harnesses that need more (`moonspec`, `moonbitlang/async`, `moonbitlang/x`) live in the
