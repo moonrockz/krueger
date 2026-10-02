@@ -87,6 +87,20 @@ test "count expressions" {
 }
 ```
 
+## Print Elm source
+
+```moonbit
+let result = @krueger.parse_module(@krueger.SourceText::new(source))
+guard result.ast is Some(file) else { return }
+let text = @krueger.print_file(file) // elm-format layout, width 120
+```
+
+`print_file` raises `PrintError` when the AST cannot print as valid Elm. The
+error's `path` leads to the bad node.
+
+See [Generate Elm code](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/generate-elm.mbt.md)
+for ASTs built in code.
+
 ## Documentation
 
 - [Cookbook](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/README.md):

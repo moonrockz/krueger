@@ -139,8 +139,52 @@ pub(all) enum DeclarationCst {
 /// ```
 pub(all) struct ModuleCst {
   tokens : Array[@scanner.Token]
+  /// The trivia of a text with no tokens (only whitespace and comments).
+  /// Empty when there are tokens: then all trivia belongs to tokens.
+  trivia : Array[@scanner.Trivia]
   header : ModuleHeaderCst?
   imports : Array[ImportCst]
   declarations : Array[DeclarationCst]
   span : @scanner.Span?
 } derive(Eq, Debug)
+
+///|
+/// The source text of the module: each token's `trivia_before`, `lexeme`
+/// and `trivia_after` in order, or `trivia` when there are no tokens. For a
+/// text that scans, this is the text, byte for byte.
+///
+/// ```mbt check
+/// test {
+///   let text = "module Main exposing (..)\r\n\r\n-- note\r\nx = 1\r\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(text),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   debug_inspect(
+///     result.cst.map(c => c.to_source() == text),
+///     content="Some(true)",
+///   )
+/// }
+/// ```
+pub fn ModuleCst::to_source(self : ModuleCst) -> String {
+  let out = StringBuilder()
+  if self.tokens.is_empty() {
+    write_trivia(out, self.trivia)
+  }
+  for token in self.tokens {
+    write_trivia(out, token.trivia_before)
+    out.write_string(token.lexeme)
+    write_trivia(out, token.trivia_after)
+  }
+  out.to_string()
+}
+
+///|
+fn write_trivia(out : StringBuilder, trivia : Array[@scanner.Trivia]) -> Unit {
+  for t in trivia {
+    match t {
+      Whitespace(text, _) | Newline(text, _) => out.write_string(text)
+      Comment(c) => out.write_string(c.text)
+    }
+  }
+}

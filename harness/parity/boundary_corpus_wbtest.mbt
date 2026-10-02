@@ -155,7 +155,7 @@ fn round_trip_problems(key : String, text : String) -> Array[String] {
 /// parity modes that score.
 test "boundary laws over the corpus" {
   match parity_mode() {
-    None | Some(WriteLock) => ()
+    None | Some(WriteLock) | Some(WritePrinted) => ()
     Some(_) => {
       let problems = []
       let mut files = 0

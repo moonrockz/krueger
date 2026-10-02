@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/pretty"
+
+// Values
+pub fn align(Doc) -> Doc
+
+pub fn concat(Array[Doc]) -> Doc
+
+pub fn empty() -> Doc
+
+pub fn group(Doc) -> Doc
+
+pub fn hardline() -> Doc
+
+pub fn if_break(Doc, Doc) -> Doc
+
+pub fn join(Array[Doc], Doc) -> Doc
+
+pub fn line() -> Doc
+
+pub fn nest(Int, Doc) -> Doc
+
+pub fn render(Doc, width? : Int) -> String
+
+pub fn softline() -> Doc
+
+pub fn tab(Int, Doc) -> Doc
+
+pub fn text(String) -> Doc
+
+pub fn verbatim(String) -> Doc
+
+// Errors
+
+// Types and methods
+type Doc
+pub impl Add for Doc
+
+// Type aliases
+
+// Traits

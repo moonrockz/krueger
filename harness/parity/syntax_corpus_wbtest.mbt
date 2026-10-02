@@ -58,7 +58,7 @@ fn syntax_problems(
 /// The node model over the corpus. Runs in the parity modes that score.
 test "syntax corpus" {
   match parity_mode() {
-    None | Some(WriteLock) => ()
+    None | Some(WriteLock) | Some(WritePrinted) => ()
     Some(_) => {
       let kinds : Map[String, Bool] = Map([])
       for row in @krueger.kind_table() {

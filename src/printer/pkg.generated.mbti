@@ -1,0 +1,58 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonrockz/krueger/printer"
+
+import {
+  "moonbitlang/core/debug",
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/dialect",
+  "moonrockz/krueger/syntax",
+}
+
+// Values
+pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+pub fn print_expression(@ast.Node[@ast.Expression], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+pub fn print_file(@ast.File, width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+
+// Errors
+pub suberror PrintError {
+  PrintError(path~ : @syntax.NodePath, problem~ : PrintProblem)
+} derive(@debug.Debug)
+
+// Types and methods
+pub(all) enum NameKind {
+  Lower
+  Upper
+  Operator
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PrintProblem {
+  InvalidName(NameKind, String)
+  EmptyModuleName
+  NonFiniteFloat(Double)
+  UnrepresentableInt(Int64)
+  NegativePattern
+  ShortApplication
+  ShortTuple
+  NoFields
+  EmptyExposing
+  EmptyCase
+  EmptyLet
+  NoConstructors
+  NoLambdaArguments
+  UnknownOperator(String)
+  InvalidPrecedence(Int)
+  InvalidGlsl
+  InvalidDocumentation
+  LetDocumentation
+  TooDeep
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

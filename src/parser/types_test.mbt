@@ -30,6 +30,7 @@ test "parse result holds an elm-syntax file" {
 ///|
 test "parse result cst uses dedicated cst package module type" {
   let module_cst = @cst.ModuleCst::{
+    trivia: [],
     tokens: [],
     header: None,
     imports: [],

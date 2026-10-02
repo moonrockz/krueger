@@ -41,6 +41,7 @@ test "module cst captures header imports and typed declarations" {
     ],
   }
   let cst = @cst.ModuleCst::{
+    trivia: [],
     tokens: header.tokens + import_node.tokens,
     header: Some(header),
     imports: [import_node],

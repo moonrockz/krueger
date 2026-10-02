@@ -7,10 +7,13 @@
 /// - `ratchet`: score, then write the counts to `tests/corpus/baseline.json`.
 /// - `write-lock`: hash the raw oracle output in `.dev/out/goldens/raw` and
 ///   write `tests/corpus/goldens.lock`.
+/// - `write-printed`: print every corpus file to `.dev/out/printed/` for
+///   `mise run printer:record`.
 priv enum Mode {
   Check
   Ratchet
   WriteLock
+  WritePrinted
 }
 
 ///|
@@ -41,6 +44,7 @@ fn parity_mode() -> Mode? raise {
     Some("check") => Some(Check)
     Some("ratchet") => Some(Ratchet)
     Some("write-lock") => Some(WriteLock)
+    Some("write-printed") => Some(WritePrinted)
     Some(other) => fail("unknown KRUEGER_PARITY_MODE: \{other}")
   }
 }
@@ -299,6 +303,7 @@ test "parity corpus" {
         "parity: skipped (set KRUEGER_PARITY_MODE or run mise run test:parity)",
       )
     Some(WriteLock) => write_lock()
+    Some(WritePrinted) => ()
     Some(mode) => {
       let baseline = read_baseline()
       let (files, default_errors) = score()

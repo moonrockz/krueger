@@ -6,6 +6,7 @@ import {
   "moonrockz/krueger/cst",
   "moonrockz/krueger/dialect",
   "moonrockz/krueger/parser",
+  "moonrockz/krueger/printer",
   "moonrockz/krueger/scanner",
   "moonrockz/krueger/syntax",
 }
@@ -34,6 +35,16 @@ pub fn kind_table() -> Array[(String, String, Array[String])]
 pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult
+
+pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise @printer.PrintError
+
+pub fn print_expression(@ast.Node[@ast.Expression], width? : Int, dialect? : @dialect.Dialect) -> String raise @printer.PrintError
+
+pub fn print_file(@ast.File, width? : Int, dialect? : @dialect.Dialect) -> String raise @printer.PrintError
+
+pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.Dialect) -> String raise @printer.PrintError
+
+pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int, dialect? : @dialect.Dialect) -> String raise @printer.PrintError
 
 pub fn[S : @syntax.EventSource, H : @syntax.Handler] push_events(S, H) -> Unit
 
@@ -146,6 +157,8 @@ pub using @cst {type ModuleHeaderCst}
 
 pub type ModuleName = ArrayView[String]
 
+pub using @printer {type NameKind}
+
 pub using @ast {type Node}
 
 pub using @syntax {type NodePath}
@@ -161,6 +174,10 @@ pub using @syntax {type PathStep}
 pub using @ast {type Pattern}
 
 pub using @scanner {type Position}
+
+pub using @printer {type PrintError}
+
+pub using @printer {type PrintProblem}
 
 pub using @ast {type QualifiedNameRef}
 

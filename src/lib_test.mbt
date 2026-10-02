@@ -88,6 +88,7 @@ test "root package exposes cst contracts" {
     span: node_span,
   }
   let cst = @krueger.ModuleCst::{
+    trivia: [],
     tokens: [],
     header: Some(header),
     imports: [],

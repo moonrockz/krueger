@@ -134,6 +134,20 @@ pub using @dialect {
 }
 
 ///|
+/// Elm source from an AST, in the elm-format layout and fitted to a line
+/// width (default 120).
+pub using @printer {
+  print_file,
+  print_declaration,
+  print_expression,
+  print_pattern,
+  print_type_annotation,
+  type PrintError,
+  type PrintProblem,
+  type NameKind,
+}
+
+///|
 /// The version of krueger, the same as `version` in `moon.mod`.
 ///
 /// ```mbt check

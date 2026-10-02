@@ -61,8 +61,14 @@ let coverage_dir : String = "_build"
 let coverage_prefix : String = "moonbit_coverage_"
 
 ///|
+/// Every library package with tests (the list of `mise run test:unit`), then
+/// the BDD features and the end-to-end tests. Coverage counts every
+/// instrumented package, so a package whose own tests do not run here
+/// counts as uncovered.
 let test_suites : Array[String] = [
-  "src/scanner", "src/parser", "src", "harness/bdd", "src/e2e",
+  "src", "src/dialect", "src/scanner", "src/parser", "src/report", "src/syntax",
+  "src/cst", "src/ast", "src/lawkit", "src/printer", "pretty/src", "harness/bdd",
+  "src/e2e",
 ]
 
 ///|

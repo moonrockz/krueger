@@ -1,0 +1,222 @@
+///|
+import {
+  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/x@0.5.5/sys",
+  "moonbitlang/x@0.5.5/crypto",
+  "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/core/encoding/hex",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
+  "moonrockz/moonspec@0.7.1",
+  "moonrockz/expect@0.6.0",
+}
+
+///|
+/// Record elm-format 0.8.7 verdicts for the printed corpus.
+///
+/// Usage: printer.mbtx record <printed-dir> <lock> [<pending.json>]
+///
+/// For each `.elm` file under `<printed-dir>` (written by
+/// `KRUEGER_PARITY_MODE=write-printed`), the lock holds the file's SHA-256
+/// and whether `elm-format --validate` accepts it (`stable`) or would change
+/// it (`changed`). Any other elm-format exit code, or a directory with no
+/// `.elm` file, stops the script with an error and writes nothing. With
+/// `<pending.json>`, the script also writes the changed files there; use it
+/// only to start or reset the list.
+
+///|
+let usage : String = "Usage: printer.mbtx record <printed-dir> <lock> [<pending.json>]"
+
+///|
+struct Verdict {
+  key : String
+  sha256 : String
+  stable : Bool
+}
+
+///|
+/// The lock file text, entries in the order given.
+fn lock_text(verdicts : Array[Verdict]) -> String {
+  let entries : Map[String, Json] = Map([])
+  for v in verdicts {
+    entries[v.key] = {
+      "sha256": v.sha256.to_json(),
+      "elm_format": (if v.stable { "stable" } else { "changed" }).to_json(),
+    }
+  }
+  Json::object(entries).stringify(indent=2) + "\n"
+}
+
+///|
+/// The pending list text: the keys of the changed files.
+fn pending_text(verdicts : Array[Verdict]) -> String {
+  let keys : Array[Json] = []
+  for v in verdicts {
+    if !v.stable {
+      keys.push(v.key.to_json())
+    }
+  }
+  Json::array(keys).stringify(indent=2) + "\n"
+}
+
+///|
+/// The verdict for an `elm-format --validate` exit code: 0 is stable
+/// (`Some(true)`) and 1 is changed (`Some(false)`). Any other code means
+/// that elm-format did not run or failed (`None`).
+fn validate_verdict(code : Int) -> Bool? {
+  match code {
+    0 => Some(true)
+    1 => Some(false)
+    _ => None
+  }
+}
+
+///|
+fn sha256_hex(text : String) -> String {
+  @hex.encode(Bytes::from_array(@crypto.sha256(@utf8.encode(text))))
+}
+
+///|
+/// Recursively list `.elm` files under `dir`, as paths relative to `dir`, sorted.
+async fn elm_files(dir : String) -> Array[String] {
+  let found = []
+  async fn go(rel : String) -> Unit {
+    let full = if rel == "" { dir } else { "\{dir}/\{rel}" }
+    for entry in @fs.readdir(full, sort=true) {
+      let child = if rel == "" { entry } else { "\{rel}/\{entry}" }
+      match @fs.kind("\{dir}/\{child}") {
+        Directory => go(child)
+        Regular => if child.has_suffix(".elm") { found.push(child) }
+        _ => ()
+      }
+    }
+  }
+  go("")
+  found.sort_by(compare_lexical)
+  found
+}
+
+///|
+/// Compare strings by code unit (`String::compare` compares length first).
+fn compare_lexical(a : String, b : String) -> Int {
+  let n = if a.length() < b.length() { a.length() } else { b.length() }
+  for i in 0..<n {
+    let c = a.code_unit_at(i).compare(b.code_unit_at(i))
+    if c != 0 {
+      return c
+    }
+  }
+  a.length().compare(b.length())
+}
+
+///|
+async fn record(dir : String, lock : String, pending : String?) -> Unit {
+  let verdicts = []
+  let files = elm_files(dir)
+  if files.is_empty() {
+    eprintln(
+      "printer: no .elm file under \{dir}; run mise run corpus:fetch, then mise run printer:record",
+    )
+    @sys.exit(1)
+  }
+  for file in files {
+    let path = "\{dir}/\{file}"
+    let (code, _, err) = @process.collect_output("mise", [
+      "x", "github:avh4/elm-format@0.8.7", "--", "elm-format", "--validate", path,
+    ])
+    guard validate_verdict(code) is Some(stable) else {
+      eprintln(
+        "printer: elm-format exited with code \{code} for \{path}:\n\{err.text()}",
+      )
+      @sys.exit(1)
+    }
+    verdicts.push({
+      key: file,
+      sha256: sha256_hex(@fs.read_file(path).text()),
+      stable,
+    })
+  }
+  @fs.write_file(lock, lock_text(verdicts))
+  let changed = verdicts.filter(v => !v.stable).length()
+  println(
+    "printer: \{verdicts.length() - changed} stable, \{changed} changed; wrote \{lock}",
+  )
+  if pending is Some(p) {
+    @fs.write_file(p, pending_text(verdicts))
+    println("printer: wrote \{p}")
+  }
+}
+
+///|
+async fn main {
+  match @env.args()[1:] {
+    ["record", dir, lock] => record(dir, lock, None)
+    ["record", dir, lock, pending] => record(dir, lock, Some(pending))
+    _ => {
+      eprintln(usage)
+      @sys.exit(2)
+    }
+  }
+}
+
+///|
+/// Scenario state for `features/printer.feature`.
+struct PrinterLockWorld {
+  verdicts : Array[Verdict]
+}
+
+///|
+fn PrinterLockWorld::new() -> PrinterLockWorld {
+  { verdicts: [], }
+}
+
+///|
+impl @moonspec.World for PrinterLockWorld with fn configure(self, setup) {
+  setup.given1("the verdicts:", fn(table : @moonspec.DataTable) {
+    // as_maps() keys each row by the header row.
+    for row in table.as_maps() {
+      self.verdicts.push({
+        key: row.get("key").unwrap_or(""),
+        sha256: row.get("sha256").unwrap_or(""),
+        stable: row.get("stable") == Some("yes"),
+      })
+    }
+  })
+  setup.then1("the lock is:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(lock_text(self.verdicts)).to_equal(doc.content + "\n")
+  })
+  setup.then1("the pending list is:", fn(doc : @moonspec.DocString) raise {
+    @expect.expect(pending_text(self.verdicts)).to_equal(doc.content + "\n")
+  })
+  setup.then1("the elm-format exit codes give:", fn(
+    table : @moonspec.DataTable,
+  ) raise {
+    @expect.expect_all(s => {
+      for row in table.as_maps() {
+        let code = @string.parse_int(row.get("code").unwrap_or(""))
+        let verdict = match validate_verdict(code) {
+          Some(true) => "stable"
+          Some(false) => "changed"
+          None => "error"
+        }
+        s
+        .expect((code, verdict))
+        .to_equal((code, row.get("verdict").unwrap_or("")))
+      }
+    })
+  })
+}
+
+///|
+async test "printer feature" {
+  @moonspec.run_or_fail(
+    PrinterLockWorld::new,
+    @moonspec.RunOptions::new([
+      @moonspec.FeatureSource::File("features/printer.feature"),
+    ]),
+  )
+  |> ignore
+}

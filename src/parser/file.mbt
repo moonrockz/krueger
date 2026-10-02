@@ -504,6 +504,7 @@ pub fn parse_tokens(
     }),
     cst: Some({
       tokens: stream,
+      trivia: tokens.trivia,
       header: cst_header,
       imports: cst_imports,
       declarations: cst_decls,

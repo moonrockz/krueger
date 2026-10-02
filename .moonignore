@@ -1,6 +1,7 @@
 # Kept out of the published package (moon publish); only src/ and the
 # READMEs ship. See AGENTS.md > Library Dependencies.
 harness/
+pretty/
 tests/
 docs/
 scripts/

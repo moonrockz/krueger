@@ -1,0 +1,21 @@
+import {
+  "moonrockz/krueger/ast",
+  "moonrockz/krueger/dialect",
+  "moonrockz/krueger/scanner",
+  "moonrockz/krueger/syntax",
+  "moonrockz/pretty",
+}
+
+import {
+  "moonrockz/expect",
+} for "wbtest"
+
+import {
+  "moonrockz/expect",
+  "moonrockz/krueger/lawkit",
+  "moonrockz/krueger/parser",
+  "moonrockz/krueger/syntax",
+  "moonbitlang/core/json",
+  "moonbitlang/core/quickcheck",
+  "moonbitlang/core/quickcheck/splitmix",
+} for "test"
