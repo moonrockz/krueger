@@ -24,6 +24,8 @@ pub fn render(Doc, width? : Int) -> String
 
 pub fn softline() -> Doc
 
+pub fn tab(Int, Doc) -> Doc
+
 pub fn text(String) -> Doc
 
 pub fn verbatim(String) -> Doc

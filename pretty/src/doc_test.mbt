@@ -91,6 +91,31 @@ test "the fit check looks past the group to the next possible break" {
 }
 
 ///|
+test "tab indents to the next multiple, after align too" {
+  let body = @pretty.text("k") +
+    @pretty.tab(4, @pretty.hardline() + @pretty.text("i")) +
+    @pretty.hardline() +
+    @pretty.text("e")
+  @expect.expect_all(s => {
+    s.expect(@pretty.render(body)).to_equal("k\n    i\ne")
+    s
+    .expect(@pretty.render(@pretty.text("(") + @pretty.align(body)))
+    .to_equal("(k\n    i\n e")
+    s
+    .expect(@pretty.render(@pretty.text("1234") + @pretty.align(body)))
+    .to_equal("1234k\n        i\n    e")
+    s
+    .expect(
+      @pretty.render(
+        @pretty.text("k") +
+        @pretty.nest(3, @pretty.tab(0, @pretty.hardline() + @pretty.text("i"))),
+      ),
+    )
+    .to_equal("k\n   i")
+  })
+}
+
+///|
 test "align indents to the current column" {
   let d = @pretty.text("let ") +
     @pretty.align(@pretty.text("a") + @pretty.hardline() + @pretty.text("b"))

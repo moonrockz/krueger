@@ -19,6 +19,7 @@ priv enum DocNode {
   VerbatimLine // a line break with no indentation
   Nest(Int, Doc)
   Align(Doc)
+  Tab(Int, Doc) // indentation: the next multiple of the Int
   Group(Doc)
   IfBreak(Doc, Doc) // broken, flat
   Concat(Doc, Doc)
@@ -102,6 +103,30 @@ pub fn hardline() -> Doc {
 /// `d` with the indentation of its line breaks increased by `n`.
 pub fn nest(n : Int, d : Doc) -> Doc {
   make(Nest(n, d), d.has_hardline)
+}
+
+///|
+/// `d` with the indentation of its line breaks set to the next multiple of
+/// `n` that is greater than the current indentation (a tab stop). With
+/// `n <= 0` the indentation does not change. Use it after `align` to indent
+/// to a fixed grid: indentation 6 becomes 8, indentation 8 becomes 12.
+///
+/// ```mbt check
+/// test {
+///   let body = @pretty.text("x") +
+///     @pretty.tab(4, @pretty.hardline() + @pretty.text("y"))
+///   inspect(
+///     @pretty.render(@pretty.text("ab") + @pretty.align(body)),
+///     content="abx\n    y",
+///   )
+///   inspect(
+///     @pretty.render(@pretty.text("abcd") + @pretty.align(body)),
+///     content="abcdx\n        y",
+///   )
+/// }
+/// ```
+pub fn tab(n : Int, d : Doc) -> Doc {
+  make(Tab(n, d), d.has_hardline)
 }
 
 ///|

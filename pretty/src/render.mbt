@@ -87,6 +87,8 @@ pub fn render(doc : Doc, width? : Int = 80) -> String {
       VerbatimLine => out.newline(0)
       Nest(n, d) => stack.push({ ..cmd, indent: cmd.indent + n, doc: d, })
       Align(d) => stack.push({ ..cmd, indent: out.column, doc: d, })
+      Tab(n, d) =>
+        stack.push({ ..cmd, indent: next_stop(cmd.indent, n), doc: d, })
       Group(d) =>
         match cmd.mode {
           Flat => stack.push({ ..cmd, doc: d, })
@@ -142,7 +144,7 @@ fn fits(remaining : Int, first : Cmd, rest : Array[Cmd]) -> Bool {
           Break => return true
         }
       HardLine | VerbatimLine => return true
-      Nest(_, d) | Align(d) => pending.push({ ..cmd, doc: d, })
+      Nest(_, d) | Align(d) | Tab(_, d) => pending.push({ ..cmd, doc: d, })
       Group(d) =>
         pending.push({
           ..cmd,
@@ -168,4 +170,14 @@ fn fits(remaining : Int, first : Cmd, rest : Array[Cmd]) -> Bool {
     }
   }
   false
+}
+
+///|
+/// The next multiple of `n` greater than `indent`; `indent` when `n <= 0`.
+fn next_stop(indent : Int, n : Int) -> Int {
+  if n <= 0 {
+    indent
+  } else {
+    (indent / n + 1) * n
+  }
 }

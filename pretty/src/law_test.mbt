@@ -7,6 +7,7 @@ enum Spec {
   SSoft
   SHard
   SNest(Int, Spec)
+  STab(Int, Spec)
   SGroup(Spec)
   SCat(Spec, Spec)
 } derive(Debug)
@@ -27,8 +28,9 @@ fn gen_spec(size : Int, rs : @splitmix.RandomState) -> Spec {
     }
   }
   let s = size / 2
-  match pick(rs, 6) {
+  match pick(rs, 7) {
     0 => SNest(pick(rs, 5), gen_spec(s, rs))
+    6 => STab(pick(rs, 5), gen_spec(s, rs))
     1 | 2 => SGroup(gen_spec(s, rs))
     _ => SCat(gen_spec(s, rs), gen_spec(s, rs))
   }
@@ -64,6 +66,7 @@ fn to_doc(s : Spec) -> @pretty.Doc {
     SSoft => @pretty.softline()
     SHard => @pretty.hardline()
     SNest(n, x) => @pretty.nest(n, to_doc(x))
+    STab(n, x) => @pretty.tab(n, to_doc(x))
     SGroup(x) => @pretty.group(to_doc(x))
     SCat(a, b) => to_doc(a) + to_doc(b)
   }
@@ -73,7 +76,7 @@ fn to_doc(s : Spec) -> @pretty.Doc {
 fn has_hard(s : Spec) -> Bool {
   match s {
     SHard => true
-    SNest(_, x) | SGroup(x) => has_hard(x)
+    SNest(_, x) | STab(_, x) | SGroup(x) => has_hard(x)
     SCat(a, b) => has_hard(a) || has_hard(b)
     _ => false
   }
@@ -85,7 +88,7 @@ fn flat_text(s : Spec) -> String {
     SText(t) => t
     SLine => " "
     SSoft | SHard => ""
-    SNest(_, x) | SGroup(x) => flat_text(x)
+    SNest(_, x) | STab(_, x) | SGroup(x) => flat_text(x)
     SCat(a, b) => flat_text(a) + flat_text(b)
   }
 }
@@ -119,7 +122,7 @@ fn model_fits(left : Int, items : @list.List[Item]) -> Bool {
         SLine => if item.flat { model_fits(left - 1, tail) } else { true }
         SSoft => if item.flat { model_fits(left, tail) } else { true }
         SHard => true
-        SNest(_, x) | SGroup(x) =>
+        SNest(_, x) | STab(_, x) | SGroup(x) =>
           model_fits(left, tail.add({ ..item, spec: x, }))
         SCat(a, b) =>
           model_fits(
@@ -153,6 +156,17 @@ fn model_render(spec : Spec, width : Int) -> String {
       }
       SNest(n, x) =>
         items = items.add({ ..item, indent: item.indent + n, spec: x, })
+      STab(n, x) => {
+        // Written apart from the engine's `next_stop`: count up to the stop.
+        let mut stop = item.indent
+        if n > 0 {
+          stop += 1
+          while stop % n != 0 {
+            stop += 1
+          }
+        }
+        items = items.add({ ..item, indent: stop, spec: x, })
+      }
       SGroup(x) => {
         let flat = item.flat ||
           (

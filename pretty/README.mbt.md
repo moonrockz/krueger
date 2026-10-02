@@ -24,6 +24,7 @@ let doc = @pretty.group(
 | `hardline()` | always a line break | |
 | `nest(n, d)` | `d` | `d`, indented by `n` more |
 | `align(d)` | `d` | `d`, indented to its start column |
+| `tab(n, d)` | `d` | `d`, indented to the next multiple of `n` |
 | `group(d)` | flat if it fits | else broken |
 | `if_break(b, f)` | `f` | `b` |
 
