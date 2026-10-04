@@ -44,9 +44,12 @@ fn SourceFacts::from_tokens(tokens : Array[@scanner.Token]) -> SourceFacts {
 ///
 /// - `ElmFormat`: as elm-format 0.8.7: a construct is multi-line when the
 ///   source has a line break where elm-format looks, or when a part of it
-///   is multi-line. There is no line width.
+///   is multi-line. There is no line width. Literals keep the form of
+///   their source text: a triple-quoted string stays triple-quoted, and a
+///   float with an exponent keeps one (`1E3` gives `1.0e3`).
 /// - `Width(n)`: a construct is multi-line when it does not fit in `n`
-///   columns (the layout of `print_file`).
+///   columns (the layout of `print_file`). Literals print from their
+///   value.
 pub(all) enum Layout {
   ElmFormat
   Width(Int)

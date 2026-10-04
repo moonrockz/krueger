@@ -38,16 +38,19 @@ fn Ctx::pattern_body(
     UnitPattern =>
       @pretty.text("(") + self.inner_alone(p.range) + @pretty.text(")")
     CharPattern(c) => @pretty.text(char_literal(c))
-    StringPattern(s) => @pretty.text(string_literal(s))
+    StringPattern(s) => self.string_doc(p.range, s)
     IntPattern(v) => {
       guard v >= 0L else { raise PrintError(path~, problem=NegativePattern) }
-      @pretty.text(v.to_string())
+      @pretty.text(self.integer_text(p.range, v))
     }
     HexPattern(v) => {
       guard v >= 0L else { raise PrintError(path~, problem=NegativePattern) }
-      @pretty.text(hex_text(v))
+      @pretty.text(self.hex_literal_text(p.range, v))
     }
     FloatPattern(x) => {
+      if self.float_lexeme_text(p.range, x) is Some(text) {
+        return @pretty.text(text)
+      }
       guard !x.is_nan() && !x.is_inf() else {
         raise PrintError(path~, problem=NonFiniteFloat(x))
       }

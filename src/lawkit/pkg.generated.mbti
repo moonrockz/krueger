@@ -30,6 +30,8 @@ pub fn excerpt_lines(String) -> Array[(Int, String)]
 
 pub fn line_count(String) -> Int
 
+pub fn literal_edge_chars() -> Array[String]
+
 pub fn literal_forms() -> Array[(String, String)]
 
 pub fn nested(Construct, Int) -> String

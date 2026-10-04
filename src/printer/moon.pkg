@@ -14,6 +14,7 @@ import {
   "moonrockz/krueger/parser",
   "moonbitlang/core/quickcheck",
   "moonbitlang/core/quickcheck/splitmix",
+  "moonbitlang/core/string",
 } for "wbtest"
 
 import {

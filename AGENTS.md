@@ -391,6 +391,17 @@ and `print_type_annotation`, each with `width?` (default 120) and
   arguments, negations, record access targets) and keeps the ones in the
   AST. For a parsed AST, `print_file` then `parse_module` gives
   `normalize_file(ast)` without ranges and regular comments.
+- Literals: a string or char literal escapes `\n`, `\t`, `\\`, its quote
+  and, as `\u{XXXX}`, every character that elm-format 0.8.7 escapes
+  (Haskell's `isPrint` is false or `isSpace` is true, except the space).
+  The table is `src/printer/unicode_table.mbt`, generated from Unicode
+  14.0.0 (the version of elm-format's GHC) by `mise run
+  unicode:generate`. Hex digits are upper case, padded to 2, 4, 8 or 16
+  digits. In the `ElmFormat` layout `format` reads each literal's lexeme:
+  a triple-quoted string stays triple-quoted, a float keeps its form
+  (`1.0e3` or `1000.0`, Haskell `showEFloat` and `showFFloat`), and an
+  integer keeps its digits. Without source, and in the `Width` layout,
+  literals print from their value.
 - Comments: documentation fields, the module documentation and port doc
   comments (both in `File.comments`) print; regular comments do not yet.
 - An AST that cannot print as valid Elm raises `PrintError(path~,
@@ -413,8 +424,8 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 283 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 80 files
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 285 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 78 files
   that elm-format still changes; many of them differ in the text of doc
   comments (bd `krueger-3u6`). Each pending file has a bd issue, and the
   list only shrinks: a fix removes entries, and the check fails when a
@@ -470,7 +481,7 @@ extension data for Elm-like languages:
 - Names follow Unicode: a lower-case name starts with a lower-case letter, an upper-case
   name with an upper-case or title-case letter, and later characters are letters,
   numbers or `_`. The table is `src/scanner/unicode_table.mbt`, generated from
-  UnicodeData.txt by `mise run unicode:generate`.
+  UnicodeData.txt (15.1.0) by `mise run unicode:generate`.
 - A number too big to store exactly is accepted with warning `KR-PARSE-009` (integers
   become `Int64` max, floats infinity).
   Both built-in dialects reject what both oracles reject; a rule that only one oracle
@@ -681,7 +692,8 @@ inputs.
   `DocAttributes` (doc-comment attributes with Unicode names and values,
   continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
   `Ranges`, and `units` (a string of UTF-16 units, for lone surrogates). Edge
-  lists: `edge_chars()` and `literal_forms()`. Position helpers:
+  lists: `edge_chars()`, `literal_forms()` and `literal_edge_chars()`
+  (the characters at the edges of literal escapes). Position helpers:
   `at_or_before`, `contains`, `within`, `range_edges`, `edge_positions`,
   `end_of_text`, `offset_of` (row/column to UTF-16 offset), `position_of` and
   `positions_of` (the inverse, for one offset or for sorted offsets in one
@@ -786,7 +798,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `corpus:manifest`   | Rebuild `tests/corpus/manifest.json` from `packages.txt` |
 | `corpus:goldens`    | Regenerate elm-syntax goldens and `goldens.lock` (needs Elm and Node) |
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
-| `unicode:generate`  | Regenerate the Unicode identifier table from UnicodeData.txt |
+| `unicode:generate`  | Regenerate the Unicode identifier table and the printer's literal table from UnicodeData.txt |
 | `printer:record`    | Print the corpus and record elm-format verdicts in `tests/printer/elm_format.lock` |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
 | `test:bench`        | Run every benchmark case once on small input (smoke check) |

@@ -289,9 +289,12 @@ fn Ctx::expr_plan(
     PrefixOperator(symbol) =>
       done(@pretty.text("(" + self.operator_symbol(path, symbol) + ")"))
     Operator(symbol) => done(@pretty.text(self.operator_symbol(path, symbol)))
-    Integer(x) => done(number_doc(path, x, n => n.to_string()))
-    Hex(x) => done(number_doc(path, x, hex_text))
+    Integer(x) => done(number_doc(path, x, n => self.integer_text(e.range, n)))
+    Hex(x) => done(number_doc(path, x, n => self.hex_literal_text(e.range, n)))
     Floatable(x) => {
+      if self.float_lexeme_text(e.range, x) is Some(text) {
+        return done(@pretty.text(text))
+      }
       guard !x.is_nan() && !x.is_inf() else {
         raise PrintError(path~, problem=NonFiniteFloat(x))
       }
@@ -306,7 +309,7 @@ fn Ctx::expr_plan(
         [Expr(path.child("negation", 0), level + 1, x, Negated)],
         docs => @pretty.text("-") + docs[0],
       )
-    Literal(s) => done(@pretty.text(string_literal(s)))
+    Literal(s) => done(self.string_doc(e.range, s))
     CharLiteral(c) => done(@pretty.text(char_literal(c)))
     TupledExpression(items) => {
       guard items.length() >= 2 else {

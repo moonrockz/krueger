@@ -20,3 +20,24 @@ Feature: Unicode identifier table
     And the inner ranges are "0041-0042, 0061-0062, 01C5-01C5, 0660-0660, 2081-2081, 3400-4DBF"
     And the title-case ranges are "01C5-01C5"
     And the non-ASCII number ranges are "0660-0660, 2081-2081"
+
+  Scenario: Characters that a printed literal writes as they are
+    elm-format 0.8.7 escapes a character when Haskell's isPrint is false
+    (Cc, Cf, Cs, Co, Zl, Zp and unassigned code points) or isSpace is true
+    (Zs), except the space U+0020.
+    Given the Unicode data:
+      """
+      0009;<control>;Cc;0;S;;;;;N;CHARACTER TABULATION;;;;
+      0020;SPACE;Zs;0;WS;;;;;N;;;;;
+      0021;EXCLAMATION MARK;Po;0;ON;;;;;N;;;;;
+      0041;LATIN CAPITAL LETTER A;Lu;0;L;;;;;N;;;;0061;
+      00A0;NO-BREAK SPACE;Zs;0;CS;<noBreak> 0020;;;;N;NON-BREAKING SPACE;;;;
+      00A1;INVERTED EXCLAMATION MARK;Po;0;ON;;;;;N;;;;;
+      06DD;ARABIC END OF AYAH;Cf;0;AN;;;;;N;;;;;
+      2028;LINE SEPARATOR;Zl;0;WS;;;;;N;;;;;
+      3400;<CJK Ideograph Extension A, First>;Lo;0;L;;;;;N;;;;;
+      4DBF;<CJK Ideograph Extension A, Last>;Lo;0;L;;;;;N;;;;;
+      E000;<Private Use, First>;Co;0;L;;;;;N;;;;;
+      F8FF;<Private Use, Last>;Co;0;L;;;;;N;;;;;
+      """
+    Then the literal plain ranges are "0020-0021, 0041-0041, 00A1-00A1, 3400-4DBF"

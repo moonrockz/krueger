@@ -52,8 +52,8 @@
     "elm_format": "stable"
   },
   "cuducos/elm-format-number@9.0.1/src/FormatNumber/Locales.elm": {
-    "sha256": "d096275dab0470909e1cf710290638294f539e2227281cf65dfb061643531d71",
-    "elm_format": "changed"
+    "sha256": "366530840d168c5d66f5076f4842ff74a881b6dd6079a1a9e72509b956b09823",
+    "elm_format": "stable"
   },
   "cuducos/elm-format-number@9.0.1/src/FormatNumber/Parser.elm": {
     "sha256": "5ba37d0f889d9df8adb90854a52840cccc25c9159bd6d052c5a8f39d8827bb43",
@@ -76,8 +76,8 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/GithubSlugs.elm": {
-    "sha256": "173db3524f6c9ec7b45ab74ec9c8a883dc9259d7edcd2d8edbb8b1de19d326c5",
-    "elm_format": "changed"
+    "sha256": "43a5c40d06c2d049ca9ee5c8cade05961773c72367d2b4a98b21ed6813bae799",
+    "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Helpers.elm": {
     "sha256": "955ac15f943391422b655f246e4bbce4a19977787940ae6d4b6b4af65801c22e",
@@ -124,7 +124,7 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/InlineParser.elm": {
-    "sha256": "6cc516dfa23bdc613c811bfc620469872855a7ce49bf98487328810365c69ef6",
+    "sha256": "ab68ef960f9f6c02ed1542ded7d23eb5afc84b847fadc0f4e921a3d31e6fbf0a",
     "elm_format": "changed"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/LinkReferenceDefinition.elm": {
@@ -788,7 +788,7 @@
     "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Input.elm": {
-    "sha256": "8984ae5da581fc218cc3575a63264ed71a0e056af3d6b1e1e6299d13e3728c3f",
+    "sha256": "e7474a1711465f045d685b1a47451613a305d298bba77ed1ab1b4ce2232048d4",
     "elm_format": "changed"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Keyed.elm": {

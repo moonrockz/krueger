@@ -1,8 +1,6 @@
 [
   "chain-partners/elm-bignum@1.0.1/src/Decimal.elm",
   "cmditch/elm-bigint@1.0.1/src/BigInt.elm",
-  "cuducos/elm-format-number@9.0.1/src/FormatNumber/Locales.elm",
-  "dillonkearns/elm-markdown@7.0.1/src/GithubSlugs.elm",
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/InlineParser.elm",
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/TableParser.elm",
   "dosarf/elm-tree-view@3.0.0/src/Tree.elm",
