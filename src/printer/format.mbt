@@ -14,7 +14,7 @@ pub suberror FormatError {
 /// (`layout=Width(n)`). Comments stay in place. Raises `ParseFailed` when
 /// the source has a syntax error in `dialect`.
 ///
-/// ```mbt nocheck
+/// ```mbt check
 /// test {
 ///   let source = "module A exposing (a)\n\na = f x\n  y\n"
 ///   inspect(

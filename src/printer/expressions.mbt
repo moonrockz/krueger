@@ -103,7 +103,8 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         let (items, combine) = self.expr_plan(path, level, e)
         let wrap = (d : @pretty.Doc) => lead + d + self.trailing(e.range)
         if needs_parens(e.value, at) {
-          push_plan(items, docs => wrap(parens(Fit, combine(docs))))
+          let split = self.join()
+          push_plan(items, docs => wrap(parens(split, combine(docs))))
         } else {
           push_plan(items, docs => wrap(combine(docs)))
         }
@@ -193,16 +194,26 @@ fn Ctx::setter_items(
 ///|
 /// The setter docs from `docs[from]` on, four per setter (see
 /// `Ctx::setter_items`), and the comments before each.
-fn setter_docs(
+fn Ctx::setter_docs(
+  self : Ctx,
+  setters : ArrayView[@ast.Node[@ast.RecordSetter]],
   docs : Array[@pretty.Doc],
   from : Int,
 ) -> (Array[@pretty.Doc], Array[@pretty.Doc]) {
   let fields = []
   let leads = []
-  for i = from; i + 3 < docs.length(); i = i + 4 {
+  for k, s in setters {
+    let i = from + 4 * k
     leads.push(docs[i])
+    // elm-format Parse/Common.hs pair (`checkMultiline`): a line break
+    // anywhere from the label to the end of the value puts the value on
+    // the next line.
+    let split = self.split_within({
+      start: s.value.field.range.start,
+      end: s.value.expression.range.end,
+    })
     fields.push(
-      field(Fit, docs[i + 1], @pretty.empty(), docs[i + 2]) + docs[i + 3],
+      field(split, docs[i + 1], @pretty.empty(), docs[i + 2]) + docs[i + 3],
     )
   }
   (fields, leads)
@@ -255,7 +266,20 @@ fn Ctx::expr_plan(
           Expr(path.child("application", i), level + 1, items[i], ExprArg),
         )
       }
-      (parts, docs => spaced(Fit, docs[0], docs[1:].to_owned()))
+      // elm-format Parse/Expression.hs appExpr: `FASplitFirst` when the
+      // source has a line break in the function or in or before the first
+      // argument; `FAJoinFirst SplitAll` when it has one in or before a
+      // later argument.
+      let first = self.split_within({
+        start: items[0].range.start,
+        end: items[1].range.end,
+      })
+      let rest = if items.length() > 2 {
+        self.split_from({ start: items[2].range.start, end: e.range.end, })
+      } else {
+        first
+      }
+      (parts, docs => application(first, rest, docs[0], docs[1:].to_owned()))
     }
     OperatorApplication(_, _, _, _) => self.chain_plan(path, level, e)
     FunctionOrValue(module_, name) =>
@@ -291,14 +315,25 @@ fn Ctx::expr_plan(
         self.sequence_items(path, "tupled", level, items),
         docs => {
           let (items, leads) = item_docs(docs)
-          sequence(Fit, "(", ")", items, leads~, inner=self.inner(e.range))
+          // elm-format Parse/Helpers.hs surround (`parens`): a line break
+          // anywhere inside the parentheses.
+          sequence(
+            self.split_within(e.range),
+            "(",
+            ")",
+            items,
+            leads~,
+            inner=self.inner(e.range),
+          )
         },
       )
     }
     ParenthesizedExpression(x) =>
       (
         [Expr(path.child("parenthesized", 0), level + 1, x, AnyExpr)],
-        docs => parens(Fit, docs[0], inner=self.inner(e.range)),
+        // elm-format Box.hs `Parens` has no source rule: the parentheses
+        // break only when the expression in them is multi-line.
+        docs => parens(self.join(), docs[0], inner=self.inner(e.range)),
       )
     LetExpression(b) => {
       guard !b.declarations.is_empty() else {
@@ -428,13 +463,20 @@ fn Ctx::expr_plan(
           Expr(p.child("expression", 0), level + 1, c.expression, AnyExpr),
         )
       }
+      // elm-format Parse/Expression.hs caseExpr (`trackNewline` around the
+      // padded subject): a line break after `case`, in the subject or
+      // before `of`. The range ends at the first pattern, after `of`.
+      let subject_split = self.split_from({
+        start: b.expression.range.start,
+        end: b.cases[0].pattern.range.start,
+      })
       (
         parts,
         docs => {
           let head = @pretty.group(
             @pretty.text("case") +
-            @pretty.tab(4, @pretty.line() + docs[0]) +
-            @pretty.line() +
+            @pretty.tab(4, split_line(subject_split) + docs[0]) +
+            split_line(subject_split) +
             @pretty.text("of"),
           )
           let mut branches = @pretty.empty()
@@ -483,6 +525,7 @@ fn Ctx::expr_plan(
       parts.push(
         Expr(path.child("expression", 0), level + 1, l.expression, AnyExpr),
       )
+      let split = self.split_within(e.range)
       (
         parts,
         docs => {
@@ -492,8 +535,11 @@ fn Ctx::expr_plan(
             head = head + docs[i]
           }
           // The body indents to the next tab stop right of the `\\`.
+          // elm-format Parse/Expression.hs lambdaExpr (`trackNewline`): a
+          // line break anywhere in the lambda puts the body on the next
+          // line.
           @pretty.align(
-            head + @pretty.group(@pretty.tab(4, @pretty.line() + docs[last])),
+            head + @pretty.group(@pretty.tab(4, split_line(split) + docs[last])),
           )
         },
       )
@@ -502,13 +548,15 @@ fn Ctx::expr_plan(
       (
         self.setter_items(path, "record", level, setters),
         docs => {
-          let (fields, leads) = setter_docs(docs, 0)
+          let (fields, leads) = self.setter_docs(setters, docs, 0)
           let inner = if setters.is_empty() {
             self.inner_alone(e.range, brace=true)
           } else {
             self.inner(e.range, last=last_range(setters))
           }
-          sequence(Fit, "{", "}", fields, leads~, inner~)
+          // elm-format Parse/Expression.hs recordTerm (`checkMultiline`):
+          // a line break anywhere inside the braces.
+          sequence(self.split_within(e.range), "{", "}", fields, leads~, inner~)
         },
       )
     ListExpr(items) =>
@@ -516,8 +564,10 @@ fn Ctx::expr_plan(
         self.sequence_items(path, "list", level, items),
         docs => {
           let (items, leads) = item_docs(docs)
+          // elm-format Parse/Expression.hs listTerm (`checkMultiline`): a
+          // line break anywhere inside the brackets.
           sequence(
-            Fit,
+            self.split_within(e.range),
             "[",
             "]",
             items,
@@ -584,9 +634,10 @@ fn Ctx::expr_plan(
       (
         parts,
         docs => {
-          let (fields, leads) = setter_docs(docs, 1)
+          let (fields, leads) = self.setter_docs(setters, docs, 1)
+          // elm-format Parse/Expression.hs recordTerm (`checkMultiline`).
           extension(
-            Fit,
+            self.split_within(e.range),
             docs[0],
             fields,
             leads~,
@@ -838,11 +889,27 @@ fn Ctx::chain_plan(
     }
   }
   let last = operands.length() - 1
+  // elm-format Parse/Binop.hs binops (`trackNewline`): a line break
+  // anywhere in the chain puts every operator on its own line.
+  let split = self.split_within(e.range)
+  // `format_binary` groups the comments around an operator with it.
+  let gap = if split is Fit { @pretty.text(" ") } else { @pretty.line() }
   let parts = []
   let line_after = []
   // An operand with comments after its operator: elm-format aligns it
   // after the operator (`|| -- a\n   b`).
-  let aligned = []
+  let aligned = Array::make(operands.length(), false)
+  // The comments that trail an operand on its row go with the next
+  // operator: before it or after it, as elm-format parses them
+  // (`BinopsClause`). Taken before the operand prints its own.
+  let moved_before : Array[Array[@ast.Node[String]]] = Array::makei(
+    operands.length(),
+    _ => [],
+  )
+  let moved_after : Array[Array[@ast.Node[String]]] = Array::makei(
+    operands.length(),
+    _ => [],
+  )
   for k, operand in operands {
     let (p, node, wrapped) = operand
     let before = opens[k]
@@ -858,27 +925,55 @@ fn Ctx::chain_plan(
     let before_operator = (c : @ast.Node[String]) => {
       k == 0 || ends_before(c, operator)
     }
-    aligned.push(
-      ranges
+    let trails = [node.range, ..after]
+    let next_operator = match operands.get(k + 1) {
+      Some((_, n, _)) => self.token_before(n.range.start)
+      None => None
+    }
+    if ranges
       .iter()
-      .any(r => self.has_comment(Leading, r, c => !before_operator(c))),
-    )
+      .any(r => self.has_comment(Leading, r, c => !before_operator(c))) {
+      aligned[k] = true
+    }
+    if k < last &&
+      trails
+      .iter()
+      .any(r => {
+        self.has_comment(Trailing, r, c => !ends_before(c, next_operator))
+      }) {
+      aligned[k + 1] = true
+    }
     parts.push(
       Leaf(() => {
-        let cs = []
+        if k < last {
+          for r in trails {
+            for c in self.take(Trailing, r) {
+              if ends_before(c, next_operator) {
+                moved_before[k + 1].push(c)
+              } else {
+                moved_after[k + 1].push(c)
+              }
+            }
+          }
+        }
+        let cs = [..moved_before[k]]
         for r in ranges {
           cs.append(self.take_if(Leading, r, before_operator))
         }
-        comments_before(cs, node.range.start)
+        if k == 0 {
+          comments_before(cs, node.range.start)
+        } else {
+          comments_joined(cs, gap)
+        }
       }),
     )
     parts.push(
       Leaf(() => {
-        let cs = []
+        let cs = [..moved_after[k]]
         for r in ranges {
           cs.append(self.take(Leading, r))
         }
-        comments_before(cs, node.range.start)
+        comments_joined(cs, gap)
       }),
     )
     parts.push(
@@ -910,11 +1005,18 @@ fn Ctx::chain_plan(
       for i = 0; i + 3 < docs.length(); i = i + 4 {
         leads.push(docs[i])
         let d = docs[i + 1] + docs[i + 2]
-        operand_docs.push(
-          (if aligned[i / 4] { @pretty.align(d) } else { d }) + docs[i + 3],
-        )
+        let d = match (aligned[i / 4], split) {
+          (false, _) => d
+          (true, Fit) => @pretty.align(d)
+          (true, _) => @pretty.align(@pretty.group(d))
+        }
+        operand_docs.push(d + docs[i + 3])
       }
-      @pretty.group(binary_doc(operand_docs, leads, symbols, line_after))
+      match split {
+        Fit =>
+          @pretty.group(binary_doc(operand_docs, leads, symbols, line_after))
+        Join | Split => format_binary(split, operand_docs, leads, symbols)
+      }
     },
   )
 }
@@ -971,6 +1073,50 @@ fn binary_doc(
     }
   }
   result
+}
+
+///|
+/// A chain in the elm-format 0.8.7 layout of its `formatBinary` for the
+/// `ElmFormat` layout. elm-format folds the chain from the left: with
+/// `Join`, an operator goes on a new line (at the next tab stop) when its
+/// operand or an operand before it in its segment is multi-line; with
+/// `Split`, every operator does. An operand that follows its operator on
+/// the line keeps its later lines right of the operator (elm-format
+/// `spaceSepOrPrefix`). A `<|` ends its segment: it goes on the line of the
+/// segment, or on its own line when the segment is multi-line
+/// (`spaceSepOrStack`); the rest of the chain is a new chain, on the line
+/// or at the next tab stop (`forceableSpaceSepOrIndented`). `leads` are as
+/// for `binary_doc`.
+fn format_binary(
+  split : Split,
+  docs : Array[@pretty.Doc],
+  leads : Array[@pretty.Doc],
+  symbols : Array[String],
+) -> @pretty.Doc {
+  // The segments ended by `<|`, each with its `<|`.
+  let piped = []
+  let mut acc = leads[0] + docs[0]
+  for i, s in symbols {
+    if s == "<|" {
+      piped.push(@pretty.group(acc + @pretty.line() + @pretty.text("<|")))
+      acc = @pretty.group(leads[i + 1] + docs[i + 1])
+    } else {
+      acc = @pretty.group(
+        acc +
+        @pretty.tab(
+          4,
+          split_line(split) +
+          @pretty.group(
+            leads[i + 1] + @pretty.text(s + " ") + @pretty.align(docs[i + 1]),
+          ),
+        ),
+      )
+    }
+  }
+  for k = piped.length() - 1; k >= 0; k = k - 1 {
+    acc = @pretty.group(piped[k] + @pretty.tab(4, split_line(split) + acc))
+  }
+  acc
 }
 
 ///|

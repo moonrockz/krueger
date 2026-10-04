@@ -106,6 +106,36 @@ fn spaced(
 }
 
 ///|
+/// `head a b c` as elm-format lays out an application
+/// (`ElmStructure.application`). `first` is `Split` for `FASplitFirst`:
+/// each argument on its own line. `rest` is `Split` for
+/// `FAJoinFirst SplitAll`: the first argument on the line, the others on
+/// their own lines. With `Join` for both (`FAJoinFirst JoinAll`), the first
+/// argument leaves the line only when the head or it is multi-line, and the
+/// others leave it when one of them is multi-line. With `Fit`, this is
+/// `spaced`. `args` is not empty.
+fn application(
+  first : Split,
+  rest : Split,
+  head : @pretty.Doc,
+  args : Array[@pretty.Doc],
+) -> @pretty.Doc {
+  match first {
+    Fit | Split => spaced(first, head, args)
+    Join => {
+      let mut tail = @pretty.empty()
+      for i in 1..<args.length() {
+        tail = tail + split_line(rest) + args[i]
+      }
+      @pretty.group(
+        @pretty.group(head + @pretty.tab(4, @pretty.line() + args[0])) +
+        @pretty.tab(4, tail),
+      )
+    }
+  }
+}
+
+///|
 /// `[ a, b ]` always on one line: a pattern never breaks (elm-format keeps
 /// patterns on one line, and a broken pattern in a case branch puts `,` in
 /// the branch column). With no items: `[]`. `inner` comes before the

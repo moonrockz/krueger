@@ -106,6 +106,25 @@ fn comments_before(
 }
 
 ///|
+/// Comments before the text after them, joined as elm-format joins them
+/// (`spaceSepOrStack`): a block comment is followed by `gap`, a line
+/// comment by a line break. With `gap = line()` in a group that holds the
+/// text, the block comments go on lines of their own when the text is
+/// multi-line.
+fn comments_joined(
+  cs : Array[@ast.Node[String]],
+  gap : @pretty.Doc,
+) -> @pretty.Doc {
+  let mut d = @pretty.empty()
+  for c in cs {
+    d = d +
+      comment_doc(c) +
+      (if is_line_comment(c) { @pretty.hardline() } else { gap })
+  }
+  d
+}
+
+///|
 /// Comments after a node on its last line: ` {- a -} -- b`.
 fn comments_after(cs : Array[@ast.Node[String]]) -> @pretty.Doc {
   let mut d = @pretty.empty()

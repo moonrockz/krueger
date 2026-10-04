@@ -40,7 +40,7 @@ test "split_if gives Fit for Width and Join without source" {
   let width = Ctx::new(@dialect.Dialect::elm_0_19_1(), layout=Width(80))
   let bare = Ctx::new(@dialect.Dialect::elm_0_19_1(), layout=ElmFormat)
   @expect.expect_all(s => {
-    s.expect(width.split_if(() => true)).to_equal(Fit)
-    s.expect(bare.split_if(() => true)).to_equal(Join)
+    s.expect(width.split_if(() => true) is Fit).to_be_true()
+    s.expect(bare.split_if(() => true) is Join).to_be_true()
   })
 }

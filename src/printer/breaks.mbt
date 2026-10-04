@@ -69,7 +69,7 @@ priv enum Split {
   /// Multi-line (`ElmFormat`, the source has a break where elm-format
   /// looks).
   Split
-} derive(Eq, Debug)
+}
 
 ///|
 /// `Fit` for `Width`; for `ElmFormat`, `Split` when there is source and
@@ -87,8 +87,21 @@ fn Ctx::split_within(self : Ctx, range : @ast.Range) -> Split {
 }
 
 ///|
-fn Ctx::split_before(self : Ctx, loc : @ast.Location) -> Split {
-  self.split_if(() => self.source.unwrap().break_before(loc))
+/// `Split` when the gap before `range` or a gap inside it has a line break:
+/// elm-format's `trackNewline` around the whitespace before a part and the
+/// part itself.
+fn Ctx::split_from(self : Ctx, range : @ast.Range) -> Split {
+  self.split_if(() => {
+    let facts = self.source.unwrap()
+    facts.break_before(range.start) || facts.break_within(range)
+  })
+}
+
+///|
+/// `Fit` for `Width`, `Join` for `ElmFormat`: for a construct that
+/// elm-format makes multi-line only when a part of it is multi-line.
+fn Ctx::join(self : Ctx) -> Split {
+  self.split_if(() => false)
 }
 
 ///|
