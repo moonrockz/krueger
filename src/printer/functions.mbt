@@ -24,18 +24,22 @@ fn Ctx::signature_doc(
     s.name.range,
     self.lower_name(path.child("name", 0), s.name.value),
   )
+  let chain = self.arrow_chain(
+    path.child("typeAnnotation", 0),
+    level + 1,
+    s.type_annotation,
+  )
+  // elm-format ElmStructure.definition ":" False: the type goes on the
+  // next line when it is multi-line; its arrows break on their own
+  // (`Ctx::arrow_chain`).
+  let chain = match self.layout {
+    Width(_) => chain
+    ElmFormat => @pretty.group(chain)
+  }
   @pretty.group(
     name +
     self.separator(s.name.range, " :", moved) +
-    @pretty.nest(
-      4,
-      @pretty.line() +
-      self.arrow_chain(
-        path.child("typeAnnotation", 0),
-        level + 1,
-        s.type_annotation,
-      ),
-    ),
+    @pretty.nest(4, @pretty.line() + chain),
   )
 }
 

@@ -186,8 +186,10 @@ fn Ctx::declaration_doc(
           lead +
           @pretty.text(if i == 0 { "= " } else { "| " }) +
           after_bar +
+          // elm-format Box.hs `Datatype`: the arguments go on their own
+          // lines when one of them is multi-line.
           spaced(
-            Fit,
+            self.join(),
             self.with_comments(
               name.range,
               upper_name(p.child("name", 0), name.value),
@@ -322,6 +324,7 @@ fn Ctx::exposing_list(
   self : Ctx,
   path : @syntax.NodePath,
   e : @ast.Node[@ast.Exposing],
+  split : Split,
 ) -> (@pretty.Doc, @pretty.Doc) raise PrintError {
   match e.value {
     All(_) => {
@@ -351,7 +354,7 @@ fn Ctx::exposing_list(
         let previous = if i > 0 { Some(items[i - 1].range) } else { None }
         if i > 0 {
           docs = docs +
-            @pretty.softline() +
+            split_softline(split) +
             self.before_item(None, x.range) +
             @pretty.text(", ")
         }
@@ -369,7 +372,7 @@ fn Ctx::exposing_list(
         @pretty.if_break(@pretty.text(" "), @pretty.empty()) +
         docs +
         self.inner(e.range) +
-        @pretty.softline() +
+        split_softline(split) +
         @pretty.text(")"),
       )
     }
@@ -396,7 +399,19 @@ fn Ctx::exposing_doc(
   } else {
     Some(@pretty.nest(4, comment_block(cs, before=true, after=true)))
   }
-  let (before_paren, items) = self.exposing_list(path, e)
+  // elm-format Parse/Module.hs listing (`trackNewline` inside the
+  // parentheses) and Box.hs formatImport: after an import, a line break in
+  // the list puts each item on its own line. The module header's list
+  // keeps its layout (its groups come from `@docs`).
+  let split = match (e.value, import_) {
+    (Explicit(items), true) =>
+      match self.token_before(items[0].range.start) {
+        Some(paren) => self.split_within({ start: paren, end: e.range.end, })
+        None => self.join()
+      }
+    _ => self.join()
+  }
+  let (before_paren, items) = self.exposing_list(path, e, split)
   match e.value {
     All(_) =>
       lead.unwrap_or(self.after(previous, " ")) +
@@ -598,6 +613,7 @@ fn Ctx::module_doc(
       let (before_paren, list) = self.exposing_list(
         path.child("exposingList", 0),
         e,
+        self.join(),
       )
       head +
       @pretty.group(
