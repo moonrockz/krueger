@@ -293,14 +293,20 @@ fn indentation(line : String) -> Int {
 }
 
 ///|
-/// The fence that `text` opens (three or more `` ` `` or `~`), if any.
+/// The fence that `text` opens (three or more `` ` `` or `~`), if any: the
+/// run of fence characters, without the info string after it.
 fn fence_start(text : String) -> String? {
-  let n = if text.has_prefix("```") {
-    indentation(text.replace_all(old="`", new=" "))
+  let mark = if text.has_prefix("```") {
+    '`'
   } else if text.has_prefix("~~~") {
-    indentation(text.replace_all(old="~", new=" "))
+    '~'
   } else {
     return None
+  }
+  let mut n = 0
+  for c in text {
+    guard c == mark else { break }
+    n += 1
   }
   Some(text.view(end_offset=n).to_owned())
 }
@@ -399,6 +405,8 @@ fn docs_lines(doc : String) -> Array[Array[String]] {
     let indent = indentation(line)
     let text = line.view(start_offset=indent).to_owned().trim_end().to_owned()
     if block is Fenced(fence) {
+      // Cheapskate closes a fence with any line that starts with it, also
+      // with text after it (CommonMark allows only spaces).
       if indent < 4 && text.has_prefix(fence) {
         block = Top
       }

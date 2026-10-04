@@ -252,7 +252,30 @@ test "@docs: indented lines, continuation lines and fenced code" {
     #|a =
     #|    1
     #|
-  @expect.expect(@printer.format(source)).to_equal(expected)
+  // Fences with an info string after a space, and a closing fence with
+  // text after it: elm-format (Cheapskate) closes a fence with any line
+  // that starts with it. The headers are elm-format's output; the doc
+  // text stays as it is.
+  let fenced = (doc : String) => {
+    "module A exposing (a, b, c, x, y, z)\n\n{-| Doc\n\n\{doc}\n-}\n\n\na =\n    1\n"
+  }
+  let header = "module A exposing\n    ( b\n    , c\n    , a, x, y, z\n    )\n\n"
+  @expect.expect_all(s => {
+    s.expect(@printer.format(source)).to_equal(expected)
+    for
+      doc in [
+        "~~~ elm\n@docs x\n~~~\n\n@docs b\n@docs c\n", "``` elm\n@docs x\n```\n\n@docs b\n@docs c\n",
+      ] {
+      let text = fenced(doc)
+      let rest = text.view(start_offset=text.find("{-|").unwrap()).to_owned()
+      s.expect(@printer.format(text)).to_equal(header + rest)
+    }
+    let text = "module A exposing (a, b, c)\n\n{-| Doc\n\n```\n@docs a\n```x\n@docs b\n```\n\n@docs c\n\n-}\n\n\na =\n    1\n"
+    let rest = text.view(start_offset=text.find("{-|").unwrap()).to_owned()
+    s
+    .expect(@printer.format(text))
+    .to_equal("module A exposing\n    ( b\n    , a, c\n    )\n\n" + rest)
+  })
 }
 
 ///|
@@ -594,7 +617,27 @@ test "imports: other comments of merged imports are kept" {
       ),
     )
     .to_equal(
-      "module A exposing (a)\n\nimport B as {- c -} D\n\n\na =\n    1\n",
+      "module A exposing (a)\n\n{- c -}\n\nimport B as D\n\n\na =\n    1\n",
+    )
+    // elm-format drops `{- c -}` with the replaced alias `C`.
+    s
+    .expect(
+      @printer.format(
+        "module A exposing (a)\n\nimport B as {- c -} C exposing (x)\nimport B as D\n\n\na =\n    1\n",
+      ),
+    )
+    .to_equal(
+      "module A exposing (a)\n\n{- c -}\n\nimport B as D exposing (x)\n\n\na =\n    1\n",
+    )
+    // elm-format output: the alias stays, and so does its comment.
+    s
+    .expect(
+      @printer.format(
+        "module A exposing (a)\n\nimport B as {- c -} C\nimport B exposing (x)\n\n\na =\n    1\n",
+      ),
+    )
+    .to_equal(
+      "module A exposing (a)\n\nimport B as {- c -} C exposing (x)\n\n\na =\n    1\n",
     )
   })
 }

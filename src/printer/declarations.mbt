@@ -1022,6 +1022,14 @@ fn Ctx::file_doc(
         }),
       )
     }
+    // The comments after `as` of an alias that a later import replaces.
+    // `Ctx::import_doc` would print them after the new alias.
+    let replaced = match
+      (sources[0].value.module_alias, imp.value.module_alias) {
+      (Some(old), Some(new)) if old.range != new.range =>
+        self.after_token(sources[0].value.module_name.range)
+      _ => []
+    }
     // When `(..)` replaces the lists, their comments stay for the sweep
     // below.
     let mut split = self.join()
@@ -1046,6 +1054,7 @@ fn Ctx::file_doc(
     )
     // The comments of the nodes that the merge removed (an alias, a
     // module name) go before the imports.
+    import_comments.append(replaced)
     if sources.length() > 1 ||
       (
         sources[0].value.module_alias is Some(_) &&
