@@ -94,6 +94,11 @@ pub fn ElmAst::file(Self) -> @ast.File
 pub impl @quickcheck.Arbitrary for ElmAst
 pub impl @shrink.Shrink for ElmAst
 
+pub(all) struct ElmHeader(String) derive(@debug.Debug)
+pub fn ElmHeader::text(Self) -> String
+pub impl @quickcheck.Arbitrary for ElmHeader
+pub impl @shrink.Shrink for ElmHeader
+
 pub(all) struct ElmModule(String) derive(@debug.Debug)
 pub fn ElmModule::text(Self) -> String
 pub impl @quickcheck.Arbitrary for ElmModule
