@@ -121,6 +121,7 @@ fn Ctx::record_fields(
       },
     )
     let lead = self.after_comma(previous, f.range)
+    let moved = self.after_token(name.range)
     let label = self.with_comments(
       name.range,
       self.lower_name(p.child("name", 0), name.value),
@@ -135,7 +136,7 @@ fn Ctx::record_fields(
     )
     docs.push(
       lead +
-      field(Fit, label, self.after(name.range, " :"), value) +
+      field(Fit, label, self.separator(name.range, " :", moved), value) +
       comments_after(value_trail) +
       self.trailing_before_comma(f.range, fields.get(i + 1).map(n => n.range)),
     )
@@ -159,12 +160,22 @@ fn Ctx::arrow_chain(
   let mut d = @pretty.empty()
   let mut first = true
   let mut lead = @pretty.empty()
+  // The comments after a `->` that trail the type before it.
+  let mut moved = @pretty.empty()
   while node.value is FunctionTypeAnnotation(left, right) {
+    let after_arrow = moved
+    moved = comments_after(self.after_token(left.range))
     let l = self.type_doc(p.child("left", 0), level + 1, left, ArrowLeft)
     d = if first {
       l
     } else {
-      d + @pretty.line() + lead + @pretty.text("-> ") + l
+      d +
+      @pretty.line() +
+      lead +
+      @pretty.text("->") +
+      after_arrow +
+      @pretty.text(" ") +
+      l
     }
     first = false
     p = p.child("right", 0)
@@ -185,7 +196,9 @@ fn Ctx::arrow_chain(
     d +
     @pretty.line() +
     lead +
-    @pretty.text("-> ") +
+    @pretty.text("->") +
+    moved +
+    @pretty.text(" ") +
     last +
     self.trailing(t.range)
   }

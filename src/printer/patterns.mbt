@@ -111,9 +111,11 @@ fn Ctx::pattern_body(
         if node.range != p.range {
           d = d + self.leading(node.range)
         }
+        let moved = self.after_token(left.range)
         d = d +
           self.pattern_doc(q.child("left", 0), level + 1, left, ConsLeft) +
-          self.after(left.range, " :: ")
+          self.separator(left.range, " ::", moved) +
+          @pretty.text(" ")
         q = q.child("right", 0)
         node = right
       }
@@ -124,13 +126,15 @@ fn Ctx::pattern_body(
       }
     }
     AsPattern(inner, name) => {
+      let moved = self.after_token(inner.range)
       let d = self.pattern_doc(
           path.child("pattern", 0),
           level + 1,
           inner,
           AsInner,
         ) +
-        self.after(inner.range, " as ") +
+        self.separator(inner.range, " as", moved) +
+        @pretty.text(" ") +
         self.with_comments(
           name.range,
           self.lower_name(path.child("name", 0), name.value),

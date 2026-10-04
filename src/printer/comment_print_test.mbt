@@ -581,6 +581,139 @@ test "elm-format: infix declaration with comments" {
 }
 
 ///|
+test "elm-format output is stable: effect module: a comment on its own line after a where field" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let formatted =
+    #|effect module Task
+    #|    where
+    #|        { command =
+    #|            MyCmd
+    #|            -- c
+    #|        , subscription = MySub
+    #|        }
+    #|    exposing
+    #|    (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(formatted, dialect~)).to_equal(formatted)
+}
+
+///|
+test "elm-format output is stable: effect module: a line comment after the last where field" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|effect module Time where { subscription = MySub -- c
+    #| } exposing (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  let formatted =
+    #|effect module Time
+    #|    where
+    #|        { subscription =
+    #|            MySub
+    #|            -- c
+    #|        }
+    #|    exposing
+    #|    (..)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect_all(s => {
+    s.expect(@printer.format(source, dialect~)).to_equal(formatted)
+    s.expect(@printer.format(formatted, dialect~)).to_equal(formatted)
+  })
+}
+
+///|
+test "elm-format output is stable: effect module: a comment in the record with a long exposing list" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let formatted =
+    #|effect module Task
+    #|    where
+    #|        { command =
+    #|            MyCmd
+    #|            -- c
+    #|        }
+    #|    exposing
+    #|    (Task, andThen, attempt, fail, map, map2, map3, map4, map5, mapError, onError, perform, sequence, succeed)
+    #|
+    #|
+    #|a =
+    #|    1
+    #|
+  @expect.expect(@printer.format(formatted, dialect~)).to_equal(formatted)
+}
+
+///|
+test "elm-format output is stable: infix: a line comment after the operator" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source =
+    #|module Basics exposing ((|>))
+    #|
+    #|
+    #|infix left 0 (|>) -- a
+    #| = apR
+    #|
+  let formatted =
+    #|module Basics exposing ((|>))
+    #|
+    #|
+    #|infix
+    #|    left
+    #|    0
+    #|    (|>)
+    #|    -- a
+    #|    =
+    #|    apR
+    #|
+  @expect.expect_all(s => {
+    s.expect(@printer.format(source, dialect~)).to_equal(formatted)
+    s.expect(@printer.format(formatted, dialect~)).to_equal(formatted)
+  })
+}
+
+///|
+test "elm-format output is stable: infix: block comments stay on one line" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let formatted =
+    #|module Basics exposing ((|>))
+    #|
+    #|
+    #|infix left  0 {- a -} (|>) {- b -} = {- c -} apR
+    #|
+  @expect.expect(@printer.format(formatted, dialect~)).to_equal(formatted)
+}
+
+///|
+test "elm-format output is stable: a block comment after a separator stays after it" {
+  let formatted =
+    #|port module A exposing (..)
+    #|
+    #|import B.C {- c1 -} as {- c2 -} D exposing (x, y)
+    #|
+    #|
+    #|port p {- c3 -} : {- c4 -} Int {- c5 -} -> {- c6 -} Cmd msg
+    #|
+    #|
+    #|type alias T a b =
+    #|    { x {- c7 -} : {- c8 -} a, y : b }
+    #|
+    #|
+    #|f ( a {- c9 -} :: {- c10 -} b, c {- c11 -} as {- c12 -} d ) =
+    #|    a
+    #|
+  @expect.expect(@printer.format(formatted)).to_equal(formatted)
+}
+
+///|
 test "law: format prints every regular comment once, in source order" {
   @quickcheck.check(
     (m : @lawkit.Commented) => {

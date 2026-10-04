@@ -174,9 +174,10 @@ fn Ctx::setter_items(
       Leaf(() => {
         let label = self.lower_name(p.child("field", 0), name.value)
         value_trail.append(self.take(Trailing, value.range))
+        let moved = self.after_token(name.range)
         self.after_comma(previous, s.range) +
         self.with_comments(name.range, label) +
-        self.after(name.range, " =")
+        self.separator(name.range, " =", moved)
       }),
     )
     items.push(Expr(p.child("expression", 0), level + 1, value, AnyExpr))
@@ -322,6 +323,7 @@ fn Ctx::expr_plan(
               Plan(
                 [
                   Leaf(() => {
+                    let moved = self.after_token(pattern.range)
                     // Elm reads a destructuring pattern as a term: `(Wrap w) =`.
                     self.pattern_doc(
                       p.child("pattern", 0),
@@ -329,7 +331,7 @@ fn Ctx::expr_plan(
                       pattern,
                       PatternArg,
                     ) +
-                    self.after(pattern.range, " =")
+                    self.separator(pattern.range, " =", moved)
                   }),
                   Expr(p.child("expression", 0), level + 1, value, AnyExpr),
                 ],
@@ -409,6 +411,7 @@ fn Ctx::expr_plan(
         parts.push(Leaf(() => self.moved_then_leading(previous, case_range(c))))
         parts.push(
           Leaf(() => {
+            let moved = self.after_token(c.pattern.range)
             @pretty.nest(
               4,
               self.pattern_doc(
@@ -417,7 +420,7 @@ fn Ctx::expr_plan(
                 c.pattern,
                 AnyPattern,
               ) +
-              self.after(c.pattern.range, " ->"),
+              self.separator(c.pattern.range, " ->", moved),
             )
           }),
         )
@@ -460,10 +463,19 @@ fn Ctx::expr_plan(
         let p = path.child("patterns", i)
         parts.push(
           Leaf(() => {
+            let moved = if i == last { self.after_token(a.range) } else { [] }
             @pretty.nest(
               4,
               self.pattern_doc(p, level + 1, a, PatternArg) +
-              self.after(a.range, if i == last { " ->" } else { " " }),
+              self.separator(
+                a.range,
+                if i == last {
+                  " ->"
+                } else {
+                  " "
+                },
+                moved,
+              ),
             )
           }),
         )

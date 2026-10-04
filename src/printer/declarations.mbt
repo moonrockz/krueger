@@ -123,10 +123,12 @@ fn Ctx::declaration_doc(
   check_level(path, level)
   match d.value {
     FunctionDeclaration(f) => self.function_doc(path, level, f)
-    AliasDeclaration(a) =>
+    AliasDeclaration(a) => {
+      let last = head_end(a.name, a.generics)
+      let moved = self.after_token(last)
       self.declaration_start(path, a.documentation, a.name.range) +
       self.type_head(path, "type alias", a.name, a.generics) +
-      self.after(head_end(a.name, a.generics), " =") +
+      self.separator(last, " =", moved) +
       @pretty.nest(
         4,
         @pretty.hardline() +
@@ -137,6 +139,7 @@ fn Ctx::declaration_doc(
           AnyType,
         ),
       )
+    }
     CustomTypeDeclaration(t) => {
       guard !t.constructors.is_empty() else {
         raise PrintError(path~, problem=NoConstructors)
@@ -222,28 +225,33 @@ fn Ctx::declaration_doc(
         path.child("function", 0),
         i.function.value,
       )
-      let before_operator = self.take(Leading, i.operator.range)
-      // The comments after the `=` go before the function.
-      let (after_operator, after_equals) = self.trailing_split(i.operator.range)
+      let operator = i.operator.range
+      let before_operator = self.take(Leading, operator)
+      // The comments after the operator: before the `=` they follow the
+      // operator, after it they go before the function.
+      let (after_operator, after_equals) = self.trailing_split(operator)
+      let equals = self.token_before(i.function.range.start)
+      after_operator.append(
+        self.take_if(Leading, i.function.range, c => ends_before(c, equals)),
+      )
       let before_function = [
         ..after_equals,
         ..self.take(Leading, i.function.range),
       ]
-      if before_operator.is_empty() &&
-        after_operator.is_empty() &&
-        before_function.is_empty() {
-        @pretty.text(
-          "infix " +
-          direction +
-          " " +
-          precedence.to_string() +
-          " (" +
-          symbol +
-          ") = ",
-        ) +
+      let breaks = before_operator.iter().any(c => ends_line(c, operator.start)) ||
+        after_operator.iter().any(c => off_line(c, operator)) ||
+        before_function.iter().any(c => ends_line(c, i.function.range.start))
+      if !breaks {
+        @pretty.text("infix " + direction + " " + precedence.to_string() + " ") +
+        comments_before(before_operator, operator.start) +
+        @pretty.text("(" + symbol + ")") +
+        comments_after(after_operator) +
+        @pretty.text(" = ") +
+        comments_before(before_function, i.function.range.start) +
         function
       } else {
-        // With comments, elm-format puts each part on its own line.
+        // A comment that ends its line: elm-format puts each part on its
+        // own line.
         @pretty.text("infix") +
         @pretty.nest(
           4,
@@ -263,7 +271,8 @@ fn Ctx::declaration_doc(
         )
       }
     }
-    Destructuring(pattern, value) =>
+    Destructuring(pattern, value) => {
+      let moved = self.after_token(pattern.range)
       // As in a let: a destructuring pattern is a term.
       @pretty.nest(
         4,
@@ -273,13 +282,14 @@ fn Ctx::declaration_doc(
           pattern,
           PatternArg,
         ) +
-        self.after(pattern.range, " ="),
+        self.separator(pattern.range, " =", moved),
       ) +
       @pretty.nest(
         4,
         @pretty.hardline() +
         self.expr_doc(path.child("expression", 0), level + 1, value, AnyExpr),
       )
+    }
   }
 }
 
@@ -314,11 +324,20 @@ fn Ctx::exposing_list(
   e : @ast.Node[@ast.Exposing],
 ) -> (@pretty.Doc, @pretty.Doc) raise PrintError {
   match e.value {
-    All(_) =>
+    All(_) => {
+      // `(..)` has no children: its comments before the `(` are inner too.
+      let paren = self.token_back_to(e.range.end, "(", 3)
+      let before_paren = self.take_if(Inner, e.range, c => ends_before(c, paren))
+      let gap = if before_paren.iter().any(is_line_comment) {
+        @pretty.nest(4, @pretty.hardline())
+      } else {
+        @pretty.empty()
+      }
       (
-        @pretty.empty(),
+        comments_after(before_paren) + gap,
         @pretty.text("(") + self.inner_alone(e.range) + @pretty.text("..)"),
       )
+    }
     Explicit(items) => {
       guard !items.is_empty() else {
         raise PrintError(path~, problem=EmptyExposing)
@@ -381,7 +400,9 @@ fn Ctx::exposing_doc(
   match e.value {
     All(_) =>
       lead.unwrap_or(self.after(previous, " ")) +
-      @pretty.text("exposing ") +
+      @pretty.text("exposing") +
+      before_paren +
+      @pretty.text(" ") +
       items
     Explicit(_) => {
       let list = @pretty.text("exposing") +
@@ -390,7 +411,14 @@ fn Ctx::exposing_doc(
       match (lead, import_) {
         (Some(l), true) => l + @pretty.group(@pretty.nest(4, list))
         (Some(l), false) => l + @pretty.group(list)
-        (None, true) => @pretty.group(@pretty.nest(4, @pretty.line() + list))
+        (None, true) =>
+          if self.line_comment_after(previous) {
+            // Nothing may follow the line comment on its line.
+            @pretty.nest(4, @pretty.hardline()) +
+            @pretty.group(@pretty.nest(4, list))
+          } else {
+            @pretty.group(@pretty.nest(4, @pretty.line() + list))
+          }
         (None, false) => @pretty.group(self.after(previous, " ") + list)
       }
     }
@@ -398,25 +426,25 @@ fn Ctx::exposing_doc(
 }
 
 ///|
-/// `command = MyCmd` in the `where` record of an effect module, after the
-/// comments `carried` from before it. A line comment after the name puts
-/// the name and its comments on lines of their own (elm-format). Also gives
-/// whether a comment of the field ends its line, and the comments after the
-/// `,` or `}` that follows it.
-fn Ctx::effect_field(
-  self : Ctx,
+/// `command = MyCmd` in the `where` record of an effect module, with the
+/// comments `before` it (after its `{` or `,`) and `after` its name (before
+/// the next `,` or `}`). A comment after the name that needs its own line
+/// puts the name and its comments on lines of their own (elm-format). Also
+/// gives whether a comment of the field ends its line. `label_at` is the
+/// start of the label (`command`), the text after the comments before it.
+fn effect_field(
   path : @syntax.NodePath,
   label : String,
+  label_at : @ast.Location,
   name : @ast.Node[String],
-  carried : Array[@ast.Node[String]],
-) -> (@pretty.Doc, Bool, Array[@ast.Node[String]]) raise PrintError {
+  before : Array[@ast.Node[String]],
+  after : Array[@ast.Node[String]],
+) -> (@pretty.Doc, Bool) raise PrintError {
   guard is_upper(name.value) else {
     raise PrintError(path~, problem=InvalidName(Upper, name.value))
   }
-  let before = [..carried, ..self.take(Leading, name.range)]
-  let (after, moved) = self.trailing_split(name.range)
-  let breaks = after.iter().any(is_line_comment)
-  let value = if breaks {
+  let own_lines = after.iter().any(c => off_line(c, name.range))
+  let value = if own_lines {
     @pretty.tab(
       4,
       @pretty.hardline() +
@@ -427,11 +455,8 @@ fn Ctx::effect_field(
     @pretty.text(" " + name.value) + comments_after(after)
   }
   (
-    comments_before(before, name.range.start) +
-    @pretty.text(label + " =") +
-    value,
-    breaks || before.iter().any(c => ends_line(c, name.range.start)),
-    moved,
+    comments_before(before, label_at) + @pretty.text(label + " =") + value,
+    own_lines || comments_break(before, label_at),
   )
 }
 
@@ -500,24 +525,49 @@ fn Ctx::module_doc(
       before_where.append(
         self.take_if(Leading, first.range, c => ends_before(c, brace)),
       )
+      // Each field gets the comments after its `{` or `,`, and the comments
+      // after its name up to the next `,` or `}`; the comments after the
+      // `}` go before `exposing`.
+      let e = d.exposing_list
       let fields = []
       let mut breaks = false
-      let mut carried = carried
-      for x in names {
+      let mut before = [..carried, ..self.take(Leading, first.range)]
+      let mut before_exposing = []
+      for k, x in names {
         let (label, n) = x
-        let (field, field_breaks, moved) = self.effect_field(
+        let (after, moved) = self.trailing_split(n.range)
+        let next_before = match names.get(k + 1) {
+          Some((_, m)) => {
+            let comma = self.token_back_to(m.range.start, ",", 3)
+            after.append(
+              self.take_if(Leading, m.range, c => ends_before(c, comma)),
+            )
+            [..moved, ..self.take(Leading, m.range)]
+          }
+          None => {
+            let close = self.token_before(e.range.start)
+            after.append(
+              self.take_if(Leading, e.range, c => ends_before(c, close)),
+            )
+            before_exposing = [..moved, ..self.take(Leading, e.range)]
+            []
+          }
+        }
+        let label_at = self
+          .token_back_to(n.range.start, label, 2)
+          .unwrap_or(n.range.start)
+        let (field, field_breaks) = effect_field(
           path.child(label, 0),
           label,
+          label_at,
           n,
-          carried,
+          before,
+          after,
         )
         fields.push(field)
         breaks = breaks || field_breaks
-        carried = moved
+        before = next_before
       }
-      // The comments after the `}` go before `exposing`.
-      let e = d.exposing_list
-      let before_exposing = [..carried, ..self.take(Leading, e.range)]
       let name_breaks = after_name.iter().any(is_line_comment)
       if !name_breaks &&
         before_where.is_empty() &&
@@ -576,6 +626,12 @@ fn Ctx::import_doc(
   i : @ast.Node[@ast.Import],
 ) -> @pretty.Doc raise PrintError {
   let name = i.value.module_name
+  // The comments after `as` (taken before the name's own comments).
+  let moved = if i.value.module_alias is Some(_) {
+    self.after_token(name.range)
+  } else {
+    []
+  }
   let mut d = @pretty.text("import") +
     self.space_before(None, name.range, 4).0 +
     self.with_comments(
@@ -591,7 +647,7 @@ fn Ctx::import_doc(
       raise PrintError(path=p, problem=InvalidName(Upper, alias_name))
     }
     d = d +
-      self.after(previous, " as") +
+      self.separator(previous, " as", moved) +
       self.space_before(None, a.range, 4).0 +
       self.with_comments(a.range, @pretty.text(alias_name))
     previous = a.range

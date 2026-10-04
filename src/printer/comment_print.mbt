@@ -53,6 +53,14 @@ fn ends_line(c : @ast.Node[String], next : @ast.Location) -> Bool {
 }
 
 ///|
+/// Whether comment `c`, after the node at `r`, needs a line before it or
+/// after it: it is a line comment, or it starts on a later row than the
+/// node ends.
+fn off_line(c : @ast.Node[String], r : @ast.Range) -> Bool {
+  is_line_comment(c) || c.range.start.row > r.end.row
+}
+
+///|
 /// Comments each on its own line, joined by line breaks. With `before`, a
 /// line break comes first; with `after`, one comes last. Nothing when there
 /// are no comments.
@@ -65,6 +73,18 @@ fn comment_block(
   (if before { @pretty.hardline() } else { @pretty.empty() }) +
   @pretty.join(cs.map(comment_doc), @pretty.hardline()) +
   (if after { @pretty.hardline() } else { @pretty.empty() })
+}
+
+///|
+/// Whether `comments_before(cs, next)` has a line break.
+fn comments_break(cs : Array[@ast.Node[String]], next : @ast.Location) -> Bool {
+  for i, c in cs {
+    let after = if i + 1 < cs.length() { cs[i + 1].range.start } else { next }
+    if ends_line(c, after) {
+      return true
+    }
+  }
+  false
 }
 
 ///|
@@ -382,4 +402,31 @@ fn Ctx::trailing_split(
     next is None || ends_before(c, next)
   })
   (before, self.take(Trailing, r))
+}
+
+///|
+/// The block comments that trail the node at `r` but come after the next
+/// token, a separator such as `:`, `=`, `->` or `as` (elm-format keeps
+/// them after it: `x {- a -} : {- b -} Int`). Take them before the node's
+/// own trailing comments, and print them after the separator with
+/// `Ctx::separator`. Line comments stay before the separator (see
+/// `Ctx::after`).
+fn Ctx::after_token(self : Ctx, r : @ast.Range) -> Array[@ast.Node[String]] {
+  guard self.token_after(r.end) is Some(next) else { return [] }
+  self.take_if(Trailing, r, c => {
+    !is_line_comment(c) && !ends_before(c, Some(next))
+  })
+}
+
+///|
+/// The separator `s` (such as ` :`) after the node at `r` (see
+/// `Ctx::after`), then the comments `moved` after it (see
+/// `Ctx::after_token`).
+fn Ctx::separator(
+  self : Ctx,
+  r : @ast.Range,
+  s : String,
+  moved : Array[@ast.Node[String]],
+) -> @pretty.Doc {
+  self.after(r, s) + comments_after(moved)
 }

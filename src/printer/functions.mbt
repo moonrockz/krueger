@@ -19,13 +19,14 @@ fn Ctx::signature_doc(
   level : Int,
   s : @ast.Signature,
 ) -> @pretty.Doc raise PrintError {
+  let moved = self.after_token(s.name.range)
   let name = self.with_comments(
     s.name.range,
     self.lower_name(path.child("name", 0), s.name.value),
   )
   @pretty.group(
     name +
-    self.after(s.name.range, " :") +
+    self.separator(s.name.range, " :", moved) +
     @pretty.nest(
       4,
       @pretty.line() +
@@ -122,20 +123,35 @@ fn Ctx::function_plan(
   kinds.push(Main)
   parts.push(
     Leaf(() => {
+      let moved = if args.is_empty() {
+        self.after_token(name.range)
+      } else {
+        []
+      }
       self.with_comments(
         name.range,
         self.lower_name(p.child("name", 0), name.value),
       ) +
-      self.after(name.range, if args.is_empty() { " =" } else { " " })
+      self.separator(
+        name.range,
+        if args.is_empty() {
+          " ="
+        } else {
+          " "
+        },
+        moved,
+      )
     }),
   )
   for i, a in args {
     parts.push(
       Leaf(() => {
+        let last = i + 1 == args.length()
+        let moved = if last { self.after_token(a.range) } else { [] }
         @pretty.nest(
           4,
           self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg) +
-          self.after(a.range, if i + 1 == args.length() { " =" } else { " " }),
+          self.separator(a.range, if last { " =" } else { " " }, moved),
         )
       }),
     )
