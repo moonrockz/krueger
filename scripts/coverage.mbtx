@@ -67,7 +67,8 @@ let coverage_prefix : String = "moonbit_coverage_"
 /// counts as uncovered.
 let test_suites : Array[String] = [
   "src", "src/dialect", "src/scanner", "src/parser", "src/report", "src/syntax",
-  "src/cst", "src/ast", "src/lawkit", "src/printer", "harness/bdd", "src/e2e",
+  "src/cst", "src/ast", "src/lawkit", "src/printer", "src/markdown", "harness/bdd",
+  "src/e2e",
 ]
 
 ///|

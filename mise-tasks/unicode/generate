@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Regenerate the lexer's Unicode identifier table (src/scanner/unicode_table.mbt) and the printer's literal table (src/printer/unicode_table.mbt)"
+#MISE description="Regenerate the lexer's Unicode identifier table (src/scanner/unicode_table.mbt), the printer's literal table (src/printer/unicode_table.mbt) and the Markdown character classes (src/markdown/unicode_table.mbt)"
 set -euo pipefail
 
 fetch() {
@@ -21,3 +21,5 @@ version=14.0.0
 data=$(fetch "$version")
 moon run -q --target wasm scripts/unicode_table.mbtx -- --literals "$data" "$version" src/printer/unicode_table.mbt
 moon fmt src/printer/unicode_table.mbt
+moon run -q --target wasm scripts/unicode_table.mbtx -- --markdown "$data" "$version" src/markdown/unicode_table.mbt
+moon fmt src/markdown/unicode_table.mbt

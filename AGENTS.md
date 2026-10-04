@@ -22,6 +22,7 @@ This module (`moonrockz/krueger`) is a **parser and parsing utilities** library 
 - **AST** — an exact mirror of [stil4m/elm-syntax](https://package.elm-lang.org/packages/stil4m/elm-syntax/7.3.9/) 7.3.9, with a JSON encoder and decoder that match elm-syntax byte for byte
 - **CST** — every token and top-level declaration, with trivia (whitespace and comments)
 - **Printer** — Elm source from the AST (elm-format 0.8.7 layout, width fit at 120, minimal parentheses) and from the CST (lossless, `ModuleCst::to_source`)
+- **Markdown** — doc-comment Markdown formatted as elm-format 0.8.7 does (`format_doc`)
 - **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.), planned
 
 The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax output
@@ -41,6 +42,7 @@ moonrockz/krueger
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
 │   ├── printer/          # AST to Elm source: elm-format shapes, parentheses, PrintError
+│   ├── markdown/         # Doc-comment Markdown as elm-format writes it (format_doc, on cmark)
 │   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor, events, NodePath, TreeCursor
 │   ├── lawkit/           # Property-test generators and position/report helpers (public test support)
 │   └── e2e/              # End-to-end tests (test-only)
@@ -454,6 +456,31 @@ and `print_type_annotation`, each with `width?` (default 120) and
   reset the list: `mise run printer:record tests/printer/pending.json`. Use
   that only to start or reset the list.
 
+### Markdown
+
+`src/markdown` (`format_doc`) formats the Markdown of a doc comment as
+elm-format 0.8.7 does (`ElmFormat/Render/Markdown.hs`). It has no Elm
+knowledge: the caller gives a `format_code` callback for Elm code blocks.
+
+- cmark (`moonbit-community/cmark`, strict CommonMark, with locations)
+  gives the blocks. elm-format's parser is a fork of Cheapskate, which is
+  not CommonMark, so `to_blocks` changes the blocks where the two differ:
+  a setext underline makes only the line before it a heading, a `@docs`
+  line ends a paragraph, an HTML block does not interrupt a paragraph, an
+  ordered list from any number does (the mark is renumbered and the text
+  parsed again; elm-format numbers lists from 1), and a blank line between
+  the items of a nested list makes the enclosing list loose. Each change is
+  marked `cheapskate difference` in the code and in the tests.
+- Inlines are parsed from the source text with a port of Cheapskate's
+  inline parser (`inlines.mbt`): entities stay as written, bare URLs get
+  angle brackets, `[a]` is always a reference link.
+- Text that nests deeper than cmark or the inline parser reads safely
+  (brackets, block quotes and lists, inlines) stays as it is. Block walks
+  use explicit stacks.
+- Expected outputs come from elm-format 0.8.7: wrap the text as
+  `module A exposing (..)\n\n{-|<text>-}\n\n\nx =\n    1\n`, run
+  elm-format, and take the text between `{-|` and `-}`.
+
 ### Dialects
 
 A `Dialect` (`src/dialect`) selects what krueger accepts and rejects, and carries
@@ -527,6 +554,7 @@ versioned on mooncakes.io, so keep them on the latest release when you bump the 
 | [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`harness/bdd`, test-only) |
 | [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect) | Fluent test assertions (scripts; new tests) |
 | [moonrockz/pretty](https://mooncakes.io/docs/moonrockz/pretty) | Wadler-style layout engine (`src/printer`) |
+| [moonbit-community/cmark](https://mooncakes.io/docs/moonbit-community/cmark) | CommonMark parser (`src/markdown` only) |
 
 Module dependencies are declared in the `import` block of `moon.mod`. Each package lists
 what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"` for
@@ -534,7 +562,8 @@ test-only dependencies.
 
 MoonBit has no module-level test-only dependencies: every module in `moon.mod` is
 downloaded by every user of krueger. So the published module (`moon.mod` at the root)
-depends only on `moonrockz/pretty` (the printer's layout engine) and `moonrockz/expect`
+depends only on `moonrockz/pretty` (the printer's layout engine),
+`moonbit-community/cmark` (the Markdown parser of `src/markdown`) and `moonrockz/expect`
 (used by the library packages' own tests); `expect`
 itself imports `moonbitlang/async` and `moonbitlang/x`, so users still download those
 two. Test
@@ -707,6 +736,8 @@ inputs.
   duplicates, for the laws of elm-format's order),
   `DocAttributes` (doc-comment attributes with Unicode names and values,
   continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
+  `DocText` (the Markdown of a doc comment: paragraphs, headings, lists,
+  block quotes, code blocks in Elm and other languages, `@docs` lines),
   `Ranges`, and `units` (a string of UTF-16 units, for lone surrogates). Edge
   lists: `edge_chars()`, `literal_forms()` and `literal_edge_chars()`
   (the characters at the edges of literal escapes). Position helpers:
@@ -814,7 +845,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `corpus:manifest`   | Rebuild `tests/corpus/manifest.json` from `packages.txt` |
 | `corpus:goldens`    | Regenerate elm-syntax goldens and `goldens.lock` (needs Elm and Node) |
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
-| `unicode:generate`  | Regenerate the Unicode identifier table and the printer's literal table from UnicodeData.txt |
+| `unicode:generate`  | Regenerate the Unicode identifier table, the printer's literal table and the Markdown character classes from UnicodeData.txt |
 | `printer:record`    | Print the corpus and record elm-format verdicts in `tests/printer/elm_format.lock` |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
 | `test:bench`        | Run every benchmark case once on small input (smoke check) |

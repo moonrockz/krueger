@@ -91,6 +91,13 @@ pub fn DocAttributes::text(Self) -> String
 pub impl @quickcheck.Arbitrary for DocAttributes
 pub impl @shrink.Shrink for DocAttributes
 
+pub(all) struct DocText {
+  text : String
+  foreign_code : Array[(String, String)]
+} derive(@debug.Debug)
+pub impl @quickcheck.Arbitrary for DocText
+pub impl @shrink.Shrink for DocText
+
 pub(all) struct ElmAst(@ast.File) derive(@debug.Debug)
 pub fn ElmAst::file(Self) -> @ast.File
 pub impl @quickcheck.Arbitrary for ElmAst
