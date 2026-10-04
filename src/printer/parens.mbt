@@ -1,11 +1,14 @@
 ///|
 /// Where `normalize_expression` rewrites an expression: a place in the
-/// printer's sense, or an operator application inside a chain. `spine` is
-/// true when the application is on the right edge of the chain, so that
-/// its right operand is the chain's last.
+/// printer's sense, an operator application inside a chain, or an
+/// operator application that does not join its parent's chain (the
+/// printer writes it in parentheses, `Ctx::chain_plan`). `spine` is true
+/// when the application is on the right edge of the chain, so that its
+/// right operand is the chain's last.
 priv enum NormalizeAt {
   Place(ExprAt)
   InChain(Bool)
+  Wrapped
 }
 
 ///|
@@ -19,15 +22,23 @@ priv enum NormalizeWork {
 
 ///|
 /// The place of an operand of the operator application `symbol`: an
-/// application stays in the chain; the last operand of a chain is
-/// `LastOperand`, or `Piped` after `<|`.
+/// application that joins the chain (`joins`, as `print_file` decides it:
+/// not `mixed`) stays in it, another one is `Wrapped`; the last operand of
+/// a chain is `LastOperand`, or `Piped` after `<|`. An operator that is
+/// not in the table stays in the chain (the printer raises on it).
 fn operand_at(
+  dialect : @dialect.Dialect,
   operand : @ast.Node[@ast.Expression],
   symbol : String,
+  on_left : Bool,
   last : Bool,
 ) -> NormalizeAt {
   match operand.value {
-    OperatorApplication(_, _, _, _) => InChain(last)
+    OperatorApplication(child, _, _, _) =>
+      match (dialect.operator(symbol), dialect.operator(child)) {
+        (Some(p), Some(c)) if !joins(p, c, on_left) => Wrapped
+        _ => InChain(last)
+      }
     _ if !last => Place(Operand)
     _ if symbol == "<|" => Place(Piped)
     _ => Place(LastOperand)
@@ -39,6 +50,7 @@ fn operand_at(
 /// decides the same while it prints (`Ctx::run`). An explicit stack, as in
 /// the printer, so deep expressions do not overflow the call stack.
 fn normalize_expression(
+  dialect : @dialect.Dialect,
   start : @ast.Node[@ast.Expression],
   at : ExprAt,
 ) -> @ast.Node[@ast.Expression] {
@@ -70,13 +82,21 @@ fn normalize_expression(
   }
   while work.pop() is Some(item) {
     match item {
+      Rewrite(e, Wrapped) =>
+        plan([(e, Place(AnyExpr))], xs => {
+          range: e.range,
+          value: ParenthesizedExpression(xs[0]),
+        })
       Rewrite(e, InChain(spine)) => {
         guard e.value is OperatorApplication(symbol, dir, l, r) else {
           work.push(Rewrite(e, Place(Operand)))
           continue
         }
         plan(
-          [(l, operand_at(l, symbol, false)), (r, operand_at(r, symbol, spine))],
+          [
+            (l, operand_at(dialect, l, symbol, true, false)),
+            (r, operand_at(dialect, r, symbol, false, spine)),
+          ],
           xs => {
             range: e.range,
             value: OperatorApplication(symbol, dir, xs[0], xs[1]),
@@ -232,48 +252,100 @@ fn normalize_patterns(
 }
 
 ///|
+priv enum PatternWork {
+  RewritePattern(@ast.Node[@ast.Pattern], PatternAt)
+  RebuildPattern(
+    Int,
+    @ast.Range,
+    (Array[@ast.Node[@ast.Pattern]]) -> @ast.Pattern
+  )
+}
+
+///|
 /// `p` with the parentheses that the printer writes (see
-/// `pattern_parens`). It recurses per nesting level, as the pattern
-/// printer does; a `::` chain is a loop.
+/// `pattern_parens`). An explicit stack, so deep patterns (a hand-built
+/// AST has no nesting limit) do not overflow the call stack.
 fn normalize_pattern(
-  p : @ast.Node[@ast.Pattern],
+  start : @ast.Node[@ast.Pattern],
   at : PatternAt,
 ) -> @ast.Node[@ast.Pattern] {
-  let value : @ast.Pattern = match p.value {
-    TuplePattern(xs) => TuplePattern(normalize_patterns(xs, AnyPattern))
-    ListPattern(xs) => ListPattern(normalize_patterns(xs, AnyPattern))
-    NamedPattern(r, args) =>
-      NamedPattern(r, normalize_patterns(args, PatternArg))
-    UnConsPattern(_, _) => {
-      let nodes = []
-      let mut node = p
-      while node.value is UnConsPattern(left, right) {
-        nodes.push((node.range, normalize_pattern(left, ConsLeft)))
-        node = right
+  let work : Array[PatternWork] = [RewritePattern(start, at)]
+  let results : Array[@ast.Node[@ast.Pattern]] = []
+  while work.pop() is Some(item) {
+    match item {
+      RewritePattern(p, at) => {
+        let (parts, build) : (
+          Array[(@ast.Node[@ast.Pattern], PatternAt)],
+          (Array[@ast.Node[@ast.Pattern]]) -> @ast.Pattern,
+        ) = match p.value {
+          TuplePattern(xs) =>
+            (
+              xs.iter().map(x => (x, AnyPattern)).collect(),
+              ys => TuplePattern(ys[:]),
+            )
+          ListPattern(xs) =>
+            (
+              xs.iter().map(x => (x, AnyPattern)).collect(),
+              ys => ListPattern(ys[:]),
+            )
+          NamedPattern(r, args) =>
+            (
+              args.iter().map(x => (x, PatternArg)).collect(),
+              ys => NamedPattern(r, ys[:]),
+            )
+          // A `::` on the right continues the chain (`Ctx::pattern_body`).
+          UnConsPattern(l, r) =>
+            (
+              [
+                (l, ConsLeft),
+                (
+                  r,
+                  if r.value is UnConsPattern(_, _) {
+                    AnyPattern
+                  } else {
+                    ConsTail
+                  },
+                ),
+              ],
+              ys => UnConsPattern(ys[0], ys[1]),
+            )
+          AsPattern(x, name) => ([(x, AsInner)], ys => AsPattern(ys[0], name))
+          ParenthesizedPattern(x) =>
+            ([(x, AnyPattern)], ys => ParenthesizedPattern(ys[0]))
+          other => ([], _ => other)
+        }
+        let range = p.range
+        work.push(
+          RebuildPattern(parts.length(), range, ys => {
+            let value = build(ys)
+            if pattern_parens(value, at) {
+              ParenthesizedPattern({ range, value, })
+            } else {
+              value
+            }
+          }),
+        )
+        for i = parts.length() - 1; i >= 0; i = i - 1 {
+          work.push(RewritePattern(parts[i].0, parts[i].1))
+        }
       }
-      let mut tail = normalize_pattern(node, ConsTail)
-      for i = nodes.length() - 1; i > 0; i = i - 1 {
-        let (range, left) = nodes[i]
-        tail = { range, value: UnConsPattern(left, tail), }
+      RebuildPattern(count, range, build) => {
+        let start = results.length() - count
+        let ys = []
+        for i in start..<results.length() {
+          ys.push(results[i])
+        }
+        results.truncate(start)
+        results.push({ range, value: build(ys), })
       }
-      UnConsPattern(nodes[0].1, tail)
     }
-    AsPattern(x, name) => AsPattern(normalize_pattern(x, AsInner), name)
-    ParenthesizedPattern(x) =>
-      ParenthesizedPattern(normalize_pattern(x, AnyPattern))
-    other => other
   }
-  let n : @ast.Node[@ast.Pattern] = { range: p.range, value, }
-  if pattern_parens(value, at) {
-    { range: p.range, value: ParenthesizedPattern(n), }
-  } else {
-    n
-  }
+  results[0]
 }
 
 ///|
 /// The declarations of `file` with elm-format's parentheses.
-fn normalize_parens(file : @ast.File) -> @ast.File {
+fn normalize_parens(file : @ast.File, dialect : @dialect.Dialect) -> @ast.File {
   let declarations : Array[@ast.Node[@ast.Declaration]] = []
   for d in file.declarations {
     let value : @ast.Declaration = match d.value {
@@ -281,13 +353,17 @@ fn normalize_parens(file : @ast.File) -> @ast.File {
         FunctionDeclaration(
           with_body(
             f,
-            normalize_expression(f.declaration.value.expression, AnyExpr),
+            normalize_expression(
+              dialect,
+              f.declaration.value.expression,
+              AnyExpr,
+            ),
           ),
         )
       Destructuring(p, x) =>
         Destructuring(
           normalize_pattern(p, PatternArg),
-          normalize_expression(x, AnyExpr),
+          normalize_expression(dialect, x, AnyExpr),
         )
       other => other
     }

@@ -218,3 +218,81 @@ test "every nested expression construct at 400 levels prints on every target" {
   let printed = @printer.print_expression(e, width=1_000_000)
   @expect.expect(printed.contains("x")).to_be_true()
 }
+
+///|
+/// A file with one declaration `x <arg> = <body>`.
+fn depth_file(
+  arg : @ast.Node[@ast.Pattern],
+  body : @ast.Node[@ast.Expression],
+) -> @ast.File {
+  {
+    module_definition: n(
+      NormalModule({ module_name: n(["A"][:]), exposing_list: n(All(r0)), }),
+    ),
+    imports: [][:],
+    declarations: [
+      n(
+        @ast.Declaration::FunctionDeclaration({
+          documentation: None,
+          signature: None,
+          declaration: n({
+            name: n("x"),
+            arguments: [arg][:],
+            expression: body,
+          }),
+        }),
+      ),
+    ][:],
+    comments: [][:],
+  }
+}
+
+///|
+test "normalize_file handles 2000 nested patterns and expressions on every target" {
+  // A built AST has no nesting limit; normalize_file uses explicit stacks.
+  let mut p : @ast.Node[@ast.Pattern] = pvar("y")
+  let mut cons : @ast.Node[@ast.Pattern] = pvar("t")
+  let mut e : @ast.Node[@ast.Expression] = n(FunctionOrValue([][:], "y"))
+  for _ in 0..<2000 {
+    p = n(ParenthesizedPattern(n(TuplePattern([p, pvar("z")][:]))))
+    cons = n(UnConsPattern(ctor("Just", [pvar("h")]), cons))
+    e = n(ListExpr([n(@ast.Expression::ParenthesizedExpression(e))][:]))
+  }
+  let normalized = @printer.normalize_file(
+    depth_file(n(TuplePattern([p, cons][:])), e),
+  )
+  guard normalized.declarations[0].value is FunctionDeclaration(f) else {
+    fail("not a function")
+  }
+  guard f.declaration.value.arguments[0].value is TuplePattern(items) else {
+    fail("not a tuple")
+  }
+  // Count the levels with loops (no recursion).
+  let mut depth = 0
+  let mut q = items[0]
+  while q.value is ParenthesizedPattern({ value: TuplePattern(xs), .. }) {
+    depth += 1
+    q = xs[0]
+  }
+  let mut wrapped = 0
+  let mut c = items[1]
+  while c.value is UnConsPattern(left, right) {
+    if left.value is ParenthesizedPattern(_) {
+      wrapped += 1
+    }
+    c = right
+  }
+  let mut lists = 0
+  let mut x = f.declaration.value.expression
+  while x.value is ListExpr(ys) {
+    lists += 1
+    x = ys[0]
+  }
+  @expect.expect_all(s => {
+    s.expect(depth).to_equal(2000)
+    s.expect(wrapped).to_equal(2000)
+    // The parentheses in the lists go.
+    s.expect(lists).to_equal(2000)
+    s.expect(x.value is FunctionOrValue(_, "y")).to_be_true()
+  })
+}

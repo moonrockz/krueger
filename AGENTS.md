@@ -398,12 +398,16 @@ and `print_type_annotation`, each with `width?` (default 120) and
   (elm-format writes `-(-x)` as `--x` and `("s").length` as
   `"s".length`; krueger does not). For a parsed AST, `print_file` then
   `parse_module` gives `normalize_file(ast)` without ranges and regular
-  comments; the printer decides while it prints and `normalize_file`
-  rewrites the AST with the same rules (`src/printer/parens.mbt`), so
-  comments and error paths stay those of the source. With source,
-  `format` keeps a chain of operators of the same precedence and
-  different directions flat (`a |> f <| g`), as elm-format does;
-  `print_file` writes `(a |> f) <| g`, which `elm make` accepts.
+  comments, and `normalize_file` holds every parenthesis that
+  `print_file` writes. The printer decides while it prints and
+  `normalize_file` rewrites the AST with the same rules
+  (`src/printer/parens.mbt`), so comments and error paths stay those of
+  the source; laws over `ElmModule` and `ElmAst` and the corpus check
+  that the two agree. `format` differs from `normalize_file` in two
+  places, as elm-format does: it keeps parentheses with a comment inside,
+  and with source it keeps a chain of operators of the same precedence
+  and different directions flat (`a |> f <| g`). `print_file` and
+  `normalize_file` have `(a |> f) <| g`, which `elm make` accepts.
 - Literals: a string or char literal escapes `\n`, `\t`, `\\`, its quote
   and, as `\u{XXXX}`, every character that elm-format 0.8.7 escapes
   (Haskell's `isPrint` is false or `isSpace` is true, except the space).

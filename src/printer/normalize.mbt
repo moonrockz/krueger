@@ -172,12 +172,15 @@ fn normalize_imports(
 }
 
 ///|
-/// The file in the order and with the parentheses that elm-format gives
-/// it. Parsing the output of `print_file` gives this AST (without ranges
-/// and regular comments). `format` gives it too, except that it keeps
-/// parentheses that have a comment inside them, and keeps a chain of
-/// operators of the same precedence and different directions flat
-/// (`a |> f <| g`), as elm-format does.
+/// The file in the order and with the parentheses that `print_file` gives
+/// it (elm-format's, and the ones that the parser needs). For a parsed
+/// file, parsing the output of `print_file` gives this AST (without ranges
+/// and regular comments). `format` gives this AST too, with two
+/// differences that come from elm-format: it keeps parentheses that have
+/// a comment inside them, and it keeps a chain of operators of the same
+/// precedence and different directions flat (`a |> f <| g`), where this
+/// AST has `(a |> f) <| g`, as `print_file` writes it (`elm make` rejects
+/// the flat chain). `dialect` gives the operator table.
 ///
 /// - The module's exposed items are a set: a duplicate is removed (`T` and
 ///   `T(..)` give `T(..)`). They are sorted: operators, then types, then
@@ -193,10 +196,13 @@ fn normalize_imports(
 ///   (elm-format `formatExpression`, `syntaxParens`): `case (f x) of`
 ///   gives `case f x of`, `a - (f b)` gives `a - f b`, `f (-x)` gives
 ///   `f -x`. Parentheses around an operator chain in a chain stay.
-/// - elm-format's parentheses are added: around a lambda, `if`, `case` or
-///   `let` at the end of an operator chain, except after `<|`
-///   (`x |> (\y -> y)`); around a constructor pattern with arguments
-///   before or after `::` and in an `as` (`(Just a) :: rest`).
+/// - Parentheses are added where `print_file` writes them: elm-format's,
+///   around a lambda, `if`, `case` or `let` at the end of an operator
+///   chain, except after `<|` (`x |> (\y -> y)`), and around a
+///   constructor pattern with arguments before or after `::` and in an
+///   `as` (`(Just a) :: rest`); and the ones that the parser needs, for
+///   example around an operator chain that cannot join its parent's
+///   chain (`(a + b) * c`).
 ///
 /// Nodes keep their ranges; an expression that replaces its parentheses
 /// takes their range. Nothing else changes.
@@ -224,8 +230,11 @@ fn normalize_imports(
 ///   )
 /// }
 /// ```
-pub fn normalize_file(file : @ast.File) -> @ast.File {
-  normalize_parens(normalize_header(file))
+pub fn normalize_file(
+  file : @ast.File,
+  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+) -> @ast.File {
+  normalize_parens(normalize_header(file), dialect)
 }
 
 ///|

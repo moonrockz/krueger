@@ -213,3 +213,73 @@ test "print_file and normalize_file apply the same parentheses" {
     .to_equal(@lawkit.without_ranges(parse(expected)))
   })
 }
+
+///|
+test "normalize_file wraps a chain that does not join, as print_file writes it" {
+  let parse = (text : String) => {
+    @parser.parse_module(
+      @scanner.SourceText::new(text),
+      @scanner.DefaultScanner::new(),
+    ).ast.unwrap()
+  }
+  // Same precedence, different directions: `print_file` writes the
+  // parentheses that `elm make` needs; `format` keeps the chain flat.
+  let file = parse(parens_module("b =\n    a |> f <| g\n"))
+  let expected = parens_module("b =\n    (a |> f) <| g\n")
+  @expect.expect_all(s => {
+    s.expect(@printer.print_file(file)).to_equal(expected)
+    s
+    .expect(@lawkit.without_ranges(@printer.normalize_file(file)))
+    .to_equal(@lawkit.without_ranges(parse(expected)))
+    s
+    .expect(@printer.format(parens_module("b =\n    a |> f <| g\n")))
+    .to_equal(parens_module("b =\n    a |> f <| g\n"))
+  })
+}
+
+///|
+test "normalize_file wraps a lower-precedence operand of a built AST" {
+  let a = n(@ast.Expression::FunctionOrValue([][:], "a"))
+  let b = n(@ast.Expression::FunctionOrValue([][:], "b"))
+  let c = n(@ast.Expression::FunctionOrValue([][:], "c"))
+  let sum = n(@ast.Expression::OperatorApplication("+", Left, a, b))
+  let product = n(@ast.Expression::OperatorApplication("*", Left, sum, c))
+  let file : @ast.File = {
+    module_definition: n(
+      NormalModule({ module_name: n(["A"][:]), exposing_list: n(All(r0)), }),
+    ),
+    imports: [][:],
+    declarations: [
+      n(
+        @ast.Declaration::FunctionDeclaration({
+          documentation: None,
+          signature: None,
+          declaration: n({
+            name: n("x"),
+            arguments: [][:],
+            expression: product,
+          }),
+        }),
+      ),
+    ][:],
+    comments: [][:],
+  }
+  let normalized = @printer.normalize_file(file)
+  guard normalized.declarations[0].value is FunctionDeclaration(f) else {
+    fail("not a function")
+  }
+  @expect.expect(
+    f.declaration.value.expression.value
+    is OperatorApplication(
+      "*",
+      _,
+      {
+        value: ParenthesizedExpression(
+          { value: OperatorApplication("+", _, _, _), .. }
+        ),
+        ..
+      },
+      _
+    ),
+  ).to_be_true()
+}

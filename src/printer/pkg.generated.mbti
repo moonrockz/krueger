@@ -15,7 +15,7 @@ pub fn format(String, layout? : Layout, dialect? : @dialect.Dialect) -> String r
 
 pub fn format_parsed(@parser.ParseResult, layout? : Layout, dialect? : @dialect.Dialect) -> String raise FormatError
 
-pub fn normalize_file(@ast.File) -> @ast.File
+pub fn normalize_file(@ast.File, dialect? : @dialect.Dialect) -> @ast.File
 
 pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
 

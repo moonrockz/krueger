@@ -166,14 +166,20 @@ test "law: format and print_file give the parentheses of normalize_file" {
   // The printer decides the parentheses while it prints (elm-format's
   // rules); `normalize_file` rewrites the AST with the same rules. The
   // generated modules have no comment inside parentheses (`format` keeps
-  // such parentheses).
+  // such parentheses) and no chain of operators of the same precedence
+  // and different directions (`format` keeps it flat).
   @quickcheck.check(
     (m : @lawkit.ElmModule) => {
       guard reparse(m.text()) is Some(first) else { return false }
       guard formatted(m.text()) is Some(text) else { return false }
       guard reparse(text) is Some(second) else { return false }
-      @lawkit.without_ranges(doc_comments_only(@printer.normalize_file(first))) ==
-      @lawkit.without_ranges(doc_comments_only(second))
+      guard printed(first) is Some(printed_text) else { return false }
+      guard reparse(printed_text) is Some(third) else { return false }
+      let expected = @lawkit.without_ranges(
+        doc_comments_only(@printer.normalize_file(first)),
+      )
+      expected == @lawkit.without_ranges(doc_comments_only(second)) &&
+      expected == @lawkit.without_ranges(doc_comments_only(third))
     },
     count=200,
     max_size=24,
@@ -210,4 +216,34 @@ test "the parenthesis laws reach the rules they check" {
     }
   }
   @expect.expect(changed > 20).to_be_true()
+}
+
+///|
+/// The number of parenthesized expressions and patterns in `file`.
+fn paren_count(file : @ast.File) -> Int {
+  let json = @ast.encode_file(file).stringify()
+  json.split("\"parenthesized\"").count() +
+  json.split("\"parentisized\"").count() -
+  2
+}
+
+///|
+test "law: a normalized built AST holds every parenthesis that print_file writes" {
+  // Printing `normalize_file(a)` and parsing it again gives its canonical
+  // form, and that form has no parentheses that `normalize_file(a)` lacks.
+  // (The canonical form also changes negative literals and `let`
+  // destructurings of a name, which the parser reads differently.)
+  @quickcheck.check(
+    (a : @lawkit.ElmAst) => {
+      let normalized = @printer.normalize_file(a.file())
+      guard printed(normalized) is Some(text) else { return false }
+      guard reparse(text) is Some(second) else { return false }
+      let canonical = canonical_file(normalized)
+      @lawkit.without_ranges(canonical) == @lawkit.without_ranges(second) &&
+      paren_count(canonical) == paren_count(normalized)
+    },
+    count=300,
+    max_size=20,
+    seed=2045,
+  )
 }
