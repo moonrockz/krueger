@@ -274,10 +274,11 @@ fn Ctx::expr_plan(
         start: items[0].range.start,
         end: items[1].range.end,
       })
+      // With one argument there are no later arguments: `rest` is not used.
       let rest = if items.length() > 2 {
         self.split_from({ start: items[2].range.start, end: e.range.end, })
       } else {
-        first
+        self.join()
       }
       (parts, docs => application(first, rest, docs[0], docs[1:].to_owned()))
     }

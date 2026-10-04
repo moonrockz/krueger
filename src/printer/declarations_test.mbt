@@ -174,6 +174,32 @@ test "declarations that Elm cannot write raise" {
         ),
       ),
     )
+    let with_import = file_of(
+      "module A exposing (f)\n\nimport B exposing (b)\n\n\nf =\n    1\n",
+    )
+    let import_ = with_import.imports[0]
+    let empty_import = {
+      ..with_import,
+      imports: [
+        {
+          ..import_,
+          value: { ..import_.value, exposing_list: Some(n(Explicit([][:]))), },
+        },
+      ][:],
+    }
+    s
+    .expect(problem_of(() => @printer.print_file(empty_import)))
+    .to_equal(
+      Some(
+        (
+          EmptyExposing,
+          [
+            { field: "imports", index: 0, },
+            { field: "exposingList", index: 0, },
+          ],
+        ),
+      ),
+    )
   })
 }
 

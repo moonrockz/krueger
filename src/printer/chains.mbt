@@ -106,10 +106,13 @@ fn Ctx::chain_plan(
   // elm-format Parse/Binop.hs binops (`trackNewline`): a line break
   // anywhere in the chain puts every operator on its own line.
   let split = self.split_within(e.range)
-  // `format_binary` groups the comments around an operator with it.
-  let gap = if split is Fit { @pretty.text(" ") } else { @pretty.line() }
+  // `chain_doc` groups the comments around an operator with it.
+  let gap = @pretty.line()
   let parts = []
-  let line_after = []
+  // Whether comments, and whether a line comment, come before the operator
+  // of each operand; set when its comments are taken.
+  let has_lead = Array::make(operands.length(), false)
+  let line_lead = Array::make(operands.length(), false)
   // An operand with comments after its operator: elm-format aligns it
   // after the operator (`|| -- a\n   b`).
   let aligned = Array::make(operands.length(), false)
@@ -174,6 +177,8 @@ fn Ctx::chain_plan(
         for r in ranges {
           cs.append(self.take_if(Leading, r, before_operator))
         }
+        has_lead[k] = !cs.is_empty()
+        line_lead[k] = cs.iter().any(is_line_comment)
         if k == 0 {
           comments_before(cs, node.range.start)
         } else {
@@ -192,7 +197,9 @@ fn Ctx::chain_plan(
     )
     parts.push(
       if wrapped {
-        Plan([Expr(p, level + 1, node, AnyExpr)], docs => parens(Fit, docs[0]))
+        Plan([Expr(p, level + 1, node, AnyExpr)], docs => {
+          parens(self.join(), docs[0])
+        })
       } else {
         Expr(p, level + 1, node, if k == last { AnyExpr } else { Operand })
       },
@@ -205,10 +212,6 @@ fn Ctx::chain_plan(
         }
         d
       }),
-    )
-    line_after.push(
-      self.line_comment_after(node.range) ||
-      after.iter().any(r => self.line_comment_after(r)),
     )
   }
   (
@@ -226,109 +229,74 @@ fn Ctx::chain_plan(
         }
         operand_docs.push(d + docs[i + 3])
       }
-      match split {
-        Fit =>
-          @pretty.group(binary_doc(operand_docs, leads, symbols, line_after))
-        Join | Split => format_binary(split, operand_docs, leads, symbols)
-      }
+      chain_doc(split, operand_docs, leads, symbols, has_lead, line_lead)
     },
   )
 }
 
 ///|
 /// The operands and operators of a chain in the elm-format 0.8.7 layout
-/// (its `formatBinary`), without the group. Each operator other than `<|`
-/// starts a line at the next tab stop. A `<|` ends its line (`f x <|`), or
-/// goes on its own line when operators come before it in its segment; the
-/// rest of the chain is a new chain at the next tab stop:
-/// `f x <|\n    g y <|\n        h z`. Built from the last segment back,
-/// without recursion. `leads[i]` (comments) goes before the operator of
-/// operand `i`, or before the operand at the start of a segment;
-/// `line_after[i]` is true when a line comment ends operand `i`.
-fn binary_doc(
-  docs : Array[@pretty.Doc],
-  leads : Array[@pretty.Doc],
-  symbols : Array[String],
-  line_after : Array[Bool],
-) -> @pretty.Doc {
-  // A segment starts at the first operand and after each `<|`.
-  let starts = [0]
-  for i, s in symbols {
-    if s == "<|" {
-      starts.push(i + 1)
-    }
-  }
-  let mut result = @pretty.empty()
-  for k = starts.length() - 1; k >= 0; k = k - 1 {
-    let start = starts[k]
-    let end = if k + 1 < starts.length() {
-      starts[k + 1] - 1
-    } else {
-      symbols.length()
-    }
-    let mut rest = @pretty.empty()
-    for i in start..<end {
-      rest = rest +
-        @pretty.line() +
-        leads[i + 1] +
-        @pretty.text(symbols[i] + " ") +
-        docs[i + 1]
-    }
-    let segment = leads[start] + docs[start] + @pretty.tab(4, rest)
-    result = if k + 1 == starts.length() {
-      segment
-    } else {
-      let pipe = if end > start || line_after[end] {
-        @pretty.line() + @pretty.text("<|")
-      } else {
-        @pretty.text(" <|")
-      }
-      segment + pipe + @pretty.tab(4, @pretty.line() + result)
-    }
-  }
-  result
-}
-
-///|
-/// A chain in the elm-format 0.8.7 layout of its `formatBinary` for the
-/// `ElmFormat` layout. elm-format folds the chain from the left: with
-/// `Join`, an operator goes on a new line (at the next tab stop) when its
+/// (its `formatBinary`), built from the left without recursion.
+///
+/// Each operator other than `<|` starts a line at the next tab stop, with
+/// its comments `leads[i]` before it. An operand after its operator keeps
+/// its later lines right of the operator in the `ElmFormat` layout
+/// (`spaceSepOrPrefix`). A `<|` ends its segment, with the comments before
+/// it on its side (`spaceSepOrStack left (comments ++ [op])`): `f x <|`, or
+/// on a line of its own; the rest of the chain is a new chain at the next
+/// tab stop: `f x <|\n    g y <|\n        h z`.
+///
+/// With `Fit`, the whole chain is one group: it is on one line or every
+/// line breaks, and a `<|` goes on its own line when operators come before
+/// it in its segment or a line comment comes before it (`line_lead[i]`).
+/// An operator with comments before it (`has_lead[i]`) has a group of its
+/// own, so a block comment goes on its own line when the rest breaks.
+/// With `Join` and `Split`, elm-format folds the chain: each operator has
+/// its own group, so with `Join` an operator goes on a new line when its
 /// operand or an operand before it in its segment is multi-line; with
-/// `Split`, every operator does. An operand that follows its operator on
-/// the line keeps its later lines right of the operator (elm-format
-/// `spaceSepOrPrefix`). A `<|` ends its segment: it goes on the line of the
-/// segment, or on its own line when the segment is multi-line
-/// (`spaceSepOrStack`); the rest of the chain is a new chain, on the line
-/// or at the next tab stop (`forceableSpaceSepOrIndented`). `leads` are as
-/// for `binary_doc`.
-fn format_binary(
+/// `Split`, every operator does. A `<|` goes on its own line when its
+/// segment is multi-line.
+fn chain_doc(
   split : Split,
   docs : Array[@pretty.Doc],
   leads : Array[@pretty.Doc],
   symbols : Array[String],
+  has_lead : Array[Bool],
+  line_lead : Array[Bool],
 ) -> @pretty.Doc {
+  let fit = split is Fit
+  let group = (d : @pretty.Doc) => if fit { d } else { @pretty.group(d) }
   // The segments ended by `<|`, each with its `<|`.
   let piped = []
+  let mut start = 0
   let mut acc = leads[0] + docs[0]
   for i, s in symbols {
     if s == "<|" {
-      piped.push(@pretty.group(acc + @pretty.line() + @pretty.text("<|")))
-      acc = @pretty.group(leads[i + 1] + docs[i + 1])
+      let before = if !fit || i > start || line_lead[i + 1] {
+        @pretty.line()
+      } else {
+        @pretty.text(" ")
+      }
+      piped.push(group(acc + before + leads[i + 1] + @pretty.text("<|")))
+      acc = docs[i + 1]
+      start = i + 1
     } else {
-      acc = @pretty.group(
-        acc +
-        @pretty.tab(
-          4,
-          split_line(split) +
-          @pretty.group(
-            leads[i + 1] + @pretty.text(s + " ") + @pretty.align(docs[i + 1]),
-          ),
-        ),
-      )
+      let operand = if fit { docs[i + 1] } else { @pretty.align(docs[i + 1]) }
+      let part = leads[i + 1] + @pretty.text(s + " ") + operand
+      let part = if fit && !has_lead[i + 1] {
+        part
+      } else {
+        @pretty.group(part)
+      }
+      acc = group(acc + @pretty.tab(4, split_line(split) + part))
     }
   }
   for k = piped.length() - 1; k >= 0; k = k - 1 {
-    acc = @pretty.group(piped[k] + @pretty.tab(4, split_line(split) + acc))
+    acc = group(piped[k] + @pretty.tab(4, split_line(split) + acc))
   }
-  acc
+  if fit {
+    @pretty.group(acc)
+  } else {
+    acc
+  }
 }

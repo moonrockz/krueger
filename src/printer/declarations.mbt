@@ -405,7 +405,8 @@ fn Ctx::exposing_doc(
   // keeps its layout (its groups come from `@docs`).
   let split = match (e.value, import_) {
     (Explicit(items), true) =>
-      match self.token_before(items[0].range.start) {
+      // An empty list raises `EmptyExposing` in `exposing_list`.
+      match items.get(0).bind(x => self.token_before(x.range.start)) {
         Some(paren) => self.split_within({ start: paren, end: e.range.end, })
         None => self.join()
       }
@@ -603,7 +604,7 @@ fn Ctx::module_doc(
       }
       // The record follows `where` on its line unless it breaks, or a
       // comment comes before `where`.
-      let record = sequence(Fit, "{", "}", fields)
+      let record = sequence(self.join(), "{", "}", fields)
       let where_clause = if name_breaks || !before_where.is_empty() {
         @pretty.text("where") + @pretty.nest(4, @pretty.hardline() + record)
       } else {

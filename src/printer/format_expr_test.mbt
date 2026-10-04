@@ -200,3 +200,58 @@ test "comments around an operator join it as elm-format parses them" {
     .to_equal(body("    f x <| {- c -} g\n"))
   })
 }
+
+///|
+test "comments before a <| go before it" {
+  // elm-format Box.hs formatBinary: the comments before `<|` stay on its
+  // side (`spaceSepOrStack left (comments ++ [op])`); those after it go
+  // before the rest of the chain.
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.format(body("  f x {- c -} <| g\n")))
+    .to_equal(body("    f x {- c -} <| g\n"))
+    s
+    .expect(@printer.format(body("  f x -- c\n    <| g\n")))
+    .to_equal(body("    f x\n    -- c\n    <|\n        g\n"))
+    s
+    .expect(@printer.format(body("  f x\n    {- c -}\n    <| g\n")))
+    .to_equal(body("    f x {- c -} <|\n        g\n"))
+    s
+    .expect(@printer.format(body("  f x <| {- c -} g\n")))
+    .to_equal(body("    f x <| {- c -} g\n"))
+    s
+    .expect(@printer.format(body("  f x <| -- c\n    g\n")))
+    .to_equal(body("    f x <|\n        -- c\n        g\n"))
+    s
+    .expect(@printer.format(body("  a + b <| -- c\n    g\n")))
+    .to_equal(body("    a\n        + b\n    <|\n        -- c\n        g\n"))
+    s
+    .expect(@printer.format(body("  a\n    + b\n    {- c -}\n    <| g\n")))
+    .to_equal(body("    a\n        + b\n    {- c -}\n    <|\n        g\n"))
+  })
+}
+
+///|
+test "Width layout: comments around operators" {
+  // The Width layout puts the comments where elm-format puts them, and
+  // breaks the chain only when it does not fit or a line comment ends a
+  // line.
+  let width = (s : String) => @printer.format(body(s), layout=Width(120))
+  @expect.expect_all(s => {
+    s
+    .expect(width("  f x {- c -} <| g\n"))
+    .to_equal(body("    f x {- c -} <| g\n"))
+    s
+    .expect(width("  f x -- c\n    <| g\n"))
+    .to_equal(body("    f x\n    -- c\n    <|\n        g\n"))
+    s
+    .expect(width("  f x <| -- c\n    g\n"))
+    .to_equal(body("    f x <|\n        -- c\n        g\n"))
+    s
+    .expect(width("  x\n    {- c -}\n    + y\n"))
+    .to_equal(body("    x {- c -} + y\n"))
+    s
+    .expect(width("  x {- b -} + -- note\n    y\n"))
+    .to_equal(body("    x\n        {- b -}\n        + -- note\n          y\n"))
+  })
+}
