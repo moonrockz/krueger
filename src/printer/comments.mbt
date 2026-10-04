@@ -119,3 +119,25 @@ fn CommentTable::matching(
     None => []
   }
 }
+
+///|
+/// Whether a comment lies inside `start ..= end` (from the start of
+/// `start` to the end of `end`). The comments are in source order.
+fn CommentTable::has_between(
+  self : CommentTable,
+  start : @ast.Location,
+  end : @ast.Location,
+) -> Bool {
+  let mut lo = 0
+  let mut hi = self.placed.length()
+  while lo < hi {
+    let mid = (lo + hi) / 2
+    if compare_location(self.placed[mid].comment.range.start, start) < 0 {
+      lo = mid + 1
+    } else {
+      hi = mid
+    }
+  }
+  lo < self.placed.length() &&
+  at_or_before(self.placed[lo].comment.range.end, end)
+}

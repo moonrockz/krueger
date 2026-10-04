@@ -3,7 +3,12 @@
 /// the plan, and spec section 4.3).
 priv enum ExprAt {
   AnyExpr
+  /// An operand of an operator chain, other than the last.
   Operand
+  /// The last operand of a chain, after an operator other than `<|`.
+  LastOperand
+  /// The last operand of a chain, after `<|`.
+  Piped
   ExprArg
   Head
   Negated
@@ -36,7 +41,7 @@ fn is_atom(e : @ast.Expression) -> Bool {
 ///|
 fn needs_parens(e : @ast.Expression, at : ExprAt) -> Bool {
   match at {
-    AnyExpr => false
+    AnyExpr | LastOperand | Piped => false
     Operand =>
       e
       is (LambdaExpression(_)
@@ -60,6 +65,70 @@ fn needs_parens(e : @ast.Expression, at : ExprAt) -> Bool {
         _ => true
       }
   }
+}
+
+///|
+/// elm-format's syntax context (Box.hs `SyntaxContext`): what an
+/// expression is, and what its place allows without parentheses.
+priv enum SyntaxContext {
+  SyntaxSeparated
+  SpaceSeparated
+  InfixSeparated
+  AmbiguousEnd
+}
+
+///|
+/// The context of an expression (the first part of elm-format's
+/// `formatExpression` result): an application is `SpaceSeparated`, an
+/// operator chain `InfixSeparated`, a lambda, `if`, `case` or `let`
+/// `AmbiguousEnd` (it ends at the end of the text), anything else
+/// `SyntaxSeparated`.
+fn syntax_context(e : @ast.Expression) -> SyntaxContext {
+  match e {
+    Application(_) => SpaceSeparated
+    OperatorApplication(_, _, _, _) => InfixSeparated
+    LambdaExpression(_)
+    | IfBlock(_, _, _)
+    | CaseExpression(_)
+    | LetExpression(_) => AmbiguousEnd
+    _ => SyntaxSeparated
+  }
+}
+
+///|
+/// The context that a place gives (the `syntaxParens` calls of
+/// elm-format's `formatExpression` and `formatBinops`).
+fn place_context(at : ExprAt) -> SyntaxContext {
+  match at {
+    AnyExpr => SyntaxSeparated
+    Operand | LastOperand | Head => InfixSeparated
+    Piped => AmbiguousEnd
+    ExprArg | Negated | Target => SpaceSeparated
+  }
+}
+
+///|
+/// Whether elm-format writes `e` at `at` in parentheses (Box.hs
+/// `needsParensInContext`).
+fn elm_format_parens(e : @ast.Expression, at : ExprAt) -> Bool {
+  match (syntax_context(e), place_context(at)) {
+    (SpaceSeparated, SpaceSeparated)
+    | (InfixSeparated, SpaceSeparated)
+    | (InfixSeparated, InfixSeparated)
+    | (AmbiguousEnd, SpaceSeparated)
+    | (AmbiguousEnd, InfixSeparated)
+    | (InfixSeparated, AmbiguousEnd) => true
+    _ => false
+  }
+}
+
+///|
+/// The parentheses around `e` at `at`: the ones that the parser needs
+/// (`needs_parens`) and the ones that elm-format writes. elm-format writes
+/// a lambda, `if`, `case` or `let` at the end of a chain in parentheses,
+/// except after `<|`; the parser does not need them.
+fn parens_at(e : @ast.Expression, at : ExprAt) -> Bool {
+  needs_parens(e, at) || elm_format_parens(e, at)
 }
 
 ///|
@@ -100,9 +169,20 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         // The leading comments are taken now, before the parts; the
         // trailing comments after them.
         let lead = self.leading(e.range)
-        let (items, combine) = self.expr_plan(path, level, e)
         let wrap = (d : @pretty.Doc) => lead + d + self.trailing(e.range)
-        if needs_parens(e.value, at) {
+        // elm-format Box.hs formatExpression `Parens`: parentheses with
+        // no comments inside go, and the expression in them takes their
+        // place (see `normalize_file`).
+        if e.value is ParenthesizedExpression(x) &&
+          !parens_at(x.value, at) &&
+          !self.comment_in_parens(e.range, x.range) {
+          push_plan([Expr(path.child("parenthesized", 0), level + 1, x, at)], docs => {
+            wrap(docs[0])
+          })
+          continue
+        }
+        let (items, combine) = self.expr_plan(path, level, e)
+        if parens_at(e.value, at) {
           let split = self.join()
           push_plan(items, docs => wrap(parens(split, combine(docs))))
         } else {

@@ -386,11 +386,24 @@ and `print_type_annotation`, each with `width?` (default 120) and
   then one line for the other items. Imports are sorted by module name
   and the imports of one module are merged. A comment moves with its
   item; no comment is dropped.
-- Parentheses: the printer adds only the parentheses that the parser
-  needs (operator precedence and associativity from the dialect,
-  arguments, negations, record access targets) and keeps the ones in the
-  AST. For a parsed AST, `print_file` then `parse_module` gives
-  `normalize_file(ast)` without ranges and regular comments.
+- Parentheses: elm-format 0.8.7's (`syntaxParens` in `Box.hs`). The
+  printer adds the parentheses that the parser needs (operator
+  precedence and associativity from the dialect, arguments, negations,
+  record access targets) and the ones elm-format adds (a lambda, `if`,
+  `case` or `let` at the end of an operator chain, except after `<|`; a
+  constructor pattern with arguments before or after `::` and in an
+  `as`). Parentheses in the AST that neither needs go (`case (f x) of`
+  gives `case f x of`); parentheses with a comment inside stay in
+  `format`. The printer never removes parentheses that the parser needs
+  (elm-format writes `-(-x)` as `--x` and `("s").length` as
+  `"s".length`; krueger does not). For a parsed AST, `print_file` then
+  `parse_module` gives `normalize_file(ast)` without ranges and regular
+  comments; the printer decides while it prints and `normalize_file`
+  rewrites the AST with the same rules (`src/printer/parens.mbt`), so
+  comments and error paths stay those of the source. With source,
+  `format` keeps a chain of operators of the same precedence and
+  different directions flat (`a |> f <| g`), as elm-format does;
+  `print_file` writes `(a |> f) <| g`, which `elm make` accepts.
 - Literals: a string or char literal escapes `\n`, `\t`, `\\`, its quote
   and, as `\u{XXXX}`, every character that elm-format 0.8.7 escapes
   (Haskell's `isPrint` is false or `isSpace` is true, except the space).
@@ -424,15 +437,14 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 285 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 78 files
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 286 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 77 files
   that elm-format still changes; many of them differ in the text of doc
   comments (bd `krueger-3u6`). Each pending file has a bd issue, and the
   list only shrinks: a fix removes entries, and the check fails when a
   listed file becomes stable.
-  Differences that are known and not yet fixed are in bd `krueger-sou`
-  (elm-format adds parentheses around a multi-line operand after an
-  operator) and in the issues that the pending list names.
+  Differences that are known and not yet fixed are in the issues that
+  the pending list names.
 - After a printer change, run `mise run printer:record` (needs
   elm-format through `mise x`) and commit the lock. Give a pending path to
   reset the list: `mise run printer:record tests/printer/pending.json`. Use

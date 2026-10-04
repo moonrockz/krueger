@@ -510,3 +510,16 @@ fn commented(
   let gap = if flat { @pretty.text(" ") } else { @pretty.hardline() }
   (@pretty.join(parts, gap), flat)
 }
+
+///|
+/// Whether a comment is inside the parentheses at `parens` but outside the
+/// expression at `inner` in them. elm-format keeps such parentheses.
+fn Ctx::comment_in_parens(
+  self : Ctx,
+  parens : @ast.Range,
+  inner : @ast.Range,
+) -> Bool {
+  guard self.comments is Some(t) else { return false }
+  t.has_between(parens.start, inner.start) ||
+  t.has_between(inner.end, parens.end)
+}

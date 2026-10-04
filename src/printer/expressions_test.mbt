@@ -94,7 +94,9 @@ test "missing parentheses are added where precedence needs them" {
     .expect(
       @printer.print_expression(op("+", Left, n(Integer(1L)), lam(v("x")))),
     )
-    .to_equal("1 + \\x -> x")
+    // elm-format Box.hs formatBinops: a lambda at the end of a chain is
+    // in parentheses, except after `<|`.
+    .to_equal("1 + (\\x -> x)")
     s
     .expect(@printer.print_expression(app([v("f"), lam(v("x"))])))
     .to_equal("f (\\x -> x)")
@@ -405,24 +407,27 @@ test "a record access target that is not a name, record or parenthesized express
       ),
     )
     .to_equal("{ r | a = x }.f")
-    s.expect(access(ParenthesizedExpression(v("x")))).to_equal("(x).f")
+    // elm-format removes the parentheses that the parse does not need.
+    s.expect(access(ParenthesizedExpression(v("x")))).to_equal("x.f")
   })
 }
 
 ///|
 test "let, case and if after an operator indent right of their keyword" {
-  // `let` is at column 9 here: its declarations must be right of it.
+  // elm-format Box.hs formatBinops: at the end of a chain they are in
+  // parentheses (the forms that elm-format 0.8.7 gives).
   @expect.expect_all(s => {
     s
     .expect(@printer.print_expression(expr_of("a </> let y = 1 in y")))
     .to_equal(
       (
         #|a
-        #|    </> let
+        #|    </> (let
         #|            y =
         #|                1
-        #|        in
-        #|        y
+        #|         in
+        #|         y
+        #|        )
       ),
     )
     s
@@ -430,9 +435,10 @@ test "let, case and if after an operator indent right of their keyword" {
     .to_equal(
       (
         #|a
-        #|    </> case x of
+        #|    </> (case x of
         #|            _ ->
         #|                y
+        #|        )
       ),
     )
     s
@@ -440,11 +446,12 @@ test "let, case and if after an operator indent right of their keyword" {
     .to_equal(
       (
         #|a
-        #|    </> if c then
+        #|    </> (if c then
         #|            x
         #|
-        #|        else
+        #|         else
         #|            y
+        #|        )
       ),
     )
     s
@@ -453,11 +460,12 @@ test "let, case and if after an operator indent right of their keyword" {
       (
         #|a
         #|    == (b
-        #|            && let
-        #|                y =
-        #|                    1
-        #|               in
-        #|               y
+        #|            && (let
+        #|                    y =
+        #|                        1
+        #|                in
+        #|                y
+        #|               )
         #|       )
       ),
     )
@@ -525,11 +533,12 @@ test "if, case and let indent to the next multiple of 4 right of their keyword" 
     .to_equal(
       (
         #|a
-        #|    |> let
-        #|        y =
-        #|            1
-        #|       in
-        #|       y
+        #|    |> (let
+        #|            y =
+        #|                1
+        #|        in
+        #|        y
+        #|       )
       ),
     )
   })

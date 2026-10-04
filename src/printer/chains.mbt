@@ -11,17 +11,27 @@ priv enum ChainStep {
 ///|
 /// Whether a child operator application can stay in its parent's chain
 /// without parentheses and parse back to the same tree.
+///
+/// With `mixed`, two operators of the same precedence and of different
+/// directions also join where the parser reads them back the same way:
+/// a left child that groups to the left (`a |> f <| g`), and a right child
+/// of a parent that groups to the right (`a <| f |> g`). The parser
+/// accepts such a chain and elm-format keeps it flat, but `elm make`
+/// rejects it, so the printer does this only for a parsed source.
 fn joins(
   parent : @dialect.OperatorDef,
   child : @dialect.OperatorDef,
   on_left : Bool,
+  mixed? : Bool = false,
 ) -> Bool {
   if child.precedence != parent.precedence {
     child.precedence > parent.precedence
   } else if on_left {
-    parent.direction is Left && child.direction is Left
+    child.direction is Left &&
+    (parent.direction is Left || (mixed && parent.direction is Right))
   } else {
-    parent.direction is Right && child.direction is Right
+    parent.direction is Right &&
+    (child.direction is Right || (mixed && child.direction is Left))
   }
 }
 
@@ -35,7 +45,12 @@ fn Ctx::chain_step(
 ) -> ChainStep raise PrintError {
   match child.value {
     OperatorApplication(symbol, _, _, _) =>
-      if joins(parent, self.operator_def(path, symbol), on_left) {
+      if joins(
+          parent,
+          self.operator_def(path, symbol),
+          on_left,
+          mixed=self.source is Some(_),
+        ) {
         Expand(path, child)
       } else {
         Operand(path, child, true)
@@ -201,7 +216,18 @@ fn Ctx::chain_plan(
           parens(self.join(), docs[0])
         })
       } else {
-        Expr(p, level + 1, node, if k == last { AnyExpr } else { Operand })
+        Expr(
+          p,
+          level + 1,
+          node,
+          if k < last {
+            Operand
+          } else if symbols[last - 1] == "<|" {
+            Piped
+          } else {
+            LastOperand
+          },
+        )
       },
     )
     parts.push(

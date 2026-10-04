@@ -1,11 +1,11 @@
 ///|
-test "patterns print with the parentheses elm-syntax needs" {
+test "patterns print with the parentheses elm-syntax needs and elm-format adds" {
   @expect.expect_all(s => {
     let x = pvar("x")
     let xs = pvar("xs")
     s
     .expect(@printer.print_pattern(n(UnConsPattern(ctor("Just", [x]), xs))))
-    .to_equal("Just x :: xs")
+    .to_equal("(Just x) :: xs")
     s
     .expect(
       @printer.print_pattern(

@@ -4,6 +4,8 @@
 enum MAt {
   MAny
   MOperand
+  MLast
+  MPiped
   MArg
   MHead
   MNegated
@@ -41,8 +43,28 @@ fn compound(e : @ast.Expression) -> Bool {
 
 ///|
 fn model_parens(e : @ast.Expression, at : MAt) -> Bool {
+  model_needs(e, at) || model_elm_format(e, at)
+}
+
+///|
+/// The parentheses that elm-format writes (Box.hs `syntaxParens`).
+fn model_elm_format(e : @ast.Expression, at : MAt) -> Bool {
+  let space = e is Application(_)
+  let infix = e is OperatorApplication(_, _, _, _)
+  let ambiguous = opens_right(e)
   match at {
     MAny => false
+    MOperand | MLast | MHead => infix || ambiguous
+    MPiped => infix
+    MArg | MNegated | MTarget => space || infix || ambiguous
+  }
+}
+
+///|
+/// The parentheses that the parser needs.
+fn model_needs(e : @ast.Expression, at : MAt) -> Bool {
+  match at {
+    MAny | MLast | MPiped => false
     MOperand => opens_right(e)
     MArg => compound(e) && !(e is Negation(_))
     MHead => compound(e)
@@ -121,7 +143,17 @@ fn chain_node(
       } else {
         n(ParenthesizedExpression(chain_node(r, true)))
       }
-    _ => ce(r, if last { MAny } else { MOperand })
+    _ =>
+      ce(
+        r,
+        if !last {
+          MOperand
+        } else if symbol == "<|" {
+          MPiped
+        } else {
+          MLast
+        },
+      )
   }
   n(OperatorApplication(symbol, dir, left, right))
 }
@@ -162,6 +194,8 @@ fn ce(e : @ast.Node[@ast.Expression], at : MAt) -> @ast.Node[@ast.Expression] {
     IfBlock(c, t, f) => IfBlock(ce(c, MAny), ce(t, MAny), ce(f, MAny))
     Negation(x) => Negation(ce(x, MNegated))
     TupledExpression(xs) => TupledExpression(each(xs, x => ce(x, MAny)))
+    // Parentheses that neither the parser nor elm-format needs go.
+    ParenthesizedExpression(x) if !model_parens(x.value, at) => return ce(x, at)
     ParenthesizedExpression(x) => ParenthesizedExpression(ce(x, MAny))
     LetExpression(b) =>
       LetExpression({
@@ -202,6 +236,7 @@ fn ce(e : @ast.Node[@ast.Expression], at : MAt) -> @ast.Node[@ast.Expression] {
 enum PAt {
   PAny
   PConsLeft
+  PConsTail
   PAsInner
   PArg
 }
@@ -213,17 +248,23 @@ fn cp(p : @ast.Node[@ast.Pattern], at : PAt) -> @ast.Node[@ast.Pattern] {
     TuplePattern(xs) => TuplePattern(each(xs, x => cp(x, PAny)))
     ListPattern(xs) => ListPattern(each(xs, x => cp(x, PAny)))
     NamedPattern(r, args) => NamedPattern(r, each(args, x => cp(x, PArg)))
-    UnConsPattern(l, r) => UnConsPattern(cp(l, PConsLeft), cp(r, PAny))
+    UnConsPattern(l, r) =>
+      UnConsPattern(
+        cp(l, PConsLeft),
+        cp(r, if r.value is UnConsPattern(_, _) { PAny } else { PConsTail }),
+      )
     AsPattern(x, name) => AsPattern(cp(x, PAsInner), name)
     ParenthesizedPattern(x) => ParenthesizedPattern(cp(x, PAny))
     other => other
   }
+  // elm-format writes a constructor with arguments in parentheses before
+  // and after `::` and in an `as`.
+  let with_args = inner is NamedPattern(_, args) && !args.is_empty()
   let parens = match at {
     PAny => false
-    PConsLeft | PAsInner => inner is (UnConsPattern(_, _) | AsPattern(_, _))
-    PArg =>
-      inner is (UnConsPattern(_, _) | AsPattern(_, _)) ||
-      (inner is NamedPattern(_, args) && !args.is_empty())
+    PConsTail => with_args
+    PConsLeft | PAsInner | PArg =>
+      inner is (UnConsPattern(_, _) | AsPattern(_, _)) || with_args
   }
   if parens {
     n(ParenthesizedPattern(n(inner)))

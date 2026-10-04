@@ -180,11 +180,11 @@
     "elm_format": "stable"
   },
   "dosarf/elm-tree-view@3.0.0/src/Tree.elm": {
-    "sha256": "9a54cc86380458792d3642c6258ab5424ec5d371dd8e6ca0f60f719a956f4c51",
+    "sha256": "d497d624809de0d68411312a585d6317e7c99d0b34716243b0a581cca897c106",
     "elm_format": "changed"
   },
   "dosarf/elm-tree-view@3.0.0/src/TreeView.elm": {
-    "sha256": "cd189e10cd8aa513aac688ea2bc3363dde4664f5b0fcaf7ff4565a761319aa38",
+    "sha256": "36254fde44c99c987f44015200d593f0619067cbeac57ec5aaba2eaeea039620",
     "elm_format": "changed"
   },
   "elm-community/array-extra@2.6.0/src/Array/Extra.elm": {
@@ -488,7 +488,7 @@
     "elm_format": "changed"
   },
   "elm/core@1.0.5/src/Array.elm": {
-    "sha256": "3caa0d38099feeeb5389cfad34b5d63d8780d0e728a00a2f19225774e959d4bb",
+    "sha256": "0d5bd754c6114879c54394cf88b695a1f0673e193aeaa413fe5760042f93fce7",
     "elm_format": "changed"
   },
   "elm/core@1.0.5/src/Basics.elm": {
@@ -596,7 +596,7 @@
     "elm_format": "changed"
   },
   "elm/json@1.1.4/src/Json/Decode.elm": {
-    "sha256": "3983ec3593d770709701abbcf6565a3e525b574761e3b01c848516b20eb4ff9b",
+    "sha256": "e044d1b9e5d1f67c8ee72a4c1918b988de81d903da60e95ada8616ad84ed2f61",
     "elm_format": "changed"
   },
   "elm/json@1.1.4/src/Json/Encode.elm": {
@@ -608,11 +608,11 @@
     "elm_format": "changed"
   },
   "elm/parser@1.1.0/src/Parser/Advanced.elm": {
-    "sha256": "22e00e63c2e4afd13320379cfcb4b6b1fe3e522d1b88864310f9447c4a28252c",
+    "sha256": "102057ce46038b2b57854a12d93fbe7484a1d88430b42644707989528a6fde5b",
     "elm_format": "changed"
   },
   "elm/random@1.0.0/src/Random.elm": {
-    "sha256": "8872c273505a553147d23e096d8508e6737d684159cd74bf7db4fef3b8a1b11a",
+    "sha256": "1e49b269ac057c23768e082cad8ab436745807ed215d0702dd6d4b616ba993e7",
     "elm_format": "changed"
   },
   "elm/regex@1.0.0/src/Regex.elm": {
@@ -900,8 +900,8 @@
     "elm_format": "stable"
   },
   "myrho/elm-round@1.0.5/src/Round.elm": {
-    "sha256": "a7a4309629131999be36222b17e44f924ecccd58a3637f0e36216dcb6e71f8e1",
-    "elm_format": "changed"
+    "sha256": "afd7ac3076bbfd03c2425c107288b4a015563c107df4799564553f66f216b6b8",
+    "elm_format": "stable"
   },
   "perzanko/elm-loading@2.0.5/src/Loading.elm": {
     "sha256": "c76381653eea68ec600a9354f7cf44b56837774d31b59be5c2b310cd83114f69",

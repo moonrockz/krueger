@@ -150,3 +150,64 @@ test "the built-AST laws reach their success branch" {
   }
   @expect.expect(with_x > 50).to_be_true()
 }
+
+///|
+/// The text of `format`, or `None` when it raises.
+fn formatted(text : String) -> String? {
+  try @printer.format(text) catch {
+    _ => None
+  } noraise {
+    t => Some(t)
+  }
+}
+
+///|
+test "law: format and print_file give the parentheses of normalize_file" {
+  // The printer decides the parentheses while it prints (elm-format's
+  // rules); `normalize_file` rewrites the AST with the same rules. The
+  // generated modules have no comment inside parentheses (`format` keeps
+  // such parentheses).
+  @quickcheck.check(
+    (m : @lawkit.ElmModule) => {
+      guard reparse(m.text()) is Some(first) else { return false }
+      guard formatted(m.text()) is Some(text) else { return false }
+      guard reparse(text) is Some(second) else { return false }
+      @lawkit.without_ranges(doc_comments_only(@printer.normalize_file(first))) ==
+      @lawkit.without_ranges(doc_comments_only(second))
+    },
+    count=200,
+    max_size=24,
+    seed=2043,
+  )
+}
+
+///|
+test "law: normalize_file is idempotent on modules" {
+  @quickcheck.check(
+    (m : @lawkit.ElmModule) => {
+      guard reparse(m.text()) is Some(file) else { return false }
+      let once = @printer.normalize_file(file)
+      @printer.normalize_file(once) == once
+    },
+    count=200,
+    max_size=24,
+    seed=2044,
+  )
+}
+
+///|
+test "the parenthesis laws reach the rules they check" {
+  // Count generated modules whose normalized AST differs from the parsed
+  // one: parentheses removed or added.
+  let mut changed = 0
+  let rs = @splitmix.new(seed=11UL)
+  for i in 0..<100 {
+    let m : @lawkit.ElmModule = @quickcheck.Arbitrary::arbitrary(i % 24, rs)
+    guard reparse(m.text()) is Some(file) else { continue }
+    if @lawkit.without_ranges(@printer.normalize_file(file)) !=
+      @lawkit.without_ranges(file) {
+      changed += 1
+    }
+  }
+  @expect.expect(changed > 20).to_be_true()
+}

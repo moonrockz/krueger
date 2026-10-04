@@ -63,6 +63,19 @@ pub fn print_type_annotation(
 ///   }
 ///   // `::` is right-associative, so an `::` on its left gets parentheses.
 ///   inspect(@printer.print_pattern(outer), content="(a :: b) :: rest")
+///   // elm-format writes a constructor with arguments before `::` in
+///   // parentheses.
+///   let just : @ast.Node[@ast.Pattern] = {
+///     range: r,
+///     value: NamedPattern({ module_name: [][:], name: "Just", }, [pvar("a")][:]),
+///   }
+///   inspect(
+///     @printer.print_pattern({
+///       range: r,
+///       value: UnConsPattern(just, pvar("rest")),
+///     }),
+///     content="(Just a) :: rest",
+///   )
 /// }
 /// ```
 pub fn print_pattern(
@@ -78,9 +91,12 @@ pub fn print_pattern(
 }
 
 ///|
-/// The Elm source of an expression. Parentheses are added where
-/// precedence needs them; parentheses in the AST stay. `if`, `case` and
-/// `let` are always multi-line (elm-format). Raises `PrintError` for an
+/// The Elm source of an expression, with elm-format's parentheses:
+/// parentheses are added where precedence needs them and where elm-format
+/// writes them (a lambda, `if`, `case` or `let` at the end of an operator
+/// chain, except after `<|`); parentheses in the AST that neither needs
+/// go (see `normalize_file`). `if`, `case` and `let` are always multi-line
+/// (elm-format). Raises `PrintError` for an
 /// expression that cannot print as valid Elm; the error's path starts at
 /// `e`.
 ///

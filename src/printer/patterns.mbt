@@ -1,11 +1,30 @@
 ///|
-/// Where a pattern is: this decides its parentheses (checked against
-/// elm-syntax: `Just x :: xs` and `a :: b as c` need none).
+/// Where a pattern is: this decides its parentheses (see
+/// `pattern_parens`).
 priv enum PatternAt {
-  AnyPattern // case branch, let, tuple and list item, inside parentheses, right of `::`
+  AnyPattern // case branch, let, tuple and list item, inside parentheses
   ConsLeft // left of `::`: `::` and `as` patterns need parentheses
+  ConsTail // the last pattern right of `::`
   AsInner // the pattern of an `as`: `::` and `as` patterns need parentheses
   PatternArg // argument or destructuring pattern: also a constructor with arguments
+}
+
+///|
+/// Whether the printer writes `p` at `at` in parentheses. A `::` or `as`
+/// pattern needs them left of `::`, in an `as` and as an argument; a
+/// constructor with arguments needs them as an argument. elm-format also
+/// writes a constructor with arguments in parentheses before and after
+/// `::` and in an `as` (Box.hs `formatPattern`: those places are
+/// `SpaceSeparated`). elm-syntax reads `a :: b as c` as `a :: (b as c)`,
+/// so an `as` after `::` has none.
+fn pattern_parens(p : @ast.Pattern, at : PatternAt) -> Bool {
+  match (p, at) {
+    (NamedPattern(_, args), PatternArg | ConsLeft | ConsTail | AsInner) =>
+      !args.is_empty()
+    (UnConsPattern(_, _) | AsPattern(_, _), PatternArg | ConsLeft | AsInner) =>
+      true
+    _ => false
+  }
 }
 
 ///|
@@ -97,13 +116,10 @@ fn Ctx::pattern_body(
         d = d +
           self.pattern_doc(path.child("patterns", i), level + 1, a, PatternArg)
       }
-      match at {
-        PatternArg => d = d + self.after(args[args.length() - 1].range, "")
-        AnyPattern | ConsLeft | AsInner => ()
-      }
-      match at {
-        PatternArg => flat_parens(d)
-        AnyPattern | ConsLeft | AsInner => d
+      if pattern_parens(p.value, at) {
+        flat_parens(d + self.after(args[args.length() - 1].range, ""))
+      } else {
+        d
       }
     }
     UnConsPattern(_, _) => {
@@ -122,10 +138,11 @@ fn Ctx::pattern_body(
         q = q.child("right", 0)
         node = right
       }
-      d = d + self.pattern_doc(q, level + 1, node, AnyPattern)
-      match at {
-        AnyPattern => d
-        ConsLeft | AsInner | PatternArg => flat_parens(d)
+      d = d + self.pattern_doc(q, level + 1, node, ConsTail)
+      if pattern_parens(p.value, at) {
+        flat_parens(d)
+      } else {
+        d
       }
     }
     AsPattern(inner, name) => {
@@ -142,9 +159,10 @@ fn Ctx::pattern_body(
           name.range,
           self.lower_name(path.child("name", 0), name.value),
         )
-      match at {
-        AnyPattern => d
-        ConsLeft | AsInner | PatternArg => flat_parens(d)
+      if pattern_parens(p.value, at) {
+        flat_parens(d)
+      } else {
+        d
       }
     }
     ParenthesizedPattern(x) =>

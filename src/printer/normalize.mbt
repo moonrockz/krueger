@@ -172,9 +172,12 @@ fn normalize_imports(
 }
 
 ///|
-/// The file in the order that elm-format gives it. `print_file` and
-/// `format` print this file: parsing their output gives this AST (without
-/// ranges and regular comments).
+/// The file in the order and with the parentheses that elm-format gives
+/// it. Parsing the output of `print_file` gives this AST (without ranges
+/// and regular comments). `format` gives it too, except that it keeps
+/// parentheses that have a comment inside them, and keeps a chain of
+/// operators of the same precedence and different directions flat
+/// (`a |> f <| g`), as elm-format does.
 ///
 /// - The module's exposed items are a set: a duplicate is removed (`T` and
 ///   `T(..)` give `T(..)`). They are sorted: operators, then types, then
@@ -186,8 +189,17 @@ fn normalize_imports(
 ///   the exposing lists are joined (`(..)` wins). An alias equal to the
 ///   module name is removed (`import A as A`). Each exposing list is a
 ///   sorted set, as above.
+/// - Parentheses that neither the parser nor elm-format needs go
+///   (elm-format `formatExpression`, `syntaxParens`): `case (f x) of`
+///   gives `case f x of`, `a - (f b)` gives `a - f b`, `f (-x)` gives
+///   `f -x`. Parentheses around an operator chain in a chain stay.
+/// - elm-format's parentheses are added: around a lambda, `if`, `case` or
+///   `let` at the end of an operator chain, except after `<|`
+///   (`x |> (\y -> y)`); around a constructor pattern with arguments
+///   before or after `::` and in an `as` (`(Just a) :: rest`).
 ///
-/// Nodes keep their ranges. Nothing else changes.
+/// Nodes keep their ranges; an expression that replaces its parentheses
+/// takes their range. Nothing else changes.
 ///
 /// ```mbt check
 /// test {
@@ -213,6 +225,15 @@ fn normalize_imports(
 /// }
 /// ```
 pub fn normalize_file(file : @ast.File) -> @ast.File {
+  normalize_parens(normalize_header(file))
+}
+
+///|
+/// The module header and the imports of `file` in elm-format's order (see
+/// `normalize_file`). The printer prints the declarations of the source
+/// and decides their parentheses while it prints, so that comments and
+/// error paths stay those of the source.
+fn normalize_header(file : @ast.File) -> @ast.File {
   let sorted = {
     ..with_exposing(file, normalize_exposing),
     imports: normalize_imports(file.imports),

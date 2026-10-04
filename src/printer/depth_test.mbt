@@ -1,10 +1,21 @@
 ///|
 test "400 nested levels print on every target" {
+  // `-(-(...-x))`: the parentheses stay (a negation in a negation needs
+  // them), except around `x`.
+  let mut e : @ast.Node[@ast.Expression] = n(FunctionOrValue([][:], "x"))
+  for _ in 0..<200 {
+    e = n(Negation(n(ParenthesizedExpression(e))))
+  }
+  inspect(@printer.print_expression(e, width=1_000_000).length(), content="599")
+}
+
+///|
+test "400 nested parentheses that go print on every target" {
   let mut e : @ast.Node[@ast.Expression] = n(FunctionOrValue([][:], "x"))
   for _ in 0..<400 {
     e = n(ParenthesizedExpression(e))
   }
-  inspect(@printer.print_expression(e, width=1_000_000).length(), content="801")
+  inspect(@printer.print_expression(e, width=1_000_000), content="x")
 }
 
 ///|

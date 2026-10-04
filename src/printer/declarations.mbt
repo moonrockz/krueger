@@ -956,7 +956,7 @@ fn Ctx::file_doc(
 ) -> @pretty.Doc raise PrintError {
   let root = @syntax.NodePath::root()
   self.check_moved(source)
-  let file = normalize_file(source)
+  let file = normalize_header(source)
   let port_docs : Array[@pretty.Doc?] = Array::make(
     file.declarations.length(),
     None,

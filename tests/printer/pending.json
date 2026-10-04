@@ -65,7 +65,6 @@
   "mdgriffith/elm-ui@1.1.8/src/Internal/Grid.elm",
   "miniBill/elm-unicode@1.0.3/src/Unicode.elm",
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Result.elm",
-  "myrho/elm-round@1.0.5/src/Round.elm",
   "rtfeldman/elm-css@17.1.1/src/Css.elm",
   "rtfeldman/elm-hex@1.0.0/src/Hex.elm",
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Accordion.elm",
