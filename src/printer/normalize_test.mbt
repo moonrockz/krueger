@@ -751,17 +751,17 @@ test "effect module: a comment before the list stays on the line" {
 }
 
 ///|
-/// The AST of `text`, or `None` when it has a diagnostic with severity
-/// `Error`.
+/// The AST of `text`, or `None` when it has a diagnostic. The input is
+/// valid Elm, so a law fails on any diagnostic, a warning too.
 fn header_ast(text : String) -> @ast.File? {
   let result = @parser.parse_module(
     @scanner.SourceText::new(text),
     @scanner.DefaultScanner::new(),
   )
-  if result.diagnostics.iter().any(d => d.severity is Error) {
-    None
-  } else {
+  if result.diagnostics.is_empty() {
     result.ast
+  } else {
+    None
   }
 }
 

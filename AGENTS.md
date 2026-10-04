@@ -416,8 +416,9 @@ and `print_type_annotation`, each with `width?` (default 120) and
   `tests/printer/elm_format.lock`. Of the 363 corpus files, 283 are stable
   under elm-format 0.8.7. `tests/printer/pending.json` lists the 80 files
   that elm-format still changes; many of them differ in the text of doc
-  comments (bd `krueger-3u6`). Each pending file has a bd issue, and the list only shrinks: a fix
-  removes entries, and the check fails when a listed file becomes stable.
+  comments (bd `krueger-3u6`). Each pending file has a bd issue, and the
+  list only shrinks: a fix removes entries, and the check fails when a
+  listed file becomes stable.
   Differences that are known and not yet fixed are in bd `krueger-sou`
   (elm-format adds parentheses around a multi-line operand after an
   operator) and in the issues that the pending list names.
