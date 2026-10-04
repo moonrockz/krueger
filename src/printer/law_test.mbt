@@ -36,13 +36,13 @@ fn doc_comments_only(file : @ast.File) -> @ast.File {
 }
 
 ///|
-test "law: printing a parsed module and parsing it again gives the same AST" {
+test "law: printing a parsed module and parsing it again gives the normalized AST" {
   @quickcheck.check(
     (m : @lawkit.ElmModule) => {
       guard reparse(m.text()) is Some(first) else { return false }
       guard printed(first) is Some(text) else { return false }
       guard reparse(text) is Some(second) else { return false }
-      @lawkit.without_ranges(doc_comments_only(first)) ==
+      @lawkit.without_ranges(doc_comments_only(@printer.normalize_file(first))) ==
       @lawkit.without_ranges(doc_comments_only(second))
     },
     count=200,

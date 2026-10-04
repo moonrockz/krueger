@@ -68,7 +68,9 @@ fn printer_check(key : String, text : String) -> (String?, Array[String]) {
   }
   match again.ast {
     Some(second) => {
-      if @lawkit.without_ranges(printer_doc_comments_only(first)) !=
+      if @lawkit.without_ranges(
+          printer_doc_comments_only(@krueger.normalize_file(first)),
+        ) !=
         @lawkit.without_ranges(printer_doc_comments_only(second)) {
         problems.push("\{key}: the AST changes through printing")
       }

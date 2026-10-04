@@ -317,15 +317,115 @@ fn Ctx::expose_doc(
 }
 
 ///|
-/// The list of an exposing list without a group: `(..)`, or `(a, b)` with
-/// its comments (`(` then `( ` when it breaks). Also the comments before the
-/// `(`, which go after `exposing`.
+/// The comments of an explicit exposing list as elm-format keeps them:
+/// before and after each item (`C2`), by the `expose_order` key of the
+/// item. The comments of items with the same key (duplicates, or the same
+/// item in two imports of one module) are joined.
+priv struct ExposeComments {
+  /// The comments between `exposing` and `(`.
+  before_paren : Array[@ast.Node[String]]
+  items : Map[
+    (Int, String),
+    (Array[@ast.Node[String]], Array[@ast.Node[String]]),
+  ]
+}
+
+///|
+fn ExposeComments::new() -> ExposeComments {
+  { before_paren: [], items: Map([]), }
+}
+
+///|
+/// Takes the comments of the items of exposing list `e` into `into`: for
+/// each item, the comments after the `(` or `,` before it, and the
+/// comments after it up to the next `,` or the `)`. Call it with the list
+/// of the source, before normalization, so that a comment goes with the
+/// item it is next to.
+fn Ctx::take_expose_comments(
+  self : Ctx,
+  e : @ast.Node[@ast.Exposing],
+  into : ExposeComments,
+) -> Unit {
+  guard e.value is Explicit(items) && items.length() > 0 else { return }
+  let paren = self.token_before(items[0].range.start)
+  into.before_paren.append(
+    self.take_if(Leading, items[0].range, c => ends_before(c, paren)),
+  )
+  for i, x in items {
+    // The comments after the `,` that trail the item before it.
+    let pre = if i > 0 { self.take(Trailing, items[i - 1].range) } else { [] }
+    pre.append(self.take(Leading, x.range))
+    let post = match items.get(i + 1) {
+      Some(next) => {
+        let comma = self.token_before(next.range.start)
+        let p = self.take_if(Trailing, x.range, c => ends_before(c, comma))
+        p.append(self.take_if(Leading, next.range, c => ends_before(c, comma)))
+        p
+      }
+      None => [..self.take(Trailing, x.range), ..self.take(Inner, e.range)]
+    }
+    let key = expose_order(x.value)
+    match into.items.get(key) {
+      Some((a, b)) => {
+        a.append(pre)
+        b.append(post)
+      }
+      None => into.items[key] = (pre, post)
+    }
+  }
+}
+
+///|
+/// `Split` when the source list `e` has a line break inside its
+/// parentheses (elm-format Parse/Module.hs `listing`, `trackNewline`).
+fn Ctx::list_split(self : Ctx, e : @ast.Node[@ast.Exposing]) -> Split {
+  match e.value {
+    Explicit(items) =>
+      match items.get(0).bind(x => self.token_before(x.range.start)) {
+        Some(paren) => self.split_within({ start: paren, end: e.range.end, })
+        None => self.join()
+      }
+    All(_) => self.join()
+  }
+}
+
+///|
+/// `( a\n, b\n)`: the parts each on its own line, then the comments
+/// `footer` (elm-format `group'` with its `extraFooter`).
+fn stacked_list(
+  parts : Array[@pretty.Doc],
+  footer : Array[@ast.Node[String]],
+) -> @pretty.Doc {
+  let mut d = @pretty.text("( ") + @pretty.nest(2, parts[0])
+  for i in 1..<parts.length() {
+    d = d + @pretty.hardline() + @pretty.text(", ") + @pretty.nest(2, parts[i])
+  }
+  if !footer.is_empty() {
+    d = d + @pretty.hardline() + comment_box(footer)
+  }
+  d + @pretty.hardline() + @pretty.text(")")
+}
+
+///|
+/// The list of an exposing list without a group: `(..)`, or the items in
+/// `groups` with their `comments` (see `exposing_groups`). One group is
+/// `(a, b)`, or each item on its own line when `split` is `Split` or an
+/// item has a comment that needs its own line; several groups are always
+/// one group per line (elm-format `formatModuleLine`, `formatListing`).
+/// A group from a `@docs` line is one line in every layout. Also gives
+/// the comments before the `(`, which go after `exposing`, and whether
+/// the list is one line that does not break in the `Width` layout.
+///
+/// The comments of the items in `@docs` groups go after the last group, on
+/// lines of their own (elm-format `commentsFromReorderedVars`).
 fn Ctx::exposing_list(
   self : Ctx,
   path : @syntax.NodePath,
   e : @ast.Node[@ast.Exposing],
+  groups : ExposingGroups,
+  comments : ExposeComments,
   split : Split,
-) -> (@pretty.Doc, @pretty.Doc) raise PrintError {
+) -> (@pretty.Doc, @pretty.Doc, Bool) raise PrintError {
   match e.value {
     All(_) => {
       // `(..)` has no children: its comments before the `(` are inner too.
@@ -339,41 +439,106 @@ fn Ctx::exposing_list(
       (
         comments_after(before_paren) + gap,
         @pretty.text("(") + self.inner_alone(e.range) + @pretty.text("..)"),
+        false,
       )
     }
     Explicit(items) => {
       guard !items.is_empty() else {
         raise PrintError(path~, problem=EmptyExposing)
       }
-      let paren = self.token_before(items[0].range.start)
-      let before_paren = comments_after(
-        self.take_if(Leading, items[0].range, c => ends_before(c, paren)),
-      )
-      let mut docs = @pretty.empty()
+      let position : Map[(Int, String), Int] = Map([])
       for i, x in items {
-        let previous = if i > 0 { Some(items[i - 1].range) } else { None }
-        if i > 0 {
-          docs = docs +
-            split_softline(split) +
-            self.before_item(None, x.range) +
-            @pretty.text(", ")
+        position[expose_order(x.value)] = i
+      }
+      let item_doc = (x : @ast.Node[@ast.TopLevelExpose]) => {
+        let key = expose_order(x.value)
+        self.expose_doc(
+          path.child("explicit", position.get(key).unwrap_or(0)),
+          x,
+        )
+      }
+      let none = ([], [])
+      let documented : Map[(Int, String), Unit] = Map([])
+      for k in 0..<groups.documented {
+        for x in groups.groups[k] {
+          documented[expose_order(x.value)] = ()
         }
-        docs = docs +
-          self.after_comma(previous, x.range) +
-          self.expose_doc(path.child("explicit", i), x) +
-          self.trailing_before_comma(
-            x.range,
-            items.get(i + 1).map(n => n.range),
+      }
+      let footer = []
+      for x in items {
+        let key = expose_order(x.value)
+        if documented.contains(key) {
+          let (pre, post) = comments.items.get(key).unwrap_or(none)
+          footer.append(pre)
+          footer.append(post)
+        }
+      }
+      let parts = []
+      let mut flat = true
+      if groups.groups.length() == 1 {
+        for x in groups.groups[0] {
+          let key = expose_order(x.value)
+          let (pre, post) = if documented.contains(key) {
+            none
+          } else {
+            comments.items.get(key).unwrap_or(none)
+          }
+          let (d, one) = commented(pre, item_doc(x), post)
+          parts.push(d)
+          flat = flat && one
+        }
+      } else {
+        flat = false
+        for k, g in groups.groups {
+          let pre = []
+          let post = []
+          let names = []
+          for x in g {
+            names.push(item_doc(x))
+            if k >= groups.documented {
+              let (a, b) = comments.items
+                .get(expose_order(x.value))
+                .unwrap_or(none)
+              pre.append(a)
+              post.append(b)
+            }
+          }
+          parts.push(
+            commented(pre, @pretty.join(names, @pretty.text(", ")), post).0,
           )
+        }
+      }
+      // The comments of items that normalization removed.
+      footer.append(self.take_within(e.range))
+      let fixed = groups.documented > 0 && split is Fit
+      let split = if fixed { Join } else { split }
+      let list = match split {
+        _ if !flat || !footer.is_empty() => stacked_list(parts, footer)
+        // The enclosing group breaks the list.
+        Fit => {
+          let mut body = @pretty.nest(2, parts[0])
+          for i in 1..<parts.length() {
+            body = body +
+              @pretty.softline() +
+              @pretty.text(", ") +
+              @pretty.nest(2, parts[i])
+          }
+          @pretty.text("(") +
+          @pretty.if_break(@pretty.text(" "), @pretty.empty()) +
+          body +
+          @pretty.softline() +
+          @pretty.text(")")
+        }
+        Join =>
+          @pretty.text("(") +
+          @pretty.join(parts, @pretty.text(", ")) +
+          @pretty.text(")")
+        Split => stacked_list(parts, footer)
       }
       (
-        before_paren,
-        @pretty.text("(") +
-        @pretty.if_break(@pretty.text(" "), @pretty.empty()) +
-        docs +
-        self.inner(e.range) +
-        split_softline(split) +
-        @pretty.text(")"),
+        comments_after(comments.before_paren),
+        list,
+        fixed && flat && footer.is_empty(),
       )
     }
   }
@@ -384,12 +549,16 @@ fn Ctx::exposing_list(
 /// module header. After an import (`import_ = true`), the broken form puts
 /// `exposing` on its own line, as elm-format 0.8.7 does:
 /// `\n    exposing\n        ( a\n        , b\n        )`. `previous` is
-/// the range of the name before it.
+/// the range of the name before it. `groups`, `comments` and `split` are
+/// as for `Ctx::exposing_list`.
 fn Ctx::exposing_doc(
   self : Ctx,
   path : @syntax.NodePath,
   e : @ast.Node[@ast.Exposing],
   previous : @ast.Range,
+  groups : ExposingGroups,
+  comments : ExposeComments,
+  split : Split,
   import_? : Bool = false,
 ) -> @pretty.Doc raise PrintError {
   // The comments before `exposing` go on lines of their own.
@@ -399,20 +568,9 @@ fn Ctx::exposing_doc(
   } else {
     Some(@pretty.nest(4, comment_block(cs, before=true, after=true)))
   }
-  // elm-format Parse/Module.hs listing (`trackNewline` inside the
-  // parentheses) and Box.hs formatImport: after an import, a line break in
-  // the list puts each item on its own line. The module header's list
-  // keeps its layout (its groups come from `@docs`).
-  let split = match (e.value, import_) {
-    (Explicit(items), true) =>
-      // An empty list raises `EmptyExposing` in `exposing_list`.
-      match items.get(0).bind(x => self.token_before(x.range.start)) {
-        Some(paren) => self.split_within({ start: paren, end: e.range.end, })
-        None => self.join()
-      }
-    _ => self.join()
-  }
-  let (before_paren, items) = self.exposing_list(path, e, split)
+  let (before_paren, items, one_line) = self.exposing_list(
+    path, e, groups, comments, split,
+  )
   match e.value {
     All(_) =>
       lead.unwrap_or(self.after(previous, " ")) +
@@ -421,9 +579,19 @@ fn Ctx::exposing_doc(
       @pretty.text(" ") +
       items
     Explicit(_) => {
+      // A list that is one line follows `exposing` on its line, unless a
+      // line comment breaks the header.
+      let gap = if one_line &&
+        lead is None &&
+        !self.line_comment_after(previous) &&
+        !comments.before_paren.iter().any(is_line_comment) {
+        @pretty.text(" ")
+      } else {
+        @pretty.line()
+      }
       let list = @pretty.text("exposing") +
         before_paren +
-        @pretty.nest(4, @pretty.line() + items)
+        @pretty.nest(4, gap + items)
       match (lead, import_) {
         (Some(l), true) => l + @pretty.group(@pretty.nest(4, list))
         (Some(l), false) => l + @pretty.group(list)
@@ -477,10 +645,14 @@ fn effect_field(
 }
 
 ///|
+/// The module header. `groups` and `comments` are the groups and the
+/// comments of its exposing list (see `Ctx::exposing_list`).
 fn Ctx::module_doc(
   self : Ctx,
   path : @syntax.NodePath,
   m : @ast.Node[@ast.Module],
+  groups : ExposingGroups,
+  comments : ExposeComments,
 ) -> @pretty.Doc raise PrintError {
   match m.value {
     NormalModule(d) | PortModule(d) => {
@@ -500,6 +672,9 @@ fn Ctx::module_doc(
         path.child("exposingList", 0),
         d.exposing_list,
         name.range,
+        groups,
+        comments,
+        self.join(),
       )
     }
     // `effect module A where { command = C } exposing (a)` on one line. A
@@ -595,7 +770,14 @@ fn Ctx::module_doc(
           @pretty.text(" where { ") +
           @pretty.join(fields, @pretty.text(", ")) +
           @pretty.text(" }") +
-          self.exposing_doc(path.child("exposingList", 0), e, last.range)
+          self.exposing_doc(
+            path.child("exposingList", 0),
+            e,
+            last.range,
+            groups,
+            comments,
+            self.join(),
+          )
       }
       let name_comments = if name_breaks {
         comment_block(after_name, before=true)
@@ -611,36 +793,48 @@ fn Ctx::module_doc(
         @pretty.text("where") +
         @pretty.group(@pretty.nest(4, @pretty.line() + record))
       }
-      let (before_paren, list) = self.exposing_list(
+      let (before_paren, list, _) = self.exposing_list(
         path.child("exposingList", 0),
         e,
+        groups,
+        comments,
         self.join(),
       )
+      // elm-format `spaceSepOrIndented`: the list goes on the next line when
+      // the header up to `exposing` or the list is multi-line.
       head +
       @pretty.group(
-        @pretty.nest(
-          4,
-          name_comments +
-          comment_block(before_where, before=true) +
-          @pretty.line() +
-          where_clause +
-          comment_block(before_exposing, before=true) +
-          @pretty.line() +
-          @pretty.text("exposing") +
-          before_paren +
-          @pretty.line() +
-          @pretty.group(list),
-        ),
+        @pretty.group(
+          @pretty.nest(
+            4,
+            name_comments +
+            comment_block(before_where, before=true) +
+            @pretty.line() +
+            where_clause +
+            comment_block(before_exposing, before=true) +
+            @pretty.line() +
+            @pretty.text("exposing") +
+            before_paren,
+          ),
+        ) +
+        @pretty.nest(4, @pretty.line() + @pretty.group(list)),
       )
     }
   }
 }
 
 ///|
+/// An import. `comments` and `split` are as for `Ctx::exposing_list`.
+/// `after_name` are comments to print after the module name: those after
+/// the names of the imports that this one merges (elm-format keeps them
+/// with the clause after them).
 fn Ctx::import_doc(
   self : Ctx,
   path : @syntax.NodePath,
   i : @ast.Node[@ast.Import],
+  comments : ExposeComments,
+  split : Split,
+  after_name? : Array[@ast.Node[String]] = [],
 ) -> @pretty.Doc raise PrintError {
   let name = i.value.module_name
   // The comments after `as` (taken before the name's own comments).
@@ -654,7 +848,8 @@ fn Ctx::import_doc(
     self.with_comments(
       name.range,
       @pretty.text(module_name(path.child("moduleName", 0), name.value)),
-    )
+    ) +
+    comments_after(after_name)
   let mut previous = name.range
   if i.value.module_alias is Some(a) {
     // An alias is one upper-case name: `import Html.Events as E`.
@@ -670,11 +865,18 @@ fn Ctx::import_doc(
     previous = a.range
   }
   if i.value.exposing_list is Some(x) {
+    let groups = match x.value {
+      Explicit(items) => ExposingGroups::single(items)
+      All(_) => { groups: [], documented: 0, }
+    }
     d = d +
       self.exposing_doc(
         path.child("exposingList", 0),
         x,
         previous,
+        groups,
+        comments,
+        split,
         import_=true,
       )
   }
@@ -707,6 +909,34 @@ fn blank_lines_between(a : BodyEntry, b : BodyEntry) -> Int {
 }
 
 ///|
+/// Checks the parts of `file` that `normalize_file` moves (the items of the
+/// module's exposing list and the imports), so that a `PrintError` names
+/// their path in `file`, not in the normalized file.
+fn Ctx::check_moved(self : Ctx, file : @ast.File) -> Unit raise PrintError {
+  let check = Ctx::new(self.dialect, layout=self.layout)
+  let root = @syntax.NodePath::root()
+  let path = root.child("moduleDefinition", 0).child("exposingList", 0)
+  if exposing_of(file.module_definition.value).value is Explicit(items) {
+    guard !items.is_empty() else {
+      raise PrintError(path~, problem=EmptyExposing)
+    }
+    for i, x in items {
+      ignore(check.expose_doc(path.child("explicit", i), x))
+    }
+  }
+  for i, imp in file.imports {
+    ignore(
+      check.import_doc(
+        root.child("imports", i),
+        imp,
+        ExposeComments::new(),
+        check.join(),
+      ),
+    )
+  }
+}
+
+///|
 /// The whole file in the elm-format layout. The `{-|` comments of
 /// `File.comments` are printed: one that ends on the row before a port
 /// declaration goes above that port, and the first other one is the
@@ -717,8 +947,16 @@ fn blank_lines_between(a : BodyEntry, b : BodyEntry) -> Int {
 /// before the module header above it; comments in the header and between
 /// imports above the imports (with no imports, also the comments before
 /// the first declaration); other comments as blocks between declarations.
-fn Ctx::file_doc(self : Ctx, file : @ast.File) -> @pretty.Doc raise PrintError {
+///
+/// The file is printed in elm-format's order (see `normalize_file`); its
+/// comments go with their nodes. A `PrintError` names a path in `source`.
+fn Ctx::file_doc(
+  self : Ctx,
+  source : @ast.File,
+) -> @pretty.Doc raise PrintError {
   let root = @syntax.NodePath::root()
+  self.check_moved(source)
+  let file = normalize_file(source)
   let port_docs : Array[@pretty.Doc?] = Array::make(
     file.declarations.length(),
     None,
@@ -727,18 +965,9 @@ fn Ctx::file_doc(self : Ctx, file : @ast.File) -> @pretty.Doc raise PrintError {
   for i, c in file.comments {
     guard c.value.has_prefix("{-|") else { continue }
     let doc = documentation_doc(root.child("comments", i), c.value)
-    let mut port = -1
-    for j, decl in file.declarations {
-      if decl.value is PortDeclaration(_) &&
-        decl.range.start.row == c.range.end.row + 1 {
-        port = j
-        break
-      }
-    }
-    if port >= 0 {
-      port_docs[port] = Some(doc)
-    } else if module_docs is None {
-      module_docs = Some(doc)
+    match documented_port(file, c) {
+      Some(port) => port_docs[port] = Some(doc)
+      None => if module_docs is None { module_docs = Some(doc) }
     }
   }
   let header = file.module_definition
@@ -748,22 +977,86 @@ fn Ctx::file_doc(self : Ctx, file : @ast.File) -> @pretty.Doc raise PrintError {
   } else {
     comment_block(initial) + line_breaks(3)
   }
-  d = d + self.module_doc(root.child("moduleDefinition", 0), header)
+  let exposing = exposing_of(source.module_definition.value)
+  let exposing_comments = ExposeComments::new()
+  self.take_expose_comments(exposing, exposing_comments)
+  d = d +
+    self.module_doc(
+      root.child("moduleDefinition", 0),
+      header,
+      exposing_groups(file, self.list_split(exposing)),
+      exposing_comments,
+    )
   if module_docs is Some(m) {
     d = d + line_breaks(2) + m
   }
-  // The comments of the import section, and the imports.
+  // The comments of the import section, and the imports. The comments
+  // between imports are taken by the imports of the source; each import
+  // of the file takes the comments of its exposing list from the source
+  // imports that it merges.
   let import_comments = self.take(Trailing, header.range)
-  let imports = []
-  let last_import = file.imports.length() - 1
-  for i, imp in file.imports {
+  let last_import = source.imports.length() - 1
+  let merged : Map[String, Array[@ast.Node[@ast.Import]]] = Map([])
+  for i, imp in source.imports {
     import_comments.append(self.take(Leading, imp.range))
-    imports.push(self.import_doc(root.child("imports", i), imp))
     if i < last_import {
       import_comments.append(self.take(Trailing, imp.range))
     }
+    let key = module_key(imp.value.module_name.value)
+    match merged.get(key) {
+      Some(list) => list.push(imp)
+      None => merged[key] = [imp]
+    }
   }
-  let file_range = @syntax.NodeRef::File(file, [][:]).range()
+  let imports = []
+  for i, imp in file.imports {
+    let sources = merged
+      .get(module_key(imp.value.module_name.value))
+      .unwrap_or([imp])
+    let comments = ExposeComments::new()
+    let after_name = []
+    for k in 1..<sources.length() {
+      after_name.append(
+        self.take_if(Trailing, sources[k].value.module_name.range, c => {
+          !is_line_comment(c)
+        }),
+      )
+    }
+    // When `(..)` replaces the lists, their comments stay for the sweep
+    // below.
+    let mut split = self.join()
+    if imp.value.exposing_list is Some({ value: Explicit(_), .. }) {
+      for s in sources {
+        if s.value.exposing_list is Some(e) {
+          self.take_expose_comments(e, comments)
+          if self.list_split(e) is Split {
+            split = Split
+          }
+        }
+      }
+    }
+    imports.push(
+      self.import_doc(
+        root.child("imports", i),
+        imp,
+        comments,
+        split,
+        after_name~,
+      ),
+    )
+    // The comments of the nodes that the merge removed (an alias, a
+    // module name) go before the imports.
+    if sources.length() > 1 ||
+      (
+        sources[0].value.module_alias is Some(_) &&
+        imp.value.module_alias is None
+      ) {
+      for s in sources {
+        import_comments.append(self.take_within(s.range))
+      }
+    }
+  }
+  let file_range = @syntax.NodeRef::File(source, [][:]).range()
   if imports.is_empty() {
     // With no imports, the comments before the first declaration (or at the
     // end of a module with no declarations) are in the import section.
@@ -784,7 +1077,7 @@ fn Ctx::file_doc(self : Ctx, file : @ast.File) -> @pretty.Doc raise PrintError {
   // The module body.
   let entries = []
   if last_import >= 0 {
-    let after_imports = self.take(Trailing, file.imports[last_import].range)
+    let after_imports = self.take(Trailing, source.imports[last_import].range)
     if !after_imports.is_empty() {
       entries.push(Comments(after_imports))
     }

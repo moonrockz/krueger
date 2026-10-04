@@ -138,6 +138,7 @@ pub using @dialect {
 /// width (default 120).
 pub using @printer {
   print_file,
+  normalize_file,
   print_declaration,
   print_expression,
   print_pattern,

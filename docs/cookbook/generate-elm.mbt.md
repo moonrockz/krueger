@@ -80,7 +80,9 @@ test "print a generated function" {
 
 `print_file` also takes the AST that `parse_module` returns. The output has
 the elm-format layout. A module with no regular comments, in the layout that
-the printer chooses, prints back unchanged. The printer does not print
+the printer chooses, prints back unchanged. As elm-format does, the printer
+sorts the exposing lists and the imports and merges duplicates
+(`normalize_file` gives that AST). The printer does not print
 regular comments yet, and elm-format keeps some layouts that the printer
 changes (for example, a list that fits on one line but is written on
 several lines).

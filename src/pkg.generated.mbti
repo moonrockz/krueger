@@ -36,6 +36,8 @@ pub fn is_upper_start(Char) -> Bool
 
 pub fn kind_table() -> Array[(String, String, Array[String])]
 
+pub fn normalize_file(@ast.File) -> @ast.File
+
 pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
 pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult

@@ -379,11 +379,18 @@ and `print_type_annotation`, each with `width?` (default 120) and
   `if`, `case` and `let` are always on several lines; lists, tuples,
   records, applications, operator chains, lambdas, signatures and
   exposing lists stay on one line when they fit in `width`.
+- Order: `print_file` and `format` print `normalize_file(ast)`, the order
+  that elm-format gives (`src/printer/normalize.mbt`). Exposed items are
+  a sorted set (operators, types, values); with `@docs` lines in the
+  module documentation, the module's list has one line per `@docs` line,
+  then one line for the other items. Imports are sorted by module name
+  and the imports of one module are merged. A comment moves with its
+  item; no comment is dropped.
 - Parentheses: the printer adds only the parentheses that the parser
   needs (operator precedence and associativity from the dialect,
   arguments, negations, record access targets) and keeps the ones in the
-  AST. For a parsed AST, `print_file` then `parse_module` gives the same
-  AST without ranges and regular comments.
+  AST. For a parsed AST, `print_file` then `parse_module` gives
+  `normalize_file(ast)` without ranges and regular comments.
 - Comments: documentation fields, the module documentation and port doc
   comments (both in `File.comments`) print; regular comments do not yet.
 - An AST that cannot print as valid Elm raises `PrintError(path~,
@@ -406,11 +413,10 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 150 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 213 files
-  that elm-format still changes; 196 of them differ because elm-format
-  groups the module exposing list by the `@docs` lines (bd `krueger-iji`).
-  Each pending file has a bd issue, and the list only shrinks: a fix
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 283 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 80 files
+  that elm-format still changes; many of them differ in the text of doc
+  comments (bd `krueger-3u6`). Each pending file has a bd issue, and the list only shrinks: a fix
   removes entries, and the check fails when a listed file becomes stable.
   Differences that are known and not yet fixed are in bd `krueger-sou`
   (elm-format adds parentheses around a multi-line operand after an
@@ -669,6 +675,8 @@ inputs.
   modules cut short or changed; it shrinks), `Nesting` and `nested(construct,
   depth)` (each nesting construct at any depth, biased to the limits ± 2),
   `ElmAst` (an AST built directly, for printer laws; every range is zero),
+  `ElmHeader` (exposing lists, `@docs` lines and imports in any order, with
+  duplicates, for the laws of elm-format's order),
   `DocAttributes` (doc-comment attributes with Unicode names and values,
   continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
   `Ranges`, and `units` (a string of UTF-16 units, for lone surrogates). Edge

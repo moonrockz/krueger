@@ -449,3 +449,64 @@ fn Ctx::separator(
 ) -> @pretty.Doc {
   self.after(r, s) + comments_after(moved)
 }
+
+///|
+/// The not yet printed comments inside `r`, in source order; marks them
+/// printed. For the comments of nodes that `normalize_file` removes (a
+/// duplicate exposed item, the alias of a merged import).
+fn Ctx::take_within(self : Ctx, r : @ast.Range) -> Array[@ast.Node[String]] {
+  guard self.comments is Some(t) else { return [] }
+  let out = []
+  for i, p in t.placed {
+    let c = p.comment
+    if !t.printed[i] &&
+      at_or_before(r.start, c.range.start) &&
+      at_or_before(c.range.end, r.end) {
+      t.printed[i] = true
+      out.push(c)
+    }
+  }
+  out
+}
+
+///|
+/// Whether comment `c` prints on one line (a block comment with no line
+/// break).
+fn one_line(c : @ast.Node[String]) -> Bool {
+  !is_line_comment(c) && !comment_text(c.value).contains("\n")
+}
+
+///|
+/// Comments as elm-format joins them (`formatComments`): on one line when
+/// each of them is one line, else each on its own line.
+fn comment_box(cs : Array[@ast.Node[String]]) -> @pretty.Doc {
+  let gap = if cs.iter().all(one_line) {
+    @pretty.text(" ")
+  } else {
+    @pretty.hardline()
+  }
+  @pretty.join(cs.map(comment_doc), gap)
+}
+
+///|
+/// `d` with the comments `pre` before it and `post` after it (elm-format
+/// `formatCommented`): on one line when each comment is one line, else the
+/// comments before, `d` and the comments after on lines of their own. Also
+/// gives whether it is one line.
+fn commented(
+  pre : Array[@ast.Node[String]],
+  d : @pretty.Doc,
+  post : Array[@ast.Node[String]],
+) -> (@pretty.Doc, Bool) {
+  let flat = pre.iter().all(one_line) && post.iter().all(one_line)
+  let parts = []
+  if !pre.is_empty() {
+    parts.push(comment_box(pre))
+  }
+  parts.push(d)
+  if !post.is_empty() {
+    parts.push(comment_box(post))
+  }
+  let gap = if flat { @pretty.text(" ") } else { @pretty.hardline() }
+  (@pretty.join(parts, gap), flat)
+}
