@@ -180,3 +180,16 @@ test "normalize_file formats doc comments" {
     "{-| A _b_.\n-}",
   ])
 }
+
+///|
+test "a doc comment that formatting would not close at its end stays as written" {
+  // Markdown reads `{\-` and `-\}` as `{-` and `-}`, which would open or
+  // close a comment: the doc comment stays exactly as written (also the
+  // `*b*` that elm-format writes `_b_`).
+  @expect.expect_all(s => {
+    for doc in [" A *b* {\\- c.\n", " A *b* -\\} c.\n"] {
+      let source = doc_module(doc)
+      s.expect(@printer.format(source)).to_equal(source)
+    }
+  })
+}

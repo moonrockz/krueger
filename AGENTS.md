@@ -576,7 +576,9 @@ depends only on `moonrockz/pretty` (the printer's layout engine),
 `moonbit-community/cmark` (the Markdown parser of `src/markdown`) and `moonrockz/expect`
 (used by the library packages' own tests); `expect`
 itself imports `moonbitlang/async` and `moonbitlang/x`, so users still download those
-two. Test
+two. `cmark` imports `moonbit-community/casefold`, `moonbit-community/charclass` and
+`moonbitlang/async@0.22.4`, and those bring in `moonbit-community/ucd`, so users
+download these too. Test
 harnesses that need more (`moonspec`, `moonbitlang/async`, `moonbitlang/x`) live in the
 unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
 `moonbitlang/async` keeps its `examples/` and `test_programs/`:
@@ -595,13 +597,16 @@ unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
 
 ### Toolchain
 
-- Supported targets: wasm, wasm-gc, js and native. Library packages (`src`, `scanner`,
-  `parser`, `ast`, `cst`) must build and pass their tests on all four
+- Supported targets: wasm, wasm-gc, js and native. Library packages (`src`, `dialect`,
+  `scanner`, `parser`, `report`, `syntax`, `ast`, `cst`, `lawkit`, `printer`,
+  `markdown`) must build and pass their tests on all four
   (`mise run test:targets`, CI job `targets`). llvm is left out because the toolchain does
   not ship `moonbitlang/core` for it.
 - `moonbitlang/x` and `moonbitlang/async` count as core, but library code uses only
-  `moonbitlang/core`; platform-specific packages (for example `async/fs`, which has no js
-  implementation) belong in test-only or tooling code.
+  `moonbitlang/core`, krueger's own packages and `moonrockz/pretty`; the one
+  exception is `src/markdown`, which also uses `moonbit-community/cmark` (its
+  packages `cmark` and `cmark_base`). Platform-specific packages (for example
+  `async/fs`, which has no js implementation) belong in test-only or tooling code.
 
 - The MoonBit toolchain version is pinned in `.github/workflows/*.yml` (`MOONBIT_VERSION`).
   Keep your local toolchain on the same version (`moon version --all`, `moon upgrade`).
