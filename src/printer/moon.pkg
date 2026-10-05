@@ -1,11 +1,13 @@
 import {
   "moonrockz/krueger/ast",
   "moonrockz/krueger/dialect",
+  "moonrockz/krueger/markdown",
   "moonrockz/krueger/parser",
   "moonrockz/krueger/scanner",
   "moonrockz/krueger/syntax",
   "moonrockz/pretty",
   "moonbitlang/core/int",
+  "moonbitlang/core/hashset",
 }
 
 import {

@@ -98,7 +98,7 @@ fn Ctx::declaration_start(
 ) -> @pretty.Doc raise PrintError {
   let docs = match doc {
     Some(x) =>
-      documentation_doc(path.child("documentation", 0), x.value) +
+      self.documentation_doc(path.child("documentation", 0), x.value) +
       self.trailing(x.range)
     None => @pretty.empty()
   }
@@ -964,7 +964,7 @@ fn Ctx::file_doc(
   let mut module_docs : @pretty.Doc? = None
   for i, c in file.comments {
     guard c.value.has_prefix("{-|") else { continue }
-    let doc = documentation_doc(root.child("comments", i), c.value)
+    let doc = self.documentation_doc(root.child("comments", i), c.value)
     match documented_port(file, c) {
       Some(port) => port_docs[port] = Some(doc)
       None => if module_docs is None { module_docs = Some(doc) }

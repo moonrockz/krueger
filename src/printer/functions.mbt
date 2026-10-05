@@ -1,13 +1,16 @@
 ///|
-/// A doc comment as it is. It must start with `{-|` and end with `-}`.
-fn documentation_doc(
+/// A doc comment, with its Markdown and code as elm-format writes them
+/// (see `format_documentation`). It must start with `{-|` and end with
+/// `-}`.
+fn Ctx::documentation_doc(
+  self : Ctx,
   path : @syntax.NodePath,
   text : String,
 ) -> @pretty.Doc raise PrintError {
   guard text.length() >= 5 && text.has_prefix("{-|") && text.has_suffix("-}") else {
     raise PrintError(path~, problem=InvalidDocumentation)
   }
-  @pretty.verbatim(text)
+  @pretty.verbatim(format_documentation(text, self.dialect, self.doc_depth))
 }
 
 ///|
@@ -104,7 +107,7 @@ fn Ctx::function_plan(
         if in_let {
           raise PrintError(path=p, problem=LetDocumentation)
         }
-        documentation_doc(p, doc.value) + self.trailing(doc.range)
+        self.documentation_doc(p, doc.value) + self.trailing(doc.range)
       }),
     )
   }

@@ -74,25 +74,48 @@ pub fn format_doc(
   if too_nested(md) {
     return text
   }
-  // Each pass renumbers the list marks that interrupt a paragraph for
-  // elm-format's parser, then parses again (a renumbered list can hold
-  // another one).
+  // Where elm-format's parser reads the text differently, a pass edits
+  // the text so that cmark reads it the same way, then parses again (an
+  // edit can change what comes after it).
   for pass in 0..<8 {
     let doc = @cmark.Doc::from_string(md, layout=true, locs=true, strict=true)
-    let markers = []
-    let blocks = to_blocks(doc.block, md, markers) catch {
+    let edits = []
+    let blocks = to_blocks(doc.block, md, edits) catch {
       TooDeep => return text
     }
-    if markers.is_empty() || pass == 7 {
+    if edits.is_empty() || pass == 7 {
       let content = format_markdown(blocks, format_code) catch {
         TooDeep => return text
       }
       return frame(content)
     }
-    markers.sort()
-    md = renumber_marks(md, markers)
+    md = apply_edits(md, edits)
   }
   text
+}
+
+///|
+/// A change to the parsed text: `text` replaces `src[start:end]`.
+priv struct Edit {
+  start : Int
+  end : Int
+  text : String
+}
+
+///|
+/// `src` with `edits`; an edit that overlaps an earlier one is left out.
+fn apply_edits(src : String, edits : Array[Edit]) -> String {
+  edits.sort_by((a, b) => a.start.compare(b.start))
+  let sb = StringBuilder()
+  let mut done = 0
+  for e in edits {
+    guard e.start >= done else { continue }
+    sb.write_string(slice(src, done, e.start))
+    sb.write_string(e.text)
+    done = e.end
+  }
+  sb.write_string(slice(src, done, src.length()))
+  sb.to_string()
 }
 
 ///|
@@ -317,7 +340,7 @@ fn is_tight(list : @cmark.BlockList) -> Bool {
 fn to_blocks(
   root : @cmark.Block,
   src : String,
-  markers : Array[Int],
+  edits : Array[Edit],
 ) -> Array[Block] raise TooDeep {
   let stack : Array[Conv] = [
     ConvSeq({ items: flatten(root), next: 0, out: [], }),
@@ -352,7 +375,7 @@ fn to_blocks(
           Paragraph(p) => {
             let starts = []
             let lines = inline_lines(p.v.inline, src, starts~)
-            markers.append(interrupting_markers(lines, starts, src))
+            edits.append(renumber_marks(lines, starts, src))
             // cheapskate difference: an HTML block does not interrupt a
             // paragraph; its lines continue the paragraph.
             while s.items.get(s.next) is Some(HtmlBlock(h)) {
@@ -362,6 +385,10 @@ fn to_blocks(
               s.next += 1
             }
             para_blocks(lines, s.out)
+          }
+          CodeBlock(c) => {
+            edits.append(fence_closes(c, src))
+            leaf_blocks(block, src, s.out, after_reference)
           }
           _ => leaf_blocks(block, src, s.out, after_reference)
         }
@@ -393,16 +420,18 @@ fn to_blocks(
 }
 
 ///|
-/// The positions of the ordered list marks that start a list inside a
-/// paragraph for elm-format's parser. cheapskate difference: there, a list
-/// with any number interrupts a paragraph; in CommonMark only a list from
-/// 1 does. A mark counts when it is at most 3 columns right of the
-/// paragraph's first line, and text follows it.
-fn interrupting_markers(
+/// Edits that renumber the ordered list marks that start a list inside a
+/// paragraph for elm-format's parser, to `1.` (or `1)`) and spaces, so the
+/// text after a mark stays in its column. cheapskate difference: there, a
+/// list with any number interrupts a paragraph; in CommonMark only a list
+/// from 1 does (elm-format numbers every list from 1). A mark counts when
+/// it is at most 3 columns right of the paragraph's first line, and text
+/// follows it.
+fn renumber_marks(
   lines : Array[String],
   starts : Array[Int],
   src : String,
-) -> Array[Int] {
+) -> Array[Edit] {
   let column = (offset : Int) => {
     let mut i = offset
     while i > 0 && src.code_unit_at(i - 1).to_int() != 0x0A {
@@ -414,8 +443,13 @@ fn interrupting_markers(
   let base = column(first)
   let out = []
   for i in 1..<lines.length() {
-    if ordered_mark_length(lines[i]) is Some(_) && column(starts[i]) - base <= 3 {
-      out.push(starts[i])
+    if ordered_mark_length(lines[i]) is Some(n) && column(starts[i]) - base <= 3 {
+      let at = starts[i]
+      out.push({
+        start: at,
+        end: at + n + 1,
+        text: "1" + slice(src, at + n, at + n + 1) + " ".repeat(n - 1),
+      })
     }
   }
   out
@@ -443,25 +477,36 @@ fn ordered_mark_length(line : String) -> Int? {
 }
 
 ///|
-/// `md` with the ordered list marks at `markers` written as `1.` (or `1)`)
-/// and spaces, so the text after them stays in its column.
-fn renumber_marks(md : String, markers : Array[Int]) -> String {
-  let sb = StringBuilder()
-  let mut done = 0
-  for at in markers {
-    guard at >= done else { continue }
-    let line_end = find_newline(md, at, md.length())
-    guard ordered_mark_length(slice(md, at, line_end)) is Some(n) else {
-      continue
-    }
-    sb.write_string(slice(md, done, at))
-    sb.write_char('1')
-    sb.write_string(slice(md, at + n, at + n + 1))
-    sb.write_string(" ".repeat(n - 1))
-    done = at + n + 1
+/// Edits that end a fenced code block at its first line that starts with
+/// the opening fence: elm-format's parser closes the block there and leaves
+/// out the rest of that line. cheapskate difference: in CommonMark, only a
+/// fence without text after it closes the block.
+fn fence_closes(c : @cmark.Node[@cmark.CodeBlock], src : String) -> Array[Edit] {
+  guard c.v.layout is Fenced(_) && c.meta.loc.first_ccode >= 0 else {
+    return []
   }
-  sb.write_string(slice(md, done, md.length()))
-  sb.to_string()
+  let open_end = find_newline(src, c.meta.loc.first_ccode, src.length())
+  let opening = strip_start_by(slice(src, c.meta.loc.first_ccode, open_end), c => {
+    c == ' '
+  })
+  let mark = if opening.has_prefix("~") { '~' } else { '`' }
+  let fence = String::make(
+    opening.to_array().iter().take_while(x => x == mark).count(),
+    mark,
+  )
+  for line in c.v.code.iter() {
+    let at = line.meta.loc.first_ccode
+    if at >= 0 && line.v.has_prefix(fence) {
+      return [
+        {
+          start: at + fence.length(),
+          end: find_newline(src, at, src.length()),
+          text: "",
+        },
+      ]
+    }
+  }
+  []
 }
 
 ///|

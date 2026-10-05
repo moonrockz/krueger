@@ -180,8 +180,9 @@ pub fn print_declaration(
 /// It prints `normalize_file(file)`: the exposing lists and the imports in
 /// elm-format's order, with a module's exposing list grouped by the
 /// `@docs` lines of its documentation.
-/// Text inside doc comments and GLSL is written as it is, line ends
-/// included: a doc comment from a CRLF source keeps its `\r\n`.
+/// Doc comments are written as elm-format writes them (Markdown and Elm
+/// code formatted, LF line ends; see `@markdown.format_doc`). Text inside
+/// GLSL is written as it is, line ends included.
 /// Raises `PrintError` for an AST that cannot print as valid Elm; the
 /// error's path starts at the file.
 ///

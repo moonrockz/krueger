@@ -60,14 +60,16 @@ test "print a generated function" {
     declarations: [ge_n(@krueger.Declaration::FunctionDeclaration(f))],
     comments: [],
   }
-  // The printer adds the parentheses that precedence needs.
+  // The printer adds the parentheses that precedence needs, and writes the
+  // doc comment as elm-format does (`-}` on its own line).
   inspect(
     @krueger.print_file(file),
     content=(
       #|module Scale exposing (..)
       #|
       #|
-      #|{-| Scale a sum. -}
+      #|{-| Scale a sum.
+      #|-}
       #|scale a b c =
       #|    (a + b) * c
       #|

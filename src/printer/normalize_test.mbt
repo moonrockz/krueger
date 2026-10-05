@@ -105,8 +105,7 @@ test "@docs: `T(..)` names no exposed item" {
     #|x =
     #|    1
     #|
-  // elm-format also rewrites the doc line to `@docs T, y`; krueger keeps
-  // the documentation text as it is (bd krueger-3u6).
+  // elm-format also rewrites the doc line to `@docs T, y`.
   let expected =
     #|module A exposing
     #|    ( x, z
@@ -117,7 +116,7 @@ test "@docs: `T(..)` names no exposed item" {
     #|{-| Module doc.
     #|
     #|@docs x, z
-    #|@docs T(..), y
+    #|@docs T, y
     #|
     #|-}
     #|
@@ -218,8 +217,7 @@ test "@docs: indented lines, continuation lines and fenced code" {
     #|a =
     #|    1
     #|
-  // elm-format output for this source, without its changes to the
-  // documentation text (krueger keeps it as it is).
+  // elm-format output for this source.
   let expected =
     #|module A exposing
     #|    ( a
@@ -233,16 +231,15 @@ test "@docs: indented lines, continuation lines and fenced code" {
     #|{-| Doc
     #|
     #|@docs a
-    #|  @docs b
+    #|@docs b
     #|
-    #|  @docs c
+    #|@docs c
     #|
     #|@docs d
-    #|    e
+    #|@docs e
     #|
-    #|```
-    #|@docs f
-    #|```
+    #|    @docs f
+    #|
     #|
     #|# @docs g
     #|
@@ -254,27 +251,25 @@ test "@docs: indented lines, continuation lines and fenced code" {
     #|
   // Fences with an info string after a space, and a closing fence with
   // text after it: elm-format (Cheapskate) closes a fence with any line
-  // that starts with it. The headers are elm-format's output; the doc
-  // text stays as it is.
+  // that starts with it. The expected texts are elm-format's output.
   let fenced = (doc : String) => {
     "module A exposing (a, b, c, x, y, z)\n\n{-| Doc\n\n\{doc}\n-}\n\n\na =\n    1\n"
   }
-  let header = "module A exposing\n    ( b\n    , c\n    , a, x, y, z\n    )\n\n"
+  let fenced_output = "module A exposing\n    ( b\n    , c\n    , a, x, y, z\n    )\n\n{-| Doc\n\n    @docs x\n\n@docs b\n@docs c\n\n-}\n\n\na =\n    1\n"
   @expect.expect_all(s => {
     s.expect(@printer.format(source)).to_equal(expected)
     for
       doc in [
         "~~~ elm\n@docs x\n~~~\n\n@docs b\n@docs c\n", "``` elm\n@docs x\n```\n\n@docs b\n@docs c\n",
       ] {
-      let text = fenced(doc)
-      let rest = text.view(start_offset=text.find("{-|").unwrap()).to_owned()
-      s.expect(@printer.format(text)).to_equal(header + rest)
+      s.expect(@printer.format(fenced(doc))).to_equal(fenced_output)
     }
     let text = "module A exposing (a, b, c)\n\n{-| Doc\n\n```\n@docs a\n```x\n@docs b\n```\n\n@docs c\n\n-}\n\n\na =\n    1\n"
-    let rest = text.view(start_offset=text.find("{-|").unwrap()).to_owned()
     s
     .expect(@printer.format(text))
-    .to_equal("module A exposing\n    ( b\n    , a, c\n    )\n\n" + rest)
+    .to_equal(
+      "module A exposing\n    ( b\n    , a, c\n    )\n\n{-| Doc\n\n    @docs a\n\n@docs b\n\n\n    @docs c\n\n-}\n\n\na =\n    1\n",
+    )
   })
 }
 
@@ -766,10 +761,43 @@ fn header_ast(text : String) -> @ast.File? {
 }
 
 ///|
+/// `text` without `(..)` in its `@docs` lines, as elm-format writes them.
+/// elm-format is not idempotent on a `@docs` line that names `T(..)`: the
+/// line names no exposed item, then it names `T(..)` as `T` (see the test
+/// "@docs: elm-format writes `T(..)` as `T`, which then names `T(..)`").
+fn docs_without_dots(text : String) -> String {
+  text
+  .split("\n")
+  .map(l => {
+    if l.has_prefix("@docs") {
+      l.to_owned().replace_all(old="(..)", new="")
+    } else {
+      l.to_owned()
+    }
+  })
+  .collect()
+  .join("\n")
+}
+
+///|
+test "@docs: elm-format writes `T(..)` as `T`, which then names `T(..)`" {
+  // elm-format 0.8.7 output for the source, and for its own output.
+  let source = "module M exposing (Msg, map, T(..))\n\n{-| Doc.\n\n@docs T(..), map, missing\n\n-}\n\nimport Dict exposing (T(..), T(..), Z)\nimport Set\n\n\na =\n    1\n"
+  let once = "module M exposing\n    ( map\n    , Msg, T(..)\n    )\n\n{-| Doc.\n\n@docs T, map, missing\n\n-}\n\nimport Dict exposing (T(..), Z)\nimport Set\n\n\na =\n    1\n"
+  let twice = "module M exposing\n    ( T(..), map\n    , Msg\n    )\n\n{-| Doc.\n\n@docs T, map, missing\n\n-}\n\nimport Dict exposing (T(..), Z)\nimport Set\n\n\na =\n    1\n"
+  @expect.expect_all(s => {
+    s.expect(@printer.format(source)).to_equal(once)
+    s.expect(@printer.format(once)).to_equal(twice)
+  })
+}
+
+///|
 test "law: normalize_file is idempotent" {
   @quickcheck.check(
     (m : @lawkit.ElmHeader) => {
-      guard header_ast(m.text()) is Some(file) else { return false }
+      guard header_ast(docs_without_dots(m.text())) is Some(file) else {
+        return false
+      }
       let once = @printer.normalize_file(file)
       @printer.normalize_file(once) == once
     },
@@ -810,7 +838,7 @@ test "law: format and print_file give the text of normalize_file" {
 test "law: format is idempotent on headers and imports" {
   @quickcheck.check(
     (m : @lawkit.ElmHeader) => {
-      let once = try @printer.format(m.text()) catch {
+      let once = try @printer.format(docs_without_dots(m.text())) catch {
         _ => return false
       } noraise {
         t => t

@@ -76,6 +76,9 @@ priv struct Ctx {
   source : SourceFacts?
   /// The regular comments to print; `None` for an AST built by hand.
   comments : CommentTable?
+  /// The number of doc comments around the code that is printed (code in
+  /// a doc comment is formatted with a deeper `Ctx`).
+  doc_depth : Int
 }
 
 ///|
@@ -84,8 +87,9 @@ fn Ctx::new(
   layout? : Layout = Width(120),
   source? : SourceFacts? = None,
   comments? : CommentTable? = None,
+  doc_depth? : Int = 0,
 ) -> Ctx {
-  { dialect, layout, source, comments, }
+  { dialect, layout, source, comments, doc_depth, }
 }
 
 ///|

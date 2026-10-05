@@ -107,6 +107,12 @@ let recordings : Array[(String, String)] = [
   // it reads as text the next time.
   (" a*b c *em*\n", " a_b c _em\\*\n"),
   (" a_b c _em\\*\n", " a\\_b c \\_em\\*\n"),
+  // cheapskate difference: a line that starts with the fence ends a
+  // fenced code block, and the rest of the line goes (fixed after
+  // parsing)
+  (
+    " Doc\n\n```\n@docs a\n```x\n@docs b\n```\n\n@docs c\n\n", " Doc\n\n    @docs a\n\n@docs b\n\n\n    @docs c\n\n",
+  ),
   // elm-format writes two lists with different marks with `-`, which it
   // reads as one list the next time.
   (

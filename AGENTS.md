@@ -423,6 +423,17 @@ and `print_type_annotation`, each with `width?` (default 120) and
   literals print from their value.
 - Comments: documentation fields, the module documentation and port doc
   comments (both in `File.comments`) print; regular comments do not yet.
+- Doc comments print as elm-format writes them, in every mode and in
+  `normalize_file`: the text goes through `@markdown.format_doc`, and Elm
+  code in it through `format_code` (`src/printer/doc_code.mbt`). That
+  wraps the code in a module (as declarations, then as expressions, then
+  as a module), formats it with the `ElmFormat` layout and removes the
+  wrapper, with elm-format's doc-comment spacing (one blank line between
+  items, none after a comment; `formatModule` for a module). Code that
+  does not parse stays as written, and so does a doc comment whose
+  formatted text would not end the comment at its end. Code in doc
+  comments nested more than 3 deep is not formatted. Doc comments get LF
+  line ends.
 - An AST that cannot print as valid Elm raises `PrintError(path~,
   problem~)`. `path` is a `NodePath` from the printed node. Elm has no
   doc comments in a `let`, so documentation on a `let` function raises
@@ -443,10 +454,9 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 286 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 77 files
-  that elm-format still changes; many of them differ in the text of doc
-  comments (bd `krueger-3u6`). Each pending file has a bd issue, and the
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 331 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 32 files
+  that elm-format still changes. Each pending file has a bd issue, and the
   list only shrinks: a fix removes entries, and the check fails when a
   listed file becomes stable.
   Differences that are known and not yet fixed are in the issues that

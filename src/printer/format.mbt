@@ -36,12 +36,23 @@ pub fn format(
   layout? : Layout = ElmFormat,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise FormatError {
+  format_source(source, layout, dialect, 0)
+}
+
+///|
+/// `format` for code inside `doc_depth` doc comments.
+fn format_source(
+  source : String,
+  layout : Layout,
+  dialect : @dialect.Dialect,
+  doc_depth : Int,
+) -> String raise FormatError {
   let result = @parser.parse_module(
     @scanner.SourceText::new(source),
     @scanner.DefaultScanner::new(dialect~),
     dialect~,
   )
-  format_parsed(result, layout~, dialect~)
+  format_parsed_at(result, layout, dialect, doc_depth)
 }
 
 ///|
@@ -53,6 +64,17 @@ pub fn format_parsed(
   layout? : Layout = ElmFormat,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise FormatError {
+  format_parsed_at(result, layout, dialect, 0)
+}
+
+///|
+/// `format_parsed` for code inside `doc_depth` doc comments.
+fn format_parsed_at(
+  result : @parser.ParseResult,
+  layout : Layout,
+  dialect : @dialect.Dialect,
+  doc_depth : Int,
+) -> String raise FormatError {
   let errors = result.diagnostics.filter(d => d.severity is Error)
   guard errors.is_empty() && result.ast is Some(file) && result.cst is Some(cst) else {
     raise ParseFailed(errors)
@@ -63,6 +85,7 @@ pub fn format_parsed(
     layout~,
     source=Some(SourceFacts::from_tokens(cst.tokens)),
     comments=Some(comments),
+    doc_depth~,
   )
   let doc = ctx.file_doc(file) catch { e => raise Unprintable(e) }
   if comments.unprinted() is Some(r) {

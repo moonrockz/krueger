@@ -663,6 +663,6 @@ test "documentation on a let function raises LetDocumentation" {
     // The same function prints at the top level.
     s
     .expect(@printer.print_declaration(n(FunctionDeclaration(f))))
-    .to_equal("{-| d -}\ny =\n    x")
+    .to_equal("{-| d\n-}\ny =\n    x")
   })
 }

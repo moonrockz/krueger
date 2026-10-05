@@ -204,6 +204,10 @@ fn normalize_imports(
 ///   example around an operator chain that cannot join its parent's
 ///   chain (`(a + b) * c`).
 ///
+/// - Doc comments (documentation and the doc comments in `File.comments`)
+///   are written as elm-format writes them: Markdown through
+///   `@markdown.format_doc`, Elm code in them formatted (see `format`).
+///
 /// Nodes keep their ranges; an expression that replaces its parentheses
 /// takes their range. Nothing else changes.
 ///
@@ -234,7 +238,42 @@ pub fn normalize_file(
   file : @ast.File,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> @ast.File {
-  normalize_parens(normalize_header(file), dialect)
+  normalize_docs(normalize_parens(normalize_header(file), dialect), dialect)
+}
+
+///|
+/// `file` with the doc comments of its declarations and of
+/// `File.comments` (module and port documentation) as elm-format writes
+/// them (see `format_documentation`).
+fn normalize_docs(file : @ast.File, dialect : @dialect.Dialect) -> @ast.File {
+  fn doc(d : @ast.Node[String]) -> @ast.Node[String] {
+    { range: d.range, value: format_documentation(d.value, dialect, 0), }
+  }
+
+  let declarations : Array[@ast.Node[@ast.Declaration]] = file.declarations.map(d => {
+      let value : @ast.Declaration = match d.value {
+        FunctionDeclaration(f) =>
+          FunctionDeclaration({ ..f, documentation: f.documentation.map(doc), })
+        AliasDeclaration(a) =>
+          AliasDeclaration({ ..a, documentation: a.documentation.map(doc), })
+        CustomTypeDeclaration(t) =>
+          CustomTypeDeclaration({
+            ..t,
+            documentation: t.documentation.map(doc),
+          })
+        other => other
+      }
+      { range: d.range, value, }
+    },
+  )
+  let comments : Array[@ast.Node[String]] = file.comments.map(c => {
+    if c.value.has_prefix("{-|") {
+      doc(c)
+    } else {
+      c
+    }
+  })
+  { ..file, declarations: declarations[:], comments: comments[:], }
 }
 
 ///|

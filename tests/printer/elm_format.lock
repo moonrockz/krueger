@@ -40,8 +40,8 @@
     "elm_format": "stable"
   },
   "cmditch/elm-bigint@1.0.1/src/BigInt.elm": {
-    "sha256": "230f320bc3d102208641c4fd2dec5f5f875a928d9e3765d534794c296fea27f9",
-    "elm_format": "changed"
+    "sha256": "026d29ef5a5e0922696e8e7e4839d3b3c55e3e94df2e4cb3a72d76080b334b26",
+    "elm_format": "stable"
   },
   "cmditch/elm-bigint@1.0.1/src/Constants.elm": {
     "sha256": "959e5ed61f8e2d0875c0aeddbeb1ace92ea5b759b324163c4142babf42afe251",
@@ -112,8 +112,8 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Html.elm": {
-    "sha256": "d879a459fd7374b790a7e82e95fbd95364f40f8433acf4f44cd9419470675e1a",
-    "elm_format": "stable"
+    "sha256": "b47041eca92a6d9fbd7d33dcc8a798b2989566582f85cf4a49ef03f428bc2286",
+    "elm_format": "changed"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/HtmlRenderer.elm": {
     "sha256": "28dc88e7564c4fa2305885d1d5e5ac01c063bd8eb9c3d868a6c89f6f87c61e22",
@@ -180,12 +180,12 @@
     "elm_format": "stable"
   },
   "dosarf/elm-tree-view@3.0.0/src/Tree.elm": {
-    "sha256": "d497d624809de0d68411312a585d6317e7c99d0b34716243b0a581cca897c106",
-    "elm_format": "changed"
+    "sha256": "27cef3a86741845a83a9fc72f3266b538376189edb2497d5e82915763541f3ac",
+    "elm_format": "stable"
   },
   "dosarf/elm-tree-view@3.0.0/src/TreeView.elm": {
-    "sha256": "36254fde44c99c987f44015200d593f0619067cbeac57ec5aaba2eaeea039620",
-    "elm_format": "changed"
+    "sha256": "ea05db55a2b1c5c35b704a38b58dfcc987dd248c53318eca5c57d688d90dbac4",
+    "elm_format": "stable"
   },
   "elm-community/array-extra@2.6.0/src/Array/Extra.elm": {
     "sha256": "f07fa41b135eeac15394a7c5f367338017b061f3aa1557127f2b983bf32c1fe9",
@@ -208,8 +208,8 @@
     "elm_format": "stable"
   },
   "elm-community/intdict@3.1.0/src/IntDict.elm": {
-    "sha256": "7444a719f14cadc5311166d616b7932b9a5b4747a98e1d9db307262e48376f87",
-    "elm_format": "stable"
+    "sha256": "1127607e5bb9b62f6991f357a5beee4b367730ea9f2b623c3497863fcab938df",
+    "elm_format": "changed"
   },
   "elm-community/intdict@3.1.0/src/IntDict/Safe.elm": {
     "sha256": "231c8d46a0f38ba6a23f59a4b8eb50c073b96c6cbd04a16eab056bf81ae77d68",
@@ -276,8 +276,8 @@
     "elm_format": "stable"
   },
   "elm-explorations/markdown@1.0.0/src/Markdown.elm": {
-    "sha256": "baa3fbc11c7d176900bc23fbd3b0eac9ecaed5f7d81494cce0a28fee6721c45a",
-    "elm_format": "changed"
+    "sha256": "f159a904fe5123423ec4bf9a21369fb638c3c0da3bc39fddd84c11955b34b0b9",
+    "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/AsciiTable.elm": {
     "sha256": "71d68d735a60e8b64118608f2d6754008486c352e5eb030f9782d94f10759e3c",
@@ -444,8 +444,8 @@
     "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Browser/Events.elm": {
-    "sha256": "72b9547592cd007602c0b2d104c1a44534f6252128c298cf463cc29dcef520fa",
-    "elm_format": "changed"
+    "sha256": "a32bc97f077ac087631909586e2b15b7c91c536304f1ee3a7a5dc9c1ab93b3d0",
+    "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Browser/Navigation.elm": {
     "sha256": "a99ec6e9d476ae0809f9d2e2e540e8702411e4d1f17fd8db48aaa8dead6569b1",
@@ -476,196 +476,196 @@
     "elm_format": "stable"
   },
   "elm/bytes@1.0.8/src/Bytes.elm": {
-    "sha256": "8b4b80621d1678912a0936bc3819ef74d77f164b981be32d367750a518820818",
-    "elm_format": "changed"
+    "sha256": "8ebf4d9d1e2ebd2dc2eb2342514e6bd6f7297daa35c7a2e4b7050751d81ce158",
+    "elm_format": "stable"
   },
   "elm/bytes@1.0.8/src/Bytes/Decode.elm": {
-    "sha256": "abf86b1af5b97a2f5418ec448f9a4ca4ad22b154811184c679c0b6ce30d55d13",
-    "elm_format": "changed"
+    "sha256": "f59b1548733a80c9dfe45df742fe9f710601335e1dfb83e269445310b9a87c22",
+    "elm_format": "stable"
   },
   "elm/bytes@1.0.8/src/Bytes/Encode.elm": {
-    "sha256": "da6b94f57ccfaea0be4e226fe36a0478a2b342631f47aae8f4d90803468aa2d2",
-    "elm_format": "changed"
+    "sha256": "f203716b402c2b3b22fc32a9a939a9c2fb86666dee02773cc1ce79deba2ae13f",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Array.elm": {
-    "sha256": "0d5bd754c6114879c54394cf88b695a1f0673e193aeaa413fe5760042f93fce7",
-    "elm_format": "changed"
+    "sha256": "477483fb8b4cdc05648a7b4c1223f595af027da993f90cebfdd54df5c94d97a3",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Basics.elm": {
-    "sha256": "bfe7d75a500997c420fd84d1308aca13f1b91afdec08cb1a20554563c9f2e6ae",
+    "sha256": "68f41913becee346348ccdf1a7301ec681f53cd6e7aa499a794f4c2a09e11096",
     "elm_format": "changed"
   },
   "elm/core@1.0.5/src/Bitwise.elm": {
-    "sha256": "2190f9a6453e11248125bf54856c569699c3c79b9b09f0fd5ef209d1760ff18c",
-    "elm_format": "changed"
+    "sha256": "faddf512a2e184931ae7c42f477eaed15de868145b8da98274dd39bec6f6a596",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Char.elm": {
-    "sha256": "818dbde6c273a1a5da31ccdc41167b24d353bad7629a5508759908f01d4b3f5a",
+    "sha256": "f247a6e209e0e87f48801b914e4ca25d1051b42317711fcfdc4755ec73ce4a9b",
     "elm_format": "changed"
   },
   "elm/core@1.0.5/src/Debug.elm": {
-    "sha256": "5f20121cf8879af3dbe20acd998c21784056fc488244db6e8e4e5403359aedeb",
-    "elm_format": "changed"
+    "sha256": "43f0559d2cfcde013ad73defbecff6a2c6584d01ee087029af5aafab56cd3abf",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Dict.elm": {
-    "sha256": "e5e1e2e664c06b8b1e16adf21300aa90e5a79d548b910ee14a7068af96994b69",
-    "elm_format": "changed"
+    "sha256": "0d14b50bf89dd1d84a0a0c99ac66aeb23bcb7751fcfa32b93db00445a54691d9",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Elm/JsArray.elm": {
-    "sha256": "4fea0de494e53fb8a96ef6658887d188a195b48e691c94d23fe935f0f6022900",
+    "sha256": "1a5775b652717bdee9db19e0c90fc5a56d82a1560d602b9414f50f07bda1abe5",
     "elm_format": "changed"
   },
   "elm/core@1.0.5/src/List.elm": {
-    "sha256": "8cb716ff2979f392737a02ce9f4fc437c835707cacaa9de34dba77a89b523b06",
-    "elm_format": "changed"
+    "sha256": "d22a24ebd8017ab89fbf316e790763c1f8888758407e569cb441377cb8842692",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Maybe.elm": {
-    "sha256": "134bc5375c3e8b35d5eb69f22dde727fd3a4a1c1e8fb6fb21759c704e015a6d2",
-    "elm_format": "changed"
+    "sha256": "08e6fe7759bc26d363aaac1e2c2069efc52ff88843f9e2edf78a8f7590f71be2",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Platform.elm": {
-    "sha256": "5e649fecd65272603406cc1bc099c5101e230d0bd310e84a88351944ce419959",
-    "elm_format": "changed"
+    "sha256": "661983ed7f801365e2f56abd10bba6434e3dfab75b4290fc4e889f9cd77c4df5",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Platform/Cmd.elm": {
-    "sha256": "c74b5e92e1526f21112ffd02612d86fec324cb9c6f6140d31ebd32201c29cbdd",
-    "elm_format": "changed"
+    "sha256": "01c041ffae3d88967bbafac64a9ddad58da5af87245d69221666e2b0b6bb2b7a",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Platform/Sub.elm": {
-    "sha256": "07d0dd1a37bb229c3fce1c3178713649a3a7b9d2b5b44168bff17265fe509716",
-    "elm_format": "changed"
+    "sha256": "55b744bafb1af9039035d28c75a8bdbb74a1f762755720887c4bc0f1b461ebc2",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Process.elm": {
-    "sha256": "3088e7ef6b83e42805682ba072ddadcc73aa9e52915a00e720274f51c92b8a7f",
-    "elm_format": "changed"
+    "sha256": "78a136c16f2bf93bb6e6307190cc1d3113dcb101c1e1a90cb26a538dd8cbbc33",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Result.elm": {
-    "sha256": "12447c462c380182dccf53e534f4e5a26111465c191e3563401bf93749f18f6a",
-    "elm_format": "changed"
+    "sha256": "77fed7cb48352b9f1dc4a25ca60aaa5b78ca2e5bb80222d5e0ff0c8aefb7b176",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Set.elm": {
-    "sha256": "8907979005e9859cfd95f17f5618d1df727343c6071ac36f82e4650a22b458b4",
+    "sha256": "df0267bbc1dee5e86f29eece736aeee02f3c6602d613a483993b81a8bca67e88",
     "elm_format": "changed"
   },
   "elm/core@1.0.5/src/String.elm": {
-    "sha256": "48f4aff5d4cf75c0bbdf4ddd14d724ef37a5e812c0559d6a74cc617461e29459",
-    "elm_format": "changed"
+    "sha256": "9e5735b6a441bd8d6c77cfe8841518150cc5f7d1979112e9307d61ba2aa93b80",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Task.elm": {
-    "sha256": "dc947488e7dd433337a971882aca3a590238cbd7fd9042ac9d4b1e1a31bcd2ad",
-    "elm_format": "changed"
+    "sha256": "e2ca7e63be8a2768066f01b728a9d63c2c7cff0adc94bc869bc7cc1a16d446e2",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Tuple.elm": {
-    "sha256": "ed317b0fcc6e636ddbb9620280acedebe9c1cf86bdf5e02bf671169cd7e927ed",
-    "elm_format": "changed"
+    "sha256": "1a159935006f7196131d81879142de41f1b75a2ac62ec006d511ddb04802016e",
+    "elm_format": "stable"
   },
   "elm/file@1.0.5/src/File.elm": {
-    "sha256": "497c57658045e4d18c521cc1359abf926e888b8d8dce89f0357caef69d988062",
-    "elm_format": "changed"
+    "sha256": "f2934b6cfd09deefd4dcc81c305a51b5692e0f7e4e950675981dec3fd7befb88",
+    "elm_format": "stable"
   },
   "elm/file@1.0.5/src/File/Download.elm": {
-    "sha256": "4ae741dc543313ddcf5a6045796334c634f4f01f5cd50a4fb676aef6916b75d7",
-    "elm_format": "changed"
+    "sha256": "da4731104d2ce5ecf4902cf370ea9fcf27126916ecf1985d5e4c9f2a1d4d47ed",
+    "elm_format": "stable"
   },
   "elm/file@1.0.5/src/File/Select.elm": {
-    "sha256": "62cb2ea2e57f47f7c5e7d6439d0ed5755c41ce653d6a38159ad7fcb6de55899c",
-    "elm_format": "changed"
+    "sha256": "71f75f428ed21c60b711e097e342307a1a5ec8bf051cfbf12ceead49c798b56d",
+    "elm_format": "stable"
   },
   "elm/html@1.0.1/src/Html.elm": {
-    "sha256": "11d568f362039dd86724d528c927a13a77579ff4931fb8a4882e7aa1bc76b774",
-    "elm_format": "changed"
+    "sha256": "a867ce24c17206b50ae3319ce293e47b482b699f6d893a794ae64c5ee5ad41f8",
+    "elm_format": "stable"
   },
   "elm/html@1.0.1/src/Html/Attributes.elm": {
-    "sha256": "1490af3e60fcbae04e91fe0a3d9b7d4cf1f75c53a0af24af90088f8393a1723f",
-    "elm_format": "changed"
+    "sha256": "ba0c7329cb44c723a684f8093b074dec20a1bfa3857436965ddbe6b0c339a21f",
+    "elm_format": "stable"
   },
   "elm/html@1.0.1/src/Html/Events.elm": {
-    "sha256": "58398dd3a2b05890aecb24a64a27256236707cb1af315e8c0b7834d176329b4a",
-    "elm_format": "changed"
+    "sha256": "9bfc3437a04fbffb666b11c145731139fea27985634f348fe017b4687206ea74",
+    "elm_format": "stable"
   },
   "elm/html@1.0.1/src/Html/Keyed.elm": {
-    "sha256": "bd10a1dfacbf5f4a4cdb667d83e80dee37be786cb20c561df865d22f0cf62094",
-    "elm_format": "changed"
+    "sha256": "52617ea3e516ed899f6ac0d2469df5bb6b1383d4720f2462b54a7e119fa6473d",
+    "elm_format": "stable"
   },
   "elm/html@1.0.1/src/Html/Lazy.elm": {
-    "sha256": "6c6f2e8e959e092960e6c645b9e4e71a6a1d8a1ebab5f919c3b3c06d88f96d64",
-    "elm_format": "changed"
+    "sha256": "833ff4ec02906c96933ef9d855f3bfde057e00716f7740327a4618f34bdd376b",
+    "elm_format": "stable"
   },
   "elm/http@2.0.0/src/Http.elm": {
-    "sha256": "56d32024633d810f2da77a7ad5b26fd6163784e671702591478b564d60dace76",
-    "elm_format": "changed"
+    "sha256": "4c1524211b14e5d13115df4cbb09a361539799c624d7f28053a01dfe827c93cd",
+    "elm_format": "stable"
   },
   "elm/json@1.1.4/src/Json/Decode.elm": {
-    "sha256": "e044d1b9e5d1f67c8ee72a4c1918b988de81d903da60e95ada8616ad84ed2f61",
+    "sha256": "924230a9e1ec1602ab8e1d24032213261b912550e5e3dc1ea28c672157ead503",
     "elm_format": "changed"
   },
   "elm/json@1.1.4/src/Json/Encode.elm": {
-    "sha256": "4fb3add367f5a02519aed86e990407fdb6b86224bb09ce97a36805a84fab1313",
-    "elm_format": "changed"
+    "sha256": "1258395ea910603a8330625b71ac512d22a6eb2c911380596815b1fc51a33b80",
+    "elm_format": "stable"
   },
   "elm/parser@1.1.0/src/Parser.elm": {
-    "sha256": "a88ce3e7c748a0bc88c42f012a1f3d119826cbdf28e12e89b7aa3ba9a063ae7d",
+    "sha256": "2cf8281eb518c11a74e9e359019738135a9895307a9af7f593886f8b4c9bcdaf",
     "elm_format": "changed"
   },
   "elm/parser@1.1.0/src/Parser/Advanced.elm": {
-    "sha256": "102057ce46038b2b57854a12d93fbe7484a1d88430b42644707989528a6fde5b",
-    "elm_format": "changed"
+    "sha256": "35126e0447b59cf23eaf7aa41f027bbbc48f192282568500d81541ca522d0dca",
+    "elm_format": "stable"
   },
   "elm/random@1.0.0/src/Random.elm": {
-    "sha256": "1e49b269ac057c23768e082cad8ab436745807ed215d0702dd6d4b616ba993e7",
-    "elm_format": "changed"
+    "sha256": "598972598a1149e69ee6c5848d89788b7058fd387e3ee973e8c9e67c54dc5b51",
+    "elm_format": "stable"
   },
   "elm/regex@1.0.0/src/Regex.elm": {
-    "sha256": "bb7a712ef68a597c6617c83cae1eca66a1911b90854f015560b3f11d0533248e",
-    "elm_format": "changed"
+    "sha256": "e7f09d5358fb0410ff3cc046b153885f205c1f1db5ef3d500077cf8fe426caa9",
+    "elm_format": "stable"
   },
   "elm/svg@1.0.1/src/Svg.elm": {
-    "sha256": "e1928b4d32c1d74c3fb89d9d4fdb7e28dcae2990e53558eaff218cb94385a4ca",
-    "elm_format": "changed"
+    "sha256": "0ff6c51c1681971a8a37cb941413bd4c5a4b94d71701bb6445fe8799b8f35579",
+    "elm_format": "stable"
   },
   "elm/svg@1.0.1/src/Svg/Attributes.elm": {
-    "sha256": "8d46c6917a90aa0fdbbe24c602469cbc7efe1852fa04db87727fc632fe3afa74",
-    "elm_format": "changed"
+    "sha256": "ed5870d5de5e31a49312ad30603d3959740a7df166a3a87dbadf28fd950b9f9f",
+    "elm_format": "stable"
   },
   "elm/svg@1.0.1/src/Svg/Events.elm": {
-    "sha256": "0c50fe56b54b72616557fc8a6ac0312a5f7b758b9144c1f70650611cd26b6318",
-    "elm_format": "changed"
+    "sha256": "527c503c0b791662449af73720c0f4b7015d9008e90611aa6bd0a7a657f3da96",
+    "elm_format": "stable"
   },
   "elm/svg@1.0.1/src/Svg/Keyed.elm": {
-    "sha256": "918b7e42e7c4cf256bc105a72be09ad3ab90b7b036c92a3218dd15e89ad0b656",
-    "elm_format": "changed"
+    "sha256": "723e35f18c5446ab1265d8ac9def34903cc79b84411126c8d5e43e8589d1912d",
+    "elm_format": "stable"
   },
   "elm/svg@1.0.1/src/Svg/Lazy.elm": {
-    "sha256": "4305f3a3bffcb45a45ee02dd8a8917d823bdfa90c99ae8745eba70b29463ece8",
-    "elm_format": "changed"
+    "sha256": "3974b495d1b9dcfd4a454f3b1f07301ed90fcf608c3a914b55028d5226bf5619",
+    "elm_format": "stable"
   },
   "elm/time@1.0.0/src/Time.elm": {
-    "sha256": "9ad487a876c13ae31b66812225c513300e1c0e80bd55be5b3d698db343d6bb50",
-    "elm_format": "changed"
+    "sha256": "df0253f043353ab6e846b15d19a98b7c13ea9901a6c4375a50dba61ec437e847",
+    "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url.elm": {
-    "sha256": "b651bbb643ab116cb75f43c0def6f7656f885ac1090c26db6debb0d04298bc49",
-    "elm_format": "changed"
+    "sha256": "eb8ba8f940675a09ee315832f22a28280d78d6f3b9128a9356278cab933f1094",
+    "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url/Builder.elm": {
-    "sha256": "e9b81a411f06e3866496fdd084be49475470b669fa037e2f304017aa3466c701",
-    "elm_format": "changed"
+    "sha256": "d132feeb6fad2f16aa4ddafc802742954d9a81cab67b5d92d2401b8992a79549",
+    "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url/Parser.elm": {
-    "sha256": "e1c4582c9d1da6c36238f0b05a32cb09b61188cdda03e8b97da4aa83ea6ca1cf",
-    "elm_format": "changed"
+    "sha256": "efe7e19e18b3964c33d93763e0c7c6cea893f6092dc1544aa0c9645746479e6f",
+    "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url/Parser/Internal.elm": {
     "sha256": "156db7744f8b08f1a4be958d99eec5555a5d8d73e99d7fe7f0850fd5242fa652",
     "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url/Parser/Query.elm": {
-    "sha256": "58f733e7a661af7efa031b50c347229fe56bf30f7cc8bd9d2227993e356dddc7",
-    "elm_format": "changed"
+    "sha256": "5d44645a84e353b1339347352eb8d0d067ce0232bfc6d3b4d98ac37c9686c7d0",
+    "elm_format": "stable"
   },
   "elm/virtual-dom@1.0.5/src/VirtualDom.elm": {
-    "sha256": "e834933e3bf62f07c6fcb660100a256d988b8dc84cd31e5fa0d5081f0c22ab3e",
-    "elm_format": "changed"
+    "sha256": "be233735f347c52afcb1cebbdfb591caaa6abd88063c71032dba9b83acef3215",
+    "elm_format": "stable"
   },
   "erlandsona/assoc-set@1.1.3/src/AssocSet.elm": {
     "sha256": "7f36c5a0ee0e304c9a82b31fa1c9dc38c7e9dd2f31ae6d2909922d36810dfe0d",
@@ -764,7 +764,7 @@
     "elm_format": "stable"
   },
   "matthewsj/elm-ordering@2.0.0/src/Ordering.elm": {
-    "sha256": "d458c2943649cad501f100325f26bbc44653e43505862300b17ac2e30c33894f",
+    "sha256": "a282deaf6f85027514501b0a0f2eae519e6a30f18e4a6d7c31b294a512f89b4e",
     "elm_format": "changed"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element.elm": {
@@ -1044,8 +1044,8 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-hex@1.0.0/src/Hex.elm": {
-    "sha256": "d1630939f69204fd794231fafac71a6d11bc371016a74d158188b9c963dd7e88",
-    "elm_format": "changed"
+    "sha256": "4d3e0fd5385e54369a20c7719b2f8a4a1f166eabf2f3db51a024ba550f08baf2",
+    "elm_format": "stable"
   },
   "rtfeldman/elm-iso8601-date-strings@1.1.4/src/DeadEnds.elm": {
     "sha256": "286508d45d3592d4541e3c8697dc9ad7641c38640653283e246c5eeb9a5416f5",
