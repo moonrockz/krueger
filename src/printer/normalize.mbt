@@ -207,6 +207,12 @@ fn normalize_imports(
 /// - Doc comments (documentation and the doc comments in `File.comments`)
 ///   are written as elm-format writes them: Markdown through
 ///   `@markdown.format_doc`, Elm code in them formatted (see `format`).
+///   As elm-format, this is not idempotent for some doc comments: `@docs
+///   T(..)` (it names no exposed item, then it names `T(..)` as `T`),
+///   emphasis that starts after a letter (`a*b c*` gives `a_b c_`, then
+///   text), two bullet lists in a row (one list the next time), `[a] [a]`
+///   (one link), and a fenced Elm code block that starts with a blank line
+///   (the line goes the next time).
 ///
 /// Nodes keep their ranges; an expression that replaces its parentheses
 /// takes their range. Nothing else changes.

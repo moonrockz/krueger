@@ -317,8 +317,8 @@ fn is_tight(list : @cmark.BlockList) -> Bool {
           if interior && ends_with_blank([b]) {
             return false
           }
-          // cheapskate difference: a blank line between the items of a
-          // nested list makes the enclosing list loose.
+          // cheapskate difference (bd krueger-rne.12): a blank line between the
+          // items of a nested list makes the enclosing list loose.
           let nested = inner.v.items.to_array()
           for j in 0..<(nested.length() - 1) {
             if ends_with_blank(flatten(nested[j].v.block)) {
@@ -376,8 +376,8 @@ fn to_blocks(
             let starts = []
             let lines = inline_lines(p.v.inline, src, starts~)
             edits.append(renumber_marks(lines, starts, src))
-            // cheapskate difference: an HTML block does not interrupt a
-            // paragraph; its lines continue the paragraph.
+            // cheapskate difference (bd krueger-rne.12): an HTML block does not
+            // interrupt a paragraph; its lines continue the paragraph.
             while s.items.get(s.next) is Some(HtmlBlock(h)) {
               for line in h.v.0.iter() {
                 lines.push(strip_start_by(line.v, is_space))
@@ -422,7 +422,8 @@ fn to_blocks(
 ///|
 /// Edits that renumber the ordered list marks that start a list inside a
 /// paragraph for elm-format's parser, to `1.` (or `1)`) and spaces, so the
-/// text after a mark stays in its column. cheapskate difference: there, a
+/// text after a mark stays in its column. cheapskate difference (bd
+/// krueger-rne.12): there, a
 /// list with any number interrupts a paragraph; in CommonMark only a list
 /// from 1 does (elm-format numbers every list from 1). A mark counts when
 /// it is at most 3 columns right of the paragraph's first line, and text
@@ -479,7 +480,8 @@ fn ordered_mark_length(line : String) -> Int? {
 ///|
 /// Edits that end a fenced code block at its first line that starts with
 /// the opening fence: elm-format's parser closes the block there and leaves
-/// out the rest of that line. cheapskate difference: in CommonMark, only a
+/// out the rest of that line. cheapskate difference (bd krueger-rne.13):
+/// in CommonMark, only a
 /// fence without text after it closes the block.
 fn fence_closes(c : @cmark.Node[@cmark.CodeBlock], src : String) -> Array[Edit] {
   guard c.v.layout is Fenced(_) && c.meta.loc.first_ccode >= 0 else {
@@ -524,8 +526,8 @@ fn leaf_blocks(
       match h.v.layout {
         Atx(_) => out.push(Leaf(Header(h.v.level, atx_text(h.meta.loc, src))))
         Setext(_) => {
-          // cheapskate difference: only the line before the underline is
-          // the heading; the lines before it are a paragraph.
+          // cheapskate difference (bd krueger-rne.12): only the line before the
+          // underline is the heading; the lines before it are a paragraph.
           let lines = inline_lines(h.v.inline, src)
           match lines {
             [] => out.push(Leaf(Header(h.v.level, "")))
@@ -550,8 +552,17 @@ fn leaf_blocks(
       let code = c.v.code.to_array().map(l => l.v).join("\n")
       out.push(Leaf(Code(lang, code)))
     }
-    HtmlBlock(h) =>
-      out.push(Leaf(Html(h.v.0.to_array().map(l => l.v).join("\n"))))
+    HtmlBlock(h) => {
+      let lines = h.v.0.to_array().map(l => l.v)
+      if lines is [first, ..] && !starts_html_block(first) {
+        // cheapskate difference (bd krueger-rne.13): elm-format's parser starts
+        // an HTML block only at a block-level tag, `<!--` or `-->`; other lines
+        // are a paragraph.
+        para_blocks(lines.map(l => strip_start_by(l, is_space)), out)
+      } else {
+        out.push(Leaf(Html(lines.join("\n"))))
+      }
+    }
     ThematicBreak(_) => out.push(Leaf(Rule))
     LinkRefDefinition(d) => {
       let refs = []
@@ -591,7 +602,7 @@ fn para_blocks(lines : Array[String], out : Array[Block]) -> Unit {
     out.push(Leaf(Para(strip_end_by(lines[:para_end].join("\n"), is_space))))
   }
   guard docs_at is Some(start) else { return }
-  // cheapskate difference: a `@docs` line ends a paragraph.
+  // cheapskate difference (bd krueger-rne.12): a `@docs` line ends a paragraph.
   let names = []
   for line in lines[start:] {
     let rest = match line.strip_prefix("@docs") {
@@ -600,8 +611,8 @@ fn para_blocks(lines : Array[String], out : Array[Block]) -> Unit {
     }
     let terms = []
     for term in rest.split(",") {
-      let t = strip(term.to_owned()).replace_all(old="(..)", new="")
-      if !strip(term.to_owned()).is_empty() {
+      let t = strip(term.to_owned())
+      if !t.is_empty() {
         terms.push(t)
       }
     }
@@ -833,7 +844,10 @@ fn format_markdown(
             )
           List(kind, tight, items) =>
             stack.push(ListJob({ kind, tight, items, next: 0, parts: [], }))
-          Leaf(leaf) => s.parts.push(format_leaf(leaf, after_list, format_code))
+          Leaf(leaf) =>
+            s.parts.push(
+              format_leaf(leaf, after_list, s.kind is Top, format_code),
+            )
         }
       }
       SeqJob(s) => {
@@ -892,15 +906,29 @@ fn deliver(stack : Array[Job], text : String) -> Unit {
 
 ///|
 /// The formatted text of a leaf block (elm-format `formatMardownBlock`).
-/// `after_list` is true when the block comes right after a list.
+/// `after_list` is true when the block comes right after a list, `top` when
+/// the block is not in a block quote or a list.
 fn format_leaf(
   leaf : Leaf,
   after_list : Bool,
+  top : Bool,
   format_code : (String) -> String?,
 ) -> String raise TooDeep {
   match leaf {
+    // elm-format `cleanBlock` removes `(..)` from the `@docs` lines of the
+    // top-level blocks only.
     Docs(lines) =>
-      lines.map(names => "@docs " + names.join(", ")).join("\n") + "\n"
+      lines
+      .map(names => {
+        let shown = if top {
+          names.map(n => n.replace_all(old="(..)", new=""))
+        } else {
+          names
+        }
+        "@docs " + shown.join(", ")
+      })
+      .join("\n") +
+      "\n"
     Para(text) => format_inlines(parse_inlines(text), true) + "\n"
     Header(level, text) =>
       "\n" +

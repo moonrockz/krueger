@@ -1,6 +1,5 @@
 [
   "chain-partners/elm-bignum@1.0.1/src/Decimal.elm",
-  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Html.elm",
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/InlineParser.elm",
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/TableParser.elm",
   "elm-community/graph@6.0.0/src/Graph.elm",

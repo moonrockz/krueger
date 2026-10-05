@@ -745,3 +745,22 @@ test "law: format prints every regular comment once, in source order" {
     seed=2029,
   )
 }
+
+///|
+test "a comment before ) in parentheses and tuples has no blank line before it" {
+  // elm-format 0.8.7 output for each source.
+  let module_of = (body : String) => "module A exposing (..)\n\n\n" + body
+  @expect.expect_all(s => {
+    for
+      body in [
+        "x =\n    f\n        (\\children ->\n            -- a\n            Html.button\n         -- b\n        )\n",
+        "x =\n    f\n        (g\n         -- b\n        )\n", "x =\n    f\n        (\\c -> g\n         -- b\n        )\n",
+        "x =\n    ( a\n    , b\n      -- c\n    )\n", "type alias T =\n    ( Int\n    , Int\n      -- c\n    )\n",
+      ] {
+      s.expect(@printer.format(module_of(body))).to_equal(module_of(body))
+    }
+    s
+    .expect(@printer.format(module_of("x =\n    ( a, b\n    -- c\n    )\n")))
+    .to_equal(module_of("x =\n    ( a\n    , b\n      -- c\n    )\n"))
+  })
+}

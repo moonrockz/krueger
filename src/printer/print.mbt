@@ -181,8 +181,10 @@ pub fn print_declaration(
 /// elm-format's order, with a module's exposing list grouped by the
 /// `@docs` lines of its documentation.
 /// Doc comments are written as elm-format writes them (Markdown and Elm
-/// code formatted, LF line ends; see `@markdown.format_doc`). Text inside
-/// GLSL is written as it is, line ends included.
+/// code formatted, LF line ends; see `@markdown.format_doc`). As
+/// elm-format, this is not idempotent for some doc comments (see
+/// `normalize_file`). Text inside GLSL is written as it is, line ends
+/// included.
 /// Raises `PrintError` for an AST that cannot print as valid Elm; the
 /// error's path starts at the file.
 ///

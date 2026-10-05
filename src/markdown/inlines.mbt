@@ -1082,3 +1082,35 @@ fn format_title(title : String) -> String {
     " \"" + title + "\""
   }
 }
+
+///|
+/// The HTML 5 block-level tags (Cheapskate `blockHtmlTags`).
+let block_html_tags : Array[String] = [
+  "article", "header", "aside", "hgroup", "blockquote", "hr", "body", "li", "br",
+  "map", "button", "object", "canvas", "ol", "caption", "output", "col", "p", "colgroup",
+  "pre", "dd", "progress", "div", "section", "dl", "table", "dt", "tbody", "embed",
+  "textarea", "fieldset", "tfoot", "figcaption", "th", "figure", "thead", "footer",
+  "tr", "form", "ul", "h1", "h2", "h3", "h4", "h5", "h6", "video",
+]
+
+///|
+/// Whether `line` starts an HTML block for elm-format's parser (Cheapskate
+/// `parseHtmlBlockStart`): after at most 3 spaces, a whole tag with a
+/// block-level name, `<!--` or `-->`.
+fn starts_html_block(line : String) -> Bool {
+  let p = InlineParser::new(line, 0)
+  let mut spaces = 0
+  while spaces < 3 && p.char(' ') {
+    spaces += 1
+  }
+  if p.looking_at("<!--") || p.looking_at("-->") {
+    return true
+  }
+  guard p.html_tag() is Some(tag) else { return false }
+  let name = strip_start_by(tag, c => c is ('<' | '/'))
+    .to_array()
+    .iter()
+    .take_while(c => is_ascii_alnum(c) || c is ('?' | '!'))
+    .collect()
+  block_html_tags.contains(String::from_array(name).to_lower())
+}

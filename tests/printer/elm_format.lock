@@ -112,8 +112,8 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Html.elm": {
-    "sha256": "b47041eca92a6d9fbd7d33dcc8a798b2989566582f85cf4a49ef03f428bc2286",
-    "elm_format": "changed"
+    "sha256": "d879a459fd7374b790a7e82e95fbd95364f40f8433acf4f44cd9419470675e1a",
+    "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/HtmlRenderer.elm": {
     "sha256": "28dc88e7564c4fa2305885d1d5e5ac01c063bd8eb9c3d868a6c89f6f87c61e22",

@@ -401,13 +401,14 @@ fn Ctx::expr_plan(
           let (items, leads) = item_docs(docs)
           // elm-format Parse/Helpers.hs surround (`parens`): a line break
           // anywhere inside the parentheses.
+          // A comment before the `)` goes in the column of the items.
           sequence(
             self.split_within(e.range),
             "(",
             ")",
             items,
             leads~,
-            inner=self.inner(e.range),
+            inner=@pretty.nest(2, self.inner_close(e.range)),
           )
         },
       )
@@ -417,7 +418,8 @@ fn Ctx::expr_plan(
         [Expr(path.child("parenthesized", 0), level + 1, x, AnyExpr)],
         // elm-format Box.hs `Parens` has no source rule: the parentheses
         // break only when the expression in them is multi-line.
-        docs => parens(self.join(), docs[0], inner=self.inner(e.range)),
+        // A comment before the `)` goes in the column after the `(`.
+        docs => parens(self.join(), docs[0], inner=self.inner_close(e.range)),
       )
     LetExpression(b) => {
       guard !b.declarations.is_empty() else {

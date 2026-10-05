@@ -454,8 +454,8 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 331 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 32 files
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 332 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 31 files
   that elm-format still changes. Each pending file has a bd issue, and the
   list only shrinks: a fix removes entries, and the check fails when a
   listed file becomes stable.

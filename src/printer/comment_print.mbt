@@ -176,6 +176,18 @@ fn Ctx::inner(
 }
 
 ///|
+/// The inner comments of the node with range `owner`, for the place after
+/// its last child and before its closing token, with no blank line: each
+/// comment on its own line (elm-format, for parentheses and tuples). The
+/// container breaks the line before its closing token. Empty when there
+/// are none.
+fn Ctx::inner_close(self : Ctx, owner : @ast.Range) -> @pretty.Doc {
+  let cs = self.take(Inner, owner)
+  guard !cs.is_empty() else { return @pretty.empty() }
+  @pretty.hardline() + comment_block(cs)
+}
+
+///|
 /// The inner comments of the node with range `owner` when it has no
 /// children, between its opening and closing tokens: `[{- a -}]`,
 /// `[-- a\n]`. After a `{` (`brace = true`), a line comment gets a space

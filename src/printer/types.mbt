@@ -82,7 +82,7 @@ fn Ctx::type_body(
         "(",
         ")",
         docs,
-        inner=self.inner(t.range),
+        inner=@pretty.nest(2, self.inner_close(t.range)),
       )
     }
     Record(fields) => {

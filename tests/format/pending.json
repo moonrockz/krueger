@@ -1,6 +1,5 @@
 [
   "TSFoster/elm-md5@2.0.1/src/MD5.elm",
-  "dillonkearns/elm-markdown@7.0.1/src/Markdown/Html.elm",
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/InlineParser.elm",
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Parser.elm",
   "dosarf/elm-tree-view@3.0.0/src/TreeView.elm",
@@ -28,6 +27,5 @@
   "elm/parser@1.1.0/src/Parser/Advanced.elm",
   "elm/random@1.0.0/src/Random.elm",
   "matthewsj/elm-ordering@2.0.0/src/Ordering.elm",
-  "mdgriffith/elm-ui@1.1.8/src/Element/Input.elm",
   "mdgriffith/elm-ui@1.1.8/src/Internal/Style.elm"
 ]
