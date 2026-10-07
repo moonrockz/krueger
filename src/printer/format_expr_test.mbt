@@ -298,3 +298,24 @@ test "comments before then and else stay with the condition and the branch" {
     }
   })
 }
+
+///|
+test "a comment after an argument goes before the next argument" {
+  // elm-format 0.8.7 output for each source (Parse/Expression.hs appExpr:
+  // the comments before an argument are its own, `formatPreCommented`).
+  let x = (body : String) => "module A exposing (..)\n\n\nx =\n" + body
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        ("    f x -- why\n        y\n", "    f x\n        -- why\n        y\n"),
+        (
+          "    f\n        a -- c\n        b\n", "    f\n        a\n        -- c\n        b\n",
+        ),
+        ("    f x {- c -} y\n", "    f x {- c -} y\n"),
+        ("    f (x) -- c\n        y\n", "    f x\n        -- c\n        y\n"),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(x(source))).to_equal(x(expected))
+    }
+  })
+}

@@ -338,12 +338,37 @@ fn Ctx::expr_plan(
       guard items.length() >= 2 else {
         raise PrintError(path~, problem=ShortApplication)
       }
-      let parts = [
-        Expr(path.child("application", 0), level + 1, items[0], Head),
-      ]
-      for i in 1..<items.length() {
+      // elm-format Parse/Expression.hs appExpr: the comments after an item
+      // are the comments before the next argument (`formatPreCommented`).
+      // Three docs per item: the comments it takes from the item before it
+      // (taken before that item takes them as its own), its comments and
+      // the item.
+      let moved : Array[Array[@ast.Node[String]]] = Array::makei(
+        items.length(),
+        _ => [],
+      )
+      let parts = []
+      for i, x in items {
         parts.push(
-          Expr(path.child("application", i), level + 1, items[i], ExprArg),
+          Leaf(() => {
+            if i + 1 < items.length() {
+              moved[i + 1] = self.take(Trailing, x.range)
+            }
+            @pretty.empty()
+          }),
+        )
+        parts.push(Leaf(() => comments_before(moved[i], x.range.start)))
+        parts.push(
+          Expr(
+            path.child("application", i),
+            level + 1,
+            x,
+            if i == 0 {
+              Head
+            } else {
+              ExprArg
+            },
+          ),
         )
       }
       // elm-format Parse/Expression.hs appExpr: `FASplitFirst` when the
@@ -360,7 +385,16 @@ fn Ctx::expr_plan(
       } else {
         self.join()
       }
-      (parts, docs => application(first, rest, docs[0], docs[1:].to_owned()))
+      (
+        parts,
+        docs => {
+          let item_docs = []
+          for i = 0; i + 2 < docs.length(); i = i + 3 {
+            item_docs.push(docs[i + 1] + docs[i + 2])
+          }
+          application(first, rest, item_docs[0], item_docs[1:].to_owned())
+        },
+      )
     }
     OperatorApplication(_, _, _, _) => self.chain_plan(path, level, e)
     FunctionOrValue(module_, name) =>
