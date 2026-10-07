@@ -888,3 +888,39 @@ test "a line comment between exposing and its list puts each on its own line" {
     }
   })
 }
+
+///|
+test "normalize_file keeps an application of fewer than two items unchanged" {
+  let file = file_of("module A exposing (a)\n\n\na =\n    f x\n")
+  guard file.declarations is [{ range, value: FunctionDeclaration(f), }] else {
+    fail("no function")
+  }
+  let with_body = (body : @ast.Node[@ast.Expression]) => {
+    let imp = f.declaration
+    let value : @ast.Declaration = FunctionDeclaration({
+      ..f,
+      declaration: {
+        range: imp.range,
+        value: { ..imp.value, expression: body, },
+      },
+    })
+    let node : @ast.Node[@ast.Declaration] = { range, value, }
+    let changed : @ast.File = { ..file, declarations: [node][:], }
+    changed
+  }
+  let short_application = (file : @ast.File) => {
+    try @printer.print_file(file) catch {
+      PrintError(problem=ShortApplication, ..) => true
+      _ => false
+    } noraise {
+      _ => false
+    }
+  }
+  @expect.expect_all(s => {
+    for body in [app([]), app([v("x")]), app([v("f"), app([])])] {
+      let normalized = @printer.normalize_file(with_body(body))
+      s.expect(normalized).to_equal(with_body(body))
+      s.expect(short_application(normalized)).to_be_true()
+    }
+  })
+}

@@ -122,6 +122,9 @@ fn normalize_expression(
           }
         }
         match e.value {
+          // `print_file` raises `ShortApplication` for an application of
+          // fewer than two items; it stays as it is.
+          Application(items) if items.length() < 2 => plan([], _ => e)
           Application(items) => {
             let parts = [(items[0], Place(Head))]
             for i in 1..<items.length() {
