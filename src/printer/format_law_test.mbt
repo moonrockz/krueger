@@ -72,8 +72,11 @@ test "law: the AST does not change through format, apart from ranges and normali
   // `format` keeps parentheses that hold a comment and a flat chain of
   // operators of one precedence and different directions, which
   // `normalize_file` changes (see its documentation); `normalize_file`
-  // gives the same AST for both. Comments are checked by "law: format
-  // prints every regular comment once, in source order".
+  // gives the same AST for both. `Commented` puts comments in every gap,
+  // also in parentheses, so this law normalizes both sides; the next law
+  // checks the direct form on modules without comments. Comments are
+  // checked by "law: format prints every regular comment once, in source
+  // order".
   @quickcheck.check(
     (m : @lawkit.Commented) => {
       let t = m.text()
@@ -89,6 +92,28 @@ test "law: the AST does not change through format, apart from ranges and normali
     count=100,
     max_size=20,
     seed=2031,
+  )
+}
+
+///|
+test "law: the AST of format(s) is normalize_file of the AST of s, apart from ranges" {
+  // The direct form (spec 8.2). `Spaced` has no comments, so no
+  // parentheses hold a comment and `format` writes the AST of
+  // `normalize_file`.
+  @quickcheck.check(
+    (m : @lawkit.Spaced) => {
+      let t = m.text()
+      guard parse_ok(t) is Some(before) else { return false }
+      guard format_in(t, ElmFormat) is Some(out) else { return false }
+      guard parse_ok(out) is Some(after) else { return false }
+      let code = (f : @ast.File) => {
+        @lawkit.without_ranges({ ..f, comments: [][:], })
+      }
+      code(after) == code(@printer.normalize_file(before))
+    },
+    count=200,
+    max_size=20,
+    seed=2037,
   )
 }
 

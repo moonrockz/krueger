@@ -714,7 +714,9 @@ test "elm-format output is stable: a block comment after a separator stays after
 }
 
 ///|
-test "law: format prints every regular comment once, in source order" {
+test "law: format prints every regular comment once, in source order, and doc comments as format_doc writes them" {
+  // Doc comments (spec 8.2) are compared after `@markdown.format_doc`:
+  // `normalize_file` writes them as `format` does.
   @quickcheck.check(
     (m : @lawkit.Commented) => {
       let text = m.text()
@@ -742,7 +744,29 @@ test "law: format prints every regular comment once, in source order" {
         })
         .collect()
       }
-      regular(parse(text)) == regular(parse(out))
+      let docs = (f : @ast.File) => {
+        let found : Array[String] = f.comments
+          .iter()
+          .filter(c => c.value.has_prefix("{-|"))
+          .map(c => c.value)
+          .collect()
+        for d in f.declarations {
+          let doc = match d.value {
+            FunctionDeclaration(x) => x.documentation
+            AliasDeclaration(x) => x.documentation
+            CustomTypeDeclaration(x) => x.documentation
+            _ => None
+          }
+          if doc is Some(doc) {
+            found.push(doc.value)
+          }
+        }
+        found
+      }
+      let before = parse(text)
+      let after = parse(out)
+      regular(before) == regular(after) &&
+      docs(@printer.normalize_file(before)) == docs(after)
     },
     count=100,
     max_size=20,
