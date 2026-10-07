@@ -6,6 +6,20 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.5.0] - 2026-10-07
+
+<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+### ⚠️ Breaking changes
+
+- *(printer)* Print_file now applies normalize_file. It sorts and groups the exposing list, sorts and merges imports, uses elm-format's parentheses, and rewrites doc comments as elm-format does, so its output changes for existing ASTs. PrintProblem has a new variant, UnplacedComment. moonbit-community/cmark is a new dependency. ([#44](https://github.com/moonrockz/krueger/pull/44))
+
+### 🚀 Features
+
+- *(printer)* [**breaking**] Elm formatter with elm-format 0.8.7 parity ([#44](https://github.com/moonrockz/krueger/pull/44)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.4.0...v0.5.0
+
 ## [0.4.0] - 2026-10-02
 
 krueger can now write Elm source. The new printer prints an AST as Elm code
