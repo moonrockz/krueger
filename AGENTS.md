@@ -1029,8 +1029,10 @@ krueger checks which Elm source it accepts and rejects against two oracles: `elm
 Benchmarks measure krueger's speed over time. They are not a CI gate.
 
 - `harness/bench` holds the cases: `corpus/*` (tokenize, parse and encode
-  every corpus file) and `syntax/*` (tree queries on the corpus and on a
-  generated module with 1000 declarations). A case ID is
+  every corpus file), `syntax/*` (tree queries on the corpus and on a
+  generated module with 1000 declarations) and `format/*` (`format` of
+  every corpus file and of a generated module with 2000 declarations and
+  4000 comments). A case ID is
   `<suite>/<case>/<input>`; a renamed case starts a new series. Each case
   has a `check`, which runs before the case is measured.
 - `mise run bench` measures every case on `native`, `js`, `wasm-gc` and
