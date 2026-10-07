@@ -24,6 +24,10 @@ pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
 
 pub fn[A] fold(@syntax.NodeRef, A, (A, @syntax.NodeRef) -> (A, @syntax.Control), leave? : (A, @syntax.NodeRef) -> A) -> A
 
+pub fn format(String, layout? : @printer.Layout, dialect? : @dialect.Dialect) -> String raise @printer.FormatError
+
+pub fn format_parsed(@parser.ParseResult, layout? : @printer.Layout, dialect? : @dialect.Dialect) -> String raise @printer.FormatError
+
 pub fn is_lower_start(Char) -> Bool
 
 pub fn is_name_part(Char) -> Bool
@@ -31,6 +35,8 @@ pub fn is_name_part(Char) -> Bool
 pub fn is_upper_start(Char) -> Bool
 
 pub fn kind_table() -> Array[(String, String, Array[String])]
+
+pub fn normalize_file(@ast.File, dialect? : @dialect.Dialect) -> @ast.File
 
 pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
 
@@ -123,6 +129,8 @@ pub using @ast {type Expression}
 
 pub using @ast {type File}
 
+pub using @printer {type FormatError}
+
 pub using @ast {type Function}
 
 pub using @cst {type FunctionCst}
@@ -140,6 +148,8 @@ pub using @ast {type InfixDirection}
 pub using @scanner {type KeywordKind}
 
 pub using @ast {type Lambda}
+
+pub using @printer {type Layout}
 
 pub using @syntax {type LeaveEvent}
 

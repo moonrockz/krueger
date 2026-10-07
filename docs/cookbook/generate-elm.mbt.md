@@ -60,14 +60,16 @@ test "print a generated function" {
     declarations: [ge_n(@krueger.Declaration::FunctionDeclaration(f))],
     comments: [],
   }
-  // The printer adds the parentheses that precedence needs.
+  // The printer adds the parentheses that precedence needs, and writes the
+  // doc comment as elm-format does (`-}` on its own line).
   inspect(
     @krueger.print_file(file),
     content=(
       #|module Scale exposing (..)
       #|
       #|
-      #|{-| Scale a sum. -}
+      #|{-| Scale a sum.
+      #|-}
       #|scale a b c =
       #|    (a + b) * c
       #|
@@ -80,7 +82,9 @@ test "print a generated function" {
 
 `print_file` also takes the AST that `parse_module` returns. The output has
 the elm-format layout. A module with no regular comments, in the layout that
-the printer chooses, prints back unchanged. The printer does not print
+the printer chooses, prints back unchanged. As elm-format does, the printer
+sorts the exposing lists and the imports and merges duplicates
+(`normalize_file` gives that AST). The printer does not print
 regular comments yet, and elm-format keeps some layouts that the printer
 changes (for example, a list that fits on one line but is written on
 several lines).

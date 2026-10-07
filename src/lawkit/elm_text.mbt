@@ -46,6 +46,23 @@ pub fn edge_chars() -> Array[String] {
 }
 
 ///|
+/// Characters at the edges of how a printed string or char literal writes
+/// them: the quotes and the backslash, runs of `"` (a triple-quoted string
+/// escapes three in a row), line feed, carriage return, tab, other
+/// controls, the spaces that elm-format escapes (U+00A0, U+2000, U+202F)
+/// and U+0020, which it does not, format characters (U+06DD, U+E007F),
+/// line and paragraph separators, private use (U+E000), unassigned code
+/// points (U+2E7F, and U+1F6DC, unassigned in Unicode 14.0), a character
+/// new in Unicode 14.0 (U+0870), and plain ASCII and non-ASCII.
+pub fn literal_edge_chars() -> Array[String] {
+  [
+    "\"", "\"\"", "\"\"\"", "'", "\\", "\n", "\r", "\t", "\u{0}", "\u{7F}", "\u{9F}",
+    " ", "\u{00A0}", "\u{2000}", "\u{202F}", "\u{06DD}", "\u{E007F}", "\u{2028}",
+    "\u{2029}", "\u{E000}", "\u{2E7F}", "\u{1F6DC}", "\u{0870}", "a", "é", "😀",
+  ]
+}
+
+///|
 /// Every literal and comment form as (open, close), closed and not.
 pub fn literal_forms() -> Array[(String, String)] {
   [

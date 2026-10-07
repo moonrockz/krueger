@@ -135,13 +135,19 @@ pub using @dialect {
 
 ///|
 /// Elm source from an AST, in the elm-format layout and fitted to a line
-/// width (default 120).
+/// width (default 120), and Elm source formatted as elm-format 0.8.7 does,
+/// with its comments (`format`, `format_parsed`).
 pub using @printer {
   print_file,
+  normalize_file,
   print_declaration,
   print_expression,
   print_pattern,
   print_type_annotation,
+  format,
+  format_parsed,
+  type Layout,
+  type FormatError,
   type PrintError,
   type PrintProblem,
   type NameKind,

@@ -9,11 +9,17 @@
 ///   write `tests/corpus/goldens.lock`.
 /// - `write-printed`: print every corpus file to `.dev/out/printed/` for
 ///   `mise run printer:record`.
+/// - `write-formatted`: format every corpus file and elm-format test file
+///   to `.dev/out/format/actual/` for `mise run format:record`.
+/// - `check-format`: compare the formatter with the lock in
+///   `tests/format/elm_format.lock` (`mise run test:format`).
 priv enum Mode {
   Check
   Ratchet
   WriteLock
   WritePrinted
+  WriteFormatted
+  CheckFormat
 }
 
 ///|
@@ -45,6 +51,8 @@ fn parity_mode() -> Mode? raise {
     Some("ratchet") => Some(Ratchet)
     Some("write-lock") => Some(WriteLock)
     Some("write-printed") => Some(WritePrinted)
+    Some("write-formatted") => Some(WriteFormatted)
+    Some("check-format") => Some(CheckFormat)
     Some(other) => fail("unknown KRUEGER_PARITY_MODE: \{other}")
   }
 }
@@ -303,7 +311,7 @@ test "parity corpus" {
         "parity: skipped (set KRUEGER_PARITY_MODE or run mise run test:parity)",
       )
     Some(WriteLock) => write_lock()
-    Some(WritePrinted) => ()
+    Some(WritePrinted) | Some(WriteFormatted) | Some(CheckFormat) => ()
     Some(mode) => {
       let baseline = read_baseline()
       let (files, default_errors) = score()

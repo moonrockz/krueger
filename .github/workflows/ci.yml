@@ -155,6 +155,25 @@ jobs:
       - name: Score Elm parity
         run: mise run test:parity
 
+      - name: Cache elm-format test files
+        uses: actions/cache@v4
+        with:
+          path: .corpus/elm-format
+          key: elm-format-tests-${{ hashFiles('tests/format/sources.json') }}
+
+      - name: Fetch elm-format test files
+        run: mise run format:fetch
+
+      - name: Check formatter parity
+        run: mise run test:format
+
+      - name: Add formatter summary to the job summary
+        if: always()
+        run: |
+          if [ -f _build/reports/format/summary.md ]; then
+            cat _build/reports/format/summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Add parity summary to the job summary
         if: always()
         run: |
@@ -167,6 +186,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: parity-report
-          path: _build/reports/parity/
+          path: |
+            _build/reports/parity/
+            _build/reports/format/
           if-no-files-found: warn
           retention-days: 30

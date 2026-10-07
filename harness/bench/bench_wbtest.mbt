@@ -13,10 +13,20 @@ test "benchmarks" {
       },
     ),
   }
+  let commented : Source = {
+    key: "commented",
+    text: commented_module(
+      match mode {
+        Smoke => 5
+        Run(_) => 2000
+      },
+    ),
+  }
   let cases = [
     ..corpus_cases(sources),
     ..syntax_cases("corpus", sources),
     ..syntax_cases("large", [large]),
+    ..format_cases(sources, commented),
   ]
   run_cases(cases, mode)
 }

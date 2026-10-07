@@ -30,7 +30,7 @@ pub fn print_type_annotation(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.type_doc(@syntax.NodePath::root(), 0, t, AnyType), width~)
 }
 
@@ -63,6 +63,19 @@ pub fn print_type_annotation(
 ///   }
 ///   // `::` is right-associative, so an `::` on its left gets parentheses.
 ///   inspect(@printer.print_pattern(outer), content="(a :: b) :: rest")
+///   // elm-format writes a constructor with arguments before `::` in
+///   // parentheses.
+///   let just : @ast.Node[@ast.Pattern] = {
+///     range: r,
+///     value: NamedPattern({ module_name: [][:], name: "Just", }, [pvar("a")][:]),
+///   }
+///   inspect(
+///     @printer.print_pattern({
+///       range: r,
+///       value: UnConsPattern(just, pvar("rest")),
+///     }),
+///     content="(Just a) :: rest",
+///   )
 /// }
 /// ```
 pub fn print_pattern(
@@ -70,7 +83,7 @@ pub fn print_pattern(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(
     ctx.pattern_doc(@syntax.NodePath::root(), 0, p, AnyPattern),
     width~,
@@ -78,9 +91,12 @@ pub fn print_pattern(
 }
 
 ///|
-/// The Elm source of an expression. Parentheses are added where
-/// precedence needs them; parentheses in the AST stay. `if`, `case` and
-/// `let` are always multi-line (elm-format). Raises `PrintError` for an
+/// The Elm source of an expression, with elm-format's parentheses:
+/// parentheses are added where precedence needs them and where elm-format
+/// writes them (a lambda, `if`, `case` or `let` at the end of an operator
+/// chain, except after `<|`); parentheses in the AST that neither needs
+/// go (see `normalize_file`). `if`, `case` and `let` are always multi-line
+/// (elm-format). Raises `PrintError` for an
 /// expression that cannot print as valid Elm; the error's path starts at
 /// `e`.
 ///
@@ -109,7 +125,7 @@ pub fn print_expression(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), 0, e, AnyExpr), width~)
 }
 
@@ -151,7 +167,7 @@ pub fn print_declaration(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.declaration_doc(@syntax.NodePath::root(), 0, d), width~)
 }
 
@@ -161,8 +177,14 @@ pub fn print_declaration(
 /// `let`) are always multi-line; other constructs stay on one line when they
 /// fit in `width` columns. Prints documentation and the doc comments of
 /// `File.comments` (module and port documentation), not regular comments.
-/// Text inside doc comments and GLSL is written as it is, line ends
-/// included: a doc comment from a CRLF source keeps its `\r\n`.
+/// It prints `normalize_file(file)`: the exposing lists and the imports in
+/// elm-format's order, with a module's exposing list grouped by the
+/// `@docs` lines of its documentation.
+/// Doc comments are written as elm-format writes them (Markdown and Elm
+/// code formatted, LF line ends; see `@markdown.format_doc`). As
+/// elm-format, this is not idempotent for some doc comments (see
+/// `normalize_file`). Text inside GLSL is written as it is, line ends
+/// included.
 /// Raises `PrintError` for an AST that cannot print as valid Elm; the
 /// error's path starts at the file.
 ///
@@ -185,6 +207,6 @@ pub fn print_file(
   width? : Int = 120,
   dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
-  let ctx : Ctx = { dialect, }
+  let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.file_doc(file), width~)
 }

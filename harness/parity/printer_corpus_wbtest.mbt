@@ -68,9 +68,21 @@ fn printer_check(key : String, text : String) -> (String?, Array[String]) {
   }
   match again.ast {
     Some(second) => {
-      if @lawkit.without_ranges(printer_doc_comments_only(first)) !=
+      let normalized = @krueger.normalize_file(first, dialect~)
+      if @lawkit.without_ranges(printer_doc_comments_only(normalized)) !=
         @lawkit.without_ranges(printer_doc_comments_only(second)) {
         problems.push("\{key}: the AST changes through printing")
+      }
+      // normalize_file holds every parenthesis that print_file writes.
+      let from_normalized = try
+        @krueger.print_file(normalized, dialect~)
+      catch {
+        _ => None
+      } noraise {
+        t => Some(t)
+      }
+      if from_normalized != Some(printed) {
+        problems.push("\{key}: print_file of normalize_file differs")
       }
       let reprinted = try @krueger.print_file(second, dialect~) catch {
         _ => None
@@ -213,6 +225,7 @@ test "printer corpus" {
   match parity_mode() {
     None | Some(WriteLock) => ()
     Some(WritePrinted) => write_printed()
+    Some(WriteFormatted) | Some(CheckFormat) => ()
     Some(_) => check_printer_corpus()
   }
 }

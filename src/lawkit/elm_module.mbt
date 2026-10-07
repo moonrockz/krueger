@@ -66,12 +66,22 @@ fn gen_inline(size : Int, rs : @splitmix.RandomState) -> String {
     return gen_leaf(rs)
   }
   let s = size / 2
-  match pick(rs, 7) {
+  match pick(rs, 10) {
     0 => "f " + gen_atom(s, rs) + " " + gen_atom(s, rs)
     5 => "f {- é😀 -} " + gen_atom(s, rs) + "+" + gen_atom(s, rs)
     1 => gen_atom(s, rs) + " + " + gen_atom(s, rs)
     2 => gen_atom(s, rs) + " :: " + gen_atom(s, rs)
     3 => gen_atom(s, rs) + " |> f"
+    // A lambda or `if` at the end of a chain: elm-format puts it in
+    // parentheses, except after `<|`.
+    6 => gen_atom(s, rs) + " |> \\y -> " + gen_atom(s, rs)
+    7 => "f <| \\y -> " + gen_atom(s, rs)
+    8 =>
+      "((" +
+      gen_inline(s, rs) +
+      ")) ++ if x then " +
+      gen_atom(s, rs) +
+      " else y"
     4 =>
       "if " +
       gen_atom(s, rs) +
@@ -107,9 +117,13 @@ fn gen_pattern(size : Int, rs : @splitmix.RandomState) -> String {
     return gen_pattern_atom(0, rs)
   }
   let s = size / 2
-  match pick(rs, 3) {
+  match pick(rs, 5) {
     0 => "Just " + gen_pattern_atom(s, rs)
     1 => gen_pattern_atom(s, rs) + " :: " + gen_pattern_atom(s, rs)
+    // A constructor with arguments before or after `::` (and in an `as`,
+    // from `gen_pattern_atom`): elm-format puts it in parentheses.
+    2 => "Just " + gen_pattern_atom(s, rs) + " :: " + gen_pattern_atom(s, rs)
+    3 => gen_pattern_atom(s, rs) + " :: Just " + gen_pattern_atom(s, rs)
     _ => gen_pattern_atom(size, rs)
   }
 }
@@ -192,6 +206,12 @@ fn gen_declaration(
     5 => "f\{i} x y =\n    " + gen_block(size, 4, rs) + " -- 😀\n"
     6 => "s\{i} =\n    \"\"\"é\n😀b\nc\"\"\"\n"
     7 => "{- é\n😀 -}\n"
+    8 =>
+      "g\{i} (" +
+      gen_pattern(size, rs) +
+      ") =\n    " +
+      gen_block(size, 4, rs) +
+      "\n"
     _ => "f\{i} x y =\n    " + gen_block(size, 4, rs) + "\n"
   }
 }

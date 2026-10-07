@@ -32,7 +32,8 @@ test "a file in the elm-format layout prints unchanged" {
     #|import Html exposing (Html, text)
     #|
     #|
-    #|{-| The model. -}
+    #|{-| The model.
+    #|-}
     #|type alias Model =
     #|    { count : Int, names : D.Dict String Int }
     #|
@@ -57,14 +58,34 @@ test "module documentation without imports" {
 
 ///|
 test "port doc comments go above their port" {
-  let text = "port module Ports exposing (..)\n\n\n{-| Send. -}\nport send : String -> Cmd msg\n"
+  let text = "port module Ports exposing (..)\n\n\n{-| Send.\n-}\nport send : String -> Cmd msg\n"
   inspect(@printer.print_file(file_of(text)), content=text)
 }
 
 ///|
-test "doc comments print unchanged" {
+test "doc comments print as elm-format writes them" {
   let text = "module A exposing (f)\n\n{-| Mod.\n-}\n\n\n{-| Hard break  \nnext\n\n    indented code\n\n-}\nf =\n    1\n"
-  inspect(@printer.print_file(file_of(text)) == text, content="true")
+  // elm-format 0.8.7 output: a hard break is a line break.
+  inspect(
+    @printer.print_file(file_of(text)),
+    content=(
+      #|module A exposing (f)
+      #|
+      #|{-| Mod.
+      #|-}
+      #|
+      #|
+      #|{-| Hard break
+      #|next
+      #|
+      #|    indented code
+      #|
+      #|-}
+      #|f =
+      #|    1
+      #|
+    ),
+  )
 }
 
 ///|
@@ -169,6 +190,32 @@ test "declarations that Elm cannot write raise" {
           EmptyExposing,
           [
             { field: "moduleDefinition", index: 0, },
+            { field: "exposingList", index: 0, },
+          ],
+        ),
+      ),
+    )
+    let with_import = file_of(
+      "module A exposing (f)\n\nimport B exposing (b)\n\n\nf =\n    1\n",
+    )
+    let import_ = with_import.imports[0]
+    let empty_import = {
+      ..with_import,
+      imports: [
+        {
+          ..import_,
+          value: { ..import_.value, exposing_list: Some(n(Explicit([][:]))), },
+        },
+      ][:],
+    }
+    s
+    .expect(problem_of(() => @printer.print_file(empty_import)))
+    .to_equal(
+      Some(
+        (
+          EmptyExposing,
+          [
+            { field: "imports", index: 0, },
             { field: "exposingList", index: 0, },
           ],
         ),
@@ -312,15 +359,16 @@ test "an import alias is one name and an infix precedence is 0 to 9" {
 }
 
 ///|
-test "doc comments keep their line ends" {
-  // The printer writes LF line ends; text inside doc comments stays as it is.
+test "doc comments get LF line ends" {
+  // The printer writes LF line ends, also in doc comments (elm-format 0.8.7
+  // output).
   let file = file_of(
     "module A exposing (f)\r\n\r\n{-| m\r\n-}\r\n\r\n\r\n{-| a\r\nb -}\r\nf =\r\n    1\r\n",
   )
   debug_inspect(
     @printer.print_file(file),
     content=(
-      #|"module A exposing (f)\n\n{-| m\r\n-}\n\n\n{-| a\r\nb -}\nf =\n    1\n"
+      #|"module A exposing (f)\n\n{-| m\n-}\n\n\n{-| a\nb\n-}\nf =\n    1\n"
     ),
   )
 }

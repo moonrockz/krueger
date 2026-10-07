@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Check formatter parity with elm-format 0.8.7 (needs corpus:fetch and format:fetch)"
+set -euo pipefail
+
+KRUEGER_PARITY_MODE=check-format exec moon test harness/parity --target js

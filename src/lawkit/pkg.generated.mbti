@@ -30,6 +30,8 @@ pub fn excerpt_lines(String) -> Array[(Int, String)]
 
 pub fn line_count(String) -> Int
 
+pub fn literal_edge_chars() -> Array[String]
+
 pub fn literal_forms() -> Array[(String, String)]
 
 pub fn nested(Construct, Int) -> String
@@ -61,6 +63,11 @@ pub fn without_ranges(@ast.File) -> Json
 // Errors
 
 // Types and methods
+pub(all) struct Commented(String) derive(@debug.Debug)
+pub fn Commented::text(Self) -> String
+pub impl @quickcheck.Arbitrary for Commented
+pub impl @shrink.Shrink for Commented
+
 pub(all) enum Construct {
   Parens
   List
@@ -84,10 +91,22 @@ pub fn DocAttributes::text(Self) -> String
 pub impl @quickcheck.Arbitrary for DocAttributes
 pub impl @shrink.Shrink for DocAttributes
 
+pub(all) struct DocText {
+  text : String
+  foreign_code : Array[(String, String)]
+} derive(@debug.Debug)
+pub impl @quickcheck.Arbitrary for DocText
+pub impl @shrink.Shrink for DocText
+
 pub(all) struct ElmAst(@ast.File) derive(@debug.Debug)
 pub fn ElmAst::file(Self) -> @ast.File
 pub impl @quickcheck.Arbitrary for ElmAst
 pub impl @shrink.Shrink for ElmAst
+
+pub(all) struct ElmHeader(String) derive(@debug.Debug)
+pub fn ElmHeader::text(Self) -> String
+pub impl @quickcheck.Arbitrary for ElmHeader
+pub impl @shrink.Shrink for ElmHeader
 
 pub(all) struct ElmModule(String) derive(@debug.Debug)
 pub fn ElmModule::text(Self) -> String
@@ -116,6 +135,11 @@ pub(all) struct Ranges(Array[@ast.Range]) derive(@debug.Debug)
 pub fn Ranges::ranges(Self) -> Array[@ast.Range]
 pub impl @quickcheck.Arbitrary for Ranges
 pub impl @shrink.Shrink for Ranges
+
+pub(all) struct Spaced(String) derive(@debug.Debug)
+pub fn Spaced::text(Self) -> String
+pub impl @quickcheck.Arbitrary for Spaced
+pub impl @shrink.Shrink for Spaced
 
 // Type aliases
 

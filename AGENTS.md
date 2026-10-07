@@ -22,6 +22,8 @@ This module (`moonrockz/krueger`) is a **parser and parsing utilities** library 
 - **AST** — an exact mirror of [stil4m/elm-syntax](https://package.elm-lang.org/packages/stil4m/elm-syntax/7.3.9/) 7.3.9, with a JSON encoder and decoder that match elm-syntax byte for byte
 - **CST** — every token and top-level declaration, with trivia (whitespace and comments)
 - **Printer** — Elm source from the AST (elm-format 0.8.7 layout, width fit at 120, minimal parentheses) and from the CST (lossless, `ModuleCst::to_source`)
+- **Formatter** — `format`: Elm source formatted as elm-format 0.8.7 does, with every comment kept
+- **Markdown** — doc-comment Markdown formatted as elm-format 0.8.7 does (`format_doc`)
 - **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.), planned
 
 The goal is full parity with Elm 0.19.1 syntax, measured against elm-syntax output
@@ -41,6 +43,7 @@ moonrockz/krueger
 │   ├── ast/              # elm-syntax 7.3.9 mirror: types, encode_*, decode_*
 │   ├── cst/              # Concrete syntax tree
 │   ├── printer/          # AST to Elm source: elm-format shapes, parentheses, PrintError
+│   ├── markdown/         # Doc-comment Markdown as elm-format writes it (format_doc, on cmark)
 │   ├── syntax/           # Node model and traversal: NodeRef, Tree, walk, fold, Visitor, events, NodePath, TreeCursor
 │   ├── lawkit/           # Property-test generators and position/report helpers (public test support)
 │   └── e2e/              # End-to-end tests (test-only)
@@ -379,13 +382,60 @@ and `print_type_annotation`, each with `width?` (default 120) and
   `if`, `case` and `let` are always on several lines; lists, tuples,
   records, applications, operator chains, lambdas, signatures and
   exposing lists stay on one line when they fit in `width`.
-- Parentheses: the printer adds only the parentheses that the parser
-  needs (operator precedence and associativity from the dialect,
-  arguments, negations, record access targets) and keeps the ones in the
-  AST. For a parsed AST, `print_file` then `parse_module` gives the same
-  AST without ranges and regular comments.
-- Comments: documentation fields, the module documentation and port doc
-  comments (both in `File.comments`) print; regular comments do not yet.
+- Order: `print_file` and `format` print `normalize_file(ast)`, the order
+  that elm-format gives (`src/printer/normalize.mbt`). Exposed items are
+  a sorted set (operators, types, values); with `@docs` lines in the
+  module documentation, the module's list has one line per `@docs` line,
+  then one line for the other items. Imports are sorted by module name
+  and the imports of one module are merged. A comment moves with its
+  item; no comment is dropped.
+- Parentheses: elm-format 0.8.7's (`syntaxParens` in `Box.hs`). The
+  printer adds the parentheses that the parser needs (operator
+  precedence and associativity from the dialect, arguments, negations,
+  record access targets) and the ones elm-format adds (a lambda, `if`,
+  `case` or `let` at the end of an operator chain, except after `<|`; a
+  constructor pattern with arguments before or after `::` and in an
+  `as`). Parentheses in the AST that neither needs go (`case (f x) of`
+  gives `case f x of`); parentheses with a comment inside stay in
+  `format`. The printer never removes parentheses that the parser needs
+  (elm-format writes `-(-x)` as `--x` and `("s").length` as
+  `"s".length`; krueger does not). For a parsed AST, `print_file` then
+  `parse_module` gives `normalize_file(ast)` without ranges and regular
+  comments, and `normalize_file` holds every parenthesis that
+  `print_file` writes. The printer decides while it prints and
+  `normalize_file` rewrites the AST with the same rules
+  (`src/printer/parens.mbt`), so comments and error paths stay those of
+  the source; laws over `ElmModule` and `ElmAst` and the corpus check
+  that the two agree. `format` differs from `normalize_file` in two
+  places, as elm-format does: it keeps parentheses with a comment inside,
+  and with source it keeps a chain of operators of the same precedence
+  and different directions flat (`a |> f <| g`). `print_file` and
+  `normalize_file` have `(a |> f) <| g`, which `elm make` accepts.
+- Literals: a string or char literal escapes `\n`, `\t`, `\\`, its quote
+  and, as `\u{XXXX}`, every character that elm-format 0.8.7 escapes
+  (Haskell's `isPrint` is false or `isSpace` is true, except the space).
+  The table is `src/printer/unicode_table.mbt`, generated from Unicode
+  14.0.0 (the version of elm-format's GHC) by `mise run
+  unicode:generate`. Hex digits are upper case, padded to 2, 4, 8 or 16
+  digits. In the `ElmFormat` layout `format` reads each literal's lexeme:
+  a triple-quoted string stays triple-quoted, a float keeps its form
+  (`1.0e3` or `1000.0`, Haskell `showEFloat` and `showFFloat`), and an
+  integer keeps its digits. Without source, and in the `Width` layout,
+  literals print from their value.
+- Comments: `print_file` prints the documentation fields, the module
+  documentation and the port doc comments (both in `File.comments`).
+  `format` also prints the regular comments (see "Formatter").
+- Doc comments print as elm-format writes them, in every mode and in
+  `normalize_file`: the text goes through `@markdown.format_doc`, and Elm
+  code in it through `format_code` (`src/printer/doc_code.mbt`). That
+  wraps the code in a module (as declarations, then as expressions, then
+  as a module), formats it with the `ElmFormat` layout and removes the
+  wrapper, with elm-format's doc-comment spacing (one blank line between
+  items, none after a comment; `formatModule` for a module). Code that
+  does not parse stays as written, and so does a doc comment whose
+  formatted text would not end the comment at its end. Code in doc
+  comments nested more than 3 deep is not formatted. Doc comments get LF
+  line ends.
 - An AST that cannot print as valid Elm raises `PrintError(path~,
   problem~)`. `path` is a `NodePath` from the printed node. Elm has no
   doc comments in a `let`, so documentation on a `let` function raises
@@ -406,19 +456,87 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 150 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 213 files
-  that elm-format still changes; 196 of them differ because elm-format
-  groups the module exposing list by the `@docs` lines (bd `krueger-iji`).
-  Each pending file has a bd issue, and the list only shrinks: a fix
-  removes entries, and the check fails when a listed file becomes stable.
-  Differences that are known and not yet fixed are in bd `krueger-sou`
-  (elm-format adds parentheses around a multi-line operand after an
-  operator) and in the issues that the pending list names.
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 332 are stable
+  under elm-format 0.8.7. `tests/printer/pending.json` lists the 31 files
+  that elm-format still changes. Each pending file has a bd issue, and the
+  list only shrinks: a fix removes entries, and the check fails when a
+  listed file becomes stable.
+  Differences that are known and not yet fixed are in the issues that
+  the pending list names.
 - After a printer change, run `mise run printer:record` (needs
   elm-format through `mise x`) and commit the lock. Give a pending path to
   reset the list: `mise run printer:record tests/printer/pending.json`. Use
   that only to start or reset the list.
+
+#### Formatter
+
+- `format(source, layout?, dialect?)` and `format_parsed(result, layout?,
+  dialect?)` print parsed source with its comments in place.
+  `Layout::ElmFormat` (the default) takes the line breaks from the source,
+  as elm-format 0.8.7 does (`Split` decisions from `SourceFacts`, ported
+  from elm-format's parser: `checkMultiline`, `trackNewline`);
+  `Width(n)` uses the width fit of `print_file`.
+- A comment belongs to the innermost node that contains it
+  (`src/printer/comments.mbt`): it leads the next child, trails the
+  previous child on the same line, or is inner (before the closing
+  token). The printer then moves some comments as elm-format does: a
+  comment before `then` follows the condition, a comment before `else`
+  follows the branch, a comment after an argument goes before the next
+  argument, and a comment before a `,` of a tuple goes under the item
+  before it. A comment that does not print raises
+  `PrintError(UnplacedComment(range))`; no comment is dropped.
+- Block comments take elm-format's form: the spaces after `{-` and before
+  `-}` go, the lines after the first lose their common indentation and
+  start 3 columns right of the `{-`, and `-}` goes on its own line. The
+  comment tricks `{--}` and `--}` keep the declaration between them.
+- Normalizations (in both layouts, and in `print_file`): the exposing
+  list grouped by `@docs`, the imports sorted, elm-format's parentheses,
+  literal forms, and doc-comment Markdown (`src/markdown`, on
+  `moonbit-community/cmark`) with the Elm code in doc comments formatted.
+  `format` also keeps the parentheses of a type that hold a comment, and
+  (in `ElmFormat`) the parentheses of a function type after `->`, which
+  elm-syntax does not keep in the AST; it reads them from the tokens.
+- Laws (`src/printer/format_law_test.mbt`): idempotence in both layouts,
+  the AST through `format` (up to `normalize_file`), no crash on any text,
+  and the line width in `Width`; generators `Spaced` and `Commented` from
+  `src/lawkit`.
+- `mise run format:fetch` downloads the elm-format 0.8.7 test files;
+  `mise run format:record` records elm-format's output hashes in
+  `tests/format/elm_format.lock` (needs elm-format through `mise x`);
+  `mise run test:format` (CI job `parity`) compares krueger's output, and
+  checks on every file that formats that a second format gives the same
+  text and that the regular comments stay, in order. Of the corpus files,
+  297 of the 299 that elm-format leaves unchanged and 54 of the 64 that it
+  changes match; 70 of the 71 elm-format test files match.
+  `tests/format/pending.json` lists the 13 files that differ; each has a
+  bd issue, and the list only shrinks.
+- Expected outputs in tests come from elm-format 0.8.7:
+  `printf '%s' "$SRC" | mise x github:avh4/elm-format@0.8.7 -- elm-format --stdin --elm-version=0.19`.
+
+### Markdown
+
+`src/markdown` (`format_doc`) formats the Markdown of a doc comment as
+elm-format 0.8.7 does (`ElmFormat/Render/Markdown.hs`). It has no Elm
+knowledge: the caller gives a `format_code` callback for Elm code blocks.
+
+- cmark (`moonbit-community/cmark`, strict CommonMark, with locations)
+  gives the blocks. elm-format's parser is a fork of Cheapskate, which is
+  not CommonMark, so `to_blocks` changes the blocks where the two differ:
+  a setext underline makes only the line before it a heading, a `@docs`
+  line ends a paragraph, an HTML block does not interrupt a paragraph, an
+  ordered list from any number does (the mark is renumbered and the text
+  parsed again; elm-format numbers lists from 1), and a blank line between
+  the items of a nested list makes the enclosing list loose. Each change is
+  marked `cheapskate difference` in the code and in the tests.
+- Inlines are parsed from the source text with a port of Cheapskate's
+  inline parser (`inlines.mbt`): entities stay as written, bare URLs get
+  angle brackets, `[a]` is always a reference link.
+- Text that nests deeper than cmark or the inline parser reads safely
+  (brackets, block quotes and lists, inlines) stays as it is. Block walks
+  use explicit stacks.
+- Expected outputs come from elm-format 0.8.7: wrap the text as
+  `module A exposing (..)\n\n{-|<text>-}\n\n\nx =\n    1\n`, run
+  elm-format, and take the text between `{-|` and `-}`.
 
 ### Dialects
 
@@ -463,7 +581,7 @@ extension data for Elm-like languages:
 - Names follow Unicode: a lower-case name starts with a lower-case letter, an upper-case
   name with an upper-case or title-case letter, and later characters are letters,
   numbers or `_`. The table is `src/scanner/unicode_table.mbt`, generated from
-  UnicodeData.txt by `mise run unicode:generate`.
+  UnicodeData.txt (15.1.0) by `mise run unicode:generate`.
 - A number too big to store exactly is accepted with warning `KR-PARSE-009` (integers
   become `Int64` max, floats infinity).
   Both built-in dialects reject what both oracles reject; a rule that only one oracle
@@ -493,6 +611,7 @@ versioned on mooncakes.io, so keep them on the latest release when you bump the 
 | [moonrockz/moonspec](https://mooncakes.io/docs/moonrockz/moonspec) | BDD test framework (`harness/bdd`, test-only) |
 | [moonrockz/expect](https://mooncakes.io/docs/moonrockz/expect) | Fluent test assertions (scripts; new tests) |
 | [moonrockz/pretty](https://mooncakes.io/docs/moonrockz/pretty) | Wadler-style layout engine (`src/printer`) |
+| [moonbit-community/cmark](https://mooncakes.io/docs/moonbit-community/cmark) | CommonMark parser (`src/markdown` only) |
 
 Module dependencies are declared in the `import` block of `moon.mod`. Each package lists
 what it uses in its `moon.pkg`. Use `import { ... } for "test"` or `for "wbtest"` for
@@ -500,10 +619,13 @@ test-only dependencies.
 
 MoonBit has no module-level test-only dependencies: every module in `moon.mod` is
 downloaded by every user of krueger. So the published module (`moon.mod` at the root)
-depends only on `moonrockz/pretty` (the printer's layout engine) and `moonrockz/expect`
+depends only on `moonrockz/pretty` (the printer's layout engine),
+`moonbit-community/cmark` (the Markdown parser of `src/markdown`) and `moonrockz/expect`
 (used by the library packages' own tests); `expect`
 itself imports `moonbitlang/async` and `moonbitlang/x`, so users still download those
-two. Test
+two. `cmark` imports `moonbit-community/casefold`, `moonbit-community/charclass` and
+`moonbitlang/async@0.22.4`, and those bring in `moonbit-community/ucd`, so users
+download these too. Test
 harnesses that need more (`moonspec`, `moonbitlang/async`, `moonbitlang/x`) live in the
 unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
 `moonbitlang/async` keeps its `examples/` and `test_programs/`:
@@ -522,13 +644,16 @@ unpublished workspace module `harness/` (`moonrockz/krueger_harness`), as
 
 ### Toolchain
 
-- Supported targets: wasm, wasm-gc, js and native. Library packages (`src`, `scanner`,
-  `parser`, `ast`, `cst`) must build and pass their tests on all four
+- Supported targets: wasm, wasm-gc, js and native. Library packages (`src`, `dialect`,
+  `scanner`, `parser`, `report`, `syntax`, `ast`, `cst`, `lawkit`, `printer`,
+  `markdown`) must build and pass their tests on all four
   (`mise run test:targets`, CI job `targets`). llvm is left out because the toolchain does
   not ship `moonbitlang/core` for it.
 - `moonbitlang/x` and `moonbitlang/async` count as core, but library code uses only
-  `moonbitlang/core`; platform-specific packages (for example `async/fs`, which has no js
-  implementation) belong in test-only or tooling code.
+  `moonbitlang/core`, krueger's own packages and `moonrockz/pretty`; the one
+  exception is `src/markdown`, which also uses `moonbit-community/cmark` (its
+  packages `cmark` and `cmark_base`). Platform-specific packages (for example
+  `async/fs`, which has no js implementation) belong in test-only or tooling code.
 
 - The MoonBit toolchain version is pinned in `.github/workflows/*.yml` (`MOONBIT_VERSION`).
   Keep your local toolchain on the same version (`moon version --all`, `moon upgrade`).
@@ -669,10 +794,19 @@ inputs.
   modules cut short or changed; it shrinks), `Nesting` and `nested(construct,
   depth)` (each nesting construct at any depth, biased to the limits ± 2),
   `ElmAst` (an AST built directly, for printer laws; every range is zero),
+  `ElmHeader` (exposing lists, `@docs` lines and imports in any order, with
+  duplicates, for the laws of elm-format's order), `Commented` (an
+  `ElmModule` with line, block and nested comments in every gap),
+  `Spaced` (an `ElmModule` with line breaks where Elm allows them: in
+  every gap, in none, at random, only before the first or the last
+  argument),
   `DocAttributes` (doc-comment attributes with Unicode names and values,
   continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
+  `DocText` (the Markdown of a doc comment: paragraphs, headings, lists,
+  block quotes, code blocks in Elm and other languages, `@docs` lines),
   `Ranges`, and `units` (a string of UTF-16 units, for lone surrogates). Edge
-  lists: `edge_chars()` and `literal_forms()`. Position helpers:
+  lists: `edge_chars()`, `literal_forms()` and `literal_edge_chars()`
+  (the characters at the edges of literal escapes). Position helpers:
   `at_or_before`, `contains`, `within`, `range_edges`, `edge_positions`,
   `end_of_text`, `offset_of` (row/column to UTF-16 offset), `position_of` and
   `positions_of` (the inverse, for one offset or for sorted offsets in one
@@ -777,8 +911,11 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `corpus:manifest`   | Rebuild `tests/corpus/manifest.json` from `packages.txt` |
 | `corpus:goldens`    | Regenerate elm-syntax goldens and `goldens.lock` (needs Elm and Node) |
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
-| `unicode:generate`  | Regenerate the Unicode identifier table from UnicodeData.txt |
+| `unicode:generate`  | Regenerate the Unicode identifier table, the printer's literal table and the Markdown character classes from UnicodeData.txt |
 | `printer:record`    | Print the corpus and record elm-format verdicts in `tests/printer/elm_format.lock` |
+| `format:fetch`      | Download and verify the elm-format 0.8.7 test files into `.corpus/elm-format/` |
+| `format:record`     | Record elm-format 0.8.7 output hashes in `tests/format/elm_format.lock` (needs `corpus:fetch`, `format:fetch` and elm-format) |
+| `test:format`       | Compare `format` with the recorded elm-format output (needs `corpus:fetch` and `format:fetch`) |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
 | `test:bench`        | Run every benchmark case once on small input (smoke check) |
 | `bench`             | Measure the benchmarks (`--target t[,t...]`; all targets by default) |
@@ -820,6 +957,8 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes`, `release:status` | Release pull request, next version, release decision in CI, release notes, release health check |
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/printer.mbtx` | `printer:record` | Record elm-format 0.8.7 verdicts for the printed corpus |
+| `scripts/format.mbtx` | `format:fetch`, `format:record` | Download the elm-format test files; record elm-format's output hashes for the formatter |
+| `scripts/unicode_table.mbtx` | `unicode:generate` | Download UnicodeData.txt; write the scanner, printer and Markdown Unicode tables |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
 | `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |
@@ -891,8 +1030,10 @@ krueger checks which Elm source it accepts and rejects against two oracles: `elm
 Benchmarks measure krueger's speed over time. They are not a CI gate.
 
 - `harness/bench` holds the cases: `corpus/*` (tokenize, parse and encode
-  every corpus file) and `syntax/*` (tree queries on the corpus and on a
-  generated module with 1000 declarations). A case ID is
+  every corpus file), `syntax/*` (tree queries on the corpus and on a
+  generated module with 1000 declarations) and `format/*` (`format` of
+  every corpus file and of a generated module with 2000 declarations and
+  4000 comments). A case ID is
   `<suite>/<case>/<input>`; a renamed case starts a new series. Each case
   has a `check`, which runs before the case is measured.
 - `mise run bench` measures every case on `native`, `js`, `wasm-gc` and

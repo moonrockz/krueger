@@ -55,6 +55,8 @@ pub(all) enum PrintProblem {
   LetDocumentation
   /// More than 400 nested printer levels.
   TooDeep
+  /// A regular comment at this range that the formatter did not print.
+  UnplacedComment(@ast.Range)
 } derive(Eq, Debug)
 
 ///|
@@ -69,6 +71,25 @@ pub suberror PrintError {
 /// Settings for one print call.
 priv struct Ctx {
   dialect : @dialect.Dialect
+  layout : Layout
+  /// The facts of the parsed source; `None` for an AST built by hand.
+  source : SourceFacts?
+  /// The regular comments to print; `None` for an AST built by hand.
+  comments : CommentTable?
+  /// The number of doc comments around the code that is printed (code in
+  /// a doc comment is formatted with a deeper `Ctx`).
+  doc_depth : Int
+}
+
+///|
+fn Ctx::new(
+  dialect : @dialect.Dialect,
+  layout? : Layout = Width(120),
+  source? : SourceFacts? = None,
+  comments? : CommentTable? = None,
+  doc_depth? : Int = 0,
+) -> Ctx {
+  { dialect, layout, source, comments, doc_depth, }
 }
 
 ///|
