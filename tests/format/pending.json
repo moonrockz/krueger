@@ -1,7 +1,6 @@
 [
   "elm-community/intdict@3.1.0/src/IntDict.elm",
   "elm-explorations/markdown@1.0.0/src/Markdown.elm",
-  "elm-format/good/Elm-0.18/AllSyntax/LineComments/Types.elm",
   "elm-format/transform/Elm-0.18/DocCommentMarkdownSafety.elm",
   "elm/browser@1.0.2/src/Debugger/History.elm",
   "elm/core@1.0.5/src/Basics.elm",

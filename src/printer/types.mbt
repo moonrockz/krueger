@@ -200,9 +200,22 @@ fn Ctx::type_body(
       guard !fields.value.is_empty() else {
         raise PrintError(path~, problem=NoFields)
       }
-      let base = self.with_comments(
-        name.range,
-        self.lower_name(path.child("name", 0), name.value),
+      // elm-format Box.hs formatRecordLike: the comments before the `|`
+      // follow the base (`formatCommented`), in its column.
+      let bar = self.token_before(fields.value[0].range.start)
+      let base_post = self.take_if(Leading, fields.value[0].range, c => {
+        ends_before(c, bar)
+      })
+      let base = @pretty.align(
+        self.with_comments(
+          name.range,
+          self.lower_name(path.child("name", 0), name.value),
+        ) +
+        (if base_post.iter().all(one_line) {
+          comments_after(base_post)
+        } else {
+          @pretty.hardline() + comment_block(base_post)
+        }),
       )
       let (docs, leads) = self.record_fields(
         path,
@@ -252,6 +265,19 @@ fn Ctx::record_fields(
         None => @pretty.empty()
       },
     )
+    // elm-format Box.hs formatPair: the comments between the label and
+    // the `:` follow the label (`formatTailCommented`). When one of them
+    // is not one line, the label, each comment, the `:` and the type go on
+    // lines of their own, the last two at the next tab stop.
+    let colon = self.token_after(name.range.end)
+    let label_post = self.take_if(Trailing, name.range, c => {
+      is_line_comment(c) && ends_before(c, colon)
+    })
+    label_post.append(
+      self.take_if(Leading, f.value.type_annotation.range, c => {
+        ends_before(c, colon)
+      }),
+    )
     let lead = self.after_comma(previous, f.range)
     let moved = self.after_token(name.range)
     let label = self.with_comments(
@@ -272,9 +298,29 @@ fn Ctx::record_fields(
       start: name.range.start,
       end: f.value.type_annotation.range.end,
     })
+    let pair = if label_post.iter().all(one_line) {
+      field(
+        split,
+        label + comments_after(label_post),
+        self.separator(name.range, " :", moved),
+        value,
+      )
+    } else {
+      label +
+      @pretty.hardline() +
+      comment_block(label_post) +
+      @pretty.tab(
+        4,
+        @pretty.hardline() +
+        @pretty.text(":") +
+        comments_after(moved) +
+        @pretty.hardline() +
+        value,
+      )
+    }
     docs.push(
       lead +
-      field(split, label, self.separator(name.range, " :", moved), value) +
+      pair +
       comments_after(value_trail) +
       self.trailing_before_comma(f.range, fields.get(i + 1).map(n => n.range)),
     )

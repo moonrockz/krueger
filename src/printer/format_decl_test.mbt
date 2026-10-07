@@ -328,3 +328,57 @@ test "comments between the name of a signature and its colon" {
     }
   })
 }
+
+///|
+test "comments between a record type field and its colon, and around a record base" {
+  // elm-format's own test file AllSyntax/LineComments/Types.elm (elm-format
+  // 0.8.7 leaves it as it is; Box.hs formatPair and formatRecordLike).
+  let source =
+    #|record :
+    #|    { --N
+    #|      x :
+    #|        --P
+    #|        Int
+    #|
+    #|    --Q
+    #|    , --R
+    #|      y
+    #|      --S
+    #|        :
+    #|        --T
+    #|        ()
+    #|
+    #|    --U
+    #|    }
+    #|    -> ()
+    #|record _ =
+    #|    ()
+    #|
+    #|
+    #|recordExtension :
+    #|    { --V
+    #|      a
+    #|      --W
+    #|        | --X
+    #|          x
+    #|          --Y
+    #|            :
+    #|            --Z
+    #|            Int
+    #|
+    #|        --AA
+    #|        , --AB
+    #|          y
+    #|          --AC
+    #|            :
+    #|            --AD
+    #|            Int
+    #|
+    #|        --AE
+    #|    }
+    #|    -> ()
+    #|recordExtension _ =
+    #|    ()
+    #|
+  @expect.expect(@printer.format(decl(source))).to_equal(decl(source))
+}
