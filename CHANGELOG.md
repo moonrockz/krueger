@@ -6,6 +6,40 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.5.0] - 2026-10-07
+
+krueger can now format Elm source. `format(source)` gives the same bytes
+as elm-format 0.8.7 and keeps every comment in its place. A comment that
+cannot be placed raises an error; it is never dropped. `Layout::Width(n)`
+gives the width-fit layout of `print_file`, with comments.
+`format_parsed` formats a parse result that you already have. On the
+pinned corpus, 297 of 299 files that elm-format leaves unchanged come out
+byte for byte, and 124 of 135 other files match elm-format's output.
+
+The formatter applies elm-format's rewrites, and `print_file` applies them
+too, through the new public `normalize_file`:
+- the exposing list is grouped by the `@docs` lines;
+- imports are sorted and merged;
+- parentheses follow elm-format;
+- literals use elm-format's forms;
+- doc comments are formatted as elm-format formats them, Elm code blocks
+  included.
+
+The doc comment Markdown support is the new package `src/markdown`, on
+`moonbit-community/cmark`.
+
+### ⚠️ Breaking changes
+
+- *(printer)* `print_file` now applies `normalize_file`, so its output changes for existing ASTs: exposing lists, imports, parentheses and doc comments follow elm-format. The round trip is now `parse(print_file(ast)) == normalize_file(ast)`, without ranges ([#44](https://github.com/moonrockz/krueger/pull/44))
+- *(printer)* `PrintProblem` has a new variant, `UnplacedComment`. A `match` that lists every case must handle it ([#44](https://github.com/moonrockz/krueger/pull/44))
+- `moonbit-community/cmark` is a new dependency ([#44](https://github.com/moonrockz/krueger/pull/44))
+
+### 🚀 Features
+
+- *(printer)* [**breaking**] Elm formatter with elm-format 0.8.7 parity: `format`, `format_parsed`, `Layout`, `normalize_file` and `src/markdown` ([#44](https://github.com/moonrockz/krueger/pull/44)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.4.0...v0.5.0
+
 ## [0.4.0] - 2026-10-02
 
 krueger can now write Elm source. The new printer prints an AST as Elm code
