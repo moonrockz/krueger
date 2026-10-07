@@ -82,6 +82,8 @@ fn Ctx::split_if(self : Ctx, broken : () -> Bool) -> Split {
 }
 
 ///|
+/// `Split` when a gap between two tokens inside `range` has a line break:
+/// elm-format keeps a construct multi-line when its source is multi-line.
 fn Ctx::split_within(self : Ctx, range : @ast.Range) -> Split {
   self.split_if(() => self.source.unwrap().break_within(range))
 }
@@ -105,6 +107,8 @@ fn Ctx::join(self : Ctx) -> Split {
 }
 
 ///|
+/// The line break for `s`: a hard line break for `Split`, else a line
+/// break that is a space when the group fits.
 fn split_line(s : Split) -> @pretty.Doc {
   if s is Split {
     @pretty.hardline()
@@ -114,6 +118,8 @@ fn split_line(s : Split) -> @pretty.Doc {
 }
 
 ///|
+/// The line break for `s`: a hard line break for `Split`, else a line
+/// break that is nothing when the group fits.
 fn split_softline(s : Split) -> @pretty.Doc {
   if s is Split {
     @pretty.hardline()

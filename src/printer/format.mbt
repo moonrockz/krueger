@@ -128,6 +128,8 @@ fn format_parsed_at(
   doc_depth : Int,
 ) -> String raise FormatError {
   let errors = result.diagnostics.filter(d => d.severity is Error)
+  // With no error, the parser gives an AST and a CST. `errors` is empty
+  // only for a result built by hand without them: then `ParseFailed([])`.
   guard errors.is_empty() && result.ast is Some(file) && result.cst is Some(cst) else {
     raise ParseFailed(errors)
   }

@@ -25,6 +25,8 @@ test "format raises ParseFailed for a source with a syntax error" {
 
 ///|
 test "Width layout fits a long list in the width" {
+  // The header (21 columns) fits in 22 columns; the list line (24
+  // columns) does not.
   let source = "module A exposing (a)\n\n\na =\n    [ 1000, 2000, 3000 ]\n"
   @expect.expect(@printer.format(source, layout=Width(22))).to_equal(
     "module A exposing (a)\n\n\na =\n    [ 1000\n    , 2000\n    , 3000\n    ]\n",
