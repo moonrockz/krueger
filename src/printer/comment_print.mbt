@@ -6,8 +6,105 @@ fn comment_text(c : String) -> String {
 }
 
 ///|
+/// Haskell `isSpace` (GHC): the Latin-1 spaces and the Unicode category
+/// `Zs`.
+fn is_haskell_space(c : Char) -> Bool {
+  match c {
+    ' ' | '\t' | '\n' | '\r' | '\u{0B}' | '\u{0C}' | '\u{A0}' | '\u{1680}' =>
+      true
+    '\u{2000}'..='\u{200A}' | '\u{202F}' | '\u{205F}' | '\u{3000}' => true
+    _ => false
+  }
+}
+
+///|
+/// The lines of a comment as elm-format writes them. A line comment is one
+/// line. A block comment follows elm-format 0.8.7: `{--}` and `{--...-}`
+/// (comment tricks) lose only the spaces after `{--` and before `-}`
+/// (Parse/Whitespace.hs `multiComment`, Box.hs `CommentTrickBlock`). Any
+/// other block comment loses the spaces after `{-` and before `-}`, and the
+/// lines after the first lose their common indentation (`trimIndent`).
+/// Then (Box.hs `formatComment`) no line gives `{- -}`; one line `l` gives
+/// `{- l -}`; more lines give `{- ` and the first line, each other line
+/// after 3 spaces, and `-}` on a line of its own. No line ends with a
+/// space.
+fn comment_lines(c : String) -> Array[String] {
+  let text = comment_text(c)
+  guard text.has_prefix("{-") && text.has_suffix("-}") && text.length() >= 4 else {
+    return [text]
+  }
+  guard text != "{--}" else { return [text] }
+  let body = text.view(start_offset=2, end_offset=text.length() - 2)
+  if body.has_prefix("-") {
+    let b = body.view(start_offset=1).trim_start(chars=" ").trim_end(chars=" ")
+    return ("{--" + b.to_owned() + "-}")
+      .split("\n")
+      .map(l => l.to_owned())
+      .collect()
+  }
+  let b = body.trim_start(chars=" ").trim_end(chars=" ").to_owned()
+  // Haskell `lines`: no last empty line when the text ends with a line
+  // feed.
+  let lines : Array[String] = b.split("\n").map(l => l.to_owned()).collect()
+  if b == "" || b.has_suffix("\n") {
+    lines.pop() |> ignore
+  }
+  let mut depth : Int? = None
+  for i in 1..<lines.length() {
+    let l = lines[i]
+    let mut n = 0
+    for ch in l {
+      if !is_haskell_space(ch) {
+        break
+      }
+      n += 1
+    }
+    if n != l.char_length() {
+      depth = Some(
+        match depth {
+          Some(d) => if n < d { n } else { d }
+          None => n
+        },
+      )
+    }
+  }
+  let d = depth.unwrap_or(0)
+  for i in 1..<lines.length() {
+    let chars = lines[i].iter().collect()
+    lines[i] = if chars.length() <= d {
+      ""
+    } else {
+      String::from_array(chars[d:])
+    }
+  }
+  match lines.length() {
+    0 => ["{- -}"]
+    1 => ["{- " + lines[0] + " -}"]
+    _ => {
+      let out = ["{- " + lines[0]]
+      for i in 1..<lines.length() {
+        out.push("   " + lines[i])
+      }
+      out.push("-}")
+      out.map(l => l.trim_end().to_owned())
+    }
+  }
+}
+
+///|
+/// A comment as elm-format writes it (see `comment_lines`): the lines after
+/// the first start in the column of the comment.
 fn comment_doc(c : @ast.Node[String]) -> @pretty.Doc {
-  @pretty.verbatim(comment_text(c.value))
+  let lines = comment_lines(c.value)
+  if c.value.has_prefix("{--") {
+    // elm-format writes a comment trick as one literal: the lines after
+    // the first get no indentation.
+    @pretty.verbatim(lines.join("\n"))
+  } else if lines.length() == 1 {
+    @pretty.text(lines[0])
+  } else {
+    @pretty.align(@pretty.join(lines.map(@pretty.text), @pretty.hardline()))
+  }
 }
 
 ///|
@@ -485,7 +582,7 @@ fn Ctx::take_within(self : Ctx, r : @ast.Range) -> Array[@ast.Node[String]] {
 /// Whether comment `c` prints on one line (a block comment with no line
 /// break).
 fn one_line(c : @ast.Node[String]) -> Bool {
-  !is_line_comment(c) && !comment_text(c.value).contains("\n")
+  !is_line_comment(c) && comment_lines(c.value).length() == 1
 }
 
 ///|

@@ -21,16 +21,39 @@ fn Ctx::signature_doc(
   path : @syntax.NodePath,
   level : Int,
   s : @ast.Signature,
+  range? : @ast.Range? = None,
 ) -> @pretty.Doc raise PrintError {
+  // elm-format Box.hs formatTypeAnnotation: the comments between the name
+  // and the `:` follow the name (`formatTailCommented`). When one of them
+  // is not one line, the name, each comment, the `:` (indented by 4) and
+  // the type (indented by 4) go on lines of their own.
+  let colon = self.token_after(s.name.range.end)
+  let name_post = self.take_if(Trailing, s.name.range, c => {
+    is_line_comment(c) && ends_before(c, colon)
+  })
+  name_post.append(
+    self.take_if(Leading, s.type_annotation.range, c => ends_before(c, colon)),
+  )
   let moved = self.after_token(s.name.range)
   let name = self.with_comments(
     s.name.range,
     self.lower_name(path.child("name", 0), s.name.value),
   )
+  // elm-format Parse/Helpers.hs separated: the last term of a function
+  // type takes the line comment at the end of its line (`withEol`). After
+  // another type, the comment goes after the signature. `range` is the
+  // range of the signature node, which holds the trailing comments.
+  let eol = match range {
+    Some(r) if s.type_annotation.value is FunctionTypeAnnotation(_, _) &&
+      !self.has_comment(Trailing, r, c => !is_line_comment(c)) =>
+      self.take(Trailing, r)
+    _ => []
+  }
   let chain = self.arrow_chain(
     path.child("typeAnnotation", 0),
     level + 1,
     s.type_annotation,
+    eol~,
   )
   // elm-format ElmStructure.definition ":" False: the type goes on the
   // next line when it is multi-line; its arrows break on their own
@@ -39,6 +62,15 @@ fn Ctx::signature_doc(
     Width(_) => chain
     ElmFormat => @pretty.group(chain)
   }
+  if !name_post.iter().all(one_line) {
+    return name +
+      @pretty.hardline() +
+      comment_block(name_post) +
+      @pretty.nest(4, @pretty.hardline() + @pretty.text(":")) +
+      comments_after(moved) +
+      @pretty.nest(4, @pretty.hardline() + chain)
+  }
+  let name = name + comments_after(name_post)
   @pretty.group(
     name +
     self.separator(s.name.range, " :", moved) +
@@ -116,7 +148,12 @@ fn Ctx::function_plan(
     kinds.push(Main)
     parts.push(
       Leaf(() => {
-        self.signature_doc(path.child("signature", 0), level + 1, sig.value)
+        self.signature_doc(
+          path.child("signature", 0),
+          level + 1,
+          sig.value,
+          range=Some(sig.range),
+        )
       }),
     )
     comments(1, () => self.take(Trailing, sig.range))

@@ -855,3 +855,36 @@ test "law: format is idempotent on headers and imports" {
     seed=2033,
   )
 }
+
+///|
+test "a line comment between exposing and its list puts each on its own line" {
+  // elm-format 0.8.7 output for each source (Box.hs formatModuleLine:
+  // `formatCommented` of `exposing` with the comments after it, then
+  // `spaceSepOrIndented`; formatImport: the same, indented once more).
+  let rest = "\n\n\na =\n    1\n"
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "module A exposing -- D\n    (a)", "module A\n    exposing\n    -- D\n    (a)",
+        ),
+        ("module A exposing {- D -} (a)", "module A exposing {- D -} (a)"),
+        (
+          "module A\n    -- C\n    exposing -- D\n    (a)", "module A\n    -- C\n    exposing\n    -- D\n    (a)",
+        ),
+        (
+          "module A exposing -- D\n    (..)", "module A\n    exposing\n    -- D\n    (..)",
+        ),
+        (
+          "module A exposing\n -- D\n    (a, b)", "module A\n    exposing\n    -- D\n    (a, b)",
+        ),
+        (
+          "module A exposing (..)\n\nimport B exposing -- D\n    (a)\nimport C exposing -- D\n    (..)",
+          "module A exposing (..)\n\nimport B\n    exposing\n        -- D\n        (a)\nimport C\n    exposing\n        -- D\n        (..)",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(source + rest)).to_equal(expected + rest)
+    }
+  })
+}

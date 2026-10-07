@@ -165,3 +165,166 @@ test "import exposing list with a break" {
     )
   })
 }
+
+///|
+test "comments in the parentheses of a type keep the parentheses" {
+  // elm-format 0.8.7 output for each source (Parse/Type.hs tuple:
+  // `TypeParens` when the parentheses hold comments). elm-syntax keeps no
+  // node for these parentheses (krueger-zm5).
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "type alias T =\n    (Int\n    -- c\n    )\n", "type alias T =\n    (Int\n     -- c\n    )\n",
+        ),
+        (
+          "type alias T =\n    ( {- c -} Int)\n", "type alias T =\n    ({- c -} Int)\n",
+        ),
+        (
+          "type alias T =\n    (Int {- c -})\n", "type alias T =\n    (Int {- c -})\n",
+        ),
+        (
+          "type alias T =\n    (a -- c\n    )\n", "type alias T =\n    (a\n     -- c\n    )\n",
+        ),
+        (
+          "type alias T =\n    List (Int -- c\n    )\n", "type alias T =\n    List\n        (Int\n         -- c\n        )\n",
+        ),
+        (
+          "type alias T =\n    ({- c -} List Int)\n", "type alias T =\n    ({- c -} List Int)\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(decl(source))).to_equal(decl(expected))
+      s.expect(@printer.format(decl(expected))).to_equal(decl(expected))
+    }
+  })
+}
+
+///|
+test "parentheses around a function type right of an arrow stay" {
+  // elm-format 0.8.7 output for each source (Box.hs FunctionType: each
+  // term after `->` gets `typeParens ForLambda`). elm-syntax reads
+  // `Int -> (a -> b)` as `Int -> a -> b`; the source tokens keep them
+  // (krueger-05f).
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "x : Int -> (Int -> Int)\nx = f\n", "x : Int -> (Int -> Int)\nx =\n    f\n",
+        ),
+        (
+          "x : (Int -> Int) -> (Int -> Int) -> (Int -> Int)\nx = f\n", "x : (Int -> Int) -> (Int -> Int) -> (Int -> Int)\nx =\n    f\n",
+        ),
+        (
+          "x : (Int -> (Int -> Int))\nx = f\n", "x : Int -> (Int -> Int)\nx =\n    f\n",
+        ),
+        ("x : Int -> (Int)\nx = f\n", "x : Int -> Int\nx =\n    f\n"),
+        (
+          "x : Int\n    -> (Int -> Int)\nx = f\n", "x :\n    Int\n    -> (Int -> Int)\nx =\n    f\n",
+        ),
+        (
+          "x : Int -> ((Int -> Int))\nx = f\n", "x : Int -> (Int -> Int)\nx =\n    f\n",
+        ),
+        (
+          "type T = C (Int -> (Int -> Int))\n", "type T\n    = C (Int -> (Int -> Int))\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(decl(source))).to_equal(decl(expected))
+    }
+  })
+}
+
+///|
+test "a line comment after a function type in a signature stays on its line" {
+  // elm-format 0.8.7 output for each source (Parse/Helpers.hs separated:
+  // the last term of a function type takes the comment at the end of its
+  // line). After another type, the comment goes after the signature.
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "f :\n    State\n    -> Parser State --Result\nf state =\n    1\n", "f :\n    State\n    -> Parser State --Result\nf state =\n    1\n",
+        ),
+        (
+          "f : Int -> Int -- c\nf = 1\n", "f :\n    Int\n    -> Int -- c\nf =\n    1\n",
+        ),
+        ("f : Int -- c\nf = 1\n", "f : Int\n\n\n\n-- c\n\n\nf =\n    1\n"),
+        (
+          "f :\n    State\n    -> Parser State {- c -}\nf state =\n    1\n", "f :\n    State\n    -> Parser State\n\n\n\n{- c -}\n\n\nf state =\n    1\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(decl(source))).to_equal(decl(expected))
+    }
+  })
+}
+
+///|
+test "comments in the head of a type alias" {
+  // elm-format 0.8.7 output for each source (Box.hs TypeAlias:
+  // `ElmStructure.definition "=" True` of `type`, the comments and `alias`,
+  // and the commented name with its arguments).
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "type alias TypeAliasMultiline\n    -- A\n    a b =\n    ()\n", "type alias\n    TypeAliasMultiline\n        -- A\n        a\n        b\n    =\n    ()\n",
+        ),
+        (
+          "type {- P -} alias {- Q -} TypeAlias2 {- R -} a {- S -} b {- T -} =\n    {- U -}\n    { x : Int, y : Int, z : ( a, b ) }\n",
+          "type {- P -} alias {- Q -} TypeAlias2 {- R -} a {- S -} b {- T -} =\n    {- U -}\n    { x : Int, y : Int, z : ( a, b ) }\n",
+        ),
+        (
+          "type\n    --P\n    alias\n    --Q\n    TypeAlias3\n        --R\n        a\n        --S\n        b\n    --T\n    =\n    --U\n    { x : Int, y : Int, z : ( a, b ) }\n",
+          "type\n    --P\n    alias\n    --Q\n    TypeAlias3\n        --R\n        a\n        --S\n        b\n    --T\n    =\n    --U\n    { x : Int, y : Int, z : ( a, b ) }\n",
+        ),
+        (
+          "type alias A -- c\n    = Int\n", "type alias\n    A\n    -- c\n    =\n    Int\n",
+        ),
+        (
+          "type alias A a -- c\n    = Int\n", "type alias\n    A a\n    -- c\n    =\n    Int\n",
+        ),
+        (
+          "type alias A a = {- c -} Int\n", "type alias A a =\n    {- c -}\n    Int\n",
+        ),
+        (
+          "type alias A a {- c -} = Int\n", "type alias A a {- c -} =\n    Int\n",
+        ),
+        (
+          "type alias A\n    -- c\n    = Int\n", "type alias\n    A\n    -- c\n    =\n    Int\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(decl(source))).to_equal(decl(expected))
+    }
+  })
+}
+
+///|
+test "comments between the name of a signature and its colon" {
+  // elm-format 0.8.7 output for each source (Box.hs formatTypeAnnotation:
+  // `ElmStructure.definition ":" False` of the name with the comments
+  // after it).
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "x\n--V\n    :\n    --W\n    ()\nx =\n    ()\n", "x\n--V\n    :\n    --W\n    ()\nx =\n    ()\n",
+        ),
+        (
+          "x\n    {- V -}\n    : ()\nx =\n    ()\n", "x {- V -} : ()\nx =\n    ()\n",
+        ),
+        (
+          "x -- V\n    : ()\nx =\n    ()\n", "x\n-- V\n    :\n    ()\nx =\n    ()\n",
+        ),
+        (
+          "f x =\n    let\n        y\n        -- c\n            : Int\n        y =\n            1\n    in\n    y\n",
+          "f x =\n    let\n        y\n        -- c\n            :\n            Int\n        y =\n            1\n    in\n    y\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(decl(source))).to_equal(decl(expected))
+    }
+  })
+}

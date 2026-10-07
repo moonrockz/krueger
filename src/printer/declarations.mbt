@@ -56,18 +56,6 @@ fn Ctx::type_head(
 }
 
 ///|
-/// The range of the last part of a type declaration's head.
-fn head_end(
-  name : @ast.Node[String],
-  names : ArrayView[@ast.Node[String]],
-) -> @ast.Range {
-  match names.last() {
-    Some(g) => g.range
-    None => name.range
-  }
-}
-
-///|
 /// The comments before the keyword of a type, type alias or port
 /// declaration that has no documentation (`type {- a -} alias A`). They
 /// are top-level body comments.
@@ -75,8 +63,9 @@ fn Ctx::before_keyword(
   self : Ctx,
   decl : @ast.Node[@ast.Declaration],
 ) -> Array[@ast.Node[String]] {
+  // A type alias with no documentation starts at its `type`: its comments
+  // before `alias` are its own (see `Ctx::alias_doc`).
   let name = match decl.value {
-    AliasDeclaration(a) if a.documentation is None => a.name.range
     CustomTypeDeclaration(t) if t.documentation is None => t.name.range
     PortDeclaration(s) => s.name.range
     _ => return []
@@ -89,12 +78,14 @@ fn Ctx::before_keyword(
 /// The documentation of a declaration, then the comments before its
 /// keyword (the leading comments of its name that come before the keyword):
 /// with documentation, a block between blank lines, as elm-format makes
-/// them body comments.
+/// them body comments. The keyword is the token `keyword_back` tokens
+/// before the name (2 for the `type` of `type alias`).
 fn Ctx::declaration_start(
   self : Ctx,
   path : @syntax.NodePath,
   doc : @ast.Node[String]?,
   name : @ast.Range,
+  keyword_back? : Int = 1,
 ) -> @pretty.Doc raise PrintError {
   let docs = match doc {
     Some(x) =>
@@ -102,7 +93,7 @@ fn Ctx::declaration_start(
       self.trailing(x.range)
     None => @pretty.empty()
   }
-  let keyword = self.token_before(name.start)
+  let keyword = self.token_back(name.start, keyword_back)
   let cs = self.take_if(Leading, name, c => ends_before(c, keyword))
   match (doc, cs.is_empty()) {
     (None, true) => @pretty.empty()
@@ -123,23 +114,7 @@ fn Ctx::declaration_doc(
   check_level(path, level)
   match d.value {
     FunctionDeclaration(f) => self.function_doc(path, level, f)
-    AliasDeclaration(a) => {
-      let last = head_end(a.name, a.generics)
-      let moved = self.after_token(last)
-      self.declaration_start(path, a.documentation, a.name.range) +
-      self.type_head(path, "type alias", a.name, a.generics) +
-      self.separator(last, " =", moved) +
-      @pretty.nest(
-        4,
-        @pretty.hardline() +
-        self.type_doc(
-          path.child("typeAnnotation", 0),
-          level + 1,
-          a.type_annotation,
-          AnyType,
-        ),
-      )
-    }
+    AliasDeclaration(a) => self.alias_doc(path, level, a)
     CustomTypeDeclaration(t) => {
       guard !t.constructors.is_empty() else {
         raise PrintError(path~, problem=NoConstructors)
@@ -413,8 +388,9 @@ fn stacked_list(
 /// item has a comment that needs its own line; several groups are always
 /// one group per line (elm-format `formatModuleLine`, `formatListing`).
 /// A group from a `@docs` line is one line in every layout. Also gives
-/// the comments before the `(`, which go after `exposing`, and whether
-/// the list is one line that does not break in the `Width` layout.
+/// the comments before the `(`, which go after `exposing` (see
+/// `before_paren_doc`), and whether the list is one line that does not
+/// break in the `Width` layout.
 ///
 /// The comments of the items in `@docs` groups go after the last group, on
 /// lines of their own (elm-format `commentsFromReorderedVars`).
@@ -425,19 +401,14 @@ fn Ctx::exposing_list(
   groups : ExposingGroups,
   comments : ExposeComments,
   split : Split,
-) -> (@pretty.Doc, @pretty.Doc, Bool) raise PrintError {
+) -> (Array[@ast.Node[String]], @pretty.Doc, Bool) raise PrintError {
   match e.value {
     All(_) => {
       // `(..)` has no children: its comments before the `(` are inner too.
       let paren = self.token_back_to(e.range.end, "(", 3)
       let before_paren = self.take_if(Inner, e.range, c => ends_before(c, paren))
-      let gap = if before_paren.iter().any(is_line_comment) {
-        @pretty.nest(4, @pretty.hardline())
-      } else {
-        @pretty.empty()
-      }
       (
-        comments_after(before_paren) + gap,
+        before_paren,
         @pretty.text("(") + self.inner_alone(e.range) + @pretty.text("..)"),
         false,
       )
@@ -535,13 +506,25 @@ fn Ctx::exposing_list(
           @pretty.text(")")
         Split => stacked_list(parts, footer)
       }
-      (
-        comments_after(comments.before_paren),
-        list,
-        fixed && flat && footer.is_empty(),
-      )
+      (comments.before_paren, list, fixed && flat && footer.is_empty())
     }
   }
+}
+
+///|
+/// The comments before the `(` of exposing list `e`, after `exposing` on
+/// its line. After a line comment, the list of `(..)` goes on the next
+/// line.
+fn before_paren_doc(
+  e : @ast.Node[@ast.Exposing],
+  cs : Array[@ast.Node[String]],
+) -> @pretty.Doc {
+  let gap = if e.value is All(_) && cs.iter().any(is_line_comment) {
+    @pretty.nest(4, @pretty.hardline())
+  } else {
+    @pretty.empty()
+  }
+  comments_after(cs) + gap
 }
 
 ///|
@@ -568,9 +551,27 @@ fn Ctx::exposing_doc(
   } else {
     Some(@pretty.nest(4, comment_block(cs, before=true, after=true)))
   }
-  let (before_paren, items, one_line) = self.exposing_list(
+  let (paren_comments, items, list_one_line) = self.exposing_list(
     path, e, groups, comments, split,
   )
+  // elm-format Box.hs formatModuleLine and formatImport: `exposing` with
+  // the comments after it (`formatCommented`) is multi-line when a comment
+  // is, and then the list goes on the next line (`spaceSepOrIndented`):
+  // in the column of `exposing` after a module header, one tab stop right
+  // of it after an import.
+  if !paren_comments.iter().all(one_line) {
+    let rest = @pretty.hardline() +
+      comment_block(paren_comments) +
+      @pretty.hardline() +
+      items
+    return lead.unwrap_or(@pretty.nest(4, @pretty.hardline())) +
+      @pretty.nest(
+        4,
+        @pretty.text("exposing") +
+        (if import_ { @pretty.nest(4, rest) } else { rest }),
+      )
+  }
+  let before_paren = before_paren_doc(e, paren_comments)
   match e.value {
     All(_) =>
       lead.unwrap_or(self.after(previous, " ")) +
@@ -581,7 +582,7 @@ fn Ctx::exposing_doc(
     Explicit(_) => {
       // A list that is one line follows `exposing` on its line, unless a
       // line comment breaks the header.
-      let gap = if one_line &&
+      let gap = if list_one_line &&
         lead is None &&
         !self.line_comment_after(previous) &&
         !comments.before_paren.iter().any(is_line_comment) {
@@ -793,13 +794,14 @@ fn Ctx::module_doc(
         @pretty.text("where") +
         @pretty.group(@pretty.nest(4, @pretty.line() + record))
       }
-      let (before_paren, list, _) = self.exposing_list(
+      let (paren_comments, list, _) = self.exposing_list(
         path.child("exposingList", 0),
         e,
         groups,
         comments,
         self.join(),
       )
+      let before_paren = before_paren_doc(e, paren_comments)
       // elm-format `spaceSepOrIndented`: the list goes on the next line when
       // the header up to `exposing` or the list is multi-line.
       head +
@@ -888,23 +890,59 @@ fn Ctx::import_doc(
 /// declaration (elm-format's `TopLevelStructure`).
 priv enum BodyEntry {
   Comments(Array[@ast.Node[String]])
+  /// `{--}`, the start of a comment trick.
+  Opener(@ast.Node[String])
+  /// `--}`, the end of a comment trick.
+  Closer(@ast.Node[String])
   Decl(Int, @ast.Node[@ast.Declaration])
+}
+
+///|
+/// Adds comments `cs` to the body `entries`: each comment trick opener
+/// (`{--}`) and closer (`--}`) is an entry of its own (elm-format
+/// Parse/Whitespace.hs `CommentTrickOpener`, `CommentTrickCloser`).
+fn push_comments(
+  entries : Array[BodyEntry],
+  cs : Array[@ast.Node[String]],
+) -> Unit {
+  let run = []
+  let flush = () => {
+    if !run.is_empty() {
+      entries.push(Comments(run.copy()))
+      run.clear()
+    }
+  }
+  for c in cs {
+    if c.value == "{--}" {
+      flush()
+      entries.push(Opener(c))
+    } else if is_line_comment(c) && comment_text(c.value) == "--}" {
+      flush()
+      entries.push(Closer(c))
+    } else {
+      run.push(c)
+    }
+  }
+  flush()
 }
 
 ///|
 /// The number of blank lines between two body entries (elm-format 0.8.7
 /// `formatTopLevelBody`, with 2 lines between declarations).
 fn blank_lines_between(a : BodyEntry, b : BodyEntry) -> Int {
+  // The cases in the order of elm-format's `spacer`: the first that
+  // matches decides.
   match (a, b) {
+    (Opener(_), _) | (_, Closer(_)) => 0
     (Comments(_), Comments(_)) => 0
     (_, Comments(_)) => 3
-    (Comments(_), Decl(_, _)) => 2
     (Decl(_, x), Decl(_, y)) =>
       if x.value is InfixDeclaration(_) && y.value is InfixDeclaration(_) {
         0
       } else {
         2
       }
+    _ => 2
   }
 }
 
@@ -1086,18 +1124,16 @@ fn Ctx::file_doc(
   // The module body.
   let entries = []
   if last_import >= 0 {
-    let after_imports = self.take(Trailing, source.imports[last_import].range)
-    if !after_imports.is_empty() {
-      entries.push(Comments(after_imports))
-    }
+    push_comments(
+      entries,
+      self.take(Trailing, source.imports[last_import].range),
+    )
   }
   let docs = []
   for i, decl in file.declarations {
     let before = self.take(Leading, decl.range)
     before.append(self.before_keyword(decl))
-    if !before.is_empty() {
-      entries.push(Comments(before))
-    }
+    push_comments(entries, before)
     let mut doc = self.declaration_doc(root.child("declarations", i), 0, decl)
     if port_docs[i] is Some(pd) {
       doc = pd + @pretty.hardline() + doc
@@ -1109,21 +1145,15 @@ fn Ctx::file_doc(
     }
     docs.push(doc)
     entries.push(Decl(i, decl))
-    let after = self.take(Trailing, decl.range)
-    if !after.is_empty() {
-      entries.push(Comments(after))
-    }
+    push_comments(entries, self.take(Trailing, decl.range))
   }
-  let last = self.take(Inner, file_range)
-  if !last.is_empty() {
-    entries.push(Comments(last))
-  }
+  push_comments(entries, self.take(Inner, file_range))
   for i, entry in entries {
     let blank = if i == 0 {
-      if entry is Comments(_) {
-        3
-      } else {
+      if entry is Decl(_, _) {
         2
+      } else {
+        3
       }
     } else {
       blank_lines_between(entries[i - 1], entry)
@@ -1132,8 +1162,136 @@ fn Ctx::file_doc(
       line_breaks(blank + 1) +
       (match entry {
         Comments(cs) => comment_block(cs)
+        Opener(c) | Closer(c) => comment_doc(c)
         Decl(k, _) => docs[k]
       })
   }
   d + @pretty.hardline()
+}
+
+///|
+/// The comments `cs` as elm-format joins them (`formatComments`), and
+/// whether they are one line; `None` when there are none.
+fn comments_part(cs : Array[@ast.Node[String]]) -> (@pretty.Doc, Bool)? {
+  if cs.is_empty() {
+    None
+  } else {
+    Some((comment_box(cs), cs.iter().all(one_line)))
+  }
+}
+
+///|
+/// Parts on one line, separated by spaces, when each is one line; else
+/// each on its own line (elm-format `ElmStructure.spaceSepOrStack`). A
+/// part is a doc and whether it is one line.
+fn row_or_stack(parts : Array[(@pretty.Doc, Bool)]) -> (@pretty.Doc, Bool) {
+  let single = parts.iter().all(p => p.1)
+  let gap = if single { @pretty.text(" ") } else { @pretty.hardline() }
+  (@pretty.join(parts.map(p => p.0), gap), single)
+}
+
+///|
+/// `first` and `rest` on one line when each is one line, else `first`
+/// with each part of `rest` on its own line, indented by 4. With `join`,
+/// the first part of `rest` stays on the line of `first` when both are
+/// one line (elm-format `ElmStructure.application (FAJoinFirst JoinAll)`).
+fn row_or_indented(
+  first : (@pretty.Doc, Bool),
+  rest : Array[(@pretty.Doc, Bool)],
+  join? : Bool = false,
+) -> (@pretty.Doc, Bool) {
+  if first.1 && rest.iter().all(p => p.1) {
+    let parts = [first]
+    parts.append(rest)
+    return row_or_stack(parts)
+  }
+  let mut d = first.0
+  for i, p in rest {
+    d = if i == 0 && join && first.1 && p.1 {
+      d + @pretty.text(" ") + p.0
+    } else {
+      d + @pretty.nest(4, @pretty.hardline() + p.0)
+    }
+  }
+  (d, false)
+}
+
+///|
+/// A type alias, as elm-format 0.8.7 writes it (Box.hs `TypeAlias`):
+/// `type`, the comments before `alias` and `alias`, then the name with its
+/// arguments and their comments (`formatNameWithArgs`), then ` =` on the
+/// line when that head is one line, else `=` on a line of its own, and the
+/// type on the next line after the comments before it, each on its own
+/// line (`formatPreCommentedStack`).
+fn Ctx::alias_doc(
+  self : Ctx,
+  path : @syntax.NodePath,
+  level : Int,
+  a : @ast.TypeAlias,
+) -> @pretty.Doc raise PrintError {
+  let start = self.declaration_start(
+    path,
+    a.documentation,
+    a.name.range,
+    keyword_back=2,
+  )
+  let name = a.name
+  let alias_at = self.token_before(name.range.start)
+  let pre_alias = self.take_if(Leading, name.range, c => {
+    ends_before(c, alias_at)
+  })
+  let pre_name = self.take(Leading, name.range)
+  // The comments before each argument: those after the part before it,
+  // then its own.
+  let args = []
+  let mut previous = name.range
+  let name_doc = upper_name(path.child("name", 0), name.value)
+  for i, g in a.generics {
+    let pre = self.take(Trailing, previous)
+    pre.append(self.take(Leading, g.range))
+    let d = self.lower_name(path.child("generics", i), g.value)
+    args.push(
+      match comments_part(pre) {
+        Some(c) => row_or_stack([c, (d, true)])
+        None => (d, true)
+      },
+    )
+    previous = g.range
+  }
+  let t = a.type_annotation
+  let equals = self.token_after(previous.end)
+  let post = self.take_if(Trailing, previous, c => ends_before(c, equals))
+  post.append(self.take_if(Leading, t.range, c => ends_before(c, equals)))
+  let body_pre = self.take(Trailing, previous)
+  body_pre.append(self.take(Leading, t.range))
+  // `formatNameWithArgs`, then `formatCommented` with the comments before
+  // the name and before the `=`.
+  let name_args = row_or_indented((name_doc, true), args)
+  let parts = []
+  if comments_part(pre_name) is Some(c) {
+    parts.push(c)
+  }
+  parts.push(name_args)
+  if comments_part(post) is Some(c) {
+    parts.push(c)
+  }
+  let alias_part = match comments_part(pre_alias) {
+    Some(c) => row_or_stack([c, (@pretty.text("alias"), true)])
+    None => (@pretty.text("alias"), true)
+  }
+  let (head, one_line) = row_or_indented(
+    (@pretty.text("type"), true),
+    [alias_part, row_or_stack(parts)],
+    join=true,
+  )
+  let body = comment_block(body_pre, after=true) +
+    self.type_doc(path.child("typeAnnotation", 0), level + 1, t, AnyType)
+  start +
+  head +
+  (if one_line {
+    @pretty.text(" =")
+  } else {
+    @pretty.nest(4, @pretty.hardline() + @pretty.text("="))
+  }) +
+  @pretty.nest(4, @pretty.hardline() + body)
 }

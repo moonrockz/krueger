@@ -734,7 +734,11 @@ test "law: format prints every regular comment once, in source order" {
         .iter()
         .filter(c => !c.value.has_prefix("{-|"))
         .map(c => {
-          c.value.replace_all(old="\r\n", new="\n").trim_end().to_owned()
+          // elm-format changes the spaces and line breaks in a comment
+          // (see "block comments are written as elm-format writes them"),
+          // nothing else.
+          c.value.iter().filter(ch => !ch.is_whitespace()).collect()
+          |> String::from_array
         })
         .collect()
       }
@@ -762,5 +766,102 @@ test "a comment before ) in parentheses and tuples has no blank line before it" 
     s
     .expect(@printer.format(module_of("x =\n    ( a, b\n    -- c\n    )\n")))
     .to_equal(module_of("x =\n    ( a\n    , b\n      -- c\n    )\n"))
+  })
+}
+
+///|
+test "block comments are written as elm-format writes them" {
+  // elm-format 0.8.7 output for each comment between two declarations
+  // (Parse/Whitespace.hs multiComment: the spaces after `{-` and before
+  // `-}` go, and the common indentation of the lines after the first;
+  // Box.hs formatComment).
+  let module_of = (comment : String) => {
+    "module A exposing (..)\n\n\na =\n    1\n\n\n\n" +
+    comment +
+    "\n\n\nx =\n    1\n"
+  }
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        ("{- Internals of the model.\n-}", "{- Internals of the model. -}"),
+        ("{-a-}", "{- a -}"),
+        ("{-   -}", "{- -}"),
+        ("{-\n-}", "{-  -}"),
+        (
+          "{- Explanation\n\n    This is   \n      nested\n    end\n-}", "{- Explanation\n\n   This is\n     nested\n   end\n-}",
+        ),
+        ("{--TODO: maybe\nx = 2\n  -}", "{--TODO: maybe\nx = 2\n-}"),
+        ("{-- TODO: maybe -}", "{--TODO: maybe-}"),
+        ("{-\n   a\n     b\n   -}", "{-\n   a\n     b\n-}"),
+        ("{- a {- b\n  c -} d\n-}", "{- a {- b\n   c -} d\n-}"),
+        ("{-\ta -}", "{- \ta -}"),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(module_of(source))).to_equal(module_of(expected))
+    }
+    // An indented comment: the lines after the first go 3 columns right of
+    // the `{-`, and `-}` goes in its column.
+    s
+    .expect(
+      @printer.format(
+        "module A exposing (..)\n\n\nx =\n    {- a\n            b -}\n    1\n",
+      ),
+    )
+    .to_equal(
+      "module A exposing (..)\n\n\nx =\n    {- a\n       b\n    -}\n    1\n",
+    )
+  })
+}
+
+///|
+test "a comment before a , in a tuple follows the item before it" {
+  // elm-format 0.8.7 output for each source (Box.hs TupleType and Tuple:
+  // `formatC2Eol`, the comments after an item stack under it). In a list
+  // the comment goes after a blank line, in the column of the `[`.
+  let module_of = (body : String) => "module A exposing (..)\n\n\n" + body
+  @expect.expect_all(s => {
+    for
+      body in [
+        "type alias Acc =\n    ( -- hash state\n      State\n      -- splitting into words\n    , ( Int, Array Int )\n      -- total byte count\n    , Int\n    )\n",
+        "x =\n    ( a\n      -- c\n    , b\n    )\n", "y =\n    [ a\n\n    -- c\n    , b\n    ]\n",
+        "type alias Acc =\n    ( State -- a\n    , Int\n    )\n", "type alias Acc =\n    ( State {- a -}\n    , Int\n    )\n",
+      ] {
+      s.expect(@printer.format(module_of(body))).to_equal(module_of(body))
+    }
+    s
+    .expect(
+      @printer.format(
+        module_of(
+          "type alias Acc =\n    ( State\n    -- splitting into words\n    , Int\n    )\n",
+        ),
+      ),
+    )
+    .to_equal(
+      module_of(
+        "type alias Acc =\n    ( State\n      -- splitting into words\n    , Int\n    )\n",
+      ),
+    )
+  })
+}
+
+///|
+test "comment tricks keep the declaration between them" {
+  // elm-format 0.8.7 output for each source (Box.hs formatModuleBody
+  // `spacer`: no blank line after `{--}` and before `--}`).
+  let module_of = (body : String) => "module A exposing (..)\n\n\n" + body
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "a =\n    ()\n{--}\nb =\n    ()\n--}\n{--\nc =\n  ()\n--}\nd =\n    1\n",
+          "a =\n    ()\n\n\n{--}\nb =\n    ()\n--}\n\n\n\n{--\nc =\n  ()\n--}\n\n\nd =\n    1\n",
+        ),
+        (
+          "a =\n    1\n-- x\n{--}\nb =\n    ()\n--}\n-- y\nc =\n    1\n", "a =\n    1\n\n\n\n-- x\n\n\n{--}\nb =\n    ()\n--}\n\n\n\n-- y\n\n\nc =\n    1\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(module_of(source))).to_equal(module_of(expected))
+    }
   })
 }

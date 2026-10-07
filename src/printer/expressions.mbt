@@ -395,10 +395,21 @@ fn Ctx::expr_plan(
       guard items.length() >= 2 else {
         raise PrintError(path~, problem=ShortTuple)
       }
+      let after : Array[Array[@ast.Node[String]]] = Array::makei(
+        items.length(),
+        _ => [],
+      )
       (
-        self.sequence_items(path, "tupled", level, items),
+        self.sequence_items(path, "tupled", level, items, after=Some(after)),
         docs => {
           let (items, leads) = item_docs(docs)
+          // elm-format Box.hs Tuple (`formatC2Eol`): the comments before a
+          // `,` go under the item before it.
+          for i, cs in after {
+            if !cs.is_empty() {
+              items[i] = items[i] + @pretty.hardline() + comment_box(cs)
+            }
+          }
           // elm-format Parse/Helpers.hs surround (`parens`): a line break
           // anywhere inside the parentheses.
           // A comment before the `)` goes in the column of the items.
@@ -754,6 +765,7 @@ fn Ctx::sequence_items(
   field_name : String,
   level : Int,
   items : ArrayView[@ast.Node[@ast.Expression]],
+  after? : Array[Array[@ast.Node[String]]]? = None,
 ) -> Array[Work] {
   let moved : Array[Array[@ast.Node[String]]] = Array::makei(
     items.length() + 1,
@@ -775,10 +787,16 @@ fn Ctx::sequence_items(
     )
     parts.push(
       Leaf(() => {
-        if i > 0 {
-          self.before_item(None, x.range)
-        } else {
-          @pretty.empty()
+        match (i, after) {
+          (0, _) => @pretty.empty()
+          // A tuple: the comments before the `,` go to `after` of the item
+          // before it.
+          (_, Some(a)) => {
+            let comma = self.token_before(x.range.start)
+            a[i - 1] = self.take_if(Leading, x.range, c => ends_before(c, comma))
+            @pretty.empty()
+          }
+          (_, None) => self.before_item(None, x.range)
         }
       }),
     )
@@ -817,12 +835,32 @@ fn Ctx::if_plan(
   f : @ast.Node[@ast.Expression],
 ) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   let parts = []
+  // Per clause: the comments before `then` and those before `else`.
+  let before_then : Array[Array[@ast.Node[String]]] = []
+  let before_else : Array[Array[@ast.Node[String]]] = []
   let mut p = path
   let mut cond = c
   let mut then_ = t
   let mut else_ = f
   let mut more = true
   while more {
+    // elm-format Parse/Expression.hs ifClause: the comments before `then`
+    // follow the condition, and the comments before `else` follow the
+    // branch. Take them before the condition and the branch take theirs.
+    let (cr, tr, er) = (cond.range, then_.range, else_.range)
+    parts.push(
+      Leaf(() => {
+        let then_at = self.token_before(tr.start)
+        let cs = self.take(Trailing, cr)
+        cs.append(self.take_if(Leading, tr, c => ends_before(c, then_at)))
+        before_then.push(cs)
+        let else_at = self.token_back_to(er.start, "else", 1)
+        let es = self.take(Trailing, tr)
+        es.append(self.take_if(Leading, er, c => ends_before(c, else_at)))
+        before_else.push(es)
+        @pretty.empty()
+      }),
+    )
     parts.push(Expr(p.child("clause", 0), level + 1, cond, AnyExpr))
     parts.push(Expr(p.child("then", 0), level + 1, then_, AnyExpr))
     match else_.value {
@@ -844,26 +882,42 @@ fn Ctx::if_plan(
   (
     parts,
     docs => {
+      // Per clause: an empty doc (the comments are in `before_then` and
+      // `before_else`), the condition and the branch; before a nested
+      // `if`, its leading comments; at the end, the last branch.
       let last = docs.length() - 1
       let mut d = @pretty.empty()
       let mut i = 0
+      let mut k = 0
       while i + 1 < last {
         if i > 0 {
           d = d + @pretty.text(" ") + docs[i]
           i = i + 1
         }
+        let (cond_doc, _) = commented([], docs[i + 1], before_then[k])
+        let after_branch = before_else[k]
         d = d +
           @pretty.group(
             @pretty.text("if") +
-            @pretty.tab(4, @pretty.line() + docs[i]) +
+            @pretty.tab(4, @pretty.line() + cond_doc) +
             @pretty.line() +
             @pretty.text("then"),
           ) +
-          @pretty.tab(4, @pretty.hardline() + docs[i + 1]) +
+          @pretty.tab(
+            4,
+            @pretty.hardline() +
+            docs[i + 2] +
+            (if after_branch.is_empty() {
+              @pretty.empty()
+            } else {
+              @pretty.hardline() + comment_box(after_branch)
+            }),
+          ) +
           @pretty.hardline() +
           @pretty.hardline() +
           @pretty.text("else")
-        i = i + 2
+        i = i + 3
+        k = k + 1
       }
       @pretty.align(d + @pretty.tab(4, @pretty.hardline() + docs[last]))
     },

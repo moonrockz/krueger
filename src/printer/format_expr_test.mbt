@@ -255,3 +255,46 @@ test "Width layout: comments around operators" {
     .to_equal(body("    x\n        {- b -}\n        + -- note\n          y\n"))
   })
 }
+
+///|
+test "comments before then and else stay with the condition and the branch" {
+  // elm-format 0.8.7 output for each source (Parse/Expression.hs ifClause:
+  // the comments before `then` follow the condition, and the comments
+  // before `else` follow the branch before it; Box.hs If).
+  let x = (body : String) => "module A exposing (..)\n\n\nx =\n" + body
+  @expect.expect_all(s => {
+    for
+      case_ in [
+        (
+          "    if a then\n        b\n    -- c\n    else\n        d\n", "    if a then\n        b\n        -- c\n\n    else\n        d\n",
+        ),
+        (
+          "    if a\n        -- c\n    then\n        b\n\n    else\n        d\n",
+          "    if\n        a\n        -- c\n    then\n        b\n\n    else\n        d\n",
+        ),
+        (
+          "    if a {- c -} then\n        b\n\n    else\n        d\n", "    if a {- c -} then\n        b\n\n    else\n        d\n",
+        ),
+        (
+          "    if a then\n        b\n        {- c -}\n\n    else\n        d\n", "    if a then\n        b\n        {- c -}\n\n    else\n        d\n",
+        ),
+        (
+          "    if a then\n        b\n        -- c\n\n    else if e then\n        f\n        -- g\n\n    else\n        d\n",
+          "    if a then\n        b\n        -- c\n\n    else if e then\n        f\n        -- g\n\n    else\n        d\n",
+        ),
+        (
+          "    if a then b {- c -} else d\n", "    if a then\n        b\n        {- c -}\n\n    else\n        d\n",
+        ),
+        (
+          "    if a then\n        b\n    else -- c\n        d\n", "    if a then\n        b\n\n    else\n        -- c\n        d\n",
+        ),
+        (
+          "    if a then\n        b\n    -- c\n    else if e then\n        f\n    else\n        d\n",
+          "    if a then\n        b\n        -- c\n\n    else if e then\n        f\n\n    else\n        d\n",
+        ),
+      ] {
+      let (source, expected) = case_
+      s.expect(@printer.format(x(source))).to_equal(x(expected))
+    }
+  })
+}
