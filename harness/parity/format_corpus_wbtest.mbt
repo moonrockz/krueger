@@ -262,6 +262,54 @@ fn source_set(
 }
 
 ///|
+/// The regular comments of `text` without their spaces and line breaks,
+/// in source order (elm-format changes only those in a comment), or
+/// `None` when `text` has no AST.
+fn regular_comments(key : String, text : String) -> Array[String]? {
+  let result = @krueger.parse_module(
+    @krueger.SourceText::new(text),
+    dialect=corpus_dialect(key),
+  )
+  result.ast.map(file => {
+    file.comments
+    .iter()
+    .filter(c => !c.value.has_prefix("{-|"))
+    .map(c => {
+      String::from_array(
+        c.value.iter().filter(ch => !ch.is_whitespace()).collect(),
+      )
+    })
+    .collect()
+  })
+}
+
+///|
+/// The corpus laws for a source that formats to `output`: formatting
+/// `output` gives `output` again, and `output` has the regular comments of
+/// the source, in the same order.
+fn format_law_problems(
+  key : String,
+  source : String,
+  output : String,
+) -> Array[String] {
+  let problems = []
+  match format_one(key, output) {
+    Ok(again) =>
+      if again != output {
+        problems.push(
+          "\{key}: format is not idempotent: \{first_text_difference(output, again)}",
+        )
+      }
+    Err(reason) =>
+      problems.push("\{key}: the formatted text does not format: \{reason}")
+  }
+  if regular_comments(key, source) != regular_comments(key, output) {
+    problems.push("\{key}: format changes the regular comments")
+  }
+  problems
+}
+
+///|
 /// The problems with the pending list. A pending key must be a compared
 /// key whose output still differs; a skipped key or a key with no lock
 /// entry or changed source has its own message.
@@ -327,6 +375,29 @@ test "pending_problems names each cause" {
 }
 
 ///|
+test "format_law_problems names a second format that changes the text, and lost comments" {
+  let source = "module A exposing (..)\n\n\n-- c\nx =\n    1\n"
+  guard format_one("a/1/src/A.elm", source) is Ok(formatted) else {
+    fail("the source does not format")
+  }
+  @expect.expect_all(s => {
+    s
+    .expect(format_law_problems("a/1/src/A.elm", source, formatted))
+    .to_equal([])
+    let problems = format_law_problems(
+      "a/1/src/A.elm", source, "module A exposing (..)\n\n\nx = 1\n",
+    )
+    s.expect(problems.length()).to_equal(2)
+    s
+    .expect(problems.iter().any(p => p.contains("not idempotent")))
+    .to_be_true()
+    s
+    .expect(problems.iter().any(p => p.contains("regular comments")))
+    .to_be_true()
+  })
+}
+
+///|
 fn check_format_corpus() -> Unit raise {
   let lock = read_format_lock()
   let pending = read_format_pending()
@@ -381,9 +452,12 @@ fn check_format_corpus() -> Unit raise {
     guard entry.expected is Some(expected) else { continue }
     set.total += 1
     compared[key] = true
-    let (actual_hash, actual_text) = match
-      format_one(key, @fs.read_file_to_string(file)) {
-      Ok(output) => (sha256_hex(output), output)
+    let source = @fs.read_file_to_string(file)
+    let (actual_hash, actual_text) = match format_one(key, source) {
+      Ok(output) => {
+        problems.append(format_law_problems(key, source, output))
+        (sha256_hex(output), output)
+      }
       Err(reason) => ("", reason)
     }
     if actual_hash == expected {

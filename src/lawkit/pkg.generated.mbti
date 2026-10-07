@@ -136,6 +136,11 @@ pub fn Ranges::ranges(Self) -> Array[@ast.Range]
 pub impl @quickcheck.Arbitrary for Ranges
 pub impl @shrink.Shrink for Ranges
 
+pub(all) struct Spaced(String) derive(@debug.Debug)
+pub fn Spaced::text(Self) -> String
+pub impl @quickcheck.Arbitrary for Spaced
+pub impl @shrink.Shrink for Spaced
+
 // Type aliases
 
 // Traits
