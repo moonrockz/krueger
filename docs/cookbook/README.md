@@ -31,6 +31,12 @@ so the code stays in step with the API.
 - [Read and write elm-syntax JSON](elm-syntax-json.mbt.md): encode and
   decode the elm-syntax 7.3.9 JSON format, with exact Int literals.
 
+## Format Elm
+
+- [Format Elm source](format-elm-source.mbt.md): format a file as
+  elm-format 0.8.7 does, with comments in place; choose a layout; report
+  syntax errors.
+
 ## Generate Elm
 
 - [Generate Elm code](generate-elm.mbt.md): build an AST in code and print

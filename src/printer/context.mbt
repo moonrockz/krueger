@@ -50,6 +50,38 @@ fn SourceFacts::from_tokens(tokens : Array[@scanner.Token]) -> SourceFacts {
 /// - `Width(n)`: a construct is multi-line when it does not fit in `n`
 ///   columns (the layout of `print_file`). Literals print from their
 ///   value.
+///
+/// Both layouts print the comments of the source.
+///
+/// ```mbt check
+/// test {
+///   let source = "module A exposing (a)\n\na = [ 1\n  , 2 ]\n"
+///   inspect(
+///     @printer.format(source, layout=ElmFormat),
+///     content=(
+///       #|module A exposing (a)
+///       #|
+///       #|
+///       #|a =
+///       #|    [ 1
+///       #|    , 2
+///       #|    ]
+///       #|
+///     ),
+///   )
+///   inspect(
+///     @printer.format(source, layout=Width(80)),
+///     content=(
+///       #|module A exposing (a)
+///       #|
+///       #|
+///       #|a =
+///       #|    [ 1, 2 ]
+///       #|
+///     ),
+///   )
+/// }
+/// ```
 pub(all) enum Layout {
   ElmFormat
   Width(Int)

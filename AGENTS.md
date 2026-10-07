@@ -22,6 +22,7 @@ This module (`moonrockz/krueger`) is a **parser and parsing utilities** library 
 - **AST** — an exact mirror of [stil4m/elm-syntax](https://package.elm-lang.org/packages/stil4m/elm-syntax/7.3.9/) 7.3.9, with a JSON encoder and decoder that match elm-syntax byte for byte
 - **CST** — every token and top-level declaration, with trivia (whitespace and comments)
 - **Printer** — Elm source from the AST (elm-format 0.8.7 layout, width fit at 120, minimal parentheses) and from the CST (lossless, `ModuleCst::to_source`)
+- **Formatter** — `format`: Elm source formatted as elm-format 0.8.7 does, with every comment kept
 - **Markdown** — doc-comment Markdown formatted as elm-format 0.8.7 does (`format_doc`)
 - **Visitor interfaces** — pluggable traversal with multiple styles (DOM, fold, SAX-style, etc.), planned
 
@@ -421,8 +422,9 @@ and `print_type_annotation`, each with `width?` (default 120) and
   (`1.0e3` or `1000.0`, Haskell `showEFloat` and `showFFloat`), and an
   integer keeps its digits. Without source, and in the `Width` layout,
   literals print from their value.
-- Comments: documentation fields, the module documentation and port doc
-  comments (both in `File.comments`) print; regular comments do not yet.
+- Comments: `print_file` prints the documentation fields, the module
+  documentation and the port doc comments (both in `File.comments`).
+  `format` also prints the regular comments (see "Formatter").
 - Doc comments print as elm-format writes them, in every mode and in
   `normalize_file`: the text goes through `@markdown.format_doc`, and Elm
   code in it through `format_code` (`src/printer/doc_code.mbt`). That
@@ -465,6 +467,51 @@ and `print_type_annotation`, each with `width?` (default 120) and
   elm-format through `mise x`) and commit the lock. Give a pending path to
   reset the list: `mise run printer:record tests/printer/pending.json`. Use
   that only to start or reset the list.
+
+#### Formatter
+
+- `format(source, layout?, dialect?)` and `format_parsed(result, layout?,
+  dialect?)` print parsed source with its comments in place.
+  `Layout::ElmFormat` (the default) takes the line breaks from the source,
+  as elm-format 0.8.7 does (`Split` decisions from `SourceFacts`, ported
+  from elm-format's parser: `checkMultiline`, `trackNewline`);
+  `Width(n)` uses the width fit of `print_file`.
+- A comment belongs to the innermost node that contains it
+  (`src/printer/comments.mbt`): it leads the next child, trails the
+  previous child on the same line, or is inner (before the closing
+  token). The printer then moves some comments as elm-format does: a
+  comment before `then` follows the condition, a comment before `else`
+  follows the branch, a comment after an argument goes before the next
+  argument, and a comment before a `,` of a tuple goes under the item
+  before it. A comment that does not print raises
+  `PrintError(UnplacedComment(range))`; no comment is dropped.
+- Block comments take elm-format's form: the spaces after `{-` and before
+  `-}` go, the lines after the first lose their common indentation and
+  start 3 columns right of the `{-`, and `-}` goes on its own line. The
+  comment tricks `{--}` and `--}` keep the declaration between them.
+- Normalizations (in both layouts, and in `print_file`): the exposing
+  list grouped by `@docs`, the imports sorted, elm-format's parentheses,
+  literal forms, and doc-comment Markdown (`src/markdown`, on
+  `moonbit-community/cmark`) with the Elm code in doc comments formatted.
+  `format` also keeps the parentheses of a type that hold a comment, and
+  (in `ElmFormat`) the parentheses of a function type after `->`, which
+  elm-syntax does not keep in the AST; it reads them from the tokens.
+- Laws (`src/printer/format_law_test.mbt`): idempotence in both layouts,
+  the AST through `format` (up to `normalize_file`), no crash on any text,
+  and the line width in `Width`; generators `Spaced` and `Commented` from
+  `src/lawkit`.
+- `mise run format:fetch` downloads the elm-format 0.8.7 test files;
+  `mise run format:record` records elm-format's output hashes in
+  `tests/format/elm_format.lock` (needs elm-format through `mise x`);
+  `mise run test:format` (CI job `parity`) compares krueger's output, and
+  checks on every file that formats that a second format gives the same
+  text and that the regular comments stay, in order. Of the corpus files,
+  297 of the 299 that elm-format leaves unchanged and 54 of the 64 that it
+  changes match; 70 of the 71 elm-format test files match.
+  `tests/format/pending.json` lists the 13 files that differ; each has a
+  bd issue, and the list only shrinks.
+- Expected outputs in tests come from elm-format 0.8.7:
+  `printf '%s' "$SRC" | mise x github:avh4/elm-format@0.8.7 -- elm-format --stdin --elm-version=0.19`.
 
 ### Markdown
 
@@ -748,7 +795,11 @@ inputs.
   depth)` (each nesting construct at any depth, biased to the limits ± 2),
   `ElmAst` (an AST built directly, for printer laws; every range is zero),
   `ElmHeader` (exposing lists, `@docs` lines and imports in any order, with
-  duplicates, for the laws of elm-format's order),
+  duplicates, for the laws of elm-format's order), `Commented` (an
+  `ElmModule` with line, block and nested comments in every gap),
+  `Spaced` (an `ElmModule` with line breaks where Elm allows them: in
+  every gap, in none, at random, only before the first or the last
+  argument),
   `DocAttributes` (doc-comment attributes with Unicode names and values,
   continued values, `overflow_literal()`, LF, CRLF and mixed line ends),
   `DocText` (the Markdown of a doc comment: paragraphs, headings, lists,
@@ -862,6 +913,9 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `test:rejection`    | Check accept/reject verdicts against `tests/rejection/verdicts.json` |
 | `unicode:generate`  | Regenerate the Unicode identifier table, the printer's literal table and the Markdown character classes from UnicodeData.txt |
 | `printer:record`    | Print the corpus and record elm-format verdicts in `tests/printer/elm_format.lock` |
+| `format:fetch`      | Download and verify the elm-format 0.8.7 test files into `.corpus/elm-format/` |
+| `format:record`     | Record elm-format 0.8.7 output hashes in `tests/format/elm_format.lock` (needs `corpus:fetch`, `format:fetch` and elm-format) |
+| `test:format`       | Compare `format` with the recorded elm-format output (needs `corpus:fetch` and `format:fetch`) |
 | `rejection:record`  | Record `elm make` and elm-syntax verdicts for the rejection fixtures (needs Elm and Node) |
 | `test:bench`        | Run every benchmark case once on small input (smoke check) |
 | `bench`             | Measure the benchmarks (`--target t[,t...]`; all targets by default) |
@@ -903,6 +957,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes`, `release:status` | Release pull request, next version, release decision in CI, release notes, release health check |
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/printer.mbtx` | `printer:record` | Record elm-format 0.8.7 verdicts for the printed corpus |
+| `scripts/format.mbtx` | `format:fetch`, `format:record` | Download the elm-format test files; record elm-format's output hashes for the formatter |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
 | `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |

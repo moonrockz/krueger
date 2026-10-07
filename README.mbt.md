@@ -24,6 +24,9 @@ is byte for byte the same as elm-syntax's.
   hooks for Elm-like languages.
 - **Doc-comment attributes**: `@name value` data in doc comments, read into
   the parse result.
+- **Printer and formatter**: Elm source from an AST in the elm-format
+  layout, and `format`, which writes what elm-format 0.8.7 writes and keeps
+  every comment.
 
 ## Installation
 
@@ -100,6 +103,32 @@ error's `path` leads to the bad node.
 
 See [Generate Elm code](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/generate-elm.mbt.md)
 for ASTs built in code.
+
+## Format Elm source
+
+```mbt
+test "format a module" {
+  let source = "module A exposing (a)\n\na = f x -- why\n  y\n"
+  println(@krueger.format(source))
+}
+```
+
+This prints what elm-format 0.8.7 writes:
+
+```elm
+module A exposing (a)
+
+
+a =
+    f x
+        -- why
+        y
+```
+
+`format` keeps every comment, and raises `ParseFailed` with the
+diagnostics when the source has a syntax error. `layout=Width(80)` breaks
+lines to fit 80 columns instead of where the source breaks them. See
+[Format Elm source](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/format-elm-source.mbt.md).
 
 ## Documentation
 

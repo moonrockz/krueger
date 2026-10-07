@@ -135,7 +135,8 @@ pub using @dialect {
 
 ///|
 /// Elm source from an AST, in the elm-format layout and fitted to a line
-/// width (default 120).
+/// width (default 120), and Elm source formatted as elm-format 0.8.7 does,
+/// with its comments (`format`, `format_parsed`).
 pub using @printer {
   print_file,
   normalize_file,
