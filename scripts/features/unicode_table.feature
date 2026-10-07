@@ -63,3 +63,11 @@ Feature: Unicode identifier table
     Then the letter ranges are "0041-0041, 00AA-00AA"
     And the inner ranges are "0030-0030, 0041-0041, 00AA-00AA"
     And the space ranges are "0009-000D, 0020-0020, 00A0-00A0"
+
+  Scenario: The generate command writes every table
+    The lexer uses Unicode 15.1.0. elm-format 0.8.7 is built with GHC 9.2,
+    which has Unicode 14.0.0, so the printer's literal table and the
+    Markdown classes use that version.
+    Then the generated tables are "names 15.1.0 src/scanner/unicode_table.mbt; literals 14.0.0 src/printer/unicode_table.mbt; markdown 14.0.0 src/markdown/unicode_table.mbt"
+    And the data for "14.0.0" is read from ".dev/out/UnicodeData-14.0.0.txt"
+    And the data for "14.0.0" is downloaded from "https://www.unicode.org/Public/14.0.0/ucd/UnicodeData.txt"

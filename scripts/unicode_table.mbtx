@@ -2,6 +2,7 @@
 import {
   "moonbitlang/async@0.22.4",
   "moonbitlang/async@0.22.4/fs",
+  "moonbitlang/async@0.22.4/process",
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/string",
@@ -15,6 +16,11 @@ import {
 /// from UnicodeData.txt.
 ///
 /// Usage: unicode_table.mbtx [--literals | --markdown] <UnicodeData.txt> <version> <out.mbt>
+///        unicode_table.mbtx generate
+///
+/// `generate` (mise run unicode:generate) writes every table of `jobs`:
+/// it downloads each UnicodeData.txt to `.dev/out/` once, then formats
+/// each table with `moon fmt`.
 ///
 /// Classes: a lower-case name starts with Ll; an upper-case name starts with
 /// Lu or Lt; later characters are any letter (L*) or number (N*). The lexer
@@ -33,7 +39,7 @@ import {
 /// parser (Cheapskate) uses.
 
 ///|
-let usage : String = "Usage: unicode_table.mbtx [--literals | --markdown] <UnicodeData.txt> <version> <out.mbt>"
+let usage : String = "Usage: unicode_table.mbtx [--literals | --markdown] <UnicodeData.txt> <version> <out.mbt> | generate"
 
 ///|
 /// Code point ranges per class, each as inclusive (start, end) pairs, sorted
@@ -180,27 +186,119 @@ fn markdown_source(c : Classes, version : String) -> String {
 }
 
 ///|
+/// The kind of table: the lexer's identifier classes, the printer's
+/// literal table or the Markdown character classes.
+enum Kind {
+  Names
+  Literals
+  Markdown
+} derive(Eq, Debug)
+
+///|
+/// A table that `generate` writes.
+struct Job {
+  kind : Kind
+  version : String
+  out : String
+}
+
+///|
+/// The tables that `generate` writes. elm-format 0.8.7 is built with GHC
+/// 9.2, which has Unicode 14.0.0.
+fn jobs() -> Array[Job] {
+  [
+    { kind: Names, version: "15.1.0", out: "src/scanner/unicode_table.mbt", },
+    { kind: Literals, version: "14.0.0", out: "src/printer/unicode_table.mbt", },
+    {
+      kind: Markdown,
+      version: "14.0.0",
+      out: "src/markdown/unicode_table.mbt",
+    },
+  ]
+}
+
+///|
+/// The local copy of UnicodeData.txt for `version`.
+fn data_path(version : String) -> String {
+  ".dev/out/UnicodeData-\{version}.txt"
+}
+
+///|
+/// The URL of UnicodeData.txt for `version`.
+fn data_url(version : String) -> String {
+  "https://www.unicode.org/Public/\{version}/ucd/UnicodeData.txt"
+}
+
+///|
+/// The generated MoonBit source of a table of `kind`.
+fn render(kind : Kind, c : Classes, version : String) -> String {
+  match kind {
+    Names => source(c, version)
+    Literals => literals_source(c, version)
+    Markdown => markdown_source(c, version)
+  }
+}
+
+///|
+/// The line that tells what a table of `kind` holds.
+fn summary(kind : Kind, c : Classes, out : String) -> String {
+  match kind {
+    Names =>
+      "unicode: \{c.lower_start.length()} lower, \{c.upper_start.length()} upper, \{c.inner.length()} inner ranges -> \{out}"
+    Literals => "unicode: \{c.plain.length()} literal plain ranges -> \{out}"
+    Markdown =>
+      "unicode: \{c.letter.length()} letter, \{c.inner.length()} alnum, \{c.space.length()} space ranges -> \{out}"
+  }
+}
+
+///|
+async fn write_table(
+  kind : Kind,
+  input : String,
+  version : String,
+  out : String,
+) -> Unit {
+  let c = classes(@fs.read_file(input).text())
+  @fs.write_file(out, render(kind, c, version))
+  println(summary(kind, c, out))
+}
+
+///|
+async fn run_or_exit(cmd : String, args : Array[String]) -> Unit {
+  let code = @process.run(cmd, args)
+  if code != 0 {
+    eprintln("\{cmd} failed with exit code \{code}")
+    @sys.exit(code)
+  }
+}
+
+///|
+/// The local copy of UnicodeData.txt for `version`; downloads it when it
+/// is not there.
+async fn fetch(version : String) -> String {
+  let path = data_path(version)
+  if !@fs.exists(path) {
+    if !@fs.exists(".dev/out") {
+      @fs.mkdir(".dev/out", recursive=true)
+    }
+    run_or_exit("curl", ["-fsSL", "-o", path, data_url(version)])
+  }
+  path
+}
+
+///|
 async fn main {
   match @env.args()[1:] {
-    [input, version, out] => {
-      let c = classes(@fs.read_file(input).text())
-      @fs.write_file(out, source(c, version))
-      println(
-        "unicode: \{c.lower_start.length()} lower, \{c.upper_start.length()} upper, \{c.inner.length()} inner ranges -> \{out}",
-      )
-    }
-    ["--literals", input, version, out] => {
-      let c = classes(@fs.read_file(input).text())
-      @fs.write_file(out, literals_source(c, version))
-      println("unicode: \{c.plain.length()} literal plain ranges -> \{out}")
-    }
-    ["--markdown", input, version, out] => {
-      let c = classes(@fs.read_file(input).text())
-      @fs.write_file(out, markdown_source(c, version))
-      println(
-        "unicode: \{c.letter.length()} letter, \{c.inner.length()} alnum, \{c.space.length()} space ranges -> \{out}",
-      )
-    }
+    ["generate"] =>
+      for job in jobs() {
+        write_table(job.kind, fetch(job.version), job.version, job.out)
+        run_or_exit("moon", ["fmt", job.out])
+      }
+    [input, version, out] => write_table(Names, input, version, out)
+    ["--literals", input, version, out] =>
+      write_table(Literals, input, version, out)
+    ["--markdown", input, version, out] =>
+      write_table(Markdown, input, version, out)
     _ => {
       eprintln(usage)
       @sys.exit(2)
@@ -246,6 +344,29 @@ impl @moonspec.World for UnicodeWorld with fn configure(self, setup) {
   })
   setup.then1("the space ranges are {string}", fn(expected : String) raise {
     @expect.expect(describe(classes(self.data).space)).to_equal(expected)
+  })
+  setup.then1("the generated tables are {string}", fn(expected : String) raise {
+    let described = jobs().map(j => {
+      let kind = match j.kind {
+        Names => "names"
+        Literals => "literals"
+        Markdown => "markdown"
+      }
+      "\{kind} \{j.version} \{j.out}"
+    })
+    @expect.expect(described.join("; ")).to_equal(expected)
+  })
+  setup.then2("the data for {string} is read from {string}", fn(
+    version : String,
+    path : String,
+  ) raise {
+    @expect.expect(data_path(version)).to_equal(path)
+  })
+  setup.then2("the data for {string} is downloaded from {string}", fn(
+    version : String,
+    url : String,
+  ) raise {
+    @expect.expect(data_url(version)).to_equal(url)
   })
   setup.then1("the literal plain ranges are {string}", fn(
     expected : String,

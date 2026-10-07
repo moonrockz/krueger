@@ -958,6 +958,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/printer.mbtx` | `printer:record` | Record elm-format 0.8.7 verdicts for the printed corpus |
 | `scripts/format.mbtx` | `format:fetch`, `format:record` | Download the elm-format test files; record elm-format's output hashes for the formatter |
+| `scripts/unicode_table.mbtx` | `unicode:generate` | Download UnicodeData.txt; write the scanner, printer and Markdown Unicode tables |
 | `scripts/hooks_install.mbtx` | `hooks:install` | Install lefthook hooks |
 | `scripts/corpus.mbtx` | `corpus:manifest`, `corpus:fetch` | Pin, download and verify the parity corpus |
 | `scripts/goldens.mbtx` | `corpus:goldens` | Run the elm-syntax oracle over the corpus |

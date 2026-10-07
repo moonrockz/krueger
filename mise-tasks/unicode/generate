@@ -2,24 +2,4 @@
 #MISE description="Regenerate the lexer's Unicode identifier table (src/scanner/unicode_table.mbt), the printer's literal table (src/printer/unicode_table.mbt) and the Markdown character classes (src/markdown/unicode_table.mbt)"
 set -euo pipefail
 
-fetch() {
-  local data=".dev/out/UnicodeData-$1.txt"
-  if [ ! -f "$data" ]; then
-    mkdir -p .dev/out
-    curl -fsSL -o "$data" "https://www.unicode.org/Public/$1/ucd/UnicodeData.txt"
-  fi
-  echo "$data"
-}
-
-version=15.1.0
-data=$(fetch "$version")
-moon run -q --target wasm scripts/unicode_table.mbtx -- "$data" "$version" src/scanner/unicode_table.mbt
-moon fmt src/scanner/unicode_table.mbt
-
-# elm-format 0.8.7 is built with GHC 9.2, which has Unicode 14.0.0.
-version=14.0.0
-data=$(fetch "$version")
-moon run -q --target wasm scripts/unicode_table.mbtx -- --literals "$data" "$version" src/printer/unicode_table.mbt
-moon fmt src/printer/unicode_table.mbt
-moon run -q --target wasm scripts/unicode_table.mbtx -- --markdown "$data" "$version" src/markdown/unicode_table.mbt
-moon fmt src/markdown/unicode_table.mbt
+exec moon run -q --target wasm scripts/unicode_table.mbtx -- generate
