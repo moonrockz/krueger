@@ -925,6 +925,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `release:version`   | Compute next version from conventional commits |
 | `release:plan`      | Decide whether a Release workflow run releases (CI) |
 | `release:notes`     | Print a version's GitHub release notes from `CHANGELOG.md` |
+| `release:refresh`   | Update the release pull request body from `CHANGELOG.md` |
 | `release:status`    | Check that main, the tags, the GitHub release and mooncakes.io agree |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |
@@ -954,7 +955,7 @@ Project tooling logic is written in MoonBit, not bash, `jq` or `awk`.
 |--------|------|---------|
 | `scripts/coverage.mbtx` | `coverage:ci-gate`, `coverage:ci-warn` | Coverage summary and threshold |
 | `scripts/credentials.mbtx` | `release:credentials` | Write mooncakes.io credentials (CI only) |
-| `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes`, `release:status` | Release pull request, next version, release decision in CI, release notes, release health check |
+| `scripts/release.mbtx` | `release:prepare`, `release:version`, `release:plan`, `release:notes`, `release:refresh`, `release:status` | Release pull request, next version, release decision in CI, release notes, pull request body, release health check |
 | `scripts/publish.mbtx` | `release:publish` | Publish to mooncakes.io; a release tag must match `moon.mod`'s version; an already published version (a second run for the tag) succeeds |
 | `scripts/printer.mbtx` | `printer:record` | Record elm-format 0.8.7 verdicts for the printed corpus |
 | `scripts/format.mbtx` | `format:fetch`, `format:record` | Download the elm-format test files; record elm-format's output hashes for the formatter |
@@ -1104,15 +1105,18 @@ design is final and meant for readers, write it up in a committed location on pu
   push.
 - In the pull request, replace the highlights comment at the top of the new section
   with a few sentences on what the release brings, and reword the generated lines
-  where needed. Then merge. Do not bump the version in any other pull request.
+  where needed. Push, then run `mise run release:refresh` on the release branch: it
+  writes the new notes into the pull request body. Then merge. Do not bump the
+  version in any other pull request.
 - Merge the release pull request before other pull requests. A pull request that
   merges first is not in the new section and goes into no later section either (the
   tag covers it). If that happens, close the release pull request, delete its branch
   and run `mise run release:prepare` again.
 - The merge changes `moon.mod` on `main`, so the Release workflow runs:
   - `plan` (`mise run release:plan`) releases when `v<version>` has no tag yet and
-    `CHANGELOG.md` has the version's section; otherwise it skips, or fails when the
-    section is missing.
+    `CHANGELOG.md` has the version's section with its highlights written; otherwise
+    it skips, or fails when the section is missing or still has the highlights
+    placeholder.
   - `validate` runs `moon fmt`, `moon check`, `mise run test:unit` and
     `mise run test:scripts`; `publish` publishes to mooncakes.io (needs the
     `MOONCAKES_USER_TOKEN` org secret).

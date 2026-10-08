@@ -45,9 +45,10 @@ Copy this checklist and tick it off:
    highlights comment with 2–5 plain sentences: what a user can now do, what
    breaks and how to migrate. Read the bodies of the included pull requests
    (`gh pr view <n> --json body`) for this. Reword generated lines that are
-   unclear. Commit as `chore(release): highlights for vX.Y.Z` and push. Check
-   the result with `mise run release:notes X.Y.Z`. Ask the user to review the
-   text.
+   unclear. Commit as `chore(release): highlights for vX.Y.Z` and push. Run
+   `mise run release:refresh` to put the notes into the pull request body.
+   Check the result with `mise run release:notes X.Y.Z`. Ask the user to
+   review the text.
 5. **Merge.** Get the user's approval. Make sure no other pull request merged
    to main after `prepare` (`git log release/vX.Y.Z..origin/main` is empty);
    if one did, see TROUBLESHOOTING.md. Then `gh pr merge <n> --squash`.
