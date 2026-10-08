@@ -46,7 +46,17 @@ branch, run `prepare` again. Fix after: add the line to the released section
 in a `docs(changelog)` pull request, then
 `gh release edit vX.Y.Z --notes-file <(mise run release:notes X.Y.Z 2>/dev/null)`.
 
+**The pull request preview still shows the highlights placeholder**
+Cause: `prepare` writes the body before the highlights exist.
+Fix: on `release/vX.Y.Z`, after the highlights commit is pushed, run
+`mise run release:refresh`.
+
 ## Release workflow
+
+**`plan` fails: "still has the highlights placeholder"**
+Cause: the release pull request merged without its highlights.
+Fix: write the highlights in a `docs(changelog)` pull request to main; the merge
+changes no `moon.mod`, so run `gh workflow run release.yml --ref main` after it.
 
 **No Release run started after the release pull request merged**
 Cause: the workflow runs on a push to main only when `moon.mod` changes, or

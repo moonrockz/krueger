@@ -263,6 +263,53 @@ Feature: Release tooling
       | tag    | v0.4.0 | yes    | yes     | error: tag v0.4.0 does not match moon.mod version 0.3.0 (v0.3.0)                          |
       | tag    | 0.3.0  | yes    | yes     | error: tag 0.3.0 does not match moon.mod version 0.3.0 (v0.3.0)                           |
 
+  Scenario Outline: A release needs its highlights
+    Given the ref type is "branch" and the ref name is "main"
+    And the tag exists: "no"
+    And the changelog section has highlights: "<highlights>"
+    Then the plan for version "0.3.0" is "<plan>"
+
+    Examples:
+      | highlights | plan                                                                                                                                  |
+      | yes        | release 0.3.0                                                                                                                         |
+      | no         | error: the CHANGELOG.md section for 0.3.0 still has the highlights placeholder; write the highlights on release/v0.3.0, then merge |
+
+  Scenario: A section with the highlights placeholder
+    Given the text:
+      """
+
+      <!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+      ### Features
+
+      - One
+      """
+    Then the section has highlights: "no"
+
+  Scenario: A section with written highlights
+    Given the text:
+      """
+
+      krueger can now format Elm source.
+
+      ### Features
+
+      - One
+      """
+    Then the section has highlights: "yes"
+
+  Scenario Outline: Refresh the release pull request from its branch only
+    Then refreshing on branch "<branch>" for version "0.5.0" gives "<result>"
+
+    Examples:
+      | branch         | result                                                           |
+      | release/v0.5.0 | ok: release/v0.5.0                                               |
+      | main           | error: run release:refresh on release/v0.5.0, not on main        |
+      | release/v0.4.0 | error: run release:refresh on release/v0.5.0, not on release/v0.4.0 |
+
+  Scenario: The release pull request body tells how to refresh it
+    Then the pull request body for "0.5.0" mentions "mise run release:refresh"
+
   Scenario: Outputs for the workflow
     Then the outputs for a release of "0.3.0" are:
       """

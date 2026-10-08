@@ -22,10 +22,11 @@ import {
 ///                                     open the release pull request
 ///   release.mbtx plan                 decide in CI whether to release
 ///   release.mbtx notes <version>      print the GitHub release notes
+///   release.mbtx refresh              update the release pull request body
 ///   release.mbtx status               check main, tags, GitHub and mooncakes.io
 
 ///|
-let usage : String = "Usage: release.mbtx version | prepare [<version>] [--local] | plan | notes <version> | status"
+let usage : String = "Usage: release.mbtx version | prepare [<version>] [--local] | plan | notes <version> | refresh | status"
 
 ///|
 let initial_version : String = "v0.1.0"
@@ -234,6 +235,17 @@ fn release_notes(version : Version, section : String) -> String {
 }
 
 ///|
+/// The start of the comment that git-cliff writes where the highlights go
+/// (cliff.toml).
+let highlights_marker : String = "<!-- Highlights:"
+
+///|
+/// The section has its highlights: the placeholder comment is gone.
+fn has_highlights(section : String) -> Bool {
+  !section.contains(highlights_marker)
+}
+
+///|
 /// What the Release workflow does for one run.
 enum Plan {
   Release(Version)
@@ -244,13 +256,14 @@ enum Plan {
 /// Decide whether a Release run releases. A tag push must name the version in
 /// moon.mod. Any other run (a push to main that changes moon.mod, a manual
 /// run) releases when the version has no tag yet. A release needs its section
-/// in CHANGELOG.md.
+/// in CHANGELOG.md, with the highlights written.
 fn plan(
   ref_type : String,
   ref_name : String,
   version : Version,
   tag_exists : Bool,
   has_section : Bool,
+  highlights? : Bool = true,
 ) -> Result[Plan, String] {
   let tag = "v\{version}"
   if ref_type == "tag" && ref_name != tag {
@@ -264,6 +277,11 @@ fn plan(
   if !has_section {
     return Err(
       "CHANGELOG.md has no section for \{version}; release with `mise run release:prepare`",
+    )
+  }
+  if !highlights {
+    return Err(
+      "the CHANGELOG.md section for \{version} still has the highlights placeholder; write the highlights on release/v\{version}, then merge",
     )
   }
   Ok(Release(version))
@@ -286,7 +304,8 @@ fn pr_body(version : Version, notes : String) -> String {
     $|
     $|Before you merge, edit the highlights comment at the top of the
     $|`## [\{version}]` section in `CHANGELOG.md`: a few sentences on what this
-    $|release brings. You can also reword the generated lines.
+    $|release brings. You can also reword the generated lines. Then run
+    $|`mise run release:refresh` to update the preview below.
     $|
     $|When this pull request merges, the Release workflow tags the merge
     $|commit `v\{version}`, publishes to mooncakes.io and creates the GitHub
@@ -296,6 +315,17 @@ fn pr_body(version : Version, notes : String) -> String {
     $|
   ) +
   notes
+}
+
+///|
+/// `release:refresh` runs only on the release branch of the moon.mod version.
+fn refresh_branch(branch : String, version : Version) -> Result[String, String] {
+  let expected = "release/v\{version}"
+  if branch == expected {
+    Ok(branch)
+  } else {
+    Err("run release:refresh on \{expected}, not on \{branch}")
+  }
 }
 
 ///|
@@ -606,8 +636,10 @@ async fn run_plan() -> Unit {
   } else {
     ""
   }
-  let has_section = changelog_section(changelog, version) is Some(_)
-  match plan(ref_type, ref_name, version, code == 0, has_section) {
+  let section = changelog_section(changelog, version)
+  let has_section = section is Some(_)
+  let highlights = section.map(has_highlights).unwrap_or(true)
+  match plan(ref_type, ref_name, version, code == 0, has_section, highlights~) {
     Err(message) => fail_with(message)
     Ok(p) => {
       match p {
@@ -636,6 +668,45 @@ async fn notes(version : String) -> Unit {
     Some(section) => println(release_notes(version, section).trim_end())
     None => fail_with("CHANGELOG.md has no section for \{version}")
   }
+}
+
+///|
+/// Update the body of the open release pull request from CHANGELOG.md, after
+/// the highlights commit.
+async fn refresh() -> Unit {
+  let version = match parse_version(current_version()) {
+    Ok(v) => v
+    Err(message) => {
+      fail_with(message)
+      return
+    }
+  }
+  let (_, branch) = stdout_of("git", ["branch", "--show-current"])
+  let branch = match refresh_branch(branch.trim().to_owned(), version) {
+    Ok(b) => b
+    Err(message) => {
+      fail_with(message)
+      return
+    }
+  }
+  guard changelog_section(@fs.read_file(changelog_path).text(), version)
+    is Some(section) else {
+    fail_with("CHANGELOG.md has no section for \{version}")
+    return
+  }
+  if !has_highlights(section) {
+    eprintln(
+      "warning: the section for \{version} still has the highlights placeholder",
+    )
+  }
+  run_or_fail("gh", [
+    "pr",
+    "edit",
+    branch,
+    "--body",
+    pr_body(version, release_notes(version, section)),
+  ])
+  println("Updated the body of the release pull request for \{branch}.")
 }
 
 ///|
@@ -716,6 +787,7 @@ async fn main {
       prepare(Some(version), true)
     ["plan"] => run_plan()
     ["notes", version] => notes(version)
+    ["refresh"] => refresh()
     ["status"] => status()
     _ => {
       eprintln(usage)
@@ -735,6 +807,7 @@ struct ReleaseWorld {
   mut ref_name : String
   mut tag_exists : Bool
   mut has_section : Bool
+  mut highlights : Bool
   mut facts : Facts
 }
 
@@ -749,6 +822,7 @@ fn ReleaseWorld::new() -> ReleaseWorld {
     ref_name: "",
     tag_exists: false,
     has_section: true,
+    highlights: true,
     facts: {
       main_version: { major: 0, minor: 0, patch: 0, },
       latest_tag: None,
@@ -893,8 +967,36 @@ impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
       version_of(version),
       self.tag_exists,
       self.has_section,
+      highlights=self.highlights,
     )
     @expect.expect(plan_name(r)).to_equal(expected)
+  })
+  setup.given1("the changelog section has highlights: {string}", fn(
+    answer : String,
+  ) {
+    self.highlights = answer == "yes"
+  })
+  setup.then1("the section has highlights: {string}", fn(
+    expected : String,
+  ) raise {
+    let actual = if has_highlights(self.text) { "yes" } else { "no" }
+    @expect.expect(actual).to_equal(expected)
+  })
+  setup.then3(
+    "refreshing on branch {string} for version {string} gives {string}",
+    fn(branch : String, version : String, expected : String) raise {
+      let actual = match refresh_branch(branch, version_of(version)) {
+        Ok(b) => "ok: \{b}"
+        Err(message) => "error: \{message}"
+      }
+      @expect.expect(actual).to_equal(expected)
+    },
+  )
+  setup.then2("the pull request body for {string} mentions {string}", fn(
+    version : String,
+    text : String,
+  ) raise {
+    @expect.expect(pr_body(version_of(version), "")).to_contain(text)
   })
   setup.then2("the outputs for a release of {string} are:", fn(
     version : String,
