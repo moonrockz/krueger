@@ -297,8 +297,91 @@ fn plan_outputs(p : Plan) -> String {
 }
 
 ///|
-/// The body of the release pull request.
-fn pr_body(version : Version, notes : String) -> String {
+/// The line that ends each commit in the `git log` that `prepare` reads.
+let commit_end : String = "==krueger-commit-end=="
+
+///|
+/// A Conventional Commits subject marks a breaking change with `!` before
+/// the colon: `feat!: …` or `feat(scope)!: …`.
+fn is_breaking_subject(subject : String) -> Bool {
+  match subject.find(":") {
+    Some(i) => {
+      let prefix = subject.view(end_offset=i)
+      prefix.has_suffix("!") && !prefix.contains(" ")
+    }
+    None => false
+  }
+}
+
+///|
+/// The message has a `BREAKING CHANGE:` (or `BREAKING-CHANGE:`) footer line.
+fn has_breaking_footer(message : String) -> Bool {
+  message
+  .split("\n")
+  .any(line => {
+    line.has_prefix("BREAKING CHANGE:") || line.has_prefix("BREAKING-CHANGE:")
+  })
+}
+
+///|
+/// The subjects of breaking commits (`!`) without a `BREAKING CHANGE:`
+/// footer, in order. Without the footer, git-cliff writes the subject as the
+/// changelog's breaking-change line, which does not say what breaks.
+fn breaking_without_footer(messages : Array[String]) -> Array[String] {
+  let out = []
+  for message in messages {
+    let subject = message.split("\n").next().unwrap_or("").trim().to_owned()
+    if is_breaking_subject(subject) && !has_breaking_footer(message) {
+      out.push(subject)
+    }
+  }
+  out
+}
+
+///|
+/// The commit messages of `git log --format=%B%n<commit_end>`.
+fn log_messages(log : String) -> Array[String] {
+  let out = []
+  let current = StringBuilder()
+  for line in log.split("\n") {
+    if line.trim() == commit_end {
+      let message = current.to_string().trim().to_owned()
+      if message != "" {
+        out.push(message)
+      }
+      current.reset()
+    } else {
+      current.write_view(line)
+      current.write_string("\n")
+    }
+  }
+  out
+}
+
+///|
+/// The body of the release pull request. `missing_footers` lists breaking
+/// commits without a `BREAKING CHANGE:` footer.
+fn pr_body(
+  version : Version,
+  notes : String,
+  missing_footers? : Array[String] = [],
+) -> String {
+  let warning = if missing_footers.is_empty() {
+    ""
+  } else {
+    let lines = missing_footers.map(s => "- `\{s}`").join("\n")
+    (
+      $|> [!WARNING]
+      $|> These breaking commits have no `BREAKING CHANGE:` footer, so their
+      $|> changelog line repeats the subject. Rewrite each line under
+      $|> "Breaking changes" in `CHANGELOG.md` to say what breaks and how to
+      $|> migrate.
+      $|
+    ) +
+    lines +
+    "\n\n"
+  }
+  warning +
   (
     $|Release \{module_name} \{version}.
     $|
@@ -521,6 +604,22 @@ async fn github_env() -> Map[String, String] {
 }
 
 ///|
+/// Breaking commits on HEAD since the latest `v*` tag (all commits when there
+/// is no tag) that have no `BREAKING CHANGE:` footer.
+async fn breaking_commits_without_footer() -> Array[String] {
+  let (code, last) = stdout_of("git", [
+    "describe", "--tags", "--abbrev=0", "--match", "v*",
+  ])
+  let range = if code == 0 && last.trim() != "" {
+    "\{last.trim()}..HEAD"
+  } else {
+    "HEAD"
+  }
+  let (_, log) = stdout_of("git", ["log", "--format=%B%n\{commit_end}", range])
+  breaking_without_footer(log_messages(log))
+}
+
+///|
 async fn prepare(requested : String?, local_only : Bool) -> Unit {
   let (_, dirty) = stdout_of("git", ["status", "--porcelain"])
   if dirty.trim() != "" {
@@ -530,6 +629,12 @@ async fn prepare(requested : String?, local_only : Bool) -> Unit {
   }
   run_or_fail("git", ["fetch", "--tags", "origin", "main"])
   run_or_fail("git", ["switch", "--detach", "origin/main"])
+  let missing_footers = breaking_commits_without_footer()
+  for subject in missing_footers {
+    eprintln(
+      "warning: breaking commit without a BREAKING CHANGE: footer: \{subject}; rewrite its line in CHANGELOG.md",
+    )
+  }
   let computed = match requested {
     Some(_) => ""
     None => {
@@ -605,7 +710,7 @@ async fn prepare(requested : String?, local_only : Bool) -> Unit {
     "--title",
     "chore(release): \{tag}",
     "--body",
-    pr_body(version, notes),
+    pr_body(version, notes, missing_footers~),
   ])
   println(
     "Opened the release pull request. Edit the highlights in CHANGELOG.md on \{branch}, then merge.",
@@ -704,7 +809,11 @@ async fn refresh() -> Unit {
     "edit",
     branch,
     "--body",
-    pr_body(version, release_notes(version, section)),
+    pr_body(
+      version,
+      release_notes(version, section),
+      missing_footers=breaking_commits_without_footer(),
+    ),
   ])
   println("Updated the body of the release pull request for \{branch}.")
 }
@@ -971,6 +1080,38 @@ impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
     )
     @expect.expect(plan_name(r)).to_equal(expected)
   })
+  setup.given2("the commit {string} with the footer {string}", fn(
+    subject : String,
+    footer : String,
+  ) {
+    self.text = if footer == "" {
+      subject + "\n\nBody."
+    } else {
+      subject + "\n\nBody.\n\n" + footer
+    }
+  })
+  setup.then1("the breaking commits without a footer are {string}", fn(
+    expected : String,
+  ) raise {
+    @expect.expect(breaking_without_footer([self.text]).join(", ")).to_equal(
+      expected,
+    )
+  })
+  setup.then1("the breaking commits without a footer in the log are {string}", fn(
+    expected : String,
+  ) raise {
+    @expect.expect(breaking_without_footer(log_messages(self.text)).join(", ")).to_equal(
+      expected,
+    )
+  })
+  setup.then3(
+    "the pull request body for {string} with the missing footer {string} mentions {string}",
+    fn(version : String, subject : String, text : String) raise {
+      @expect.expect(
+        pr_body(version_of(version), "", missing_footers=[subject]),
+      ).to_contain(text)
+    },
+  )
   setup.given1("the changelog section has highlights: {string}", fn(
     answer : String,
   ) {
