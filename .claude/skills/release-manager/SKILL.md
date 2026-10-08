@@ -45,7 +45,9 @@ Copy this checklist and tick it off:
    highlights comment with 2–5 plain sentences: what a user can now do, what
    breaks and how to migrate. Read the bodies of the included pull requests
    (`gh pr view <n> --json body`) for this. Reword generated lines that are
-   unclear. Commit as `chore(release): highlights for vX.Y.Z` and push. Run
+   unclear. If `prepare` warned about breaking commits without a
+   `BREAKING CHANGE:` footer, rewrite their lines to say what breaks. Commit
+   as `chore(release): highlights for vX.Y.Z` and push. Run
    `mise run release:refresh` to put the notes into the pull request body.
    Check the result with `mise run release:notes X.Y.Z`. Ask the user to
    review the text.

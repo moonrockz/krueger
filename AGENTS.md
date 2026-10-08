@@ -885,6 +885,12 @@ type(scope): description
 
 Types: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `style`.
 Breaking changes: add `!` after type (e.g. `feat(parser)!: change return type`).
+Also add a `BREAKING CHANGE: <what breaks and how to migrate>` footer (Conventional
+Commits 1.0.0; `BREAKING-CHANGE:` works too). git-cliff writes the footer text as the
+changelog's breaking-change line; without it the line repeats the subject. For a
+squash merge, put the footer in the squash commit body
+(`gh pr merge --squash --body $'…\n\nBREAKING CHANGE: …'`).
+`mise run release:prepare` warns about breaking commits without the footer.
 
 Scopes (examples): `scanner`, `parser`, `ast`, `visitor`, `ci`, `build`.
 
@@ -1103,6 +1109,9 @@ design is final and meant for readers, write it up in a committed location on pu
   checks that it equals `moon.mod`'s version. Give a version to
   override git-cliff (`mise run release:prepare 1.0.0`); `--local` stops before the
   push.
+- `prepare` warns about breaking commits (`!`) without a `BREAKING CHANGE:` footer
+  and lists them in the pull request body. Rewrite each such line under "Breaking
+  changes" in `CHANGELOG.md`.
 - In the pull request, replace the highlights comment at the top of the new section
   with a few sentences on what the release brings, and reword the generated lines
   where needed. Push, then run `mise run release:refresh` on the release branch: it

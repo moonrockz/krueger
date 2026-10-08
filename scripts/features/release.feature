@@ -310,6 +310,38 @@ Feature: Release tooling
   Scenario: The release pull request body tells how to refresh it
     Then the pull request body for "0.5.0" mentions "mise run release:refresh"
 
+  Scenario Outline: A breaking commit needs a BREAKING CHANGE footer
+    Given the commit "<subject>" with the footer "<footer>"
+    Then the breaking commits without a footer are "<missing>"
+
+    Examples:
+      | subject                                  | footer                                | missing                                  |
+      | feat(printer)!: Elm formatter (#44)       | BREAKING CHANGE: print_file changes   |                                          |
+      | feat(printer)!: Elm formatter (#44)       | BREAKING-CHANGE: print_file changes   |                                          |
+      | feat(printer)!: Elm formatter (#44)       |                                       | feat(printer)!: Elm formatter (#44)       |
+      | feat!: drop the old API                   | breaking change: lower case           | feat!: drop the old API                   |
+      | feat(parser): a new rule (#45)            |                                       |                                          |
+      | fix: say what breaks! (#46)               |                                       |                                          |
+
+  Scenario: Read the commits of a git log
+    Given the text:
+      """
+      feat(printer)!: Elm formatter (#44)
+
+      Adds format.
+
+      BREAKING CHANGE: print_file changes.
+      ==krueger-commit-end==
+      fix(scanner)!: stricter hex (#45)
+      ==krueger-commit-end==
+      docs: cookbook (#46)
+      ==krueger-commit-end==
+      """
+    Then the breaking commits without a footer in the log are "fix(scanner)!: stricter hex (#45)"
+
+  Scenario: The release pull request body names breaking commits without a footer
+    Then the pull request body for "0.5.0" with the missing footer "fix(scanner)!: stricter hex (#45)" mentions "fix(scanner)!: stricter hex (#45)"
+
   Scenario: Outputs for the workflow
     Then the outputs for a release of "0.3.0" are:
       """

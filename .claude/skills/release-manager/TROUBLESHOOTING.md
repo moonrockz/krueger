@@ -46,6 +46,12 @@ branch, run `prepare` again. Fix after: add the line to the released section
 in a `docs(changelog)` pull request, then
 `gh release edit vX.Y.Z --notes-file <(mise run release:notes X.Y.Z 2>/dev/null)`.
 
+**A breaking-change line repeats the pull request title**
+Cause: the breaking commit has `!` but no `BREAKING CHANGE:` footer, so
+git-cliff uses the subject. `prepare` warns about it.
+Fix: rewrite the line in `CHANGELOG.md` on the release branch. Next time, put
+the footer in the squash commit body.
+
 **The pull request preview still shows the highlights placeholder**
 Cause: `prepare` writes the body before the highlights exist.
 Fix: on `release/vX.Y.Z`, after the highlights commit is pushed, run
