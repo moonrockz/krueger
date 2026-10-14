@@ -3,8 +3,8 @@
 priv struct DiagnosticInfo {
   code : String
   message : String
-  line : Int
-  column : Int
+  line : Int32
+  column : Int32
 }
 
 ///|
@@ -33,7 +33,7 @@ priv struct ParityReport {
 fn parity_report(
   files : Array[FileReport],
   baseline : Counts?,
-  commit? : String? = None,
+  commit~ : String? = None,
 ) -> ParityReport {
   let counts = {
     files: files.length(),
@@ -113,7 +113,7 @@ fn by_package(files : Array[FileReport]) -> Array[(String, Array[FileReport])] {
 }
 
 ///|
-fn delta(now : Int, before : Int) -> String {
+fn delta(now : Int32, before : Int32) -> String {
   let d = now - before
   if d > 0 {
     "+\{d}"
@@ -135,8 +135,8 @@ fn counts_delta(now : Counts, before : Counts) -> Counts {
 ///|
 /// Diagnostic codes of files that do not match, by number of files, most
 /// common first.
-fn failure_codes(files : Array[FileReport]) -> Array[(String, Int)] {
-  let counts : Map[String, Int] = Map([])
+fn failure_codes(files : Array[FileReport]) -> Array[(String, Int32)] {
+  let counts : Map[String, Int32] = Map([])
   for f in files {
     if !f.matched && f.diagnostic is Some(d) {
       counts[d.code] = counts.get(d.code).unwrap_or(0) + 1
@@ -157,7 +157,7 @@ fn failure_codes(files : Array[FileReport]) -> Array[(String, Int)] {
 ///|
 fn optional_string(value : String?) -> Json {
   match value {
-    Some(s) => s.to_json()
+    Some(s) => Json(s)
     None => Json::null()
   }
 }
@@ -169,21 +169,21 @@ fn report_json(r : ParityReport) -> Json {
     let diagnostic : Json = match f.diagnostic {
       Some(d) =>
         {
-          "code": d.code.to_json(),
-          "message": d.message.to_json(),
-          "line": d.line.to_json(),
-          "column": d.column.to_json(),
+          "code": Json(d.code),
+          "message": Json(d.message),
+          "line": Json(d.line),
+          "column": Json(d.column),
         }
       None => Json::null()
     }
     let file : Json = {
-      "key": f.key.to_json(),
-      "package": package_of(f.key).to_json(),
-      "path": path_of(f.key).to_json(),
-      "status": status_of(f).to_json(),
-      "tokenized": f.tokenized.to_json(),
-      "parsed": f.parsed.to_json(),
-      "matched": f.matched.to_json(),
+      "key": Json(f.key),
+      "package": Json(package_of(f.key)),
+      "path": Json(path_of(f.key)),
+      "status": Json(status_of(f)),
+      "tokenized": Json(f.tokenized),
+      "parsed": Json(f.parsed),
+      "matched": Json(f.matched),
       "diagnostic": diagnostic,
       "difference": optional_string(f.difference),
     }
@@ -200,7 +200,7 @@ fn report_json(r : ParityReport) -> Json {
       Some(b) => counts_to_json(counts_delta(r.counts, b))
       None => Json::null()
     },
-    "regressions": Json::array(r.regressions.map(s => s.to_json())),
+    "regressions": Json::array(r.regressions.map(s => Json(s))),
     "files": Json::array(files),
   }
 }

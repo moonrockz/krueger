@@ -5,12 +5,12 @@ fn fold_events(root : @syntax.NodeRef, p : Policy) -> Array[String] {
   let mut k = 0
   let folded : @list.List[String] = @syntax.fold(
     root,
-    @list.empty().add("init"),
+    @list.List([]).prepend("init"),
     (acc, n) => {
       k = k + 1
-      (acc.add("+" + tag(n)), decide(p, k - 1))
+      (acc.prepend("+" + tag(n)), decide(p, k - 1))
     },
-    leave=(acc, n) => acc.add("-" + tag(n)),
+    leave=(acc, n) => acc.prepend("-" + tag(n)),
   )
   folded.rev().to_array()
 }
@@ -73,19 +73,19 @@ test "law: a fold inside a fold callback leaves the outer fold unchanged" {
       let mut k = 0
       let outer : @list.List[String] = @syntax.fold(
         root,
-        @list.empty().add("init"),
+        @list.List([]).prepend("init"),
         (acc, n) => {
           if fold_events(n, q) != ["init"] + model(n, q) {
             ok = false
           }
           k = k + 1
-          (acc.add("+" + tag(n)), decide(p, k - 1))
+          (acc.prepend("+" + tag(n)), decide(p, k - 1))
         },
         leave=(acc, n) => {
           if fold_events(n, q) != ["init"] + model(n, q) {
             ok = false
           }
-          acc.add("-" + tag(n))
+          acc.prepend("-" + tag(n))
         },
       )
       ok && outer.rev().to_array() == ["init"] + model(root, p)

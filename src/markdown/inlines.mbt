@@ -31,7 +31,7 @@ priv suberror TooDeep
 /// The deepest nesting of inlines (emphasis, links, link titles and
 /// parentheses in URLs) that the inline parser reads. It recurses once per
 /// level, so this limit keeps the stack small on every target.
-let max_inline_depth : Int = 32
+let max_inline_depth : Int32 = 32
 
 ///|
 /// A port of Cheapskate's inline parser (`Cheapskate.Inlines`), which
@@ -39,12 +39,12 @@ let max_inline_depth : Int = 32
 /// position where it was.
 priv struct InlineParser {
   chars : Array[Char]
-  mut pos : Int
-  mut depth : Int
+  mut pos : Int32
+  mut depth : Int32
 }
 
 ///|
-fn InlineParser::new(text : String, depth : Int) -> InlineParser {
+fn InlineParser::new(text : String, depth : Int32) -> InlineParser {
   { chars: text.to_array(), pos: 0, depth, }
 }
 
@@ -157,17 +157,17 @@ fn is_md_whitespace(c : Char) -> Bool {
 
 ///|
 fn is_ascii_alnum(c : Char) -> Bool {
-  c is ('a'..='z' | 'A'..='Z' | '0'..='9')
+  c is ('a'..<='z' | 'A'..<='Z' | '0'..<='9')
 }
 
 ///|
 /// Cheapskate `isEscapable`: ASCII punctuation and symbols.
 fn is_escapable(c : Char) -> Bool {
-  c is ('!'..='/' | ':'..='@' | '['..='`' | '{'..='~')
+  c is ('!'..<='/' | ':'..<='@' | '['..<='`' | '{'..<='~')
 }
 
 ///|
-fn in_ranges(ranges : FixedArray[Int], c : Char) -> Bool {
+fn in_ranges(ranges : FixedArray[Int32], c : Char) -> Bool {
   let n = c.to_int()
   let mut lo = 0
   let mut hi = ranges.length() / 2 - 1
@@ -265,7 +265,7 @@ fn is_scheme(t : String) -> Bool {
 /// nesting depth of the parse that reads `text`.
 fn parse_inlines(
   text : String,
-  depth? : Int = 0,
+  depth~ : Int32 = 0,
 ) -> Array[Inline] raise TooDeep {
   let p = InlineParser::new(text, depth)
   let out = []
@@ -975,7 +975,7 @@ fn auto_link(t : String) -> Inline {
 ///|
 /// The length of the longest run of `` ` `` in `text` (elm-format
 /// `longestSpanOf`).
-fn longest_backtick_run(text : String) -> Int {
+fn longest_backtick_run(text : String) -> Int32 {
   let mut longest = 0
   let mut current = 0
   for c in text {

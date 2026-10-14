@@ -219,17 +219,17 @@ pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
 /// The innermost node at or below `start` whose range contains `p` (the rule
 /// of `Tree::node_at`), with the index of each step down in its parent's
 /// `children()`, or `None` when `start` does not contain `p`.
-fn innermost_at(start : NodeRef, p : @ast.Location) -> (NodeRef, Array[Int])? {
+fn innermost_at(start : NodeRef, p : @ast.Location) -> (NodeRef, Array[Int32])? {
   if !contains(start.range(), p) {
     return None
   }
   let mut best = start
-  let mut best_trail : @list.List[Int] = @list.empty()
+  let mut best_trail : @list.List[Int32] = @list.List([])
   let mut best_depth = 0
   // An explicit stack, visited in source order. A trail holds the child
   // indices from `start`, innermost first.
-  let stack : Array[(NodeRef, Int, @list.List[Int])] = [
-    (start, 0, @list.empty()),
+  let stack : Array[(NodeRef, Int32, @list.List[Int32])] = [
+    (start, 0, @list.List([])),
   ]
   while stack.pop() is Some((node, depth, trail)) {
     let r = node.range()
@@ -242,7 +242,7 @@ fn innermost_at(start : NodeRef, p : @ast.Location) -> (NodeRef, Array[Int])? {
     let kids = node.children()
     for i = kids.length() - 1; i >= 0; i = i - 1 {
       if contains(kids[i].range(), p) {
-        stack.push((kids[i], depth + 1, trail.add(i)))
+        stack.push((kids[i], depth + 1, trail.prepend(i)))
       }
     }
   }

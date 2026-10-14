@@ -165,6 +165,6 @@ fn point(p : @scanner.Position) -> @scanner.Span {
 
 ///|
 /// `p` moved `columns` code units to the right on the same line.
-fn shift_position(p : @scanner.Position, columns : Int) -> @scanner.Position {
+fn shift_position(p : @scanner.Position, columns : Int32) -> @scanner.Position {
   { offset: p.offset + columns, line: p.line, column: p.column + columns, }
 }

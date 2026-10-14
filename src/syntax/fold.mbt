@@ -33,7 +33,7 @@ pub fn[A] fold(
   root : NodeRef,
   init : A,
   enter : (A, NodeRef) -> (A, Control),
-  leave? : (A, NodeRef) -> A = (a, _) => a,
+  leave~ : (A, NodeRef) -> A = (a, _) => a,
 ) -> A {
   let mut acc = init
   walk(

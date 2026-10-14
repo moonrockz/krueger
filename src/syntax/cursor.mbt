@@ -6,7 +6,7 @@ priv struct CursorFrame {
   siblings : Array[(PathStep?, NodeRef)]
   /// The parent's path (the start node's frame has the empty path).
   parent_path : NodePath
-  mut index : Int
+  mut index : Int32
 }
 
 ///|
@@ -91,7 +91,7 @@ pub fn TreeCursor::path(self : TreeCursor) -> NodePath {
 
 ///|
 /// The number of `goto_*` steps below the start node (0 at the start node).
-pub fn TreeCursor::depth(self : TreeCursor) -> Int {
+pub fn TreeCursor::depth(self : TreeCursor) -> Int32 {
   self.frames.length() - 1
 }
 
@@ -99,7 +99,7 @@ pub fn TreeCursor::depth(self : TreeCursor) -> Int {
 /// Move to the child that `choose` picks among the node's children.
 fn TreeCursor::descend(
   self : TreeCursor,
-  choose : (Array[(PathStep?, NodeRef)]) -> Int?,
+  choose : (Array[(PathStep?, NodeRef)]) -> Int32?,
 ) -> Bool {
   let kids = self.node().children_with_fields().map(x => (Some(x.0), x.1))
   guard choose(kids) is Some(i) else { return false }
@@ -222,7 +222,7 @@ pub fn TreeCursor::goto_first_child_for(
   p : @ast.Location,
 ) -> Bool {
   self.descend(kids => {
-    let mut best : Int? = None
+    let mut best : Int32? = None
     for i, x in kids {
       let r = x.1.range()
       if contains(r, p) {

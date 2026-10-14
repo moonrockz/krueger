@@ -97,14 +97,17 @@ fn line_states(lines : Array[String]) -> (Array[Bool], Array[Bool]) {
 }
 
 ///|
-fn has_at(line : String, i : Int, s : String) -> Bool {
+fn has_at(line : String, i : Int32, s : String) -> Bool {
   i + s.length() <= line.length() && line.view(start_offset=i).has_prefix(s)
 }
 
 ///|
 /// A multi-line construct that holds a comment before its closing bracket,
 /// so that the comment is `Inner` to the construct.
-fn closing_bracket_lines(n : Int, rs : @splitmix.RandomState) -> Array[String] {
+fn closing_bracket_lines(
+  n : Int32,
+  rs : @splitmix.RandomState,
+) -> Array[String] {
   let (open, close, first) = match pick(rs, 3) {
     0 => ("[", "]", "1")
     1 => ("{", "}", "a = 1")

@@ -14,7 +14,7 @@ fn reparse(text : String) -> @ast.File? {
 
 ///|
 /// The printed text of `file`, or `None` when the printer raises.
-fn printed(file : @ast.File, width? : Int = 120) -> String? {
+fn printed(file : @ast.File, width~ : Int32 = 120) -> String? {
   try @printer.print_file(file, width~) catch {
     _ => None
   } noraise {
@@ -141,7 +141,7 @@ test "law: a bad name raises with a path to the node that holds it" {
 test "the built-AST laws reach their success branch" {
   // Every ElmAst prints (all names are valid) and most hold a value x.
   let mut with_x = 0
-  let rs = @splitmix.new(seed=7UL)
+  let rs = @splitmix.RandomState(seed=7UL)
   for i in 0..<100 {
     let a : @lawkit.ElmAst = @quickcheck.Arbitrary::arbitrary(i % 20, rs)
     if @ast.encode_file(a.file()).stringify().contains("\"name\":\"x\"") {
@@ -206,7 +206,7 @@ test "the parenthesis laws reach the rules they check" {
   // Count generated modules whose normalized AST differs from the parsed
   // one: parentheses removed or added.
   let mut changed = 0
-  let rs = @splitmix.new(seed=11UL)
+  let rs = @splitmix.RandomState(seed=11UL)
   for i in 0..<100 {
     let m : @lawkit.ElmModule = @quickcheck.Arbitrary::arbitrary(i % 24, rs)
     guard reparse(m.text()) is Some(file) else { continue }
@@ -220,7 +220,7 @@ test "the parenthesis laws reach the rules they check" {
 
 ///|
 /// The number of parenthesized expressions and patterns in `file`.
-fn paren_count(file : @ast.File) -> Int {
+fn paren_count(file : @ast.File) -> Int32 {
   let json = @ast.encode_file(file).stringify()
   json.split("\"parenthesized\"").count() +
   json.split("\"parentisized\"").count() -

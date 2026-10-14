@@ -6,8 +6,8 @@ import {
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -76,7 +76,7 @@ fn parse_result(line : String, prefix : String) -> OracleResult raise {
 async fn run_or_exit(
   cmd : String,
   args : Array[String],
-  cwd? : String = ".",
+  cwd~ : String = ".",
 ) -> Unit {
   let code = @process.run(cmd, args, cwd~)
   if code != 0 {

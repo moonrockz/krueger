@@ -7,8 +7,8 @@ import {
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -71,8 +71,8 @@ struct CaseResult {
   q1 : Double
   q3 : Double
   iqr : Double
-  runs : Int
-  batch_size : Int
+  runs : Int32
+  batch_size : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -102,7 +102,7 @@ struct EnvInfo {
 /// `benchmark-results.json`: one run's results with its environment and
 /// run metadata. A results file in the history is a run file.
 struct ResultsFile {
-  schema : Int
+  schema : Int32
   run : RunInfo
   env : EnvInfo
   targets : Array[String]
@@ -147,21 +147,21 @@ fn case_result_of(j : Json) -> CaseResult raise {
 ///|
 fn case_result_to_json(r : CaseResult) -> Json {
   {
-    "target": r.target.to_json(),
-    "suite": r.suite.to_json(),
-    "case": r.case_name.to_json(),
-    "input": r.input.to_json(),
+    "target": Json(r.target),
+    "suite": Json(r.suite),
+    "case": Json(r.case_name),
+    "input": Json(r.input),
     "unit": "us",
-    "median": r.median.to_json(),
-    "mean": r.mean.to_json(),
-    "min": r.min.to_json(),
-    "max": r.max.to_json(),
-    "std_dev": r.std_dev.to_json(),
-    "q1": r.q1.to_json(),
-    "q3": r.q3.to_json(),
-    "iqr": r.iqr.to_json(),
-    "runs": r.runs.to_json(),
-    "batch_size": r.batch_size.to_json(),
+    "median": Json(r.median),
+    "mean": Json(r.mean),
+    "min": Json(r.min),
+    "max": Json(r.max),
+    "std_dev": Json(r.std_dev),
+    "q1": Json(r.q1),
+    "q3": Json(r.q3),
+    "iqr": Json(r.iqr),
+    "runs": Json(r.runs),
+    "batch_size": Json(r.batch_size),
   }
 }
 
@@ -182,23 +182,23 @@ fn parse_raw(text : String) -> Result[Array[CaseResult], String] {
 ///|
 fn results_to_json(r : ResultsFile) -> Json {
   {
-    "schema": r.schema.to_json(),
+    "schema": Json(r.schema),
     "run": {
-      "id": r.run.id.to_json(),
-      "url": r.run.url.to_json(),
-      "event": r.run.event.to_json(),
-      "ref": r.run.git_ref.to_json(),
-      "sha": r.run.sha.to_json(),
-      "date": r.run.date.to_json(),
+      "id": Json(r.run.id),
+      "url": Json(r.run.url),
+      "event": Json(r.run.event),
+      "ref": Json(r.run.git_ref),
+      "sha": Json(r.run.sha),
+      "date": Json(r.run.date),
     },
     "env": {
-      "runner_os": r.env.runner_os.to_json(),
-      "cpu": r.env.cpu.to_json(),
-      "moon_version": r.env.moon_version.to_json(),
-      "toolchain": r.env.toolchain.to_json(),
+      "runner_os": Json(r.env.runner_os),
+      "cpu": Json(r.env.cpu),
+      "moon_version": Json(r.env.moon_version),
+      "toolchain": Json(r.env.toolchain),
     },
-    "targets": r.targets.to_json(),
-    "results": r.results.map(case_result_to_json).to_json(),
+    "targets": Json(r.targets),
+    "results": Json(r.results.map(case_result_to_json)),
   }
 }
 
@@ -397,7 +397,7 @@ fn mark_name(m : Mark) -> String {
 }
 
 ///|
-fn mark_rank(m : Mark) -> Int {
+fn mark_rank(m : Mark) -> Int32 {
   match m {
     Slower => 0
     Faster => 1
@@ -525,7 +525,7 @@ fn compare_runs(
 
 ///|
 /// `x` rounded to `digits` decimals (0 to 3), as text.
-fn fixed(x : Double, digits : Int) -> String {
+fn fixed(x : Double, digits : Int32) -> String {
   let scale = [1L, 10L, 100L, 1000L][digits]
   let scaled = (x.abs() * scale.to_double()).round().to_int64()
   let sign = if x < 0.0 && scaled != 0L { "-" } else { "" }
@@ -626,7 +626,7 @@ fn render_summary(c : Comparison, threshold : Double) -> String {
 fn trend_history(
   history : Array[(String, ResultsFile)],
   current : ResultsFile,
-  limit : Int,
+  limit : Int32,
 ) -> Array[ResultsFile] {
   let main = history
     .filter(h => {
@@ -807,7 +807,7 @@ fn data_readme() -> String {
 }
 
 ///|
-async fn output_of(cmd : String, args : Array[String]) -> (Int, String) {
+async fn output_of(cmd : String, args : Array[String]) -> (Int32, String) {
   let (code, out) = @process.collect_stdout(
     cmd,
     args,
@@ -1307,7 +1307,9 @@ impl @moonspec.World for BenchWorld with fn configure(self, setup) {
   setup.then1("the HTML report contains {string}", fn(text : String) raise {
     @expect.expect(self.html).to_contain(text)
   })
-  setup.then1("the HTML report contains {int} trend chart", fn(n : Int) raise {
+  setup.then1("the HTML report contains {int} trend chart", fn(
+    n : Int32,
+  ) raise {
     @expect.expect(self.html.split("<svg class=\"trend\"").count() - 1).to_equal(
       n,
     )

@@ -4,7 +4,7 @@ version = "0.0.1"
 
 import {
   "moonrockz/krueger@0.0.0",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/expect@0.6.1",
 }
 
 repository = "https://github.com/moonrockz/krueger"

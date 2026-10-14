@@ -14,7 +14,7 @@ fn obj(fields : Array[(String, Json)]) -> Json {
 }
 
 ///|
-fn encode_int(i : Int) -> Json {
+fn encode_int(i : Int32) -> Json {
   Json::number(i.to_double())
 }
 

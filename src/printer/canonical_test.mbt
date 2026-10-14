@@ -99,7 +99,7 @@ fn wrap(e : @ast.Expression, at : MAt) -> @ast.Node[@ast.Expression] {
 }
 
 ///|
-fn table(symbol : String) -> (Int, @ast.InfixDirection) {
+fn table(symbol : String) -> (Int32, @ast.InfixDirection) {
   let def = @dialect.Dialect::elm_0_19_1().operator(symbol).unwrap()
   (def.precedence, def.direction)
 }

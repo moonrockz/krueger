@@ -135,7 +135,7 @@ test "law: each Enter's field is the parent's field_of the child" {
 fn read_one(
   r : @syntax.EventReader,
   p : Policy,
-  taken : Ref[Int],
+  taken : Ref[Int32],
   out : Array[String],
 ) -> Bool {
   match r.next() {

@@ -1,9 +1,9 @@
 ///|
 /// Width of a report line, as in `elm make`.
-let line_width : Int = 80
+let line_width : Int32 = 80
 
 ///|
-fn code_points(text : String) -> Int {
+fn code_points(text : String) -> Int32 {
   let mut n = 0
   for _ in text {
     n += 1
@@ -199,7 +199,7 @@ pub fn render_plain(
 }
 
 ///|
-fn ansi_color(color : @scanner.Color) -> Int {
+fn ansi_color(color : @scanner.Color) -> Int32 {
   match color {
     Black => 30
     Red => 31

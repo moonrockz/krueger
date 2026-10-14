@@ -60,7 +60,7 @@ impl @moonspec.World for LexerWorld with fn configure(self, setup) {
     )
   })
   setup.then2("token {int} starts at {string}", fn(
-    index : Int,
+    index : Int32,
     position : String,
   ) raise {
     let tokens = self.tokens()

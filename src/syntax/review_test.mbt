@@ -90,7 +90,7 @@ test "changing the parse result does not change the tree" {
 
 ///|
 /// The number of trivia items before and after each token in `r`.
-fn trivia_counts(tree : @syntax.Tree, r : @ast.Range) -> Array[Int] {
+fn trivia_counts(tree : @syntax.Tree, r : @ast.Range) -> Array[Int32] {
   tree.tokens_in(r).map(t => t.trivia_before.length() + t.trivia_after.length())
 }
 

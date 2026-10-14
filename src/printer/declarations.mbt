@@ -8,7 +8,7 @@ fn Ctx::space_before(
   self : Ctx,
   previous : @ast.Range?,
   r : @ast.Range,
-  indent : Int,
+  indent : Int32,
 ) -> (@pretty.Doc, Bool) {
   let cs = self.take(Leading, r)
   if cs.iter().any(c => ends_line(c, r.start)) {
@@ -85,7 +85,7 @@ fn Ctx::declaration_start(
   path : @syntax.NodePath,
   doc : @ast.Node[String]?,
   name : @ast.Range,
-  keyword_back? : Int = 1,
+  keyword_back~ : Int32 = 1,
 ) -> @pretty.Doc raise PrintError {
   let docs = match doc {
     Some(x) =>
@@ -108,7 +108,7 @@ fn Ctx::declaration_start(
 fn Ctx::declaration_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   d : @ast.Node[@ast.Declaration],
 ) -> @pretty.Doc raise PrintError {
   check_level(path, level)
@@ -279,7 +279,7 @@ priv enum BodyEntry {
   Opener(@ast.Node[String])
   /// `--}`, the end of a comment trick.
   Closer(@ast.Node[String])
-  Decl(Int, @ast.Node[@ast.Declaration])
+  Decl(Int32, @ast.Node[@ast.Declaration])
 }
 
 ///|
@@ -314,7 +314,7 @@ fn push_comments(
 ///|
 /// The number of blank lines between two body entries (elm-format 0.8.7
 /// `formatTopLevelBody`, with 2 lines between declarations).
-fn blank_lines_between(a : BodyEntry, b : BodyEntry) -> Int {
+fn blank_lines_between(a : BodyEntry, b : BodyEntry) -> Int32 {
   // The cases in the order of elm-format's `spacer`: the first that
   // matches decides.
   match (a, b) {
@@ -583,7 +583,7 @@ fn row_or_stack(parts : Array[(@pretty.Doc, Bool)]) -> (@pretty.Doc, Bool) {
 fn row_or_indented(
   first : (@pretty.Doc, Bool),
   rest : Array[(@pretty.Doc, Bool)],
-  join? : Bool = false,
+  join~ : Bool = false,
 ) -> (@pretty.Doc, Bool) {
   if first.1 && rest.iter().all(p => p.1) {
     let parts = [first]
@@ -611,7 +611,7 @@ fn row_or_indented(
 fn Ctx::alias_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   a : @ast.TypeAlias,
 ) -> @pretty.Doc raise PrintError {
   let start = self.declaration_start(

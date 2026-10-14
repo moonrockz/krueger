@@ -35,7 +35,7 @@ fn lines(text : String) -> Array[StringView] {
 ///|
 /// Whether the unit at `i` is the low half of a surrogate pair (a low
 /// surrogate right after a high one), which adds no column.
-fn continues_pair(text : StringView, i : Int) -> Bool {
+fn continues_pair(text : StringView, i : Int32) -> Bool {
   let c = text.code_unit_at(i).to_int()
   c >= 0xDC00 &&
   c <= 0xDFFF &&
@@ -48,7 +48,7 @@ fn continues_pair(text : StringView, i : Int) -> Bool {
 /// The number of columns `s` takes, counted as the scanner counts them: one
 /// for every UTF-16 unit except the low half of a surrogate pair (so a pair
 /// is one column, and a lone surrogate, high or low, is one).
-fn code_points(s : StringView) -> Int {
+fn code_points(s : StringView) -> Int32 {
   let mut n = 0
   for i in 0..<s.length() {
     if !continues_pair(s, i) {
@@ -135,7 +135,7 @@ pub fn edge_positions(
 /// the text. Columns are counted as the scanner counts them (see
 /// `code_points`); a CRLF is one line break. The end of a line and the end of
 /// the text are on it.
-pub fn offset_of(text : String, p : @ast.Location) -> Int? {
+pub fn offset_of(text : String, p : @ast.Location) -> Int32? {
   let mut row = 1
   let mut column = 1
   let mut i = 0
@@ -178,7 +178,7 @@ pub(all) struct Ranges(Array[@ast.Range]) derive(Debug)
 
 ///|
 pub impl @quickcheck.Arbitrary for Ranges with fn arbitrary(size, rs) {
-  let pick = (n : Int) => {
+  let pick = (n : Int32) => {
     rs.next_uint(limit=n.reinterpret_as_uint()).reinterpret_as_int()
   }
   let n = pick(size.min(12) + 1)
@@ -234,7 +234,7 @@ pub fn Ranges::ranges(self : Ranges) -> Array[@ast.Range] {
 /// position after the pair.
 pub fn positions_of(
   text : String,
-  offsets : Array[Int],
+  offsets : Array[Int32],
 ) -> Array[@ast.Location?] {
   let out : Array[@ast.Location?] = []
   let mut row = 1
@@ -268,7 +268,7 @@ pub fn positions_of(
 /// The row and column of UTF-16 offset `offset` in `text` (see
 /// `positions_of`); `None` past the end. Inverse of `offset_of` on offsets
 /// between characters.
-pub fn position_of(text : String, offset : Int) -> @ast.Location? {
+pub fn position_of(text : String, offset : Int32) -> @ast.Location? {
   positions_of(text, [offset])[0]
 }
 
@@ -276,8 +276,8 @@ pub fn position_of(text : String, offset : Int) -> @ast.Location? {
 /// Whether `offset` lies between two characters of `text`: inside the text,
 /// and not inside a CRLF or a surrogate pair. Token, trivia and diagnostic
 /// boundaries must lie between characters.
-pub fn between_characters(text : String, offset : Int) -> Bool {
-  let unit = (i : Int) => {
+pub fn between_characters(text : String, offset : Int32) -> Bool {
+  let unit = (i : Int32) => {
     if i >= 0 && i < text.length() {
       text.code_unit_at(i).to_int()
     } else {

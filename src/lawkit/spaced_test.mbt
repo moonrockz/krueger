@@ -1,6 +1,6 @@
 ///|
 test "generated spaced modules parse without errors and reach their edges" {
-  let rs = @splitmix.new(seed=2034)
+  let rs = @splitmix.RandomState(seed=2034)
   let mut broken = 0
   let mut unbroken = 0
   let mut crlf = 0

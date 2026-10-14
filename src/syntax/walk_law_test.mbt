@@ -82,9 +82,9 @@ test "law: leave gets the node its enter got, innermost first" {
 
 ///|
 /// Subtree sizes in pre-order (test-only recursion over a shallow tree).
-fn subtree_sizes(root : @syntax.NodeRef) -> Array[Int] {
+fn subtree_sizes(root : @syntax.NodeRef) -> Array[Int32] {
   let sizes = []
-  fn go(n : @syntax.NodeRef) -> Int {
+  fn go(n : @syntax.NodeRef) -> Int32 {
     let at = sizes.length()
     sizes.push(1)
     let mut total = 1
@@ -101,7 +101,7 @@ fn subtree_sizes(root : @syntax.NodeRef) -> Array[Int] {
 ///|
 test "law: Stop at the k-th node enters the pre-order prefix and leaves only closed nodes" {
   @quickcheck.check(
-    (input : (ElmModule, UInt)) => {
+    (input : (ElmModule, UInt32)) => {
       let (m, raw) = input
       let root = elm_root(m)
       let pre = preorder(root)

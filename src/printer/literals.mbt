@@ -1,6 +1,6 @@
 ///|
 /// `cp` as at least 4 upper-case hex digits.
-fn hex_code(cp : Int) -> String {
+fn hex_code(cp : Int32) -> String {
   let digits = cp.to_string(radix=16).to_upper()
   if digits.length() < 4 {
     "0".repeat(4 - digits.length()) + digits
@@ -20,7 +20,7 @@ priv enum Quote {
 ///|
 /// Whether a literal writes the character with code point `cp` as it is
 /// (see `literal_plain_ranges`).
-fn is_plain(cp : Int) -> Bool {
+fn is_plain(cp : Int32) -> Bool {
   let ranges = literal_plain_ranges
   let mut lo = 0
   let mut hi = ranges.length() / 2 - 1
@@ -152,7 +152,7 @@ fn hex_text(n : Int64) -> String {
 /// The shortest decimal digits of `x` (finite, not negative) and their
 /// exponent `e`: `x` is `0.digits` times `10^e` (Haskell `floatToDigits`).
 /// Zero gives `("0", 0)`.
-fn float_digits(x : Double) -> (String, Int) {
+fn float_digits(x : Double) -> (String, Int32) {
   let parts = x.to_string().split("e").map(p => p.to_owned()).collect()
   let mut exponent = 0
   if parts.length() > 1 {
@@ -167,7 +167,7 @@ fn float_digits(x : Double) -> (String, Int) {
     exponent = sign * exponent
   }
   let digits : Array[Char] = []
-  let mut point : Int? = None
+  let mut point : Int32? = None
   for c in parts[0] {
     if c == '.' {
       point = Some(digits.length())
@@ -230,7 +230,7 @@ fn decimal_float_text(x : Double) -> String {
 
 ///|
 /// Whether `s` is one or more ASCII digits.
-fn all_digits(s : StringView, hex? : Bool = false) -> Bool {
+fn all_digits(s : StringView, hex~ : Bool = false) -> Bool {
   !s.is_empty() &&
   s
   .iter()
@@ -292,7 +292,7 @@ fn Ctx::hex_literal_text(self : Ctx, r : @ast.Range, n : Int64) -> String {
 /// `Double` keeps its lexeme.
 fn Ctx::float_lexeme_text(self : Ctx, r : @ast.Range, x : Double) -> String? {
   guard self.literal_lexeme(r) is Some(l) &&
-    l.iter().all(c => c is ('0'..='9' | '.' | 'e' | 'E' | '+' | '-')) else {
+    l.iter().all(c => c is ('0'..<='9' | '.' | 'e' | 'E' | '+' | '-')) else {
     return None
   }
   if x.is_nan() || x.is_inf() {

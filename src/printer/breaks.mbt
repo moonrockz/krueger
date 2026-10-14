@@ -1,5 +1,5 @@
 ///|
-fn compare_location(a : @ast.Location, b : @ast.Location) -> Int {
+fn compare_location(a : @ast.Location, b : @ast.Location) -> Int32 {
   if a.row != b.row {
     a.row.compare(b.row)
   } else {
@@ -12,7 +12,7 @@ fn compare_location(a : @ast.Location, b : @ast.Location) -> Int {
 fn SourceFacts::first_at_or_after(
   self : SourceFacts,
   loc : @ast.Location,
-) -> Int {
+) -> Int32 {
   let mut lo = 0
   let mut hi = self.starts.length()
   while lo < hi {
@@ -27,7 +27,7 @@ fn SourceFacts::first_at_or_after(
 }
 
 ///|
-fn SourceFacts::token_at(self : SourceFacts, loc : @ast.Location) -> Int? {
+fn SourceFacts::token_at(self : SourceFacts, loc : @ast.Location) -> Int32? {
   let i = self.first_at_or_after(loc)
   if i < self.starts.length() && compare_location(self.starts[i], loc) == 0 {
     Some(i)

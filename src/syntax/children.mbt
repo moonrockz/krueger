@@ -47,7 +47,7 @@ fn function_entries(f : @ast.Function) -> Array[(String, Array[NodeRef])] {
 
 ///|
 /// The key of a declaration range in `declaration_attributes`.
-fn range_key(r : @ast.Range) -> (Int, Int, Int, Int) {
+fn range_key(r : @ast.Range) -> (Int32, Int32, Int32, Int32) {
   (r.start.row, r.start.column, r.end.row, r.end.column)
 }
 
@@ -57,7 +57,7 @@ fn range_key(r : @ast.Range) -> (Int, Int, Int, Int) {
 /// linear in the number of declarations.
 fn declaration_attributes(
   groups : ArrayView[@parser.AttributeGroup],
-) -> Map[(Int, Int, Int, Int), ArrayView[@parser.DocAttribute]] {
+) -> Map[(Int32, Int32, Int32, Int32), ArrayView[@parser.DocAttribute]] {
   let by_range = Map([])
   for g in groups {
     if g.target is Declaration(range~, ..) {
@@ -323,7 +323,7 @@ pub fn NodeRef::field(self : NodeRef, name : String) -> Array[NodeRef] {
 }
 
 ///|
-fn start_before(a : NodeRef, b : NodeRef) -> Int {
+fn start_before(a : NodeRef, b : NodeRef) -> Int32 {
   let x = a.range().start
   let y = b.range().start
   if x.row != y.row {

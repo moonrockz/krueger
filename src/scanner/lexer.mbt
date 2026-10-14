@@ -24,9 +24,9 @@ pub(all) struct RawToken {
 /// low half of a surrogate pair does not add a column.
 priv struct Cursor {
   text : String
-  mut pos : Int
-  mut line : Int
-  mut column : Int
+  mut pos : Int32
+  mut line : Int32
+  mut column : Int32
 }
 
 ///|
@@ -36,7 +36,7 @@ fn Cursor::new(text : String) -> Cursor {
 
 ///|
 /// Code unit `ahead` units after the cursor, or -1 at the end.
-fn Cursor::at(self : Cursor, ahead? : Int = 0) -> Int {
+fn Cursor::at(self : Cursor, ahead~ : Int32 = 0) -> Int32 {
   let i = self.pos + ahead
   if i < self.text.length() {
     self.text.code_unit_at(i).to_int()
@@ -48,7 +48,7 @@ fn Cursor::at(self : Cursor, ahead? : Int = 0) -> Int {
 ///|
 /// The code point at the cursor and its width in code units (a surrogate pair
 /// is one code point, two units), or `(-1, 0)` at the end.
-fn Cursor::code_point(self : Cursor) -> (Int, Int) {
+fn Cursor::code_point(self : Cursor) -> (Int32, Int32) {
   let c = self.at()
   if c >= 0xD800 && c <= 0xDBFF {
     let low = self.at(ahead=1)
@@ -63,7 +63,7 @@ fn Cursor::code_point(self : Cursor) -> (Int, Int) {
 /// Whether the code point at the cursor satisfies `predicate`.
 fn Cursor::code_point_is(self : Cursor, predicate : (Char) -> Bool) -> Bool {
   let (cp, width) = self.code_point()
-  width > 0 && predicate(Int::unsafe_to_char(cp))
+  width > 0 && predicate(Int32::unsafe_to_char(cp))
 }
 
 ///|
@@ -96,7 +96,7 @@ fn Cursor::advance(self : Cursor) -> Unit {
 }
 
 ///|
-fn Cursor::advance_by(self : Cursor, n : Int) -> Unit {
+fn Cursor::advance_by(self : Cursor, n : Int32) -> Unit {
   for _ in 0..<n {
     self.advance()
   }
@@ -113,24 +113,24 @@ fn Cursor::starts_with(self : Cursor, prefix : String) -> Bool {
 }
 
 ///|
-fn Cursor::slice(self : Cursor, start : Int) -> String {
+fn Cursor::slice(self : Cursor, start : Int32) -> String {
   self.text.unsafe_substring(start~, end=self.pos)
 }
 
 ///|
-fn is_ascii_digit_code(c : Int) -> Bool {
+fn is_ascii_digit_code(c : Int32) -> Bool {
   c >= '0'.to_int() && c <= '9'.to_int()
 }
 
 ///|
-fn is_hex_digit_code(c : Int) -> Bool {
+fn is_hex_digit_code(c : Int32) -> Bool {
   is_ascii_digit_code(c) ||
   (c >= 'a'.to_int() && c <= 'f'.to_int()) ||
   (c >= 'A'.to_int() && c <= 'F'.to_int())
 }
 
 ///|
-fn is_symbol_char(c : Int) -> Bool {
+fn is_symbol_char(c : Int32) -> Bool {
   match c {
     '+'
     | '-'
@@ -241,7 +241,7 @@ fn skip_quoted(cursor : Cursor, close : String, multiline : Bool) -> Bool {
     let c = cursor.at()
     // A single-line literal ends before an unescaped line break, LF or CRLF,
     // so its span never ends inside a CRLF.
-    let line_break = (ahead : Int) => {
+    let line_break = (ahead : Int32) => {
       cursor.at(ahead~) == '\n'.to_int() ||
       (
         cursor.at(ahead~) == '\r'.to_int() &&
@@ -351,7 +351,7 @@ fn skip_number(cursor : Cursor) -> Bool {
 /// ```
 pub fn lex_raw(
   source : SourceText,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> Result[Array[RawToken], ScanErrorList] {
   let symbols = symbols_of(dialect)
   let cursor = Cursor::new(source.text)

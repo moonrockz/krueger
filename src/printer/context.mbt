@@ -8,7 +8,7 @@ priv struct SourceFacts {
   lexemes : Array[String]
   /// `prefix[i]` is the number of gaps with a break among gaps `0..<i`.
   /// Gap `i` is the trivia before token `i`.
-  prefix : Array[Int]
+  prefix : Array[Int32]
 }
 
 ///|
@@ -84,11 +84,11 @@ fn SourceFacts::from_tokens(tokens : Array[@scanner.Token]) -> SourceFacts {
 /// ```
 pub(all) enum Layout {
   ElmFormat
-  Width(Int)
+  Width(Int32)
 } derive(Eq, Debug)
 
 ///|
-fn Layout::render_width(self : Layout) -> Int {
+fn Layout::render_width(self : Layout) -> Int32 {
   match self {
     ElmFormat => @int.MAX_VALUE
     Width(n) => n

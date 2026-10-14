@@ -8,7 +8,7 @@ pub struct EnterEvent {
   kind : String
   field : String?
   start : @ast.Location
-  depth : Int
+  depth : Int32
   path : NodePath
 } derive(Eq, Debug)
 
@@ -17,7 +17,7 @@ pub struct EnterEvent {
 /// its `Enter`.
 pub struct LeaveEvent {
   node : NodeRef
-  depth : Int
+  depth : Int32
   path : NodePath
 } derive(Eq, Debug)
 
@@ -63,7 +63,7 @@ priv struct ReaderFrame {
   entered : NodeRef
   path : NodePath
   fields : Array[(PathStep, NodeRef)]
-  mut at : Int
+  mut at : Int32
 }
 
 ///|

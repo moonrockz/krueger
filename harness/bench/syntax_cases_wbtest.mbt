@@ -53,7 +53,7 @@ fn parse_all(sources : Array[Source]) -> Array[Parsed] raise {
 }
 
 ///|
-fn count_if(b : Bool) -> Int {
+fn count_if(b : Bool) -> Int32 {
   if b {
     1
   } else {
@@ -65,8 +65,8 @@ fn count_if(b : Bool) -> Int {
 /// A check that `run` returns `expected`, or a positive count for `None`.
 fn check_count(
   id : String,
-  run : () -> Int,
-  expected : Int?,
+  run : () -> Int32,
+  expected : Int32?,
 ) -> () -> Unit raise {
   fn() raise {
     let got = run()
@@ -82,7 +82,7 @@ fn check_count(
 /// `large`). Each sample runs the query over every parsed source.
 fn syntax_cases(input : String, sources : Array[Source]) -> Array[Case] raise {
   let parsed = parse_all(sources)
-  let over = (f : (Parsed) -> Int) => {
+  let over = (f : (Parsed) -> Int32) => {
     () => {
       let mut n = 0
       for p in parsed {
@@ -144,13 +144,13 @@ fn syntax_cases(input : String, sources : Array[Source]) -> Array[Case] raise {
     }
     k
   })
-  let expect_count = (name : String, run : () -> Int, expected : Int) => {
+  let expect_count = (name : String, run : () -> Int32, expected : Int32) => {
     check_count("syntax/\{name}/\{input}", run, Some(expected))
   }
-  let expect_some = (name : String, run : () -> Int) => {
+  let expect_some = (name : String, run : () -> Int32) => {
     check_count("syntax/\{name}/\{input}", run, None)
   }
-  let case_of = (name : String, run : () -> Int, check : () -> Unit raise) => {
+  let case_of = (name : String, run : () -> Int32, check : () -> Unit raise) => {
     suite: "syntax",
     name,
     input,

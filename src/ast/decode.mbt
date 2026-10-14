@@ -24,7 +24,7 @@ pub impl Show for DecodeError with fn output(self, logger) {
 priv enum Path {
   Root
   Key(Path, String)
-  Index(Path, Int)
+  Index(Path, Int32)
 }
 
 ///|
@@ -101,7 +101,7 @@ fn string_at(j : Json, path : Path) -> String raise DecodeError {
 
 ///|
 /// Elm `JD.int` for values that are 32-bit in practice (ranges, precedence).
-fn int_at(j : Json, path : Path) -> Int raise DecodeError {
+fn int_at(j : Json, path : Path) -> Int32 raise DecodeError {
   match j {
     Number(d, ..) => {
       let i = d.to_int()

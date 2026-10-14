@@ -1,7 +1,7 @@
 ///|
 fn file_of(
   text : String,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> @ast.File raise {
   let result = @parser.parse_module(
     @scanner.SourceText::new(text),
@@ -334,7 +334,7 @@ test "an import alias is one name and an infix precedence is 0 to 9" {
         ),
       ),
     )
-    let infix = fn(precedence : Int) -> @ast.Node[@ast.Declaration] {
+    let infix = fn(precedence : Int32) -> @ast.Node[@ast.Declaration] {
       n(
         InfixDeclaration({
           direction: n(Right),

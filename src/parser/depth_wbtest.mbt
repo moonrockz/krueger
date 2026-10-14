@@ -1,5 +1,5 @@
 ///|
-fn first_declaration_depth(text : String) -> Int {
+fn first_declaration_depth(text : String) -> Int32 {
   let source = @scanner.SourceText::{ module_name: Some("M"), text, }
   guard @scanner.DefaultScanner::new().tokenize(source) is Ok(tokens) else {
     abort("scan error")

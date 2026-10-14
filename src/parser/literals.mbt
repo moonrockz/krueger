@@ -3,7 +3,7 @@
 /// `\u{HEX}`. `body` is the literal without its quotes.
 fn decode_escapes(
   body : String,
-  code_point_limit? : Bool = false,
+  code_point_limit~ : Bool = false,
 ) -> String raise SyntaxError {
   let sb = StringBuilder()
   let chars = body.to_array()
@@ -58,7 +58,7 @@ fn decode_escapes(
         let scalar = code <= 0x10FFFF && !(code >= 0xD800 && code <= 0xDFFF)
         sb.write_char(
           if scalar {
-            Int::unsafe_to_char(code)
+            Int32::unsafe_to_char(code)
           } else {
             '\u{FFFD}'
           },
@@ -80,11 +80,11 @@ let dummy_span : @scanner.Span = {
 }
 
 ///|
-fn hex_value(c : Char) -> Int? {
+fn hex_value(c : Char) -> Int32? {
   match c {
-    '0'..='9' => Some(c.to_int() - '0'.to_int())
-    'a'..='f' => Some(c.to_int() - 'a'.to_int() + 10)
-    'A'..='F' => Some(c.to_int() - 'A'.to_int() + 10)
+    '0'..<='9' => Some(c.to_int() - '0'.to_int())
+    'a'..<='f' => Some(c.to_int() - 'a'.to_int() + 10)
+    'A'..<='F' => Some(c.to_int() - 'A'.to_int() + 10)
     _ => None
   }
 }

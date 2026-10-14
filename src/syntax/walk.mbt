@@ -14,7 +14,7 @@ pub(all) enum Control {
 priv struct Frame {
   node : NodeRef
   children : Array[NodeRef]
-  mut next : Int
+  mut next : Int32
 }
 
 ///|
@@ -73,7 +73,7 @@ priv struct Frame {
 pub fn walk(
   root : NodeRef,
   enter : (NodeRef) -> Control,
-  leave? : (NodeRef) -> Unit = _ => (),
+  leave~ : (NodeRef) -> Unit = _ => (),
 ) -> Unit {
   match enter(root) {
     Stop => return

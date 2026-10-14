@@ -3,7 +3,7 @@
 /// `  9|>`, also a negative or malformed number, which a law must reject) and
 /// the text after its `|`. Lines whose text before the first `|` is not a
 /// number are not excerpt lines.
-pub fn excerpt_lines(rendered : String) -> Array[(Int, String)] {
+pub fn excerpt_lines(rendered : String) -> Array[(Int32, String)] {
   let out = []
   for line in rendered.split("\n") {
     let line = line.trim_start()
@@ -53,7 +53,7 @@ pub fn source_lines(text : String) -> Array[String] {
 
 ///|
 /// The number of lines of `text` (see `source_lines`).
-pub fn line_count(text : String) -> Int {
+pub fn line_count(text : String) -> Int32 {
   text.split("\n").count()
 }
 
@@ -64,7 +64,7 @@ pub fn line_count(text : String) -> Int {
 pub fn shows_source(
   text : String,
   rendered : String,
-  expected : Array[Int],
+  expected : Array[Int32],
 ) -> Bool {
   let lines = source_lines(text)
   let found = excerpt_lines(rendered)
@@ -98,7 +98,7 @@ pub fn strip_ansi(s : String) -> String {
       }
       i += 1
     } else {
-      sb.write_char(Int::unsafe_to_char(s.code_unit_at(i).to_int()))
+      sb.write_char(Int32::unsafe_to_char(s.code_unit_at(i).to_int()))
       i += 1
     }
   }

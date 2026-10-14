@@ -1,6 +1,6 @@
 ///|
 /// Whether `cp` is in one of the inclusive start/end pairs of `ranges`.
-fn in_ranges(ranges : FixedArray[Int], cp : Int) -> Bool {
+fn in_ranges(ranges : FixedArray[Int32], cp : Int32) -> Bool {
   let mut lo = 0
   let mut hi = ranges.length() / 2 - 1
   while lo <= hi {

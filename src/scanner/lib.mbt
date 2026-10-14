@@ -44,7 +44,7 @@ pub struct DefaultScanner {
 /// }
 /// ```
 pub fn DefaultScanner::new(
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> DefaultScanner {
   { dialect, }
 }

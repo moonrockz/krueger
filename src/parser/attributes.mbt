@@ -2,9 +2,9 @@
 /// One line of a doc comment, with the file position of its first character.
 priv struct DocLine {
   text : String
-  line : Int
-  column : Int
-  offset : Int
+  line : Int32
+  column : Int32
+  offset : Int32
 }
 
 ///|
@@ -48,7 +48,7 @@ fn doc_lines(comment : @scanner.Comment) -> Array[DocLine] {
 priv struct RawAttribute {
   lines : Array[DocLine]
   /// Open brackets after the lines so far (plain attributes only).
-  mut open : Int
+  mut open : Int32
   /// Whether the lines so far hold a value (plain attributes only).
   mut has_value : Bool
   /// From an attributes block, where continuation lines are verbatim.
@@ -67,7 +67,7 @@ let block_info : String = "attributes"
 ///|
 /// Brackets opened minus closed in `text`, skipping string and char
 /// literals.
-fn bracket_balance(text : String) -> Int {
+fn bracket_balance(text : String) -> Int32 {
   let mut balance = 0
   let mut quote : Char? = None
   let mut escaped = false
@@ -285,7 +285,7 @@ fn is_data(e : @ast.Expression) -> Bool {
 }
 
 ///|
-fn range_at(line : Int, column : Int, length : Int) -> @ast.Range {
+fn range_at(line : Int32, column : Int32, length : Int32) -> @ast.Range {
   {
     start: { row: line, column, },
     end: { row: line, column: column + length, },
@@ -301,7 +301,7 @@ fn range_at(line : Int, column : Int, length : Int) -> @ast.Range {
 fn shift_token(
   t : @scanner.Token,
   raw : RawAttribute,
-  shift : Int,
+  shift : Int32,
 ) -> @scanner.Token {
   let body_starts = []
   let mut at = 0
@@ -458,7 +458,7 @@ fn parse_attribute(
 }
 
 ///|
-fn code_points(text : String) -> Int {
+fn code_points(text : String) -> Int32 {
   let mut n = 0
   for _ in text {
     n += 1
@@ -475,7 +475,7 @@ fn parse_values(
   name_node : @ast.Node[String],
   range : @ast.Range,
   body : String,
-  shift : Int,
+  shift : Int32,
   dialect : @dialect.Dialect,
   warnings : Array[@scanner.Diagnostic],
 ) -> Result[DocAttribute, @scanner.Diagnostic] {
@@ -529,7 +529,7 @@ fn encode_attribute(a : DocAttribute, exact_ints~ : Bool) -> Json {
   match a {
     Attribute(name~, arguments~, range~) =>
       {
-        "name": @ast.encode_node(name, n => n.to_json()),
+        "name": @ast.encode_node(name, n => Json(n)),
         "arguments": Json::array(
           arguments.map(arg => {
             @ast.encode_node(arg, e => {
@@ -541,9 +541,7 @@ fn encode_attribute(a : DocAttribute, exact_ints~ : Bool) -> Json {
       }
     Docs(names~, range~) =>
       {
-        "docs": Json::array(
-          names.map(n => @ast.encode_node(n, v => v.to_json())),
-        ),
+        "docs": Json::array(names.map(n => @ast.encode_node(n, v => Json(v)))),
         "range": @ast.encode_range(range),
       }
   }
@@ -618,9 +616,9 @@ pub fn encode_attributes_with(
   Json::array(
     groups.map(g => {
       "target": match g.target {
-        Module => "module".to_json()
+        Module => Json("module")
         Declaration(name~, range~) =>
-          { "declaration": name.to_json(), "range": @ast.encode_range(range) }
+          { "declaration": Json(name), "range": @ast.encode_range(range) }
       },
       "attributes": Json::array(
         g.attributes.map(a => encode_attribute(a, exact_ints~)),

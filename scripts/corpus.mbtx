@@ -9,8 +9,8 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonbitlang/core/encoding/hex",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -71,19 +71,19 @@ fn manifest_json(entries : Array[PackageEntry]) -> Json {
   let pkgs = entries.map(e => {
     let files = e.files.map(f => {
       let (path, sha256) = f
-      let file : Json = { "path": path.to_json(), "sha256": sha256.to_json() }
+      let file : Json = { "path": Json(path), "sha256": Json(sha256) }
       file
     })
     let entry : Json = {
-      "name": e.pkg.name.to_json(),
-      "version": e.pkg.version.to_json(),
-      "zipball": e.zipball.to_json(),
-      "sha1": e.zip_sha1.to_json(),
+      "name": Json(e.pkg.name),
+      "version": Json(e.pkg.version),
+      "zipball": Json(e.zipball),
+      "sha1": Json(e.zip_sha1),
       "files": Json::array(files),
     }
     entry
   })
-  { "elm": "0.19.1".to_json(), "packages": Json::array(pkgs) }
+  { "elm": Json("0.19.1"), "packages": Json::array(pkgs) }
 }
 
 ///|

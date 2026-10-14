@@ -112,7 +112,7 @@ fn sources_for(mode : Mode) -> Array[Source] raise {
 /// A module with `declarations` functions: each has a doc comment with an
 /// attribute, a signature, a comment, `let`, `case`, a lambda and a record
 /// update. The same text in every run, so runs compare.
-fn large_module(declarations : Int) -> String {
+fn large_module(declarations : Int32) -> String {
   let buf = StringBuilder()
   buf.write_string(
     "module Bench exposing (..)\n\nimport Dict exposing (Dict)\nimport Html exposing (div, text)\n\n\n",

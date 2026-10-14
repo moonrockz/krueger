@@ -1,19 +1,19 @@
 ///|
 /// Parity counts over the corpus.
 priv struct Counts {
-  files : Int
-  tokenized : Int
-  parsed : Int
-  matched : Int
+  files : Int32
+  tokenized : Int32
+  parsed : Int32
+  matched : Int32
 }
 
 ///|
 fn counts_to_json(c : Counts) -> Json {
   {
-    "files": c.files.to_json(),
-    "tokenized": c.tokenized.to_json(),
-    "parsed": c.parsed.to_json(),
-    "matched": c.matched.to_json(),
+    "files": Json(c.files),
+    "tokenized": Json(c.tokenized),
+    "parsed": Json(c.parsed),
+    "matched": Json(c.matched),
   }
 }
 

@@ -194,7 +194,7 @@ test "children that start at the same place keep their field order" {
 ///|
 test "law: children are in start order, and in list order among equal starts" {
   @quickcheck.check(
-    (rows : Array[UInt]) => {
+    (rows : Array[UInt32]) => {
       let elements : Array[@ast.Node[@ast.Expression]] = rows.mapi((i, r) => {
         let row = (r % 3).reinterpret_as_int() + 1
         {
@@ -225,7 +225,7 @@ test "law: children_with_fields sorts like children, and each step keeps its lis
   // Edges: no, one and many elements; already in order (no sort needed),
   // reversed, and equal starts.
   @quickcheck.check(
-    (rows : Array[UInt]) => {
+    (rows : Array[UInt32]) => {
       let elements : Array[@ast.Node[@ast.Expression]] = rows.mapi((i, r) => {
         let row = (r % 3).reinterpret_as_int() + 1
         {

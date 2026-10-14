@@ -49,7 +49,7 @@ test "strip_ansi removes style sequences only" {
 
 ///|
 test "range_in_source accepts ranges on the text and rejects others" {
-  let r = (sl : Int, sc : Int, el : Int, ec : Int) => {
+  let r = (sl : Int32, sc : Int32, el : Int32, ec : Int32) => {
     (
       { start: { row: sl, column: sc, }, end: { row: el, column: ec, }, } :
       @ast.Range)

@@ -22,7 +22,7 @@ fn joins(
   parent : @dialect.OperatorDef,
   child : @dialect.OperatorDef,
   on_left : Bool,
-  mixed? : Bool = false,
+  mixed~ : Bool = false,
 ) -> Bool {
   if child.precedence != parent.precedence {
     child.precedence > parent.precedence
@@ -73,7 +73,7 @@ fn Ctx::chain_step(
 fn Ctx::chain_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   e : @ast.Node[@ast.Expression],
 ) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   let steps : Array[ChainStep] = []

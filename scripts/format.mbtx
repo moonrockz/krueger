@@ -10,8 +10,8 @@ import {
   "moonbitlang/core/encoding/hex",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -64,7 +64,7 @@ priv struct Verdict {
   key : String
   source : String
   parsed : Bool
-  exit_code : Int
+  exit_code : Int32
   output : String
 }
 
@@ -81,7 +81,7 @@ fn sha256_hex(text : String) -> String {
 
 ///|
 /// Compare strings by code unit (`String::compare` compares length first).
-fn compare_lexical(a : String, b : String) -> Int {
+fn compare_lexical(a : String, b : String) -> Int32 {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i in 0..<n {
     let c = a.code_unit_at(i).compare(b.code_unit_at(i))
@@ -99,20 +99,14 @@ fn lock_json(verdicts : Array[Verdict]) -> Json {
   let entries : Map[String, Json] = Map([])
   for v in sorted {
     entries[v.key] = if !v.parsed {
-      {
-        "source": v.source.to_json(),
-        "skipped": "krueger rejects the file".to_json(),
-      }
+      { "source": Json(v.source), "skipped": Json("krueger rejects the file") }
     } else if v.exit_code != 0 {
       {
-        "source": v.source.to_json(),
-        "skipped": "elm-format exited with code \{v.exit_code}".to_json(),
+        "source": Json(v.source),
+        "skipped": Json("elm-format exited with code \{v.exit_code}"),
       }
     } else {
-      {
-        "source": v.source.to_json(),
-        "expected": sha256_hex(v.output).to_json(),
-      }
+      { "source": Json(v.source), "expected": Json(sha256_hex(v.output)) }
     }
   }
   Json::object(entries)
@@ -128,7 +122,7 @@ fn pending_keys(hashes : Array[(String, String, String)]) -> Array[String] {
 
 ///|
 fn keys_text(keys : Array[String]) -> String {
-  Json::array(keys.map(k => k.to_json())).stringify(indent=2) + "\n"
+  Json::array(keys.map(k => Json(k))).stringify(indent=2) + "\n"
 }
 
 ///|
@@ -180,13 +174,9 @@ struct Sources {
 fn sources_json(s : Sources) -> Json {
   let files : Map[String, Json] = Map([])
   for f in s.files {
-    files[f.0] = f.1.to_json()
+    files[f.0] = Json(f.1)
   }
-  {
-    "url": s.url.to_json(),
-    "prefix": s.prefix.to_json(),
-    "files": Json::object(files),
-  }
+  { "url": Json(s.url), "prefix": Json(s.prefix), "files": Json::object(files) }
 }
 
 ///|

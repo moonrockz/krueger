@@ -1,6 +1,6 @@
 ///|
 /// At most this many prefixes are cut from one corpus file.
-let max_prefixes : Int = 50
+let max_prefixes : Int32 = 50
 
 ///|
 /// Whether span `s` lies inside `text`, its ends lie between characters, and
@@ -20,7 +20,7 @@ fn corpus_span_in_bounds(text : String, s : @krueger.Span) -> Bool {
 
 ///|
 /// The line numbers the excerpts of `d` must show (see the `report` laws).
-fn corpus_expected_gutters(d : @krueger.Diagnostic) -> Array[Int] {
+fn corpus_expected_gutters(d : @krueger.Diagnostic) -> Array[Int32] {
   let out = []
   for block in d.report {
     if block is Excerpt(context~, highlight~) {
@@ -94,7 +94,7 @@ fn prefix_problems(label : String, text : String) -> Array[String] {
 /// into each token longer than one unit (a cut inside a token), and the end
 /// of the text; sorted, without duplicates. `None` when the text does not
 /// scan.
-fn token_boundaries(text : String) -> Array[Int]? {
+fn token_boundaries(text : String) -> Array[Int32]? {
   let source = @krueger.SourceText::{ module_name: None, text, }
   guard @krueger.tokenize(source) is Ok(ts) else { return None }
   let found = [0, text.length()]
@@ -114,7 +114,7 @@ fn token_boundaries(text : String) -> Array[Int]? {
 /// The offsets where `text`'s prefixes are cut: every token boundary, or at
 /// most `max_prefixes` of them, evenly spaced (the first and the last
 /// included).
-fn prefix_cuts(boundaries : Array[Int]) -> Array[Int] {
+fn prefix_cuts(boundaries : Array[Int32]) -> Array[Int32] {
   if boundaries.length() <= max_prefixes {
     return boundaries
   }

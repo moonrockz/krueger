@@ -17,7 +17,7 @@ test "mismatches compares both dialects and checks hashes" {
     let text = "module Fixture exposing (..)\n\n\nf = 1\n"
     let verdicts : Json = {
       "a.elm": {
-        "sha256": sha256_hex(text).to_json(),
+        "sha256": Json(sha256_hex(text)),
         "elm-0.19.1": { "accepted": false },
         "elm-syntax-7.3.9": { "accepted": true },
       },
@@ -53,7 +53,7 @@ test "fixtures on disk and recorded verdicts must agree" {
     let text = "module Fixture exposing (..)\n\n\nf = 1\n"
     let verdicts : Json = {
       "a.elm": {
-        "sha256": sha256_hex(text).to_json(),
+        "sha256": Json(sha256_hex(text)),
         "elm-0.19.1": { "accepted": true },
         "elm-syntax-7.3.9": { "accepted": true },
       },

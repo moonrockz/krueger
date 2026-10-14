@@ -46,7 +46,7 @@ pub(all) enum PrintProblem {
   /// An operator that is not in the dialect's operator table.
   UnknownOperator(String)
   /// An infix declaration whose precedence is not 0 to 9.
-  InvalidPrecedence(Int)
+  InvalidPrecedence(Int32)
   /// GLSL text that holds `|]`.
   InvalidGlsl
   /// Documentation that does not start with `{-|` and end with `-}`.
@@ -78,16 +78,16 @@ priv struct Ctx {
   comments : CommentTable?
   /// The number of doc comments around the code that is printed (code in
   /// a doc comment is formatted with a deeper `Ctx`).
-  doc_depth : Int
+  doc_depth : Int32
 }
 
 ///|
 fn Ctx::new(
   dialect : @dialect.Dialect,
-  layout? : Layout = Width(120),
-  source? : SourceFacts? = None,
-  comments? : CommentTable? = None,
-  doc_depth? : Int = 0,
+  layout~ : Layout = Width(120),
+  source~ : SourceFacts? = None,
+  comments~ : CommentTable? = None,
+  doc_depth~ : Int32 = 0,
 ) -> Ctx {
   { dialect, layout, source, comments, doc_depth, }
 }
@@ -96,10 +96,10 @@ fn Ctx::new(
 /// The deepest nesting the printer accepts. Operator chains, record access
 /// chains, function type arrows, `else if` chains and application items do
 /// not add levels, so every AST the parser returns is inside this limit.
-let max_level : Int = 400
+let max_level : Int32 = 400
 
 ///|
-fn check_level(path : @syntax.NodePath, level : Int) -> Unit raise PrintError {
+fn check_level(path : @syntax.NodePath, level : Int32) -> Unit raise PrintError {
   if level > max_level {
     raise PrintError(path~, problem=TooDeep)
   }

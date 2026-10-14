@@ -31,7 +31,7 @@ fn sha256_hex(text : String) -> String {
 
 ///|
 /// Compare strings by code unit (`String::compare` compares length first).
-fn compare_lexical(a : String, b : String) -> Int {
+fn compare_lexical(a : String, b : String) -> Int32 {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i in 0..<n {
     let c = a.code_unit_at(i).compare(b.code_unit_at(i))
@@ -43,7 +43,7 @@ fn compare_lexical(a : String, b : String) -> Int {
 }
 
 ///|
-fn compare_pending(a : Pending, b : Pending) -> Int {
+fn compare_pending(a : Pending, b : Pending) -> Int32 {
   let by_fixture = compare_lexical(a.fixture, b.fixture)
   if by_fixture != 0 {
     return by_fixture

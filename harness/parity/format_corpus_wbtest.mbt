@@ -104,9 +104,9 @@ fn write_formatted() -> Unit raise {
     }
     keys.push(
       Json::object({
-        "key": key.to_json(),
-        "source": sha256.to_json(),
-        "krueger": verdict.to_json(),
+        "key": Json(key),
+        "source": Json(sha256),
+        "krueger": Json(verdict),
       }),
     )
   }
@@ -199,9 +199,9 @@ fn first_text_difference(expected : String, actual : String) -> String {
 ///|
 /// Counts of one source set.
 priv struct SetCount {
-  mut matched : Int
-  mut total : Int
-  skipped : Map[String, Int]
+  mut matched : Int32
+  mut total : Int32
+  skipped : Map[String, Int32]
 }
 
 ///|
@@ -213,11 +213,11 @@ fn SetCount::new() -> SetCount {
 fn SetCount::to_json(self : SetCount) -> Json {
   let skipped : Map[String, Json] = Map([])
   for reason, n in self.skipped {
-    skipped[reason] = n.to_json()
+    skipped[reason] = Json(n)
   }
   {
-    "matched": self.matched.to_json(),
-    "total": self.total.to_json(),
+    "matched": Json(self.matched),
+    "total": Json(self.total),
     "skipped": Json::object(skipped),
   }
 }
@@ -495,7 +495,7 @@ fn check_format_corpus() -> Unit raise {
       "corpus_changed": changed.to_json(),
       "corpus_skipped": corpus_skipped.to_json(),
       "elm_format_tests": tests.to_json(),
-      "pending": pending.length().to_json(),
+      "pending": Json(pending.length()),
     }).stringify(indent=2) +
     "\n",
   )

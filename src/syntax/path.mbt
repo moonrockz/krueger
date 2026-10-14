@@ -3,7 +3,7 @@
 /// that field (0 for a field that holds one node).
 pub(all) struct PathStep {
   field : String
-  index : Int
+  index : Int32
 } derive(Eq, Hash, Debug)
 
 ///|
@@ -42,13 +42,13 @@ pub(all) struct PathStep {
 pub struct NodePath {
   /// The steps, innermost first.
   priv reversed : @list.List[PathStep]
-  priv length : Int
+  priv length : Int32
 } derive(Eq, Hash)
 
 ///|
 /// The path of the start node: no steps, depth 0.
 pub fn NodePath::root() -> NodePath {
-  { reversed: @list.empty(), length: 0, }
+  { reversed: @list.List([]), length: 0, }
 }
 
 ///|
@@ -56,9 +56,12 @@ pub fn NodePath::root() -> NodePath {
 pub fn NodePath::child(
   self : NodePath,
   field : String,
-  index : Int,
+  index : Int32,
 ) -> NodePath {
-  { reversed: self.reversed.add({ field, index, }), length: self.length + 1, }
+  {
+    reversed: self.reversed.prepend({ field, index, }),
+    length: self.length + 1,
+  }
 }
 
 ///|
@@ -102,7 +105,7 @@ pub fn NodePath::append(self : NodePath, rest : NodePath) -> NodePath {
 
 ///|
 /// The number of steps (0 for the start node).
-pub fn NodePath::depth(self : NodePath) -> Int {
+pub fn NodePath::depth(self : NodePath) -> Int32 {
   self.length
 }
 

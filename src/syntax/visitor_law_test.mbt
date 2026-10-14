@@ -3,7 +3,7 @@
 struct PolicyVisitor {
   policy : Policy
   events : Array[String]
-  mut k : Int
+  mut k : Int32
 }
 
 ///|

@@ -22,7 +22,7 @@ pub(all) enum Construct {
 /// A module whose one declaration nests `construct` `depth` levels deep.
 pub(all) struct Nesting {
   construct : Construct
-  depth : Int
+  depth : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -49,7 +49,7 @@ pub fn constructs() -> Array[Construct] {
 
 ///|
 /// The module text of `construct` nested `depth` levels deep.
-pub fn nested(construct : Construct, depth : Int) -> String {
+pub fn nested(construct : Construct, depth : Int32) -> String {
   let head = "module M exposing (..)\n\n\n"
   match construct {
     Parens =>

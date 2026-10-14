@@ -154,7 +154,7 @@ test "law: in the Width layout no line is longer than the width, unless it is on
 test "the formatter laws reach their success branch" {
   // Spaced modules format, and formatting changes most of them; some
   // ElmText inputs parse, so the never-crash law also formats text.
-  let rs = @splitmix.new(seed=2036)
+  let rs = @splitmix.RandomState(seed=2036)
   let mut formatted = 0
   let mut changed = 0
   for i in 0..<100 {

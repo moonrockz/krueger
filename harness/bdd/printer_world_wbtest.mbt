@@ -11,7 +11,7 @@ fn PrinterWorld::new() -> PrinterWorld {
 }
 
 ///|
-fn printed_source(text : String, width : Int) -> Result[String, String] {
+fn printed_source(text : String, width : Int32) -> Result[String, String] {
   let result = @krueger.parse_module(@krueger.SourceText::new(text))
   guard result.ast is Some(file) else { return Err("no AST") }
   try @krueger.print_file(file, width~) catch {
@@ -38,7 +38,7 @@ impl @moonspec.World for PrinterWorld with fn configure(self, setup) {
   setup.when("I print its AST", fn(_ctx) {
     self.printed = printed_source(self.source, 120)
   })
-  setup.when1("I print its AST with width {int}", fn(width : Int) {
+  setup.when1("I print its AST with width {int}", fn(width : Int32) {
     self.printed = printed_source(self.source, width)
   })
   setup.then("the printed source equals the module", fn(_ctx) raise {

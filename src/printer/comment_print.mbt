@@ -12,7 +12,7 @@ fn is_haskell_space(c : Char) -> Bool {
   match c {
     ' ' | '\t' | '\n' | '\r' | '\u{0B}' | '\u{0C}' | '\u{A0}' | '\u{1680}' =>
       true
-    '\u{2000}'..='\u{200A}' | '\u{202F}' | '\u{205F}' | '\u{3000}' => true
+    '\u{2000}'..<='\u{200A}' | '\u{202F}' | '\u{205F}' | '\u{3000}' => true
     _ => false
   }
 }
@@ -49,7 +49,7 @@ fn comment_lines(c : String) -> Array[String] {
   if b == "" || b.has_suffix("\n") {
     lines.pop() |> ignore
   }
-  let mut depth : Int? = None
+  let mut depth : Int32? = None
   for i in 1..<lines.length() {
     let l = lines[i]
     let mut n = 0
@@ -163,8 +163,8 @@ fn off_line(c : @ast.Node[String], r : @ast.Range) -> Bool {
 /// are no comments.
 fn comment_block(
   cs : Array[@ast.Node[String]],
-  before? : Bool = false,
-  after? : Bool = false,
+  before~ : Bool = false,
+  after~ : Bool = false,
 ) -> @pretty.Doc {
   guard !cs.is_empty() else { return @pretty.empty() }
   (if before { @pretty.hardline() } else { @pretty.empty() }) +
@@ -261,7 +261,7 @@ fn Ctx::trailing(self : Ctx, r : @ast.Range) -> @pretty.Doc {
 fn Ctx::inner(
   self : Ctx,
   owner : @ast.Range,
-  last? : @ast.Range? = None,
+  last~ : @ast.Range? = None,
 ) -> @pretty.Doc {
   let cs = match last {
     Some(r) => self.take(Inner, r)
@@ -292,7 +292,7 @@ fn Ctx::inner_close(self : Ctx, owner : @ast.Range) -> @pretty.Doc {
 fn Ctx::inner_alone(
   self : Ctx,
   owner : @ast.Range,
-  brace? : Bool = false,
+  brace~ : Bool = false,
 ) -> @pretty.Doc {
   let cs = self.take(Inner, owner)
   let mut d = match cs.get(0) {
@@ -362,7 +362,7 @@ fn Ctx::after(self : Ctx, r : @ast.Range, s : String) -> @pretty.Doc {
 ///|
 /// `Ctx::inner` for a container with `count` children, `Ctx::inner_alone`
 /// for one with none.
-fn Ctx::inner_for(self : Ctx, owner : @ast.Range, count : Int) -> @pretty.Doc {
+fn Ctx::inner_for(self : Ctx, owner : @ast.Range, count : Int32) -> @pretty.Doc {
   if count == 0 {
     self.inner_alone(owner)
   } else {
@@ -373,7 +373,11 @@ fn Ctx::inner_for(self : Ctx, owner : @ast.Range, count : Int) -> @pretty.Doc {
 ///|
 /// The start of the token `n` tokens before the token at `loc`, when there
 /// is source.
-fn Ctx::token_back(self : Ctx, loc : @ast.Location, n : Int) -> @ast.Location? {
+fn Ctx::token_back(
+  self : Ctx,
+  loc : @ast.Location,
+  n : Int32,
+) -> @ast.Location? {
   guard self.source is Some(facts) else { return None }
   let i = facts.first_at_or_after(loc)
   if i >= n {
@@ -499,7 +503,7 @@ fn Ctx::token_back_to(
   self : Ctx,
   loc : @ast.Location,
   lexeme : String,
-  n : Int,
+  n : Int32,
 ) -> @ast.Location? {
   guard self.source is Some(facts) else { return None }
   let i = facts.first_at_or_after(loc)

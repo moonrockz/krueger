@@ -3,8 +3,8 @@ name = "moonrockz/krueger"
 version = "0.5.0"
 
 import {
-  "moonrockz/expect@0.6.0",
-  "moonrockz/pretty@0.1.0",
+  "moonrockz/expect@0.6.1",
+  "moonrockz/pretty@0.1.1",
   "moonbit-community/cmark@0.4.10",
 }
 

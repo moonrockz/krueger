@@ -100,7 +100,7 @@ test "each construct changes verdict at its pinned threshold" {
   // is 150 levels; a constructor or type application counts two levels per
   // source level (75); chains are limited by the AST depth (400 levels, the
   // declaration and implementation included).
-  let thresholds : Array[(@lawkit.Construct, Int)] = [
+  let thresholds : Array[(@lawkit.Construct, Int32)] = [
     (Parens, 150),
     (List, 150),
     (Record, 150),
@@ -140,7 +140,7 @@ test "law: deep nesting cut short is reported, never overflowed" {
   // Edges: every construct near both limits, cut at any UTF-16 offset
   // (unclosed openers at every depth, a cut inside a CRLF).
   @quickcheck.check(
-    (input : (@lawkit.Nesting, UInt)) => {
+    (input : (@lawkit.Nesting, UInt32)) => {
       let (n, cut) = input
       let full = n.text()
       let text = full

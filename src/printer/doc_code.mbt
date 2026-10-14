@@ -2,7 +2,7 @@
 /// The deepest nesting of doc comments (a doc comment in Elm code in a doc
 /// comment) whose code is formatted. Code in deeper doc comments stays as
 /// written, so formatting does not recurse without limit.
-let max_doc_depth : Int = 3
+let max_doc_depth : Int32 = 3
 
 ///|
 /// The doc comment `text` (`{-|` to `-}`) as elm-format writes it: its
@@ -13,7 +13,7 @@ let max_doc_depth : Int = 3
 fn format_documentation(
   text : String,
   dialect : @dialect.Dialect,
-  depth : Int,
+  depth : Int32,
 ) -> String {
   guard text.length() >= 5 && text.has_prefix("{-|") && text.has_suffix("-}") else {
     return text
@@ -75,7 +75,7 @@ fn closes_at_end(text : String) -> Bool {
 fn format_code(
   code : String,
   dialect : @dialect.Dialect,
-  depth : Int,
+  depth : Int32,
 ) -> String? {
   guard depth < max_doc_depth else { return None }
   let found = code_as_declarations(code, dialect, depth)
@@ -105,8 +105,8 @@ priv enum CodeItem {
 /// A top-level item of formatted code: its rows (1-based, inclusive), and
 /// for a definition the name it defines (`v:` for values, `t:` for types).
 priv struct CodeRows {
-  start : Int
-  mut end : Int
+  start : Int32
+  mut end : Int32
   kind : CodeItem
   name : String?
 }
@@ -117,7 +117,7 @@ priv struct CodeRows {
 fn format_wrapped(
   source : String,
   dialect : @dialect.Dialect,
-  depth : Int,
+  depth : Int32,
 ) -> (String, @ast.File)? {
   let text = format_source(source, ElmFormat, dialect, depth + 1) catch {
     _ => return None
@@ -188,7 +188,7 @@ fn code_items(file : @ast.File) -> Array[CodeRows] {
 /// `formatTopLevelBody` with one line between items): none after a
 /// comment, between infix declarations, and between two definitions of
 /// one name.
-fn code_spacing(a : CodeRows, b : CodeRows) -> Int {
+fn code_spacing(a : CodeRows, b : CodeRows) -> Int32 {
   match (a.kind, b.kind) {
     (Comment, Comment | Definition | Fixity) => 0
     (Fixity, Fixity) => 0
@@ -231,7 +231,7 @@ fn code_text(
 fn code_as_declarations(
   code : String,
   dialect : @dialect.Dialect,
-  depth : Int,
+  depth : Int32,
 ) -> String? {
   guard format_wrapped(code_header + code + "\n", dialect, depth)
     is Some((text, file)) &&
@@ -253,7 +253,7 @@ fn code_as_declarations(
 fn code_as_expressions(
   code : String,
   dialect : @dialect.Dialect,
-  depth : Int,
+  depth : Int32,
 ) -> String? {
   guard expression_groups(code, dialect) is Some(groups) else { return None }
   for g in groups {
@@ -262,7 +262,7 @@ fn code_as_expressions(
     }
   }
   // The line comments after expressions on one line, by group.
-  let eol : Map[Int, String] = Map([])
+  let eol : Map[Int32, String] = Map([])
   let first = @parser.parse_module(
     @scanner.SourceText::new(wrap_expressions(groups)),
     @scanner.DefaultScanner::new(dialect~),
@@ -357,7 +357,7 @@ fn expression_groups(
   }
   // The lines (1-based) after the first line of a multi-line token or
   // comment.
-  let inside : @hashset.HashSet[Int] = @hashset.HashSet([])
+  let inside : @hashset.HashSet[Int32] = @hashset.HashSet([])
   let mark = (span : @scanner.Span) => {
     for l = span.start.line + 1; l <= span.end.line; l = l + 1 {
       inside.add(l)
@@ -426,7 +426,7 @@ fn wrap_expressions(groups : Array[Array[String]]) -> String {
 
 ///|
 /// The row of the definition `x__N` (`N` is `index`) in `file`, or 0.
-fn expression_row(file : @ast.File, index : Int) -> Int {
+fn expression_row(file : @ast.File, index : Int32) -> Int32 {
   let name = "x__\{index}"
   for d in file.declarations {
     if d.value is FunctionDeclaration(f) &&
@@ -448,7 +448,7 @@ fn expression_row(file : @ast.File, index : Int) -> Int {
 fn code_as_module(
   code : String,
   dialect : @dialect.Dialect,
-  depth : Int,
+  depth : Int32,
 ) -> String? {
   let (text, file, has_header) = match format_wrapped(code, dialect, depth) {
     Some((text, file)) => (text, file, true)
@@ -528,7 +528,7 @@ fn code_as_module(
 /// The number of comments before the first token of `code`. A block
 /// comment that ends code with only comments is not one: elm-format reads
 /// it after the module header.
-fn leading_comments(code : String, dialect : @dialect.Dialect) -> Int {
+fn leading_comments(code : String, dialect : @dialect.Dialect) -> Int32 {
   guard @scanner.DefaultScanner::new(dialect~).tokenize(
       @scanner.SourceText::new(code),
     )

@@ -15,7 +15,7 @@
 pub(all) struct ElmModule(String) derive(Debug)
 
 ///|
-fn pick(rs : @splitmix.RandomState, n : Int) -> Int {
+fn pick(rs : @splitmix.RandomState, n : Int32) -> Int32 {
   rs.next_uint(limit=n.reinterpret_as_uint()).reinterpret_as_int()
 }
 
@@ -25,7 +25,7 @@ fn one(rs : @splitmix.RandomState, xs : Array[String]) -> String {
 }
 
 ///|
-fn ind(n : Int) -> String {
+fn ind(n : Int32) -> String {
   " ".repeat(n)
 }
 
@@ -41,7 +41,7 @@ fn gen_leaf(rs : @splitmix.RandomState) -> String {
 
 ///|
 /// An expression that needs no parentheses as an argument.
-fn gen_atom(size : Int, rs : @splitmix.RandomState) -> String {
+fn gen_atom(size : Int32, rs : @splitmix.RandomState) -> String {
   if size <= 0 {
     return gen_leaf(rs)
   }
@@ -61,7 +61,7 @@ fn gen_atom(size : Int, rs : @splitmix.RandomState) -> String {
 
 ///|
 /// A one-line expression.
-fn gen_inline(size : Int, rs : @splitmix.RandomState) -> String {
+fn gen_inline(size : Int32, rs : @splitmix.RandomState) -> String {
   if size <= 0 {
     return gen_leaf(rs)
   }
@@ -94,7 +94,7 @@ fn gen_inline(size : Int, rs : @splitmix.RandomState) -> String {
 }
 
 ///|
-fn gen_pattern_atom(size : Int, rs : @splitmix.RandomState) -> String {
+fn gen_pattern_atom(size : Int32, rs : @splitmix.RandomState) -> String {
   if size <= 0 {
     return one(rs, [
       "_", "a", "1", "\"s\"", "()", "Nothing", "[]", "'c'", "9007199254740991", "0x1FFFFFFFFFFFFF",
@@ -112,7 +112,7 @@ fn gen_pattern_atom(size : Int, rs : @splitmix.RandomState) -> String {
 }
 
 ///|
-fn gen_pattern(size : Int, rs : @splitmix.RandomState) -> String {
+fn gen_pattern(size : Int32, rs : @splitmix.RandomState) -> String {
   if size <= 0 {
     return gen_pattern_atom(0, rs)
   }
@@ -129,7 +129,7 @@ fn gen_pattern(size : Int, rs : @splitmix.RandomState) -> String {
 }
 
 ///|
-fn gen_type(size : Int, rs : @splitmix.RandomState) -> String {
+fn gen_type(size : Int32, rs : @splitmix.RandomState) -> String {
   if size <= 0 {
     return one(rs, ["Int", "a", "()", "String"])
   }
@@ -147,7 +147,11 @@ fn gen_type(size : Int, rs : @splitmix.RandomState) -> String {
 ///|
 /// An expression that may span lines (case, let), starting at column
 /// `indent + 1`.
-fn gen_block(size : Int, indent : Int, rs : @splitmix.RandomState) -> String {
+fn gen_block(
+  size : Int32,
+  indent : Int32,
+  rs : @splitmix.RandomState,
+) -> String {
   if size <= 0 {
     return gen_inline(0, rs)
   }
@@ -182,8 +186,8 @@ fn gen_block(size : Int, indent : Int, rs : @splitmix.RandomState) -> String {
 
 ///|
 fn gen_declaration(
-  i : Int,
-  size : Int,
+  i : Int32,
+  size : Int32,
   ports : Bool,
   rs : @splitmix.RandomState,
 ) -> String {

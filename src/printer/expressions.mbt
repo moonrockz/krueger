@@ -138,14 +138,14 @@ fn parens_at(e : @ast.Expression, at : ExprAt) -> Bool {
 /// few hundred frames).
 priv enum Work {
   /// Print this expression: check its level, then push its plan.
-  Expr(@syntax.NodePath, Int, @ast.Node[@ast.Expression], ExprAt)
+  Expr(@syntax.NodePath, Int32, @ast.Node[@ast.Expression], ExprAt)
   /// Make a doc that has no nested expression (a name, a pattern, a type).
   /// It runs when it is popped, so errors come in source order.
   Leaf(() -> @pretty.Doc raise PrintError)
   /// Run these items in order, then combine their docs into one.
   Plan(Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc)
   /// Pop this many docs and push their combination.
-  Build(Int, (Array[@pretty.Doc]) -> @pretty.Doc)
+  Build(Int32, (Array[@pretty.Doc]) -> @pretty.Doc)
 }
 
 ///|
@@ -209,7 +209,7 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
 fn Ctx::expr_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   e : @ast.Node[@ast.Expression],
   at : ExprAt,
 ) -> @pretty.Doc raise PrintError {
@@ -230,7 +230,7 @@ fn Ctx::setter_items(
   self : Ctx,
   path : @syntax.NodePath,
   field_name : String,
-  level : Int,
+  level : Int32,
   setters : ArrayView[@ast.Node[@ast.RecordSetter]],
 ) -> Array[Work] {
   let items = []
@@ -278,7 +278,7 @@ fn Ctx::setter_docs(
   self : Ctx,
   setters : ArrayView[@ast.Node[@ast.RecordSetter]],
   docs : Array[@pretty.Doc],
-  from : Int,
+  from : Int32,
 ) -> (Array[@pretty.Doc], Array[@pretty.Doc]) {
   let fields = []
   let leads = []
@@ -328,7 +328,7 @@ fn number_doc(
 fn Ctx::expr_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   e : @ast.Node[@ast.Expression],
 ) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   match e.value {
@@ -797,9 +797,9 @@ fn Ctx::sequence_items(
   self : Ctx,
   path : @syntax.NodePath,
   field_name : String,
-  level : Int,
+  level : Int32,
   items : ArrayView[@ast.Node[@ast.Expression]],
-  after? : Array[Array[@ast.Node[String]]]? = None,
+  after~ : Array[Array[@ast.Node[String]]]? = None,
 ) -> Array[Work] {
   let moved : Array[Array[@ast.Node[String]]] = Array::makei(
     items.length() + 1,
@@ -863,7 +863,7 @@ fn item_docs(
 fn Ctx::if_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   c : @ast.Node[@ast.Expression],
   t : @ast.Node[@ast.Expression],
   f : @ast.Node[@ast.Expression],

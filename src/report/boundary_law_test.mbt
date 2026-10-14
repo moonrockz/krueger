@@ -2,7 +2,7 @@
 /// The line numbers the excerpts of `d` must show, in order: for each
 /// excerpt, its context's first line to the last line of its context or
 /// highlight.
-fn expected_gutters(d : @scanner.Diagnostic) -> Array[Int] {
+fn expected_gutters(d : @scanner.Diagnostic) -> Array[Int32] {
   let out = []
   for block in d.report {
     if block is Excerpt(context~, highlight~) {
