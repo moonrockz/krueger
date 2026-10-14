@@ -8,7 +8,7 @@ is 0.x, a minor release can contain breaking changes.
 
 ## [0.6.0] - 2026-10-14
 
-<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+This is a maintenance release. The parser, printer and formatter give the same output as in 0.5.0, and the public API does not change. krueger is now built and tested with MoonBit 0.10.15. It now depends on `moonrockz/pretty` 0.1.1, `moonbit-community/cmark` 0.4.12 and `moonrockz/expect` 0.6.1. The release process also improved: `release:refresh` updates the release pull request body, `release:plan` stops a release that has no highlights, and `release:prepare` warns about breaking commits without a `BREAKING CHANGE:` footer.
 
 ### 🚀 Features
 
