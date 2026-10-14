@@ -6,6 +6,22 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.6.0] - 2026-10-14
+
+<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+### 🚀 Features
+
+- *(release)* Release:refresh updates the release PR body; plan needs highlights ([#46](https://github.com/moonrockz/krueger/pull/46)) by @DamianReeves
+- *(release)* Warn about breaking commits without a BREAKING CHANGE footer ([#47](https://github.com/moonrockz/krueger/pull/47)) by @DamianReeves
+
+### 🏗️ Build and CI
+
+- Add ci-ok job as the single required check ([#48](https://github.com/moonrockz/krueger/pull/48)) by @DamianReeves
+- *(deps)* Upgrade MoonBit toolchain to 0.10.15, moonrockz packages and cmark ([#49](https://github.com/moonrockz/krueger/pull/49)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.5.0...v0.6.0
+
 ## [0.5.0] - 2026-10-07
 
 krueger can now format Elm source. `format(source)` gives the same bytes
