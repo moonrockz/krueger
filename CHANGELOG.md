@@ -6,6 +6,22 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.6.0] - 2026-10-14
+
+This is a maintenance release. The parser, printer and formatter give the same output as in 0.5.0, and the public API does not change. krueger is now built and tested with MoonBit 0.10.15. It now depends on `moonrockz/pretty` 0.1.1, `moonbit-community/cmark` 0.4.12 and `moonrockz/expect` 0.6.1. The release process also improved: `release:refresh` updates the release pull request body, `release:plan` stops a release that has no highlights, and `release:prepare` warns about breaking commits without a `BREAKING CHANGE:` footer.
+
+### 🚀 Features
+
+- *(release)* Release:refresh updates the release PR body; plan needs highlights ([#46](https://github.com/moonrockz/krueger/pull/46)) by @DamianReeves
+- *(release)* Warn about breaking commits without a BREAKING CHANGE footer ([#47](https://github.com/moonrockz/krueger/pull/47)) by @DamianReeves
+
+### 🏗️ Build and CI
+
+- Add ci-ok job as the single required check ([#48](https://github.com/moonrockz/krueger/pull/48)) by @DamianReeves
+- *(deps)* Upgrade MoonBit toolchain to 0.10.15, moonrockz packages and cmark ([#49](https://github.com/moonrockz/krueger/pull/49)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.5.0...v0.6.0
+
 ## [0.5.0] - 2026-10-07
 
 krueger can now format Elm source. `format(source)` gives the same bytes
