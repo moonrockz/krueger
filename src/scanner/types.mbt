@@ -34,9 +34,9 @@ pub(all) enum Severity {
 /// }
 /// ```
 pub(all) struct Position {
-  offset : Int
-  line : Int
-  column : Int
+  offset : Int32
+  line : Int32
+  column : Int32
 } derive(Eq, Debug)
 
 ///|

@@ -2,7 +2,7 @@
 using @lawkit {type ElmModule}
 
 ///|
-fn pick(rs : @splitmix.RandomState, n : Int) -> Int {
+fn pick(rs : @splitmix.RandomState, n : Int32) -> Int32 {
   rs.next_uint(limit=n.reinterpret_as_uint()).reinterpret_as_int()
 }
 
@@ -44,7 +44,7 @@ impl @quickcheck.Arbitrary for Policy with fn arbitrary(_, rs) {
 impl @quickcheck.Shrink for Policy
 
 ///|
-fn decide(p : Policy, k : Int) -> @syntax.Control {
+fn decide(p : Policy, k : Int32) -> @syntax.Control {
   let Policy(cs) = p
   cs[k % cs.length()]
 }

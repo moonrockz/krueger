@@ -13,10 +13,10 @@ pub(all) struct ElmText(Array[String]) derive(Debug)
 ///|
 /// A string of these UTF-16 code units (a literal cannot hold a lone
 /// surrogate).
-pub fn units(xs : Array[Int]) -> String {
+pub fn units(xs : Array[Int32]) -> String {
   let sb = StringBuilder()
   for x in xs {
-    sb.write_char(Int::unsafe_to_char(x))
+    sb.write_char(Int32::unsafe_to_char(x))
   }
   sb.to_string()
 }

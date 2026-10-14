@@ -5,8 +5,8 @@ import {
   "moonbitlang/async@0.22.4/process",
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -62,7 +62,7 @@ enum Outcome {
 } derive(Eq, Debug)
 
 ///|
-fn classify(exit_code : Int, output : String) -> Outcome {
+fn classify(exit_code : Int32, output : String) -> Outcome {
   if exit_code == 0 {
     Published
   } else if output.contains(duplicated) {
@@ -107,7 +107,7 @@ struct PublishWorld {
   mut ref_type : String
   mut ref_name : String
   mut check : Result[Unit, String]
-  mut exit_code : Int
+  mut exit_code : Int32
   mut output : String
 }
 
@@ -161,7 +161,7 @@ impl @moonspec.World for PublishWorld with fn configure(self, setup) {
     @expect.expect(actual).to_equal(expected)
   })
   setup.given2("moon publish exits with {int} and prints {string}", fn(
-    code : Int,
+    code : Int32,
     output : String,
   ) {
     self.exit_code = code

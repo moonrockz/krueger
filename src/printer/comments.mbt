@@ -19,7 +19,7 @@ priv struct Placed {
 priv struct CommentTable {
   placed : Array[Placed]
   printed : Array[Bool]
-  index : Map[(Int, Int, Int, Int, Int), Array[Int]]
+  index : Map[(Int32, Int32, Int32, Int32, Int32), Array[Int32]]
 }
 
 ///|
@@ -33,7 +33,7 @@ fn range_contains(r : @ast.Range, l : @ast.Location) -> Bool {
 }
 
 ///|
-fn role_index(role : Role) -> Int {
+fn role_index(role : Role) -> Int32 {
   match role {
     Leading => 0
     Trailing => 1
@@ -42,7 +42,10 @@ fn role_index(role : Role) -> Int {
 }
 
 ///|
-fn index_key(role : Role, r : @ast.Range) -> (Int, Int, Int, Int, Int) {
+fn index_key(
+  role : Role,
+  r : @ast.Range,
+) -> (Int32, Int32, Int32, Int32, Int32) {
   (role_index(role), r.start.row, r.start.column, r.end.row, r.end.column)
 }
 
@@ -81,7 +84,7 @@ fn Level::new(node : @syntax.NodeRef) -> Level {
 ///|
 /// The number of leading ranges for which `before` holds. `before` must
 /// hold for a prefix of the ranges only.
-fn Level::count_while(self : Level, before : (@ast.Range) -> Bool) -> Int {
+fn Level::count_while(self : Level, before : (@ast.Range) -> Bool) -> Int32 {
   let mut lo = 0
   let mut hi = self.ranges.length()
   while lo < hi {
@@ -97,7 +100,7 @@ fn Level::count_while(self : Level, before : (@ast.Range) -> Bool) -> Int {
 
 ///|
 /// The index of the first child whose range contains `l`.
-fn Level::containing(self : Level, l : @ast.Location) -> Int? {
+fn Level::containing(self : Level, l : @ast.Location) -> Int32? {
   guard self.ordered else {
     for i, r in self.ranges {
       if range_contains(r, l) {
@@ -119,7 +122,7 @@ fn Level::containing(self : Level, l : @ast.Location) -> Int? {
 ///|
 /// The last child that ends at or before the start of `c`, and the first
 /// other child that starts at or after the end of `c`.
-fn Level::around(self : Level, c : @ast.Range) -> (Int?, Int?) {
+fn Level::around(self : Level, c : @ast.Range) -> (Int32?, Int32?) {
   guard self.ordered && compare_location(c.start, c.end) < 0 else {
     let mut prev = None
     let mut next = None
@@ -163,9 +166,9 @@ fn Level::around(self : Level, c : @ast.Range) -> (Int?, Int?) {
 /// again for it.
 fn place_comments(file : @ast.File) -> CommentTable {
   let levels = [Level::new(File(file, [][:]))]
-  let chosen : Array[Int] = []
+  let chosen : Array[Int32] = []
   let placed = []
-  let index : Map[(Int, Int, Int, Int, Int), Array[Int]] = Map([])
+  let index : Map[(Int32, Int32, Int32, Int32, Int32), Array[Int32]] = Map([])
   for c in file.comments {
     guard !c.value.has_prefix("{-|") else { continue }
     // Descend to the innermost node that contains the comment start.
@@ -207,7 +210,7 @@ fn CommentTable::matching(
   self : CommentTable,
   role : Role,
   r : @ast.Range,
-) -> Array[Int] {
+) -> Array[Int32] {
   match self.index.get(index_key(role, r)) {
     Some(list) => list.filter(i => !self.printed[i])
     None => []

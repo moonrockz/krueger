@@ -124,7 +124,7 @@ fn[V : Visitor] dispatch(visitor : V, n : NodeRef) -> Control {
 /// ```mbt nocheck
 /// struct Names {
 ///   functions : Array[String]
-///   mut patterns : Int
+///   mut patterns : Int32
 /// }
 ///
 /// impl @syntax.Visitor for Names with fn visit_function(self, n) {

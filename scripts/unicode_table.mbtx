@@ -6,8 +6,8 @@ import {
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -45,18 +45,18 @@ let usage : String = "Usage: unicode_table.mbtx [--literals | --markdown] <Unico
 /// Code point ranges per class, each as inclusive (start, end) pairs, sorted
 /// and merged.
 struct Classes {
-  lower_start : Array[(Int, Int)]
-  upper_start : Array[(Int, Int)]
-  inner : Array[(Int, Int)]
-  titlecase : Array[(Int, Int)]
-  number : Array[(Int, Int)]
-  plain : Array[(Int, Int)]
-  letter : Array[(Int, Int)]
-  space : Array[(Int, Int)]
+  lower_start : Array[(Int32, Int32)]
+  upper_start : Array[(Int32, Int32)]
+  inner : Array[(Int32, Int32)]
+  titlecase : Array[(Int32, Int32)]
+  number : Array[(Int32, Int32)]
+  plain : Array[(Int32, Int32)]
+  letter : Array[(Int32, Int32)]
+  space : Array[(Int32, Int32)]
 }
 
 ///|
-fn add(ranges : Array[(Int, Int)], start : Int, end : Int) -> Unit {
+fn add(ranges : Array[(Int32, Int32)], start : Int32, end : Int32) -> Unit {
   match ranges.last() {
     Some((s, e)) if start <= e + 1 =>
       ranges[ranges.length() - 1] = (s, if end > e { end } else { e })
@@ -75,7 +75,7 @@ fn classes(data : String) -> Classes raise {
   let plain = []
   let letter = []
   let space = []
-  let mut range_start : Int? = None
+  let mut range_start : Int32? = None
   for raw in data.split("\n") {
     let line = raw.trim().to_owned()
     if line == "" {
@@ -125,7 +125,7 @@ fn classes(data : String) -> Classes raise {
 }
 
 ///|
-fn hex4(n : Int) -> String {
+fn hex4(n : Int32) -> String {
   let digits = "0123456789ABCDEF"
   let sb = StringBuilder()
   let mut shift = if n > 0xFFFF { 20 } else { 12 }
@@ -137,12 +137,12 @@ fn hex4(n : Int) -> String {
 }
 
 ///|
-fn describe(ranges : Array[(Int, Int)]) -> String {
+fn describe(ranges : Array[(Int32, Int32)]) -> String {
   ranges.map(r => "\{hex4(r.0)}-\{hex4(r.1)}").join(", ")
 }
 
 ///|
-fn table(name : String, ranges : Array[(Int, Int)]) -> String {
+fn table(name : String, ranges : Array[(Int32, Int32)]) -> String {
   let sb = StringBuilder()
   sb.write_string("///|\nlet \{name} : FixedArray[Int] = [\n")
   for r in ranges {

@@ -1,5 +1,5 @@
 ///|
-fn sp(l1 : Int, c1 : Int, l2 : Int, c2 : Int) -> @scanner.Span {
+fn sp(l1 : Int32, c1 : Int32, l2 : Int32, c2 : Int32) -> @scanner.Span {
   {
     start: { offset: 0, line: l1, column: c1, },
     end: { offset: 0, line: l2, column: c2, },
@@ -165,7 +165,7 @@ test "elm json has the elm make shape" {
       e.get("problems") is Some(Array([Object(p)])) else {
       fail("bad shape: \{json.stringify()}")
     }
-    s.expect(p.get("title")).to_equal(Some("UNFINISHED LET".to_json()))
+    s.expect(p.get("title")).to_equal(Some(Json("UNFINISHED LET")))
     s
     .expect(p.get("region"))
     .to_equal(
@@ -186,8 +186,10 @@ test "elm json has the elm make shape" {
     s
     .expect(parts[0])
     .to_equal(
-      ("I was partway through parsing a `let` expression, but I got stuck here:\n\n5|     let\n6|         y = 1\n" +
-      " ".repeat(16)).to_json(),
+      Json(
+        "I was partway through parsing a `let` expression, but I got stuck here:\n\n5|     let\n6|         y = 1\n" +
+        " ".repeat(16),
+      ),
     )
   })
 }

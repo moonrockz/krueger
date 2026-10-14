@@ -24,7 +24,7 @@ fn syntax_problems(
   key : String,
   tree : @krueger.Tree,
   kinds : Map[String, Bool],
-) -> (Int, Array[String]) {
+) -> (Int32, Array[String]) {
   let problems = []
   let nodes = syntax_nodes(tree.root())
   for node in nodes {
@@ -116,7 +116,7 @@ fn walk_tag(n : @krueger.NodeRef) -> String {
 ///|
 /// Counts the nodes a visitor leaves (defaults elsewhere).
 struct LeaveCount {
-  mut count : Int
+  mut count : Int32
 }
 
 ///|
@@ -131,7 +131,7 @@ impl @krueger.Visitor for LeaveCount with fn leave(self, _) {
 fn walk_problems(
   key : String,
   root : @krueger.NodeRef,
-  count : Int,
+  count : Int32,
 ) -> Array[String] {
   let pre = []
   let pre_starts = []

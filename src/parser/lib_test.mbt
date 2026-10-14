@@ -19,7 +19,7 @@ fn ast(result : @parser.ParseResult) -> @ast.File raise {
 }
 
 ///|
-fn range(r1 : Int, c1 : Int, r2 : Int, c2 : Int) -> @ast.Range {
+fn range(r1 : Int32, c1 : Int32, r2 : Int32, c2 : Int32) -> @ast.Range {
   { start: { row: r1, column: c1, }, end: { row: r2, column: c2, }, }
 }
 
@@ -365,7 +365,7 @@ fn nested(
   open : String,
   middle : String,
   close : String,
-  depth : Int,
+  depth : Int32,
 ) -> String {
   let sb = StringBuilder()
   for _ in 0..<depth {
@@ -519,7 +519,7 @@ test "a doc comment on a failing declaration is not also reported as stray" {
 }
 
 ///|
-fn chain(op : String, terms : Int, tail : String) -> String {
+fn chain(op : String, terms : Int32, tail : String) -> String {
   let sb = StringBuilder()
   sb.write_string("module Main exposing (..)\n\n\nf =\n    1")
   for _ in 0..<terms {
@@ -551,7 +551,7 @@ test "long operator chains still parse and encode" {
 }
 
 ///|
-fn repeated(unit : String, n : Int) -> String {
+fn repeated(unit : String, n : Int32) -> String {
   let sb = StringBuilder()
   for _ in 0..<n {
     sb.write_string(unit)

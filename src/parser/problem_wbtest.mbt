@@ -146,7 +146,7 @@ fn first_diagnostic(text : String) -> @scanner.Diagnostic? {
 }
 
 ///|
-fn highlight_of(d : @scanner.Diagnostic) -> (Int, Int) {
+fn highlight_of(d : @scanner.Diagnostic) -> (Int32, Int32) {
   match d.report.iter().find_first(b => b is Excerpt(_)) {
     Some(Excerpt(highlight~, ..)) =>
       (highlight.start.line, highlight.start.column)

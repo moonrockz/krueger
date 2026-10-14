@@ -65,7 +65,7 @@ pub fn Rule::name(self : Rule) -> String {
 /// An infix operator: its symbol, precedence (1 to 9) and direction.
 pub(all) struct OperatorDef {
   symbol : String
-  precedence : Int
+  precedence : Int32
   direction : @ast.InfixDirection
 } derive(Eq, Debug)
 
@@ -168,7 +168,7 @@ pub(all) struct Dialect {
 /// The infix operators of Elm 0.19.1 as elm-syntax 7.3.9 knows them, including
 /// `</>` and `<?>` from elm/url.
 pub fn standard_operators() -> Array[OperatorDef] {
-  let table : Array[(String, Int, @ast.InfixDirection)] = [
+  let table : Array[(String, Int32, @ast.InfixDirection)] = [
     ("|>", 1, Left),
     ("<|", 1, Right),
     ("||", 2, Right),

@@ -10,8 +10,8 @@ import {
   "moonbitlang/core/encoding/hex",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -43,8 +43,8 @@ fn lock_text(verdicts : Array[Verdict]) -> String {
   let entries : Map[String, Json] = Map([])
   for v in verdicts {
     entries[v.key] = {
-      "sha256": v.sha256.to_json(),
-      "elm_format": (if v.stable { "stable" } else { "changed" }).to_json(),
+      "sha256": Json(v.sha256),
+      "elm_format": Json(if v.stable { "stable" } else { "changed" }),
     }
   }
   Json::object(entries).stringify(indent=2) + "\n"
@@ -56,7 +56,7 @@ fn pending_text(verdicts : Array[Verdict]) -> String {
   let keys : Array[Json] = []
   for v in verdicts {
     if !v.stable {
-      keys.push(v.key.to_json())
+      keys.push(Json(v.key))
     }
   }
   Json::array(keys).stringify(indent=2) + "\n"
@@ -66,7 +66,7 @@ fn pending_text(verdicts : Array[Verdict]) -> String {
 /// The verdict for an `elm-format --validate` exit code: 0 is stable
 /// (`Some(true)`) and 1 is changed (`Some(false)`). Any other code means
 /// that elm-format did not run or failed (`None`).
-fn validate_verdict(code : Int) -> Bool? {
+fn validate_verdict(code : Int32) -> Bool? {
   match code {
     0 => Some(true)
     1 => Some(false)
@@ -101,7 +101,7 @@ async fn elm_files(dir : String) -> Array[String] {
 
 ///|
 /// Compare strings by code unit (`String::compare` compares length first).
-fn compare_lexical(a : String, b : String) -> Int {
+fn compare_lexical(a : String, b : String) -> Int32 {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i in 0..<n {
     let c = a.code_unit_at(i).compare(b.code_unit_at(i))

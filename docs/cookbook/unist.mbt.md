@@ -70,7 +70,7 @@ column at a time:
 ```mbt check
 ///|
 /// The UTF-16 offset where each line starts. Only LF ends a line.
-fn un_line_starts(text : String) -> Array[Int] {
+fn un_line_starts(text : String) -> Array[Int32] {
   let starts = [0]
   for i in 0..<text.length() {
     if text.code_unit_at(i) is '\n' {
@@ -82,18 +82,18 @@ fn un_line_starts(text : String) -> Array[Int] {
 
 ///|
 /// True when a surrogate pair (one code point, two units) starts at `i`.
-fn un_is_pair(text : String, i : Int) -> Bool {
+fn un_is_pair(text : String, i : Int32) -> Bool {
   i + 1 < text.length() &&
-  text.code_unit_at(i).to_int() is (0xD800..=0xDBFF) &&
-  text.code_unit_at(i + 1).to_int() is (0xDC00..=0xDFFF)
+  text.code_unit_at(i).to_int() is (0xD800..<=0xDBFF) &&
+  text.code_unit_at(i + 1).to_int() is (0xDC00..<=0xDFFF)
 }
 
 ///|
 /// A unist point. `column` and `offset` count UTF-16 units.
 struct UnPoint {
-  line : Int
-  column : Int
-  offset : Int
+  line : Int32
+  column : Int32
+  offset : Int32
 } derive(Debug)
 
 ///|
@@ -105,7 +105,7 @@ fn UnPoint::json(self : UnPoint) -> Json {
 /// Converts a krueger location (code-point column) to a unist point.
 fn un_point(
   text : String,
-  starts : Array[Int],
+  starts : Array[Int32],
   location : @krueger.Location,
 ) -> UnPoint {
   let line_start = starts[location.row - 1]
@@ -156,7 +156,7 @@ priv struct UnFrame {
 
 ///|
 /// Makes the unist node for a finished frame.
-fn un_node(text : String, starts : Array[Int], frame : UnFrame) -> Json {
+fn un_node(text : String, starts : Array[Int32], frame : UnFrame) -> Json {
   let node = frame.node
   let range = node.range()
   let start = un_point(text, starts, range.start)
@@ -164,15 +164,15 @@ fn un_node(text : String, starts : Array[Int], frame : UnFrame) -> Json {
   // unist families (mdast, hast, xast) give the root node the type `root`.
   let type_ = if node.category() == "file" { "root" } else { node.category() }
   let object : Map[String, Json] = {
-    "type": type_.to_json(),
-    "kind": node.kind().to_json(),
+    "type": Json(type_),
+    "kind": Json(node.kind()),
   }
   if frame.field is Some(field) {
-    object["field"] = field.to_json()
+    object["field"] = Json(field)
   }
   if frame.children.is_empty() {
     let value = text.view(start_offset=start.offset, end_offset=end.offset)
-    object["value"] = value.to_owned().to_json()
+    object["value"] = Json(value.to_owned())
   } else {
     object["children"] = Json::array(frame.children)
   }
@@ -531,9 +531,9 @@ the innermost node that contains the location.
 /// Converts a unist point (UTF-16 column) to a krueger location.
 fn un_location(
   text : String,
-  starts : Array[Int],
-  line : Int,
-  column : Int,
+  starts : Array[Int32],
+  line : Int32,
+  column : Int32,
 ) -> @krueger.Location {
   let line_start = starts[line - 1]
   let target = line_start + column - 1

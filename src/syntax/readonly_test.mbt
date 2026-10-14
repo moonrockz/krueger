@@ -3,7 +3,7 @@
 /// a value as it is, so an `Array` (which converts to a view in a typed
 /// binding) fails this check.
 trait ReadOnly {
-  fn size(Self) -> Int
+  fn size(Self) -> Int32
 }
 
 ///|

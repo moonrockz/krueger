@@ -26,8 +26,8 @@ fn node_positions(n : @syntax.NodeRef) -> Array[@ast.Location] {
 /// The child goto_first_child_for(p) must pick: the innermost child that
 /// contains `p` (the first among equals), or else the first child that
 /// starts after `p`.
-fn child_for(kids : Array[@syntax.NodeRef], p : @ast.Location) -> Int? {
-  let mut best : Int? = None
+fn child_for(kids : Array[@syntax.NodeRef], p : @ast.Location) -> Int32? {
+  let mut best : Int32? = None
   for i, k in kids {
     let r = k.range()
     if range_contains(r, p) {
@@ -50,7 +50,7 @@ fn child_for(kids : Array[@syntax.NodeRef], p : @ast.Location) -> Int? {
 /// The node at `path` (child indices from `base`) and its field in its parent.
 fn node_at_path(
   base : @syntax.NodeRef,
-  path : Array[Int],
+  path : Array[Int32],
 ) -> (@syntax.NodeRef, String?) {
   let mut n = base
   let mut field = None
@@ -63,7 +63,7 @@ fn node_at_path(
 }
 
 ///|
-fn pick_position(n : @syntax.NodeRef, m : UInt) -> @ast.Location {
+fn pick_position(n : @syntax.NodeRef, m : UInt32) -> @ast.Location {
   let ps = node_positions(n)
   ps[(m / 7 % ps.length().reinterpret_as_uint()).reinterpret_as_int()]
 }
@@ -71,7 +71,7 @@ fn pick_position(n : @syntax.NodeRef, m : UInt) -> @ast.Location {
 ///|
 /// Move `m` (not a reset), applied to a model cursor: a path of child indices
 /// from `base`.
-fn model_move(base : @syntax.NodeRef, path : Array[Int], m : UInt) -> Bool {
+fn model_move(base : @syntax.NodeRef, path : Array[Int32], m : UInt32) -> Bool {
   let (n, _) = node_at_path(base, path)
   let siblings = if path.is_empty() {
     1
@@ -131,7 +131,7 @@ fn model_move(base : @syntax.NodeRef, path : Array[Int], m : UInt) -> Bool {
 
 ///|
 /// Move `m` (not a reset), applied to a real cursor.
-fn cursor_move(c : @syntax.TreeCursor, m : UInt) -> Bool {
+fn cursor_move(c : @syntax.TreeCursor, m : UInt32) -> Bool {
   match m % 6 {
     0 => c.goto_first_child()
     1 => c.goto_last_child()
@@ -145,8 +145,8 @@ fn cursor_move(c : @syntax.TreeCursor, m : UInt) -> Bool {
 ///|
 /// The children of `n` as (field, index in field, node), sorted by start and
 /// then by field order: computed apart from `children()`.
-fn slot_order(n : @syntax.NodeRef) -> Array[(String, Int, @syntax.NodeRef)] {
-  let slots : Array[(Int, String, Int, @syntax.NodeRef)] = []
+fn slot_order(n : @syntax.NodeRef) -> Array[(String, Int32, @syntax.NodeRef)] {
+  let slots : Array[(Int32, String, Int32, @syntax.NodeRef)] = []
   for f in n.fields() {
     for i, c in n.field(f) {
       slots.push((slots.length(), f, i, c))
@@ -170,7 +170,7 @@ fn slot_order(n : @syntax.NodeRef) -> Array[(String, Int, @syntax.NodeRef)] {
 /// The path steps a model path (child indices from `base`) names.
 fn model_steps(
   base : @syntax.NodeRef,
-  path : Array[Int],
+  path : Array[Int32],
 ) -> Array[@syntax.PathStep] {
   let mut n = base
   let steps = []
@@ -188,7 +188,7 @@ fn model_steps(
 fn agrees(
   c : @syntax.TreeCursor,
   base : @syntax.NodeRef,
-  path : Array[Int],
+  path : Array[Int32],
 ) -> Bool {
   let (n, field) = node_at_path(base, path)
   tag(c.node()) == tag(n) &&
@@ -203,7 +203,7 @@ fn agrees(
 ///|
 test "law: every cursor move agrees with a path model, resets included" {
   @quickcheck.check(
-    (input : (ElmModule, Array[UInt])) => {
+    (input : (ElmModule, Array[UInt32])) => {
       let (m, moves) = input
       let root = elm_root(m)
       let nodes = []
@@ -238,7 +238,7 @@ test "law: every cursor move agrees with a path model, resets included" {
 ///|
 test "law: a cursor's copy moves independently" {
   @quickcheck.check(
-    (input : (ElmModule, Array[UInt], Array[UInt])) => {
+    (input : (ElmModule, Array[UInt32], Array[UInt32])) => {
       let (m, first, second) = input
       let root = elm_root(m)
       let c = @syntax.TreeCursor::new(root)

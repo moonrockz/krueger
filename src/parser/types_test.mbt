@@ -1,5 +1,5 @@
 ///|
-fn location(row : Int, column : Int) -> @ast.Location {
+fn location(row : Int32, column : Int32) -> @ast.Location {
   { row, column, }
 }
 

@@ -15,7 +15,7 @@ priv enum NormalizeAt {
 priv enum NormalizeWork {
   Rewrite(@ast.Node[@ast.Expression], NormalizeAt)
   Rebuild(
-    Int,
+    Int32,
     (Array[@ast.Node[@ast.Expression]]) -> @ast.Node[@ast.Expression]
   )
 }
@@ -258,7 +258,7 @@ fn normalize_patterns(
 priv enum PatternWork {
   RewritePattern(@ast.Node[@ast.Pattern], PatternAt)
   RebuildPattern(
-    Int,
+    Int32,
     @ast.Range,
     (Array[@ast.Node[@ast.Pattern]]) -> @ast.Pattern
   )

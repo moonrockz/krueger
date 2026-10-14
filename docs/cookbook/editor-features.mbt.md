@@ -46,7 +46,7 @@ fn ef_tree(text : String) -> @syntax.Tree raise {
 }
 
 ///|
-fn ef_at(row : Int, column : Int) -> @ast.Location {
+fn ef_at(row : Int32, column : Int32) -> @ast.Location {
   { row, column, }
 }
 

@@ -2,7 +2,7 @@
 /// Records which method saw each node.
 struct Recorder {
   calls : Array[String]
-  mut left : Int
+  mut left : Int32
 }
 
 ///|
@@ -163,7 +163,7 @@ test "accept dispatches each of the 77 kinds as the table says" {
 ///|
 /// A visitor with only `leave`: every other method is the default.
 struct LeaveCounter {
-  mut count : Int
+  mut count : Int32
 }
 
 ///|

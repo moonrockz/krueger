@@ -38,7 +38,7 @@ let corpus_dir : String = "../.corpus"
 let raw_goldens_dir : String = "../.dev/out/goldens/raw"
 
 ///|
-let max_reported_mismatches : Int = 20
+let max_reported_mismatches : Int32 = 20
 
 ///|
 let reports_dir : String = "../_build/reports/parity"

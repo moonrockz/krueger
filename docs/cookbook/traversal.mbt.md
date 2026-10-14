@@ -92,7 +92,7 @@ annotation.
 ///|
 /// The range of the first `Debug.todo` reference, and the number of nodes
 /// that the walk entered.
-fn tr_first_todo(root : @syntax.NodeRef) -> (@ast.Range?, Int) {
+fn tr_first_todo(root : @syntax.NodeRef) -> (@ast.Range?, Int32) {
   let mut found = None
   let mut entered = 0
   @syntax.walk(root, node => {
@@ -162,8 +162,8 @@ This example counts the nodes per category:
 
 ```mbt check
 ///|
-fn tr_count_categories(root : @syntax.NodeRef) -> Map[String, Int] {
-  @syntax.fold(root, ({} : Map[String, Int]), (counts, node) => {
+fn tr_count_categories(root : @syntax.NodeRef) -> Map[String, Int32] {
+  @syntax.fold(root, ({} : Map[String, Int32]), (counts, node) => {
     let key = node.category()
     counts.set(key, counts.get(key).unwrap_or(0) + 1)
     (counts, Continue)
@@ -187,7 +187,7 @@ keeps the maximum:
 ///|
 /// The maximum nesting depth of expressions (an expression inside no other
 /// expression has depth 1).
-fn tr_expression_depth(root : @syntax.NodeRef) -> Int {
+fn tr_expression_depth(root : @syntax.NodeRef) -> Int32 {
   let (_, max) = @syntax.fold(
     root,
     (0, 0),
@@ -296,7 +296,7 @@ This outline skips the children of imports, signatures and type aliases:
 
 ```mbt check
 ///|
-fn tr_outline(root : @syntax.NodeRef, max_depth : Int) -> String {
+fn tr_outline(root : @syntax.NodeRef, max_depth : Int32) -> String {
   let lines = []
   let reader = @syntax.EventReader::new(root)
   while reader.next() is Some(event) {

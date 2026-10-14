@@ -8,7 +8,7 @@ fn facts_of(text : String) -> SourceFacts {
 }
 
 ///|
-fn loc(row : Int, column : Int) -> @ast.Location {
+fn loc(row : Int32, column : Int32) -> @ast.Location {
   { row, column, }
 }
 

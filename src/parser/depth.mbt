@@ -1,7 +1,7 @@
 ///|
 /// Deepest AST a declaration may have. Encoding an AST and printing its JSON
 /// recurse once per level, so deeper trees overflow the stack on wasm.
-const MAX_AST_DEPTH : Int = 400
+const MAX_AST_DEPTH : Int32 = 400
 
 ///|
 /// A node of any AST type, for the depth walk.
@@ -89,7 +89,7 @@ fn children(item : Item) -> Array[Item] {
 ///|
 /// The depth of `decl`'s AST, measured without recursion (an explicit stack),
 /// so it works on trees of any depth.
-fn declaration_depth(decl : @ast.Declaration) -> Int {
+fn declaration_depth(decl : @ast.Declaration) -> Int32 {
   let roots : Array[Item] = match decl {
     FunctionDeclaration(f) => [F(f)]
     AliasDeclaration(a) => [T(a.type_annotation.value)]

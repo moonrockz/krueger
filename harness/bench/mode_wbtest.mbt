@@ -48,7 +48,7 @@ priv struct Case {
   suite : String
   name : String
   input : String
-  run : () -> Int
+  run : () -> Int32
   check : () -> Unit raise
 }
 
@@ -59,7 +59,7 @@ fn Case::id(self : Case) -> String {
 
 ///|
 /// Keeps the sizes that `run` returns, so the measured work is used.
-let sink : Ref[Int] = { val: 0, }
+let sink : Ref[Int32] = { val: 0, }
 
 ///|
 fn number(o : Map[String, Json], key : String) -> Double raise {
@@ -78,21 +78,21 @@ fn result_json(c : Case, target : String, summary : Json) -> Json raise {
     fail("bench summary: missing quartiles")
   }
   {
-    "target": target.to_json(),
-    "suite": c.suite.to_json(),
-    "case": c.name.to_json(),
-    "input": c.input.to_json(),
+    "target": Json(target),
+    "suite": Json(c.suite),
+    "case": Json(c.name),
+    "input": Json(c.input),
     "unit": "us",
-    "median": number(o, "median").to_json(),
-    "mean": number(o, "mean").to_json(),
-    "min": number(o, "min").to_json(),
-    "max": number(o, "max").to_json(),
-    "std_dev": number(o, "std_dev").to_json(),
-    "q1": q1.to_json(),
-    "q3": q3.to_json(),
-    "iqr": number(o, "iqr").to_json(),
-    "runs": number(o, "runs").to_int().to_json(),
-    "batch_size": number(o, "batch_size").to_int().to_json(),
+    "median": Json(number(o, "median")),
+    "mean": Json(number(o, "mean")),
+    "min": Json(number(o, "min")),
+    "max": Json(number(o, "max")),
+    "std_dev": Json(number(o, "std_dev")),
+    "q1": Json(q1),
+    "q3": Json(q3),
+    "iqr": Json(number(o, "iqr")),
+    "runs": Json(number(o, "runs").to_int()),
+    "batch_size": Json(number(o, "batch_size").to_int()),
   }
 }
 
@@ -125,10 +125,7 @@ fn run_cases(cases : Array[Case], mode : Mode) -> Unit raise {
           @fs.create_dir(dir)
         }
       }
-      let raw : Json = {
-        "target": target.to_json(),
-        "results": results.to_json(),
-      }
+      let raw : Json = { "target": Json(target), "results": Json(results) }
       @fs.write_string_to_file("\{raw_dir}/\{target}.json", raw.stringify())
     }
   }

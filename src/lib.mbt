@@ -192,7 +192,7 @@ pub fn version() -> String {
 /// ```
 pub fn tokenize(
   source : SourceText,
-  dialect? : Dialect = Dialect::elm_0_19_1(),
+  dialect~ : Dialect = Dialect::elm_0_19_1(),
 ) -> Result[TokenStream, ScanErrorList] {
   @scanner.DefaultScanner::new(dialect~).tokenize(source)
 }
@@ -267,7 +267,7 @@ pub fn tokenize(
 /// ```
 pub fn parse_module(
   source : SourceText,
-  dialect? : Dialect = Dialect::elm_0_19_1(),
+  dialect~ : Dialect = Dialect::elm_0_19_1(),
 ) -> ParseResult {
   @parser.parse_module(source, @scanner.DefaultScanner::new(dialect~), dialect~)
 }
@@ -293,7 +293,7 @@ pub fn parse_module(
 /// ```
 pub fn parse_tokens(
   tokens : TokenStream,
-  dialect? : Dialect = Dialect::elm_0_19_1(),
+  dialect~ : Dialect = Dialect::elm_0_19_1(),
 ) -> ParseResult {
   @parser.parse_tokens(tokens, dialect~)
 }

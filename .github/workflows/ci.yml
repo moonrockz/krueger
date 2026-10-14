@@ -7,7 +7,7 @@ on:
 
 env:
   # Pinned MoonBit toolchain (moon/moonc/core). Bump deliberately; see AGENTS.md.
-  MOONBIT_VERSION: "0.10.14+7d59c7ec9"
+  MOONBIT_VERSION: "0.10.15+943464bfa"
 
 jobs:
   lint:

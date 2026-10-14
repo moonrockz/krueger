@@ -5,9 +5,9 @@ version = "0.0.1"
 import {
   "moonrockz/krueger@0.0.0",
   "moonbitlang/x@0.5.5",
-  "moonrockz/moonspec@0.7.1",
+  "moonrockz/moonspec@0.11.0",
   "moonbitlang/async@0.22.4",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/expect@0.6.1",
 }
 
 repository = "https://github.com/moonrockz/krueger"

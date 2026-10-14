@@ -75,7 +75,7 @@ fn token_range(t : @scanner.Token) -> @ast.Range {
 }
 
 ///|
-fn shift(p : @ast.Location, d : Int) -> @ast.Location {
+fn shift(p : @ast.Location, d : Int32) -> @ast.Location {
   { row: p.row, column: p.column + d, }
 }
 

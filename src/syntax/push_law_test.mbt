@@ -3,7 +3,7 @@
 struct PolicyHandler {
   policy : Policy
   log : Array[String]
-  mut taken : Int
+  mut taken : Int32
 }
 
 ///|
@@ -125,7 +125,7 @@ fn record_line(e : @syntax.Event) -> String {
 struct RecordHandler {
   policy : Policy
   lines : Array[String]
-  mut taken : Int
+  mut taken : Int32
 }
 
 ///|

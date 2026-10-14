@@ -3,7 +3,7 @@
 /// line comment before the function and one in its body. It is in
 /// elm-format's layout, so `format` gives the same text back. The number
 /// of comments makes comment placement a large part of the work.
-fn commented_module(declarations : Int) -> String {
+fn commented_module(declarations : Int32) -> String {
   let buf = StringBuilder()
   buf.write_string("module Bench exposing (..)\n")
   for i in 0..<declarations {

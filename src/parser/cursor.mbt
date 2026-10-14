@@ -10,15 +10,15 @@ priv suberror SyntaxError {
 /// that continuation lines must be deeper than (1 at module level).
 priv struct Cursor {
   tokens : Array[@scanner.Token]
-  mut pos : Int
-  mut indent : Int
-  mut depth : Int
-  mut chain_depth : Int
+  mut pos : Int32
+  mut indent : Int32
+  mut depth : Int32
+  mut chain_depth : Int32
   dialect : @dialect.Dialect
   contexts : Array[Frame]
   /// Position of the token that starts the current item (declaration, let
   /// declaration, case branch): it may sit at the indent column.
-  mut item_start : Int
+  mut item_start : Int32
   /// Set while building a layout failure: the problem is marked right after
   /// the previous token, as elm make does.
   mut layout_failure : Bool
@@ -54,7 +54,7 @@ fn Cursor::peek(self : Cursor) -> @scanner.Token? {
 }
 
 ///|
-fn Cursor::peek_at(self : Cursor, ahead : Int) -> @scanner.Token? {
+fn Cursor::peek_at(self : Cursor, ahead : Int32) -> @scanner.Token? {
   self.tokens.get(self.pos + ahead)
 }
 
@@ -506,7 +506,7 @@ fn Cursor::positively_indented(self : Cursor) -> Bool {
 /// Run `body` with the indent set to `column`, then restore it.
 fn[T] Cursor::with_indent(
   self : Cursor,
-  column : Int,
+  column : Int32,
   body : () -> T raise SyntaxError,
 ) -> T raise SyntaxError {
   let saved = self.indent
@@ -524,7 +524,7 @@ fn[T] Cursor::with_indent(
 ///|
 /// Deepest nesting of expressions, types and patterns the parser accepts.
 /// Deeper input gives a syntax error instead of a stack overflow.
-const MAX_DEPTH : Int = 150
+const MAX_DEPTH : Int32 = 150
 
 ///|
 /// Run `body` one step deeper in a right-recursive chain (`a :: b :: ...`,
@@ -684,7 +684,7 @@ fn combine(a : @ast.Range, b : @ast.Range) -> @ast.Range {
 }
 
 ///|
-fn shift(loc : @ast.Location, columns : Int) -> @ast.Location {
+fn shift(loc : @ast.Location, columns : Int32) -> @ast.Location {
   { row: loc.row, column: loc.column + columns, }
 }
 

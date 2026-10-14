@@ -1,5 +1,5 @@
 ///|
-fn at(row : Int, column : Int) -> @ast.Location {
+fn at(row : Int32, column : Int32) -> @ast.Location {
   { row, column, }
 }
 
@@ -131,10 +131,10 @@ test "law: generated ranges never run backwards and stay on the grid" {
 ///|
 /// A string made of these UTF-16 code units (string literals cannot hold a
 /// lone surrogate).
-fn units(xs : Array[Int]) -> String {
+fn units(xs : Array[Int32]) -> String {
   let sb = StringBuilder()
   for x in xs {
-    sb.write_char(Int::unsafe_to_char(x))
+    sb.write_char(Int32::unsafe_to_char(x))
   }
   sb.to_string()
 }

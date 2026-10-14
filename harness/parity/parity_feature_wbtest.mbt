@@ -50,13 +50,13 @@ impl @moonspec.World for ParityWorld with fn configure(self, setup) {
   })
   setup.given4(
     "the counts {int} files, {int} tokenized, {int} parsed, {int} matched",
-    fn(files : Int, tokenized : Int, parsed : Int, matched : Int) {
+    fn(files : Int32, tokenized : Int32, parsed : Int32, matched : Int32) {
       self.counts = { files, tokenized, parsed, matched, }
     },
   )
   setup.given4(
     "the baseline {int} files, {int} tokenized, {int} parsed, {int} matched",
-    fn(files : Int, tokenized : Int, parsed : Int, matched : Int) {
+    fn(files : Int32, tokenized : Int32, parsed : Int32, matched : Int32) {
       self.baseline = { files, tokenized, parsed, matched, }
     },
   )

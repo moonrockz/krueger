@@ -46,7 +46,7 @@ priv struct Spacer {
 ///|
 /// A space, or a line break and the indentation of a continuation line:
 /// right of `column`, the indentation of the enclosing layout item.
-fn Spacer::gap(self : Spacer, column : Int, at : Gap) -> String {
+fn Spacer::gap(self : Spacer, column : Int32, at : Gap) -> String {
   let breaks = match (self.policy, at) {
     (Never, _) => false
     (Always, _) => true
@@ -72,7 +72,7 @@ fn Spacer::leaf(self : Spacer) -> String {
 
 ///|
 /// An expression that needs no parentheses as an argument.
-fn Spacer::atom(self : Spacer, size : Int, column : Int) -> String {
+fn Spacer::atom(self : Spacer, size : Int32, column : Int32) -> String {
   if size <= 0 {
     return self.leaf()
   }
@@ -123,7 +123,7 @@ fn Spacer::atom(self : Spacer, size : Int, column : Int) -> String {
 
 ///|
 /// An expression whose continuation lines go right of `column`.
-fn Spacer::expr(self : Spacer, size : Int, column : Int) -> String {
+fn Spacer::expr(self : Spacer, size : Int32, column : Int32) -> String {
   if size <= 0 {
     return self.leaf()
   }
@@ -164,7 +164,7 @@ fn Spacer::expr(self : Spacer, size : Int, column : Int) -> String {
 
 ///|
 /// A type whose continuation lines go right of `column`.
-fn Spacer::type_(self : Spacer, size : Int, column : Int) -> String {
+fn Spacer::type_(self : Spacer, size : Int32, column : Int32) -> String {
   if size <= 0 {
     return one(self.rs, ["Int", "a", "()", "String"])
   }
@@ -204,7 +204,7 @@ fn Spacer::type_(self : Spacer, size : Int, column : Int) -> String {
 ///|
 /// The body of a declaration at column 1: an expression after `=` (on the
 /// line or the next), a `case` or a `let`.
-fn Spacer::body(self : Spacer, size : Int) -> String {
+fn Spacer::body(self : Spacer, size : Int32) -> String {
   let s = size / 2
   match pick(self.rs, 4) {
     0 => {
@@ -228,7 +228,7 @@ fn Spacer::body(self : Spacer, size : Int) -> String {
 }
 
 ///|
-fn Spacer::declaration(self : Spacer, i : Int, size : Int) -> String {
+fn Spacer::declaration(self : Spacer, i : Int32, size : Int32) -> String {
   match pick(self.rs, 4) {
     0 =>
       "type alias T\{i} a =" + self.gap(0, Other) + self.type_(size, 0) + "\n"

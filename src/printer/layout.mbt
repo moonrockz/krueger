@@ -9,8 +9,8 @@ fn sequence(
   open : String,
   close : String,
   items : Array[@pretty.Doc],
-  leads? : Array[@pretty.Doc] = [],
-  inner? : @pretty.Doc = @pretty.empty(),
+  leads~ : Array[@pretty.Doc] = [],
+  inner~ : @pretty.Doc = @pretty.empty(),
 ) -> @pretty.Doc {
   guard !items.is_empty() else {
     return @pretty.text(open) + inner + @pretty.text(close)
@@ -35,8 +35,8 @@ fn extension(
   split : Split,
   base : @pretty.Doc,
   fields : Array[@pretty.Doc],
-  leads? : Array[@pretty.Doc] = [],
-  inner? : @pretty.Doc = @pretty.empty(),
+  leads~ : Array[@pretty.Doc] = [],
+  inner~ : @pretty.Doc = @pretty.empty(),
 ) -> @pretty.Doc {
   let mut body = @pretty.text("| ") + @pretty.nest(2, fields[0])
   for i in 1..<fields.length() {
@@ -78,7 +78,7 @@ fn field(
 fn parens(
   split : Split,
   d : @pretty.Doc,
-  inner? : @pretty.Doc = @pretty.empty(),
+  inner~ : @pretty.Doc = @pretty.empty(),
 ) -> @pretty.Doc {
   @pretty.group(
     @pretty.align(
@@ -144,7 +144,7 @@ fn flat_sequence(
   open : String,
   close : String,
   items : Array[@pretty.Doc],
-  inner? : @pretty.Doc = @pretty.empty(),
+  inner~ : @pretty.Doc = @pretty.empty(),
 ) -> @pretty.Doc {
   guard !items.is_empty() else {
     return @pretty.text(open) + inner + @pretty.text(close)
@@ -164,7 +164,7 @@ fn flat_parens(d : @pretty.Doc) -> @pretty.Doc {
 
 ///|
 /// `n` line breaks.
-fn line_breaks(n : Int) -> @pretty.Doc {
+fn line_breaks(n : Int32) -> @pretty.Doc {
   let mut d = @pretty.empty()
   for _ in 0..<n {
     d = d + @pretty.hardline()

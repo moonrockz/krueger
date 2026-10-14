@@ -9,8 +9,8 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/encoding/hex",
   "moonbitlang/core/encoding/utf8",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -79,7 +79,7 @@ fn is_syntax_title(title : String) -> Bool {
 ///|
 /// The elm make verdict for one fixture from its exit code and stderr (the
 /// `--report=json` output).
-fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
+fn elm_make_verdict(code : Int32, stderr : String) -> Json raise {
   if code == 0 {
     return { "accepted": true }
   }
@@ -112,7 +112,7 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
   if is_syntax_title(title) {
     return {
       "accepted": false,
-      "title": title.to_json(),
+      "title": Json(title),
       "region": region_json,
       "message": message,
     }
@@ -122,7 +122,7 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
     // every project even though the parser accepted the file.
     return {
       "accepted": false,
-      "title": title.to_json(),
+      "title": Json(title),
       "region": region_json,
       "message": message,
       "later": true,
@@ -131,7 +131,7 @@ fn elm_make_verdict(code : Int, stderr : String) -> Json raise {
   // The parser accepted the file; a later phase (naming, types) failed.
   {
     "accepted": true,
-    "later_error": title.to_json(),
+    "later_error": Json(title),
     "region": region_json,
     "message": message,
   }
@@ -211,7 +211,7 @@ async fn elm_files(dir : String) -> Array[String] {
 
 ///|
 /// Compare strings by code unit (`String::compare` compares length first).
-fn compare_lexical(a : String, b : String) -> Int {
+fn compare_lexical(a : String, b : String) -> Int32 {
   let n = if a.length() < b.length() { a.length() } else { b.length() }
   for i in 0..<n {
     let c = a.code_unit_at(i).compare(b.code_unit_at(i))
@@ -226,7 +226,7 @@ fn compare_lexical(a : String, b : String) -> Int {
 async fn run_or_exit(
   cmd : String,
   args : Array[String],
-  cwd? : String = ".",
+  cwd~ : String = ".",
 ) -> Unit {
   let code = @process.run(cmd, args, cwd~)
   if code != 0 {
@@ -319,9 +319,9 @@ async fn record(
       return
     }
     recorded[file] = {
-      "sha256": hashes[file].to_json(),
+      "sha256": Json(hashes[file]),
       "elm-0.19.1": elm_make[file],
-      "elm-syntax-7.3.9": { "accepted": accepted.to_json() },
+      "elm-syntax-7.3.9": { "accepted": Json(accepted) },
     }
   }
   @fs.write_file(out, Json::object(recorded).stringify(indent=2) + "\n")
@@ -390,7 +390,7 @@ async fn main {
 ///|
 /// Scenario state for `features/rejection.feature`.
 struct RejectionWorld {
-  mut code : Int
+  mut code : Int32
   mut stderr : String
   mut oracle : String
 }
@@ -409,14 +409,14 @@ impl @moonspec.World for RejectionWorld with fn configure(self, setup) {
     @expect.expect(is_syntax_title(title)).to_equal(expected == "yes")
   })
   setup.when2("elm make exits with {int} and stderr:", fn(
-    code : Int,
+    code : Int32,
     doc : @moonspec.DocString,
   ) {
     self.code = code
     self.stderr = doc.content
   })
   setup.when2("elm make exits with {int} and stderr containing a tab:", fn(
-    code : Int,
+    code : Int32,
     doc : @moonspec.DocString,
   ) {
     self.code = code

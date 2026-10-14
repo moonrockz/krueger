@@ -1,5 +1,5 @@
 ///|
-fn pos(offset : Int, line : Int, column : Int) -> @scanner.Position {
+fn pos(offset : Int32, line : Int32, column : Int32) -> @scanner.Position {
   @scanner.Position::{ offset, line, column, }
 }
 

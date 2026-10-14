@@ -142,7 +142,7 @@ fn cursor_preorder(root : @krueger.NodeRef) -> Array[String] {
 
 ///|
 /// The number written with the decimal digits `s`, if it has only digits.
-fn digits(s : StringView) -> Int? {
+fn digits(s : StringView) -> Int32? {
   let mut n = 0
   for c in s {
     if c < '0' || c > '9' {
@@ -171,7 +171,7 @@ fn shown_path(path : @krueger.NodePath) -> String {
 /// Checks that each pushed Leave closes the latest open Enter.
 struct PairCheck {
   open : Array[@krueger.NodePath]
-  mut problems : Int
+  mut problems : Int32
 }
 
 ///|

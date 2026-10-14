@@ -19,9 +19,9 @@ fn Ctx::documentation_doc(
 fn Ctx::signature_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   s : @ast.Signature,
-  range? : @ast.Range? = None,
+  range~ : @ast.Range? = None,
 ) -> @pretty.Doc raise PrintError {
   // elm-format Box.hs formatTypeAnnotation: the comments between the name
   // and the `:` follow the name (`formatTailCommented`). When one of them
@@ -86,7 +86,7 @@ fn Ctx::signature_doc(
 fn Ctx::function_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   f : @ast.Function,
 ) -> @pretty.Doc raise PrintError {
   self.run(self.function_plan(path, level, f))
@@ -97,7 +97,7 @@ fn Ctx::function_doc(
 /// the implementation, or the comments between them.
 priv enum FunctionPart {
   Main
-  Between(Int)
+  Between(Int32)
 }
 
 ///|
@@ -113,15 +113,15 @@ priv enum FunctionPart {
 fn Ctx::function_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   f : @ast.Function,
-  in_let? : Bool = false,
+  in_let~ : Bool = false,
 ) -> Work {
   let parts = []
   let kinds = []
   // Whether each block of comments has comments, set when its item runs.
   let found = [false, false, false]
-  let comments = (k : Int, take : () -> Array[@ast.Node[String]]) => {
+  let comments = (k : Int32, take : () -> Array[@ast.Node[String]]) => {
     kinds.push(Between(k))
     parts.push(
       Leaf(() => {

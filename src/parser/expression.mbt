@@ -9,7 +9,7 @@ fn expression(c : Cursor) -> @ast.Node[@ast.Expression] raise SyntaxError {
 /// operators whose precedence is above `min` (or equal when `or_equal`).
 fn expression_above(
   c : Cursor,
-  min : Int,
+  min : Int32,
   or_equal : Bool,
 ) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let mut left = application(c)
@@ -53,7 +53,7 @@ fn expression_above(
 /// operator of the same precedence is an error.
 fn non_associative_right(
   c : Cursor,
-  precedence : Int,
+  precedence : Int32,
 ) -> @ast.Node[@ast.Expression] raise SyntaxError {
   let right = expression_above(c, precedence, false)
   if c.positively_indented() &&

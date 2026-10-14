@@ -1,6 +1,6 @@
 ///|
 /// Random path steps: a field ("a" or "b") and an index below 4.
-struct Steps(Array[(Bool, UInt)]) derive(Debug)
+struct Steps(Array[(Bool, UInt32)]) derive(Debug)
 
 ///|
 impl @quickcheck.Arbitrary for Steps with fn arbitrary(size, rs) {
@@ -46,7 +46,7 @@ test "law: a child path's parent is the path, and its steps grow by the new step
 }
 
 ///|
-fn steps_of(xs : ArrayView[(Bool, UInt)]) -> Array[@syntax.PathStep] {
+fn steps_of(xs : ArrayView[(Bool, UInt32)]) -> Array[@syntax.PathStep] {
   xs.map(x => {
     field: if x.0 {
       "a"

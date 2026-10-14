@@ -8,7 +8,7 @@ fn sexpr(json : Json) -> String {
     True => "true"
     False => "false"
     Number(n, ..) => Json::number(n).stringify()
-    String(s) => s.to_json().stringify()
+    String(s) => Json(s).stringify()
     Array(items) => "[" + items.map(sexpr).join(" ") + "]"
     Object(o) =>
       match (o.get("range"), o.get("value"), o.get("type")) {

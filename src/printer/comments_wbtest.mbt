@@ -116,7 +116,7 @@ test "two comments with the same owner and role keep source order" {
 
 ///|
 test "generated commented modules parse without errors" {
-  let rs = @splitmix.new(seed=2027)
+  let rs = @splitmix.RandomState(seed=2027)
   let counts = [0, 0, 0]
   let mut crlf = 0
   for i in 0..<200 {

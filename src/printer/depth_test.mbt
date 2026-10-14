@@ -139,7 +139,7 @@ test "401 nested types raise TooDeep" {
 ///|
 /// One of each nested expression construct, at the next printer level.
 fn wrap_expr(
-  i : Int,
+  i : Int32,
   e : @ast.Node[@ast.Expression],
 ) -> @ast.Node[@ast.Expression] {
   let y : @ast.Node[@ast.Expression] = n(FunctionOrValue([][:], "y"))

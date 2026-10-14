@@ -31,7 +31,7 @@ fn pattern_parens(p : @ast.Pattern, at : PatternAt) -> Bool {
 fn Ctx::pattern_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   p : @ast.Node[@ast.Pattern],
   at : PatternAt,
 ) -> @pretty.Doc raise PrintError {
@@ -48,7 +48,7 @@ fn Ctx::pattern_doc(
 fn Ctx::pattern_body(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   p : @ast.Node[@ast.Pattern],
   at : PatternAt,
 ) -> @pretty.Doc raise PrintError {
@@ -178,7 +178,7 @@ fn Ctx::pattern_body(
 fn Ctx::pattern_items(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   items : ArrayView[@ast.Node[@ast.Pattern]],
 ) -> Array[(@pretty.Doc, @ast.Range)] raise PrintError {
   let docs = []

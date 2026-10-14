@@ -27,8 +27,8 @@
 /// ```
 pub fn print_type_annotation(
   t : @ast.Node[@ast.TypeAnnotation],
-  width? : Int = 120,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  width~ : Int32 = 120,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.type_doc(@syntax.NodePath::root(), 0, t, AnyType), width~)
@@ -80,8 +80,8 @@ pub fn print_type_annotation(
 /// ```
 pub fn print_pattern(
   p : @ast.Node[@ast.Pattern],
-  width? : Int = 120,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  width~ : Int32 = 120,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(
@@ -122,8 +122,8 @@ pub fn print_pattern(
 /// ```
 pub fn print_expression(
   e : @ast.Node[@ast.Expression],
-  width? : Int = 120,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  width~ : Int32 = 120,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), 0, e, AnyExpr), width~)
@@ -164,8 +164,8 @@ pub fn print_expression(
 /// ```
 pub fn print_declaration(
   d : @ast.Node[@ast.Declaration],
-  width? : Int = 120,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  width~ : Int32 = 120,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.declaration_doc(@syntax.NodePath::root(), 0, d), width~)
@@ -204,8 +204,8 @@ pub fn print_declaration(
 /// ```
 pub fn print_file(
   file : @ast.File,
-  width? : Int = 120,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  width~ : Int32 = 120,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
   @pretty.render(ctx.file_doc(file), width~)

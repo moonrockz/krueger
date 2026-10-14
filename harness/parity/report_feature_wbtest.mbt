@@ -17,7 +17,7 @@ fn ReportWorld::report(self : ReportWorld) -> ParityReport {
 }
 
 ///|
-fn count_occurrences(text : String, needle : String) -> Int {
+fn count_occurrences(text : String, needle : String) -> Int32 {
   text.split(needle).count() - 1
 }
 
@@ -51,13 +51,13 @@ fn json_counts(json : Json) -> String raise {
 impl @moonspec.World for ReportWorld with fn configure(self, setup) {
   setup.given4(
     "a parity run with baseline {int} files, {int} tokenized, {int} parsed, {int} matched",
-    fn(files : Int, tokenized : Int, parsed : Int, matched : Int) {
+    fn(files : Int32, tokenized : Int32, parsed : Int32, matched : Int32) {
       self.baseline = Some({ files, tokenized, parsed, matched, })
     },
   )
   setup.given4(
     "the baseline was {int} files, {int} tokenized, {int} parsed, {int} matched",
-    fn(files : Int, tokenized : Int, parsed : Int, matched : Int) {
+    fn(files : Int32, tokenized : Int32, parsed : Int32, matched : Int32) {
       self.baseline = Some({ files, tokenized, parsed, matched, })
     },
   )
@@ -112,7 +112,12 @@ impl @moonspec.World for ReportWorld with fn configure(self, setup) {
   })
   setup.then4(
     "the JSON counts are {int} files, {int} tokenized, {int} parsed, {int} matched",
-    fn(files : Int, tokenized : Int, parsed : Int, matched : Int) raise {
+    fn(
+      files : Int32,
+      tokenized : Int32,
+      parsed : Int32,
+      matched : Int32,
+    ) raise {
       @expect.expect(
         json_counts(json_field(@json.parse(self.output), "counts")),
       ).to_equal(
@@ -122,13 +127,18 @@ impl @moonspec.World for ReportWorld with fn configure(self, setup) {
   )
   setup.then4(
     "the JSON delta is {int} files, {int} tokenized, {int} parsed, {int} matched",
-    fn(files : Int, tokenized : Int, parsed : Int, matched : Int) raise {
+    fn(
+      files : Int32,
+      tokenized : Int32,
+      parsed : Int32,
+      matched : Int32,
+    ) raise {
       @expect.expect(json_counts(json_field(@json.parse(self.output), "delta"))).to_equal(
         "\{files} files, \{tokenized} tokenized, \{parsed} parsed, \{matched} matched",
       )
     },
   )
-  setup.then1("the JSON report lists {int} files", fn(n : Int) raise {
+  setup.then1("the JSON report lists {int} files", fn(n : Int32) raise {
     guard json_field(@json.parse(self.output), "files") is Array(files) else {
       fail("files is not an array")
     }
@@ -159,7 +169,7 @@ impl @moonspec.World for ReportWorld with fn configure(self, setup) {
   })
   setup.then3(
     "the JUnit report has a testsuite {string} with {int} tests and {int} skipped",
-    fn(name : String, tests : Int, skipped : Int) raise {
+    fn(name : String, tests : Int32, skipped : Int32) raise {
       @expect.expect(self.output).to_contain(
         "<testsuite name=\"\{name}\" tests=\"\{tests}\" failures=\"0\" skipped=\"\{skipped}\">",
       )
@@ -179,7 +189,7 @@ impl @moonspec.World for ReportWorld with fn configure(self, setup) {
   setup.then1("the HTML report contains {string}", fn(text : String) raise {
     @expect.expect(self.output).to_contain(text)
   })
-  setup.then1("the HTML report has {int} file rows", fn(n : Int) raise {
+  setup.then1("the HTML report has {int} file rows", fn(n : Int32) raise {
     @expect.expect(count_occurrences(self.output, "<tr class=\"file\"")).to_equal(
       n,
     )

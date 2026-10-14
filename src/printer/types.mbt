@@ -10,7 +10,7 @@ priv enum TypeAt {
 fn Ctx::type_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   t : @ast.Node[@ast.TypeAnnotation],
   at : TypeAt,
 ) -> @pretty.Doc raise PrintError {
@@ -24,7 +24,7 @@ fn Ctx::type_doc(
 fn Ctx::type_parts(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   t : @ast.Node[@ast.TypeAnnotation],
   at : TypeAt,
 ) -> (@pretty.Doc, @pretty.Doc, @pretty.Doc) raise PrintError {
@@ -132,7 +132,7 @@ fn Ctx::type_paren_comments(
 fn Ctx::type_body(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   t : @ast.Node[@ast.TypeAnnotation],
   at : TypeAt,
 ) -> @pretty.Doc raise PrintError {
@@ -250,7 +250,7 @@ fn Ctx::record_fields(
   self : Ctx,
   path : @syntax.NodePath,
   field_name : String,
-  level : Int,
+  level : Int32,
   fields : @ast.RecordDefinition,
 ) -> (Array[@pretty.Doc], Array[@pretty.Doc]) raise PrintError {
   let docs = []
@@ -342,9 +342,9 @@ fn Ctx::record_fields(
 fn Ctx::arrow_chain(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int,
+  level : Int32,
   t : @ast.Node[@ast.TypeAnnotation],
-  eol? : Array[@ast.Node[String]] = [],
+  eol~ : Array[@ast.Node[String]] = [],
 ) -> @pretty.Doc raise PrintError {
   let split = self.split_within(t.range)
   let mut node = t

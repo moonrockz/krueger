@@ -28,7 +28,7 @@ priv struct ExposeComments {
   /// The comments between `exposing` and `(`.
   before_paren : Array[@ast.Node[String]]
   items : Map[
-    (Int, String),
+    (Int32, String),
     (Array[@ast.Node[String]], Array[@ast.Node[String]]),
   ]
 }
@@ -145,7 +145,7 @@ fn Ctx::exposing_list(
       guard !items.is_empty() else {
         raise PrintError(path~, problem=EmptyExposing)
       }
-      let position : Map[(Int, String), Int] = Map([])
+      let position : Map[(Int32, String), Int32] = Map([])
       for i, x in items {
         position[expose_order(x.value)] = i
       }
@@ -157,7 +157,7 @@ fn Ctx::exposing_list(
         )
       }
       let none = ([], [])
-      let documented : Map[(Int, String), Unit] = Map([])
+      let documented : Map[(Int32, String), Unit] = Map([])
       for k in 0..<groups.documented {
         for x in groups.groups[k] {
           documented[expose_order(x.value)] = ()
@@ -270,7 +270,7 @@ fn Ctx::exposing_doc(
   groups : ExposingGroups,
   comments : ExposeComments,
   split : Split,
-  import_? : Bool = false,
+  import_~ : Bool = false,
 ) -> @pretty.Doc raise PrintError {
   // The comments before `exposing` go on lines of their own.
   let cs = self.take(Leading, e.range)
@@ -564,7 +564,7 @@ fn Ctx::import_doc(
   i : @ast.Node[@ast.Import],
   comments : ExposeComments,
   split : Split,
-  after_name? : Array[@ast.Node[String]] = [],
+  after_name~ : Array[@ast.Node[String]] = [],
 ) -> @pretty.Doc raise PrintError {
   let name = i.value.module_name
   // The comments after `as` (taken before the name's own comments).

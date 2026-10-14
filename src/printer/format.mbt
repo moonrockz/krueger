@@ -63,8 +63,8 @@ pub suberror FormatError {
 /// ```
 pub fn format(
   source : String,
-  layout? : Layout = ElmFormat,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  layout~ : Layout = ElmFormat,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise FormatError {
   format_source(source, layout, dialect, 0)
 }
@@ -75,7 +75,7 @@ fn format_source(
   source : String,
   layout : Layout,
   dialect : @dialect.Dialect,
-  doc_depth : Int,
+  doc_depth : Int32,
 ) -> String raise FormatError {
   let result = @parser.parse_module(
     @scanner.SourceText::new(source),
@@ -113,8 +113,8 @@ fn format_source(
 /// ```
 pub fn format_parsed(
   result : @parser.ParseResult,
-  layout? : Layout = ElmFormat,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  layout~ : Layout = ElmFormat,
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise FormatError {
   format_parsed_at(result, layout, dialect, 0)
 }
@@ -125,7 +125,7 @@ fn format_parsed_at(
   result : @parser.ParseResult,
   layout : Layout,
   dialect : @dialect.Dialect,
-  doc_depth : Int,
+  doc_depth : Int32,
 ) -> String raise FormatError {
   let errors = result.diagnostics.filter(d => d.severity is Error)
   // With no error, the parser gives an AST and a CST. `errors` is empty

@@ -8,8 +8,8 @@
 /// `column` the column, both counted from 1. Columns count code points, so a
 /// character outside the BMP (a surrogate pair) is one column.
 pub(all) struct Location {
-  row : Int
-  column : Int
+  row : Int32
+  column : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -138,7 +138,7 @@ pub(all) enum Declaration {
 /// Elm.Syntax.Infix.Infix
 pub(all) struct Infix {
   direction : Node[InfixDirection]
-  precedence : Node[Int]
+  precedence : Node[Int32]
   operator : Node[String]
   function : Node[String]
 } derive(Eq, Debug)

@@ -49,7 +49,7 @@ row in an array, so that each conversion reads only one row.
 /// The rows of a source text: the UTF-16 offset where each row starts.
 struct AxRows {
   text : String
-  starts : Array[Int]
+  starts : Array[Int32]
 }
 
 ///|
@@ -66,7 +66,7 @@ fn AxRows::new(text : String) -> AxRows {
 
 ///|
 /// The UTF-16 offset where row `row` (0-based) ends, before its line break.
-fn AxRows::row_end(self : AxRows, row : Int) -> Int {
+fn AxRows::row_end(self : AxRows, row : Int32) -> Int32 {
   if row + 1 >= self.starts.length() {
     return self.text.length()
   }
@@ -83,7 +83,7 @@ fn AxRows::row_end(self : AxRows, row : Int) -> Int {
 ///|
 /// The UTF-16 offset of an elm-syntax location. A location after the end of
 /// its row (or of the text) gives the end of that row (or of the text).
-fn AxRows::offset(self : AxRows, at : @ast.Location) -> Int {
+fn AxRows::offset(self : AxRows, at : @ast.Location) -> Int32 {
   if at.row < 1 {
     return 0
   }
@@ -103,7 +103,7 @@ fn AxRows::offset(self : AxRows, at : @ast.Location) -> Int {
 
 ///|
 /// Whether a surrogate pair (one code point, two UTF-16 units) starts at `i`.
-fn ax_is_pair(text : String, i : Int, end : Int) -> Bool {
+fn ax_is_pair(text : String, i : Int32, end : Int32) -> Bool {
   let high = text.code_unit_at(i).to_int()
   i + 1 < end &&
   high >= 0xD800 &&
@@ -152,8 +152,8 @@ pairs, so the two stacks stay in step.
 ///|
 /// A node that is open: `enter` has run, `leave` has not.
 struct AxFrame {
-  start : Int
-  end : Int
+  start : Int32
+  end : Int32
   fields : Map[String, Json]
   children : Array[Json]
 }

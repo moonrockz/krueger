@@ -44,7 +44,7 @@ let header_import_items : Array[String] = ["x", "y", "T", "T(..)", "(+)", "Z"]
 fn some_of(
   rs : @splitmix.RandomState,
   pool : Array[String],
-  count : Int,
+  count : Int32,
 ) -> Array[String] {
   let out = []
   for _ in 0..<count {

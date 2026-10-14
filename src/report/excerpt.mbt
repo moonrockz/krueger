@@ -15,12 +15,12 @@ fn source_lines(source : @scanner.SourceText) -> Array[String] {
 }
 
 ///|
-fn digits(n : Int) -> Int {
+fn digits(n : Int32) -> Int32 {
   n.to_string().length()
 }
 
 ///|
-fn pad_left(text : String, width : Int) -> String {
+fn pad_left(text : String, width : Int32) -> String {
   " ".repeat(width - text.length()) + text
 }
 

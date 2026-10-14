@@ -1,6 +1,6 @@
 ///|
 fn location_json(p : @scanner.Position) -> Json {
-  { "line": p.line.to_json(), "column": p.column.to_json() }
+  { "line": Json(p.line), "column": Json(p.column) }
 }
 
 ///|
@@ -22,17 +22,17 @@ fn message_json(
       Plain(text) => plain.write_string(text)
       Styled(text~, color~, bold~, underline~) => {
         if plain.to_string() != "" {
-          parts.push(plain.to_string().to_json())
+          parts.push(Json(plain.to_string()))
           plain.reset()
         }
         parts.push({
-          "bold": bold.to_json(),
-          "underline": underline.to_json(),
+          "bold": Json(bold),
+          "underline": Json(underline),
           "color": match color {
-            Some(c) => c.json_name().to_json()
+            Some(c) => Json(c.json_name())
             None => Json::null()
           },
-          "string": text.to_json(),
+          "string": Json(text),
         })
       }
     }
@@ -44,7 +44,7 @@ fn message_json(
     rest
   }
   if rest != "" {
-    parts.push(rest.to_json())
+    parts.push(Json(rest))
   }
   Json::array(parts)
 }
@@ -101,7 +101,7 @@ pub fn render_elm_json(
   let problems : Array[Json] = diags
     .filter(d => d.severity is Error)
     .map(d => {
-      "title": d.title.to_json(),
+      "title": Json(d.title),
       "region": span_json(region(d)),
       "message": message_json(d, source),
     })
@@ -110,8 +110,8 @@ pub fn render_elm_json(
   } else {
     [
       {
-        "path": path.to_json(),
-        "name": source.module_name.unwrap_or("Main").to_json(),
+        "path": Json(path),
+        "name": Json(source.module_name.unwrap_or("Main")),
         "problems": Json::array(problems),
       },
     ]
@@ -153,10 +153,10 @@ fn severity_name(severity : @scanner.Severity) -> String {
 pub fn encode_diagnostics(diags : Array[@scanner.Diagnostic]) -> Json {
   Json::array(
     diags.map(d => {
-      "code": d.code.to_json(),
-      "severity": severity_name(d.severity).to_json(),
-      "title": d.title.to_json(),
-      "message": d.message.to_json(),
+      "code": Json(d.code),
+      "severity": Json(severity_name(d.severity)),
+      "title": Json(d.title),
+      "message": Json(d.message),
       "span": span_json(d.span),
     }),
   )

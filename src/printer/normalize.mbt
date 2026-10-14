@@ -1,7 +1,7 @@
 ///|
 /// The sort key of an exposed item (elm-format `varOrder`): operators, then
 /// types, then values; by name in each kind.
-fn expose_order(x : @ast.TopLevelExpose) -> (Int, String) {
+fn expose_order(x : @ast.TopLevelExpose) -> (Int32, String) {
   match x {
     InfixExpose(s) => (1, s)
     TypeOrAliasExpose(name) => (2, name)
@@ -19,7 +19,7 @@ fn expose_name(x : @ast.TopLevelExpose) -> String {
 
 ///|
 /// Compares two names by code point, as Haskell compares strings.
-fn compare_names(a : String, b : String) -> Int {
+fn compare_names(a : String, b : String) -> Int32 {
   let xs : Array[Char] = []
   for c in a {
     xs.push(c)
@@ -38,7 +38,7 @@ fn compare_names(a : String, b : String) -> Int {
 }
 
 ///|
-fn compare_order(a : (Int, String), b : (Int, String)) -> Int {
+fn compare_order(a : (Int32, String), b : (Int32, String)) -> Int32 {
   if a.0 != b.0 {
     a.0.compare(b.0)
   } else {
@@ -60,7 +60,7 @@ fn is_open(x : @ast.TopLevelExpose) -> Bool {
 fn normalize_exposes(
   items : ArrayView[@ast.Node[@ast.TopLevelExpose]],
 ) -> Array[@ast.Node[@ast.TopLevelExpose]] {
-  let index : Map[(Int, String), Int] = Map([])
+  let index : Map[(Int32, String), Int32] = Map([])
   let out = []
   for x in items {
     let key = expose_order(x.value)
@@ -117,7 +117,7 @@ fn module_key(name : @ast.ModuleName) -> String {
 fn normalize_imports(
   imports : ArrayView[@ast.Node[@ast.Import]],
 ) -> Array[@ast.Node[@ast.Import]] {
-  let index : Map[String, Int] = Map([])
+  let index : Map[String, Int32] = Map([])
   let out : Array[@ast.Node[@ast.Import]] = []
   for imp in imports {
     let key = module_key(imp.value.module_name.value)
@@ -242,7 +242,7 @@ fn normalize_imports(
 /// ```
 pub fn normalize_file(
   file : @ast.File,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> @ast.File {
   normalize_docs(normalize_parens(normalize_header(file), dialect), dialect)
 }
@@ -334,7 +334,7 @@ fn exposing_of(m : @ast.Module) -> @ast.Node[@ast.Exposing] {
 ///|
 /// The index of the port declaration that doc comment `c` documents (it
 /// ends on the row before the port), if any.
-fn documented_port(file : @ast.File, c : @ast.Node[String]) -> Int? {
+fn documented_port(file : @ast.File, c : @ast.Node[String]) -> Int32? {
   for j, decl in file.declarations {
     if decl.value is PortDeclaration(_) &&
       decl.range.start.row == c.range.end.row + 1 {
@@ -358,7 +358,7 @@ fn module_documentation(file : @ast.File) -> @ast.Node[String]? {
 
 ///|
 /// The number of spaces at the start of `line`.
-fn indentation(line : String) -> Int {
+fn indentation(line : String) -> Int32 {
   let mut n = 0
   for c in line {
     guard c == ' ' else { break }
@@ -566,7 +566,7 @@ fn docs_key(name : String) -> String {
 /// `@docs` lines.
 priv struct ExposingGroups {
   groups : Array[Array[@ast.Node[@ast.TopLevelExpose]]]
-  documented : Int
+  documented : Int32
 }
 
 ///|

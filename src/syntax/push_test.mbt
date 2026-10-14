@@ -50,7 +50,7 @@ test "push_events follows the handler's SkipChildren and Stop" {
 ///|
 /// A handler with only `on_leave`.
 struct LeaveTally {
-  mut tally : Int
+  mut tally : Int32
 }
 
 ///|
@@ -81,7 +81,7 @@ test "push_events handles a 398-level tree" {
 /// `EnterEvent::new` and `LeaveEvent::new`.
 struct Replay {
   events : Array[@syntax.Event]
-  mut at : Int
+  mut at : Int32
 }
 
 ///|

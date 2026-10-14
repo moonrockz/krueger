@@ -22,7 +22,7 @@ fn declaration_error_code(kind : DeclarationKind) -> (String, String) {
 /// Skip to the next token on column 1 (the next top-level item). The item
 /// started at `start`; the cursor moves past it at least one token, so a
 /// failure on the item's last token does not skip the next item.
-fn skip_to_top_level(c : Cursor, start : Int) -> Unit {
+fn skip_to_top_level(c : Cursor, start : Int32) -> Unit {
   if !c.at_end() && c.pos <= start {
     c.pos = start + 1
   }
@@ -92,7 +92,7 @@ fn not_at_module_level(c : Cursor, t : @scanner.Token) -> Problem {
 
 ///|
 /// Span of the tokens from `start` up to the cursor.
-fn span_since(c : Cursor, start : Int) -> @scanner.Span {
+fn span_since(c : Cursor, start : Int32) -> @scanner.Span {
   let first = c.tokens[start]
   let last = if c.pos > start { c.tokens[c.pos - 1] } else { first }
   { start: first.span.start, end: last.span.end, }
@@ -269,7 +269,7 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 /// ```
 pub fn parse_tokens(
   tokens : @scanner.TokenStream,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> ParseResult {
   let stream = tokens.tokens
   let c = Cursor::new(stream, dialect)
@@ -579,7 +579,7 @@ fn collect_attributes(
 pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,
-  dialect? : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> ParseResult {
   match scanner.tokenize(source) {
     Ok(tokens) => parse_tokens(tokens, dialect~)

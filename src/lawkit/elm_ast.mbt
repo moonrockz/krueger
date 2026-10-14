@@ -86,7 +86,7 @@ fn gen_ast_leaf(rs : @splitmix.RandomState) -> @ast.Expression {
 
 ///|
 fn gen_ast_expr(
-  size : Int,
+  size : Int32,
   rs : @splitmix.RandomState,
 ) -> @ast.Node[@ast.Expression] {
   if size <= 0 {
@@ -179,7 +179,7 @@ fn gen_ast_expr(
 ///|
 /// A pattern for a case branch.
 fn gen_ast_pattern(
-  size : Int,
+  size : Int32,
   rs : @splitmix.RandomState,
 ) -> @ast.Node[@ast.Pattern] {
   if size <= 0 {
@@ -235,7 +235,7 @@ fn gen_arg_pattern(rs : @splitmix.RandomState) -> @ast.Node[@ast.Pattern] {
 
 ///|
 fn gen_ast_type(
-  size : Int,
+  size : Int32,
   rs : @splitmix.RandomState,
 ) -> @ast.Node[@ast.TypeAnnotation] {
   if size <= 0 {
@@ -287,7 +287,7 @@ fn gen_ast_type(
 ///|
 fn gen_ast_function(
   name : String,
-  size : Int,
+  size : Int32,
   rs : @splitmix.RandomState,
 ) -> @ast.Function {
   let args = []
@@ -315,7 +315,7 @@ fn gen_ast_function(
 }
 
 ///|
-fn gen_ast_file(size : Int, rs : @splitmix.RandomState) -> @ast.File {
+fn gen_ast_file(size : Int32, rs : @splitmix.RandomState) -> @ast.File {
   let decls : Array[@ast.Node[@ast.Declaration]] = []
   for i in 0..<(1 + pick(rs, 3)) {
     decls.push(

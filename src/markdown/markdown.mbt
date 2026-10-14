@@ -11,7 +11,7 @@ priv enum Block {
 ///|
 priv enum Leaf {
   Para(String)
-  Header(Int, String)
+  Header(Int32, String)
   Code(String, String) // language, code
   Html(String)
   Rule
@@ -68,7 +68,7 @@ priv enum ListKind {
 /// ```
 pub fn format_doc(
   text : String,
-  format_code? : (String) -> String? = _ => None,
+  format_code~ : (String) -> String? = _ => None,
 ) -> String {
   let mut md = prepare(text)
   if too_nested(md) {
@@ -97,8 +97,8 @@ pub fn format_doc(
 ///|
 /// A change to the parsed text: `text` replaces `src[start:end]`.
 priv struct Edit {
-  start : Int
-  end : Int
+  start : Int32
+  end : Int32
   text : String
 }
 
@@ -181,7 +181,7 @@ fn too_nested(md : String) -> Bool {
             spaces += 1
           }
         '>' => levels += 1
-        '-' | '*' | '+' | '.' | ')' | '0'..='9' => ()
+        '-' | '*' | '+' | '.' | ')' | '0'..<='9' => ()
         _ => break
       }
       prev = c
@@ -244,7 +244,7 @@ priv enum Conv {
 ///|
 priv struct ConvSeq {
   items : Array[@cmark.Block]
-  mut next : Int
+  mut next : Int32
   out : Array[Block]
 }
 
@@ -253,7 +253,7 @@ priv struct ConvList {
   kind : ListKind
   tight : Bool
   items : Array[@cmark.Block]
-  mut next : Int
+  mut next : Int32
   out : Array[Array[Block]]
 }
 
@@ -430,10 +430,10 @@ fn to_blocks(
 /// follows it.
 fn renumber_marks(
   lines : Array[String],
-  starts : Array[Int],
+  starts : Array[Int32],
   src : String,
 ) -> Array[Edit] {
-  let column = (offset : Int) => {
+  let column = (offset : Int32) => {
     let mut i = offset
     while i > 0 && src.code_unit_at(i - 1).to_int() != 0x0A {
       i -= 1
@@ -459,7 +459,7 @@ fn renumber_marks(
 ///|
 /// The number of digits of the ordered list mark (`12. ` or `12) `, not
 /// `1`) at the start of `line`, when text follows the mark.
-fn ordered_mark_length(line : String) -> Int? {
+fn ordered_mark_length(line : String) -> Int32? {
   let chars = line.to_array()
   let mut n = 0
   while n < chars.length() && chars[n].is_ascii_digit() {
@@ -630,7 +630,7 @@ fn para_blocks(lines : Array[String], out : Array[Block]) -> Unit {
 fn inline_lines(
   inline : @cmark.Inline,
   src : String,
-  starts? : Array[Int] = [],
+  starts~ : Array[Int32] = [],
 ) -> Array[String] {
   let loc = inline.meta().loc
   guard loc.first_ccode >= 0 && loc.last_ccode >= loc.first_ccode else {
@@ -700,7 +700,7 @@ fn inline_lines(
 
 ///|
 /// The position of the first line break in `src[start:end]`, or `end`.
-fn find_newline(src : String, start : Int, end : Int) -> Int {
+fn find_newline(src : String, start : Int32, end : Int32) -> Int32 {
   let mut i = start
   while i < end && src.code_unit_at(i).to_int() != 0x0A {
     i += 1
@@ -711,7 +711,7 @@ fn find_newline(src : String, start : Int, end : Int) -> Int {
 ///|
 /// The position after the block quote marks and spaces at the start of
 /// `src[start:end]`.
-fn skip_prefix(src : String, start : Int, end : Int) -> Int {
+fn skip_prefix(src : String, start : Int32, end : Int32) -> Int32 {
   let mut i = start
   while i < end && src.code_unit_at(i).to_int() is (0x20 | 0x3E) {
     i += 1
@@ -720,7 +720,7 @@ fn skip_prefix(src : String, start : Int, end : Int) -> Int {
 }
 
 ///|
-fn slice(src : String, start : Int, end : Int) -> String {
+fn slice(src : String, start : Int32, end : Int32) -> String {
   src.view(start_offset=start, end_offset=end).to_owned()
 }
 
@@ -793,7 +793,7 @@ priv enum Job {
 priv struct SeqJob {
   blocks : Array[Block]
   kind : SeqKind
-  mut next : Int
+  mut next : Int32
   parts : Array[String]
 }
 
@@ -809,7 +809,7 @@ priv struct ListJob {
   kind : ListKind
   tight : Bool
   items : Array[Array[Block]]
-  mut next : Int
+  mut next : Int32
   parts : Array[String]
 }
 

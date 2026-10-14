@@ -17,7 +17,7 @@ fn line_excerpt(highlight : Span) -> Block {
 
 ///|
 /// `span` moved `columns` code units to the right on the same line.
-fn shift(p : Position, columns : Int) -> Position {
+fn shift(p : Position, columns : Int32) -> Position {
   { offset: p.offset + columns, line: p.line, column: p.column + columns, }
 }
 

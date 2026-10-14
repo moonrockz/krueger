@@ -7,8 +7,8 @@ import {
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -28,14 +28,14 @@ enum Mode {
 ///|
 struct Options {
   mode : Mode
-  threshold : Int
+  threshold : Int32
 } derive(Eq, Debug)
 
 ///|
 struct ModuleStat {
   name : String
-  covered : Int
-  total : Int
+  covered : Int32
+  total : Int32
 } derive(Eq, Debug)
 
 ///|
@@ -118,8 +118,8 @@ fn extract_payloads(text : String) -> Array[String] raise {
 
 ///|
 /// Parse one payload: a JSON object of module name to branch hit counts.
-fn parse_payload(payload : String) -> Map[String, Array[Int]] raise {
-  let result : Map[String, Array[Int]] = Map([])
+fn parse_payload(payload : String) -> Map[String, Array[Int32]] raise {
+  let result : Map[String, Array[Int32]] = Map([])
   guard @json.parse(payload) is Object(modules) else {
     fail("coverage payload is not a JSON object")
   }
@@ -141,8 +141,10 @@ fn parse_payload(payload : String) -> Map[String, Array[Int]] raise {
 ///|
 /// Merge payloads. Keys keep first-seen order; counts take the
 /// element-wise maximum, and a shorter array counts as 0 past its end.
-fn merge(payloads : Array[Map[String, Array[Int]]]) -> Map[String, Array[Int]] {
-  let merged : Map[String, Array[Int]] = Map([])
+fn merge(
+  payloads : Array[Map[String, Array[Int32]]],
+) -> Map[String, Array[Int32]] {
+  let merged : Map[String, Array[Int32]] = Map([])
   for payload in payloads {
     for name, counts in payload {
       match merged.get(name) {
@@ -179,7 +181,7 @@ fn is_test_module(name : String) -> Bool {
 
 ///|
 /// Per-module stats for non-test modules, in merged key order.
-fn module_stats(merged : Map[String, Array[Int]]) -> Array[ModuleStat] {
+fn module_stats(merged : Map[String, Array[Int32]]) -> Array[ModuleStat] {
   let stats = []
   for name, counts in merged {
     if !is_test_module(name) {
@@ -192,7 +194,7 @@ fn module_stats(merged : Map[String, Array[Int]]) -> Array[ModuleStat] {
 
 ///|
 /// Percent of covered branch points; no branch points counts as 100%.
-fn percent(covered : Int, total : Int) -> Double {
+fn percent(covered : Int32, total : Int32) -> Double {
   if total == 0 {
     100.0
   } else {
@@ -286,7 +288,7 @@ fn build_report(artifacts : Array[String]) -> Report? raise {
 }
 
 ///|
-fn verdict(mode : Mode, total : Double, threshold : Int) -> Verdict {
+fn verdict(mode : Mode, total : Double, threshold : Int32) -> Verdict {
   if total >= threshold.to_double() {
     return Pass
   }
@@ -416,7 +418,7 @@ impl @moonspec.World for CoverageWorld with fn configure(self, setup) {
     self.total = total
   })
   setup.when2("I check it against {int}% in {word} mode", fn(
-    threshold : Int,
+    threshold : Int32,
     mode : String,
   ) raise {
     let mode = match mode {

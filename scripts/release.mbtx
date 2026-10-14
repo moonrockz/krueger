@@ -6,8 +6,8 @@ import {
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
-  "moonrockz/moonspec@0.7.1",
-  "moonrockz/expect@0.6.0",
+  "moonrockz/moonspec@0.11.0",
+  "moonrockz/expect@0.6.1",
 }
 
 ///|
@@ -43,7 +43,7 @@ let lib_path : String = "src/lib.mbt"
 
 ///|
 /// Pick the version to print from the git-cliff exit code and stdout.
-fn choose_version(exit_code : Int, stdout : String) -> String {
+fn choose_version(exit_code : Int32, stdout : String) -> String {
   let version = stdout.trim().to_owned()
   if exit_code == 0 && version != "" {
     version
@@ -55,9 +55,9 @@ fn choose_version(exit_code : Int, stdout : String) -> String {
 ///|
 /// A `major.minor.patch` version.
 struct Version {
-  major : Int
-  minor : Int
-  patch : Int
+  major : Int32
+  minor : Int32
+  patch : Int32
 } derive(Eq, Compare, Debug)
 
 ///|
@@ -66,7 +66,7 @@ impl Show for Version with fn output(self, logger) {
 }
 
 ///|
-fn parse_number(text : StringView) -> Int? {
+fn parse_number(text : StringView) -> Int32? {
   guard text.length() > 0 && text.length() <= 9 else { return None }
   let mut n = 0
   for c in text {
@@ -263,7 +263,7 @@ fn plan(
   version : Version,
   tag_exists : Bool,
   has_section : Bool,
-  highlights? : Bool = true,
+  highlights~ : Bool = true,
 ) -> Result[Plan, String] {
   let tag = "v\{version}"
   if ref_type == "tag" && ref_name != tag {
@@ -364,7 +364,7 @@ fn log_messages(log : String) -> Array[String] {
 fn pr_body(
   version : Version,
   notes : String,
-  missing_footers? : Array[String] = [],
+  missing_footers~ : Array[String] = [],
 ) -> String {
   let warning = if missing_footers.is_empty() {
     ""
@@ -425,7 +425,7 @@ struct Facts {
   /// The latest version on mooncakes.io, or `None` when it cannot be read.
   mooncakes : Version?
   /// Commits on origin/main after the latest tag.
-  unreleased : Int
+  unreleased : Int32
   /// Head branches of open release pull requests.
   release_prs : Array[String]
 }
@@ -549,7 +549,7 @@ fn fail_with(message : String) -> Unit {
 async fn run_or_fail(
   cmd : String,
   args : Array[String],
-  extra_env? : Map[String, String] = {},
+  extra_env~ : Map[String, String] = {},
 ) -> Unit {
   let code = @process.run(cmd, args, extra_env~)
   if code != 0 {
@@ -558,7 +558,7 @@ async fn run_or_fail(
 }
 
 ///|
-async fn stdout_of(cmd : String, args : Array[String]) -> (Int, String) {
+async fn stdout_of(cmd : String, args : Array[String]) -> (Int32, String) {
   let (code, out) = @process.collect_stdout(
     cmd,
     args,
@@ -908,7 +908,7 @@ async fn main {
 ///|
 /// Scenario state for `features/release.feature`.
 struct ReleaseWorld {
-  mut exit_code : Int
+  mut exit_code : Int32
   mut stdout : String
   mut text : String
   mut result : Result[String, String]
@@ -964,7 +964,7 @@ fn plan_name(r : Result[Plan, String]) -> String {
 ///|
 impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
   setup.given2("git-cliff exits with {int} and prints {string}", fn(
-    code : Int,
+    code : Int32,
     stdout : String,
   ) {
     self.exit_code = code
@@ -1177,7 +1177,7 @@ impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
     },
   )
   setup.given2("{int} unreleased commits and release pull requests {string}", fn(
-    n : Int,
+    n : Int32,
     prs : String,
   ) {
     self.facts = {
