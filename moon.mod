@@ -5,7 +5,7 @@ version = "0.5.0"
 import {
   "moonrockz/expect@0.6.1",
   "moonrockz/pretty@0.1.1",
-  "moonbit-community/cmark@0.4.10",
+  "moonbit-community/cmark@0.4.12",
 }
 
 readme = "README.mbt.md"
