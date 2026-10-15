@@ -105,6 +105,8 @@ pub using @ast {type DecodeError}
 
 pub using @ast {type DefaultModuleData}
 
+pub using @scanner {type Detail}
+
 pub using @scanner {type Diagnostic}
 
 pub using @dialect {type Dialect}
@@ -236,6 +238,8 @@ pub using @ast {type TypeAnnotation}
 pub using @cst {type UnionTypeCst}
 
 pub using @ast {type ValueConstructor}
+
+pub using @scanner {type Walk}
 
 pub using @syntax {trait EventSource}
 

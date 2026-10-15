@@ -527,6 +527,30 @@ fn[T] Cursor::with_indent(
 const MAX_DEPTH : Int32 = 150
 
 ///|
+/// The fuel that the refusals report until the caller can set it.
+const DEFAULT_FUEL : Int32 = 1200
+
+///|
+/// A `TOO MUCH NESTING` failure in `walk`, with the fuel on the problem.
+fn Cursor::out_of_fuel(
+  self : Cursor,
+  walk : @scanner.Walk,
+  message : String,
+  opening : String,
+  advice : String,
+) -> SyntaxError {
+  let problem = self.titled("TOO MUCH NESTING", [Plain(opening)], [
+    plain(
+      "I ran out of fuel at \{DEFAULT_FUEL}. \{advice} Or give the parser more fuel, and the host more stack.",
+    ),
+  ])
+  SyntaxError(message, self.here(), {
+    ..problem,
+    detail: Some(OutOfFuel(fuel=DEFAULT_FUEL, walk~)),
+  })
+}
+
+///|
 /// Run `body` one step deeper in a right-recursive chain (`a :: b :: ...`,
 /// `Int -> Int -> ...`, `a ++ b ++ ...`); fail above `MAX_AST_DEPTH`, whose
 /// tree could not be encoded anyway.
@@ -535,11 +559,11 @@ fn[T] Cursor::chain(
   body : () -> T raise SyntaxError,
 ) -> T raise SyntaxError {
   if self.chain_depth >= MAX_AST_DEPTH {
-    raise self.fail_titled(
+    raise self.out_of_fuel(
+      Chain,
       "chain too long",
-      "TOO MUCH NESTING",
-      [Plain("This chain is too long for me:")],
-      [plain("Try splitting it into smaller definitions.")],
+      "This chain is too long for me:",
+      "Try splitting it into smaller definitions.",
     )
   }
   self.chain_depth += 1
@@ -560,11 +584,11 @@ fn[T] Cursor::nested(
   body : () -> T raise SyntaxError,
 ) -> T raise SyntaxError {
   if self.depth >= MAX_DEPTH {
-    raise self.fail_titled(
+    raise self.out_of_fuel(
+      Nesting,
       "nesting too deep",
-      "TOO MUCH NESTING",
-      [Plain("This expression, type or pattern is nested too deeply for me:")],
-      [plain("Try moving part of it into a separate definition.")],
+      "This expression, type or pattern is nested too deeply for me:",
+      "Try moving part of it into a separate definition.",
     )
   }
   self.depth += 1

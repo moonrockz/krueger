@@ -366,6 +366,7 @@ fn malformed(raw : RawAttribute, reason : String) -> @scanner.Diagnostic {
         Plain("."),
       ]),
     ],
+    detail: None,
   }
 }
 

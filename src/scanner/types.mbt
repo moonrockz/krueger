@@ -109,6 +109,27 @@ pub(all) struct Diagnostic {
   title : String
   /// The long message, as `elm make` shows it (render with `@report`).
   report : Array[Block]
+  /// Data about the cause, for tools that map krueger's diagnostics to
+  /// their own codes. `None` for most diagnostics.
+  detail : Detail?
+} derive(Eq, Debug)
+
+///|
+/// Data about the cause of a diagnostic, for tools that map krueger's
+/// diagnostics to their own codes.
+pub(all) enum Detail {
+  /// The parser ran out of fuel (`KR-PARSE-010`). `fuel` is the budget the
+  /// caller gave; `walk` is the walk that spent the last of it.
+  OutOfFuel(fuel~ : Int32, walk~ : Walk)
+} derive(Eq, Debug)
+
+///|
+/// A parser walk that spends fuel.
+pub(all) enum Walk {
+  /// The nesting of expressions, types and patterns.
+  Nesting
+  /// A right-recursive chain: `::`, `->` and a right-associative operator.
+  Chain
 } derive(Eq, Debug)
 
 ///|

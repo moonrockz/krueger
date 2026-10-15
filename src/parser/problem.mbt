@@ -36,6 +36,8 @@ priv struct Frame {
 priv struct Problem {
   title : String
   report : Array[@scanner.Block]
+  /// Data for the diagnostic (`KR-PARSE-010` carries the fuel and the walk).
+  detail : @scanner.Detail?
 }
 
 ///|
@@ -143,7 +145,11 @@ fn make_problem(
   highlight : @scanner.Span,
   after : Array[@scanner.Block],
 ) -> Problem {
-  { title, report: [Text(opening), Excerpt(context~, highlight~), ..after], }
+  {
+    title,
+    report: [Text(opening), Excerpt(context~, highlight~), ..after],
+    detail: None,
+  }
 }
 
 ///|

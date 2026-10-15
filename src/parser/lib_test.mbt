@@ -384,21 +384,21 @@ test "deep nesting is a diagnostic, not a stack overflow" {
     let header = "module Main exposing (..)\n\n\n"
     let deep = 5000
     let expr = parse(header + "f = " + nested("(", "1", ")", deep) + "\n")
-    s.expect(codes(expr)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(expr)).to_equal(["KR-PARSE-010"])
     let unclosed = parse(header + "f = " + nested("(", "1", "", deep) + "\n")
-    s.expect(codes(unclosed)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(unclosed)).to_equal(["KR-PARSE-010"])
     let list = parse(header + "f = " + nested("[", "1", "]", deep) + "\n")
-    s.expect(codes(list)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(list)).to_equal(["KR-PARSE-010"])
     let typ = parse(
       header + "f : " + nested("(", "Int", ")", deep) + "\nf = 1\n",
     )
-    s.expect(codes(typ)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(typ)).to_equal(["KR-PARSE-010"])
     let pat = parse(header + "f " + nested("(", "x", ")", deep) + " = 1\n")
-    s.expect(codes(pat)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(pat)).to_equal(["KR-PARSE-010"])
     let type_alias = parse(
       header + "type alias A = " + nested("(", "Int", ")", deep) + "\n",
     )
-    s.expect(codes(type_alias)).to_equal(["KR-PARSE-003"])
+    s.expect(codes(type_alias)).to_equal(["KR-PARSE-010"])
   })
 }
 

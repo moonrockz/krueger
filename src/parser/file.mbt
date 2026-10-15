@@ -5,8 +5,9 @@ fn parser_error(
   span : @scanner.Span,
   title~ : String,
   report~ : Array[@scanner.Block],
+  detail~ : @scanner.Detail? = None,
 ) -> @scanner.Diagnostic {
-  { code, severity: Error, message, span, title, report, }
+  { code, severity: Error, message, span, title, report, detail, }
 }
 
 ///|
@@ -417,7 +418,10 @@ pub fn parse_tokens(
     c.start_item()
     try declaration(c, documentation) catch {
       SyntaxError(message, span, problem) => {
-        let (code, what) = declaration_error_code(kind)
+        let (code, what) = match problem.detail {
+          Some(OutOfFuel(_)) => ("KR-PARSE-010", "Nested too deeply")
+          None => declaration_error_code(kind)
+        }
         diagnostics.push(
           parser_error(
             code,
@@ -425,27 +429,28 @@ pub fn parse_tokens(
             span,
             title=problem.title,
             report=problem.report,
+            detail=problem.detail,
           ),
         )
         skip_to_top_level(c, start)
       }
     } noraise {
       decl if declaration_depth(decl.value) > MAX_AST_DEPTH => {
-        let (code, what) = declaration_error_code(kind)
         let at = point(stream[start].span.start)
         diagnostics.push(
           parser_error(
-            code,
-            "\{what}: nested too deeply",
+            "KR-PARSE-010",
+            "Nested too deeply: declaration nested too deeply",
             stream[start].span,
             title="TOO MUCH NESTING",
             report=[
               plain("This declaration is nested too deeply for me:"),
               Excerpt(context=at, highlight=at),
               plain(
-                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep. Try splitting it into smaller definitions.",
+                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep, and I ran out of fuel at \{DEFAULT_FUEL}. Try splitting it into smaller definitions. Or give the parser more fuel, and the host more stack.",
               ),
             ],
+            detail=Some(OutOfFuel(fuel=DEFAULT_FUEL, walk=Chain)),
           ),
         )
       }

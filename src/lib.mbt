@@ -50,6 +50,8 @@ pub using @scanner {
   type Span,
   type SourceText,
   type Diagnostic,
+  type Detail,
+  type Walk,
   type Block,
   type Chunk,
   type Color,

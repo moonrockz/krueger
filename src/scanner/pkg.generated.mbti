@@ -96,6 +96,10 @@ pub fn DefaultScanner::new(dialect? : @dialect.Dialect) -> Self
 pub fn DefaultScanner::tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
 pub impl Scanner for DefaultScanner
 
+pub(all) enum Detail {
+  OutOfFuel(fuel~ : Int, walk~ : Walk)
+} derive(Eq, @debug.Debug)
+
 pub(all) struct Diagnostic {
   code : String
   severity : Severity
@@ -103,6 +107,7 @@ pub(all) struct Diagnostic {
   span : Span
   title : String
   report : Array[Block]
+  detail : Detail?
 } derive(Eq, @debug.Debug)
 
 pub(all) enum KeywordKind {
@@ -223,6 +228,11 @@ pub(all) enum Trivia {
   Whitespace(String, Span)
   Newline(String, Span)
   Comment(Comment)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Walk {
+  Nesting
+  Chain
 } derive(Eq, @debug.Debug)
 
 // Type aliases

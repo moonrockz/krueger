@@ -115,6 +115,7 @@ moonrockz/krueger
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 | `KR-PARSE-008` | Syntax error in a port or infix declaration |
 | `KR-PARSE-009` | Number literal out of range (warning; the value is clamped) |
+| `KR-PARSE-010` | Nested too deeply: the parser ran out of fuel (`Diagnostic.detail` carries the fuel and the walk) |
 | `KR-ATTR-001` | Malformed doc attribute (warning; the attribute is skipped) |
 
 `src/diagnostics.mbt` holds these descriptions (`diagnostic_description(code)`); the parity
@@ -135,7 +136,8 @@ summary reads them. Keep this table and that file in step when you add a code.
 ### Diagnostics
 
 Every `Diagnostic` has a `code` (`KR-SCAN-*`, `KR-PARSE-*`), a `severity`, a one-line
-`message`, a `span`, a `title` and a `report`:
+`message`, a `span`, a `title`, a `report` and a `detail` (`None` for most; a
+`KR-PARSE-010` refusal carries `OutOfFuel(fuel~, walk~)`):
 
 - `title` is the `elm make` title for the same problem (`UNFINISHED LET`, `NO TABS`, …).
   The parser keeps a stack of the constructs it is inside; a failure takes its title

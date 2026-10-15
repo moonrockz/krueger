@@ -132,7 +132,9 @@ fn severity_name(severity : @scanner.Severity) -> String {
 /// All diagnostics (warnings too) with krueger's codes, as JSON.
 ///
 /// Each diagnostic is an object with `code`, `severity` (`error`,
-/// `warning` or `info`), `title`, `message` and `span`. The long report is
+/// `warning` or `info`), `title`, `message` and `span`, and `detail` when
+/// the diagnostic has one (`KR-PARSE-010`:
+/// `{"outOfFuel": {"fuel": 1200, "walk": "nesting"}}`). The long report is
 /// not included; use `render_plain` or `render_elm_json` for it.
 ///
 /// ```mbt check
@@ -153,11 +155,29 @@ fn severity_name(severity : @scanner.Severity) -> String {
 pub fn encode_diagnostics(diags : Array[@scanner.Diagnostic]) -> Json {
   Json::array(
     diags.map(d => {
-      "code": Json(d.code),
-      "severity": Json(severity_name(d.severity)),
-      "title": Json(d.title),
-      "message": Json(d.message),
-      "span": span_json(d.span),
+      let fields : Map[String, Json] = {
+        "code": Json(d.code),
+        "severity": Json(severity_name(d.severity)),
+        "title": Json(d.title),
+        "message": Json(d.message),
+        "span": span_json(d.span),
+      }
+      match d.detail {
+        Some(OutOfFuel(fuel~, walk~)) =>
+          fields["detail"] = {
+            "outOfFuel": {
+              "fuel": Json::number(fuel.to_double()),
+              "walk": Json(
+                match walk {
+                  Nesting => "nesting"
+                  Chain => "chain"
+                },
+              ),
+            },
+          }
+        None => ()
+      }
+      Json::object(fields)
     }),
   )
 }
