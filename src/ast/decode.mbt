@@ -28,28 +28,31 @@ priv enum Path {
 }
 
 ///|
+/// Renders the path without recursion (a path at the bottom of a deep tree
+/// has thousands of segments): the segments are collected from the leaf
+/// up, then written from the root down.
 fn Path::render(self : Path) -> String {
-  let sb = StringBuilder()
-  self.write_to(sb)
-  sb.to_string()
-}
-
-///|
-fn Path::write_to(self : Path, sb : StringBuilder) -> Unit {
-  match self {
-    Root => sb.write_string("$")
-    Key(parent, key) => {
-      parent.write_to(sb)
-      sb.write_string(".")
-      sb.write_string(key)
-    }
-    Index(parent, i) => {
-      parent.write_to(sb)
-      sb.write_string("[")
-      sb.write_string(i.to_string())
-      sb.write_string("]")
+  let segments : Array[String] = []
+  let mut at = self
+  while true {
+    match at {
+      Root => break
+      Key(parent, key) => {
+        segments.push("." + key)
+        at = parent
+      }
+      Index(parent, i) => {
+        segments.push("[" + i.to_string() + "]")
+        at = parent
+      }
     }
   }
+  let sb = StringBuilder()
+  sb.write_string("$")
+  for i = segments.length() - 1; i >= 0; i = i - 1 {
+    sb.write_string(segments[i])
+  }
+  sb.to_string()
 }
 
 ///|
@@ -284,22 +287,6 @@ fn module_name_at(j : Json, path : Path) -> ModuleName raise DecodeError {
 }
 
 ///|
-fn file_at(j : Json, path : Path) -> File raise DecodeError {
-  {
-    module_definition: field(j, path, "moduleDefinition", (v, p) => {
-      node_at(v, p, module_at)
-    }),
-    imports: field(j, path, "imports", (v, p) => {
-      list_at(v, p, (v, p) => node_at(v, p, import_at))
-    }),
-    declarations: field(j, path, "declarations", (v, p) => {
-      list_at(v, p, (v, p) => node_at(v, p, declaration_at))
-    }),
-    comments: field(j, path, "comments", (v, p) => list_at(v, p, string_node_at)),
-  }
-}
-
-///|
 fn module_at(j : Json, path : Path) -> Module raise DecodeError {
   let (tag, m) = typed(j, path)
   match tag {
@@ -405,21 +392,223 @@ fn import_at(j : Json, path : Path) -> Import raise DecodeError {
 }
 
 ///|
-fn declaration_at(j : Json, path : Path) -> Declaration raise DecodeError {
+/// A step of the decoder. The decoder does not recurse per AST level: a
+/// step reads the shallow fields of one node in elm-syntax's order, and
+/// gives back the steps for its nested nodes (each one looks its field up
+/// when it runs, so the first error reported is the one a depth-first
+/// decoder reports) and a last step that builds the node from the cells
+/// its children filled. `run` pops steps until none is left.
+priv struct Step(() -> Array[Step] raise DecodeError)
+
+///|
+fn run(start : Step) -> Unit raise DecodeError {
+  let stack : Array[Step] = [start]
+  while stack.pop() is Some(step) {
+    let Step(f) = step
+    let more = f()
+    for i = more.length() - 1; i >= 0; i = i - 1 {
+      stack.push(more[i])
+    }
+  }
+}
+
+///|
+/// The value a child step decoded into its cell.
+fn[T] got(cell : Ref[T?]) -> T raise DecodeError {
+  match cell.val {
+    Some(v) => v
+    None => fail(Root, "internal error: a nested node was not decoded")
+  }
+}
+
+///|
+/// `(Json, Path)` as a decoder, for `field` and `payload`: the step that
+/// uses the value does the decoding.
+let pair : (Json, Path) -> (Json, Path) raise DecodeError = (j, p) => (j, p)
+
+///|
+/// A step that decodes the node at `get()`: its range, then its value with
+/// `value_steps`, into `out`.
+fn[T] node_step(
+  get : () -> (Json, Path) raise DecodeError,
+  value_steps : (Json, Path, Ref[T?]) -> Array[Step] raise DecodeError,
+  out : Ref[Node[T]?],
+) -> Step {
+  Step(() => {
+    let (j, path) = get()
+    let range = field(j, path, "range", range_at)
+    let (v, p) = field(j, path, "value", pair)
+    let value : Ref[T?] = Ref(None)
+    let steps = value_steps(v, p, value)
+    steps.push(
+      Step(() => {
+        out.val = Some({ range, value: got(value), })
+        []
+      }),
+    )
+    steps
+  })
+}
+
+///|
+/// A step that decodes the list at `get()` with one `element` step per
+/// item, into `out`.
+fn[T] list_step(
+  get : () -> (Json, Path) raise DecodeError,
+  element : (() -> (Json, Path) raise DecodeError, Ref[T?]) -> Step,
+  out : Ref[Array[T]?],
+) -> Step {
+  Step(() => {
+    let (j, path) = get()
+    guard j is Array(xs) else {
+      fail(path, "Expecting a LIST but got \{kind(j)}")
+    }
+    let cells : Array[Ref[T?]] = []
+    let steps : Array[Step] = []
+    for i, x in xs {
+      let cell : Ref[T?] = Ref(None)
+      cells.push(cell)
+      steps.push(element(() => (x, Index(path, i)), cell))
+    }
+    steps.push(
+      Step(() => {
+        let items = Array(capacity=cells.length())
+        for cell in cells {
+          items.push(got(cell))
+        }
+        out.val = Some(items)
+        []
+      }),
+    )
+    steps
+  })
+}
+
+///|
+/// Runs `steps` for the value at `(j, path)` and gives the value.
+fn[T] decode_with(
+  j : Json,
+  path : Path,
+  steps : (Json, Path, Ref[T?]) -> Array[Step] raise DecodeError,
+) -> T raise DecodeError {
+  let out : Ref[T?] = Ref(None)
+  run(Step(() => steps(j, path, out)))
+  got(out)
+}
+
+// --- file and declarations --------------------------------------------------
+
+///|
+fn file_steps(
+  j : Json,
+  path : Path,
+  out : Ref[File?],
+) -> Array[Step] raise DecodeError {
+  let module_definition = field(j, path, "moduleDefinition", (v, p) => {
+    node_at(v, p, module_at)
+  })
+  let imports = field(j, path, "imports", (v, p) => {
+    list_at(v, p, (v, p) => node_at(v, p, import_at))
+  })
+  let declarations : Ref[Array[Node[Declaration]]?] = Ref(None)
+  [
+    list_step(
+      () => field(j, path, "declarations", pair),
+      (get, cell) => node_step(get, declaration_steps, cell),
+      declarations,
+    ),
+    Step(() => {
+      let comments = field(j, path, "comments", (v, p) => {
+        list_at(v, p, string_node_at)
+      })
+      out.val = Some({
+        module_definition,
+        imports,
+        declarations: got(declarations),
+        comments,
+      })
+      []
+    }),
+  ]
+}
+
+///|
+fn declaration_steps(
+  j : Json,
+  path : Path,
+  out : Ref[Declaration?],
+) -> Array[Step] raise DecodeError {
   let (tag, m) = typed(j, path)
   match tag {
-    "function" => FunctionDeclaration(payload(m, tag, path, function_at))
-    "typeAlias" => AliasDeclaration(payload(m, tag, path, type_alias_at))
-    "typedecl" => CustomTypeDeclaration(payload(m, tag, path, type_at))
-    "port" => PortDeclaration(payload(m, tag, path, signature_at))
-    "infix" => InfixDeclaration(payload(m, tag, path, infix_at))
-    "destructuring" =>
-      payload(m, tag, path, (v, p) => {
-        Destructuring(
-          field(v, p, "pattern", pattern_node_at),
-          field(v, p, "expression", expression_node_at),
-        )
-      })
+    "function" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let f : Ref[Function?] = Ref(None)
+      let steps = function_steps(v, p, f)
+      steps.push(
+        Step(() => {
+          out.val = Some(FunctionDeclaration(got(f)))
+          []
+        }),
+      )
+      steps
+    }
+    "typeAlias" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let a : Ref[TypeAlias?] = Ref(None)
+      let steps = type_alias_steps(v, p, a)
+      steps.push(
+        Step(() => {
+          out.val = Some(AliasDeclaration(got(a)))
+          []
+        }),
+      )
+      steps
+    }
+    "typedecl" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let t : Ref[Type?] = Ref(None)
+      let steps = type_steps(v, p, t)
+      steps.push(
+        Step(() => {
+          out.val = Some(CustomTypeDeclaration(got(t)))
+          []
+        }),
+      )
+      steps
+    }
+    "port" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let sig : Ref[Signature?] = Ref(None)
+      let steps = signature_steps(v, p, sig)
+      steps.push(
+        Step(() => {
+          out.val = Some(PortDeclaration(got(sig)))
+          []
+        }),
+      )
+      steps
+    }
+    "infix" => {
+      out.val = Some(InfixDeclaration(payload(m, tag, path, infix_at)))
+      []
+    }
+    "destructuring" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let pattern : Ref[Node[Pattern]?] = Ref(None)
+      let expression : Ref[Node[Expression]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "pattern", pair), pattern_steps, pattern),
+        node_step(
+          () => field(v, p, "expression", pair),
+          expression_steps,
+          expression,
+        ),
+        Step(() => {
+          out.val = Some(Destructuring(got(pattern), got(expression)))
+          []
+        }),
+      ]
+    }
     _ => unknown_tag(path, tag)
   }
 }
@@ -450,11 +639,24 @@ fn infix_direction_at(
 }
 
 ///|
-fn signature_at(j : Json, path : Path) -> Signature raise DecodeError {
-  {
-    name: field(j, path, "name", string_node_at),
-    type_annotation: field(j, path, "typeAnnotation", type_annotation_node_at),
-  }
+fn signature_steps(
+  j : Json,
+  path : Path,
+  out : Ref[Signature?],
+) -> Array[Step] raise DecodeError {
+  let name = field(j, path, "name", string_node_at)
+  let type_annotation : Ref[Node[TypeAnnotation]?] = Ref(None)
+  [
+    node_step(
+      () => field(j, path, "typeAnnotation", pair),
+      type_annotation_steps,
+      type_annotation,
+    ),
+    Step(() => {
+      out.val = Some({ name, type_annotation: got(type_annotation), })
+      []
+    }),
+  ]
 }
 
 ///|
@@ -471,136 +673,239 @@ fn generics_at(j : Json, path : Path) -> Array[Node[String]] raise DecodeError {
 }
 
 ///|
-fn type_alias_at(j : Json, path : Path) -> TypeAlias raise DecodeError {
-  {
-    documentation: documentation_at(j, path),
-    name: field(j, path, "name", string_node_at),
-    generics: generics_at(j, path),
-    type_annotation: field(j, path, "typeAnnotation", type_annotation_node_at),
-  }
-}
-
-///|
-fn type_at(j : Json, path : Path) -> Type raise DecodeError {
-  {
-    documentation: documentation_at(j, path),
-    name: field(j, path, "name", string_node_at),
-    generics: generics_at(j, path),
-    constructors: field(j, path, "constructors", (v, p) => {
-      list_at(v, p, (v, p) => node_at(v, p, value_constructor_at))
+fn type_alias_steps(
+  j : Json,
+  path : Path,
+  out : Ref[TypeAlias?],
+) -> Array[Step] raise DecodeError {
+  let documentation = documentation_at(j, path)
+  let name = field(j, path, "name", string_node_at)
+  let generics = generics_at(j, path)
+  let type_annotation : Ref[Node[TypeAnnotation]?] = Ref(None)
+  [
+    node_step(
+      () => field(j, path, "typeAnnotation", pair),
+      type_annotation_steps,
+      type_annotation,
+    ),
+    Step(() => {
+      out.val = Some({
+        documentation,
+        name,
+        generics,
+        type_annotation: got(type_annotation),
+      })
+      []
     }),
-  }
+  ]
 }
 
 ///|
-fn value_constructor_at(
+fn type_steps(
   j : Json,
   path : Path,
-) -> ValueConstructor raise DecodeError {
-  {
-    name: field(j, path, "name", string_node_at),
-    arguments: field(j, path, "arguments", (v, p) => {
-      list_at(v, p, type_annotation_node_at)
+  out : Ref[Type?],
+) -> Array[Step] raise DecodeError {
+  let documentation = documentation_at(j, path)
+  let name = field(j, path, "name", string_node_at)
+  let generics = generics_at(j, path)
+  let constructors : Ref[Array[Node[ValueConstructor]]?] = Ref(None)
+  [
+    list_step(
+      () => field(j, path, "constructors", pair),
+      (get, cell) => node_step(get, value_constructor_steps, cell),
+      constructors,
+    ),
+    Step(() => {
+      out.val = Some({
+        documentation,
+        name,
+        generics,
+        constructors: got(constructors),
+      })
+      []
     }),
-  }
+  ]
 }
 
 ///|
-fn type_annotation_node_at(
+fn value_constructor_steps(
   j : Json,
   path : Path,
-) -> Node[TypeAnnotation] raise DecodeError {
-  node_at(j, path, type_annotation_at)
+  out : Ref[ValueConstructor?],
+) -> Array[Step] raise DecodeError {
+  let name = field(j, path, "name", string_node_at)
+  let arguments : Ref[Array[Node[TypeAnnotation]]?] = Ref(None)
+  [
+    type_annotation_list_step(
+      () => field(j, path, "arguments", pair),
+      arguments,
+    ),
+    Step(() => {
+      out.val = Some({ name, arguments: got(arguments), })
+      []
+    }),
+  ]
+}
+
+// --- type annotations -------------------------------------------------------
+
+///|
+fn type_annotation_list_step(
+  get : () -> (Json, Path) raise DecodeError,
+  out : Ref[Array[Node[TypeAnnotation]]?],
+) -> Step {
+  list_step(
+    get,
+    (get, cell) => node_step(get, type_annotation_steps, cell),
+    out,
+  )
 }
 
 ///|
-fn type_annotation_list_at(
+fn type_annotation_steps(
   j : Json,
   path : Path,
-) -> Array[Node[TypeAnnotation]] raise DecodeError {
-  list_at(j, path, type_annotation_node_at)
-}
-
-///|
-fn type_annotation_at(
-  j : Json,
-  path : Path,
-) -> TypeAnnotation raise DecodeError {
+  out : Ref[TypeAnnotation?],
+) -> Array[Step] raise DecodeError {
   let (tag, m) = typed(j, path)
   match tag {
-    "generic" =>
-      GenericType(
-        payload(m, tag, path, (v, p) => field(v, p, "value", string_at)),
+    "generic" => {
+      out.val = Some(
+        GenericType(
+          payload(m, tag, path, (v, p) => field(v, p, "value", string_at)),
+        ),
       )
-    "typed" =>
-      payload(m, tag, path, (v, p) => {
-        Typed(
-          field(v, p, "moduleNameAndName", (v, p) => {
-            node_at(v, p, (v, p) => {
-              (
-                field(v, p, "moduleName", module_name_at),
-                field(v, p, "name", string_at),
-              )
-            })
-          }),
-          field(v, p, "args", type_annotation_list_at),
-        )
+      []
+    }
+    "typed" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let name = field(v, p, "moduleNameAndName", (v, p) => {
+        node_at(v, p, (v, p) => {
+          (
+            field(v, p, "moduleName", module_name_at),
+            field(v, p, "name", string_at),
+          )
+        })
       })
-    "unit" => payload(m, tag, path, (_, _) => Unit)
-    "tupled" =>
-      Tupled(
-        payload(m, tag, path, (v, p) => {
-          field(v, p, "values", type_annotation_list_at)
+      let args : Ref[Array[Node[TypeAnnotation]]?] = Ref(None)
+      [
+        type_annotation_list_step(() => field(v, p, "args", pair), args),
+        Step(() => {
+          out.val = Some(Typed(name, got(args)))
+          []
         }),
-      )
-    "function" =>
-      payload(m, tag, path, (v, p) => {
-        FunctionTypeAnnotation(
-          field(v, p, "left", type_annotation_node_at),
-          field(v, p, "right", type_annotation_node_at),
-        )
-      })
-    "record" =>
-      Record(
-        payload(m, tag, path, (v, p) => {
-          field(v, p, "value", record_definition_at)
+      ]
+    }
+    "unit" => {
+      ignore(payload(m, tag, path, pair))
+      out.val = Some(Unit)
+      []
+    }
+    "tupled" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let values : Ref[Array[Node[TypeAnnotation]]?] = Ref(None)
+      [
+        type_annotation_list_step(() => field(v, p, "values", pair), values),
+        Step(() => {
+          out.val = Some(Tupled(got(values)))
+          []
         }),
-      )
-    "genericRecord" =>
-      payload(m, tag, path, (v, p) => {
-        GenericRecord(
-          field(v, p, "name", string_node_at),
-          field(v, p, "values", (v, p) => node_at(v, p, record_definition_at)),
-        )
-      })
+      ]
+    }
+    "function" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let left : Ref[Node[TypeAnnotation]?] = Ref(None)
+      let right : Ref[Node[TypeAnnotation]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "left", pair), type_annotation_steps, left),
+        node_step(
+          () => field(v, p, "right", pair),
+          type_annotation_steps,
+          right,
+        ),
+        Step(() => {
+          out.val = Some(FunctionTypeAnnotation(got(left), got(right)))
+          []
+        }),
+      ]
+    }
+    "record" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let fields : Ref[Array[Node[RecordField]]?] = Ref(None)
+      [
+        record_definition_step(() => field(v, p, "value", pair), fields),
+        Step(() => {
+          out.val = Some(Record(got(fields)))
+          []
+        }),
+      ]
+    }
+    "genericRecord" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let name = field(v, p, "name", string_node_at)
+      let fields : Ref[Node[Array[Node[RecordField]]]?] = Ref(None)
+      [
+        node_step(
+          () => field(v, p, "values", pair),
+          (j, p, cell) => [record_definition_step(() => (j, p), cell)],
+          fields,
+        ),
+        Step(() => {
+          let f = got(fields)
+          out.val = Some(
+            GenericRecord(name, { range: f.range, value: f.value, }),
+          )
+          []
+        }),
+      ]
+    }
     _ => unknown_tag(path, tag)
   }
 }
 
 ///|
-fn record_definition_at(
-  j : Json,
-  path : Path,
-) -> RecordDefinition raise DecodeError {
-  list_at(j, path, (v, p) => {
-    node_at(v, p, (v, p) => {
-      name: field(v, p, "name", string_node_at),
-      type_annotation: field(v, p, "typeAnnotation", type_annotation_node_at),
-    })
-  })
+fn record_definition_step(
+  get : () -> (Json, Path) raise DecodeError,
+  out : Ref[Array[Node[RecordField]]?],
+) -> Step {
+  list_step(
+    get,
+    (get, cell) => {
+      node_step(
+        get,
+        (v, p, field_out) => {
+          let name = field(v, p, "name", string_node_at)
+          let type_annotation : Ref[Node[TypeAnnotation]?] = Ref(None)
+          [
+            node_step(
+              () => field(v, p, "typeAnnotation", pair),
+              type_annotation_steps,
+              type_annotation,
+            ),
+            Step(() => {
+              field_out.val = Some(
+                ({ name, type_annotation: got(type_annotation), } : RecordField),
+              )
+              []
+            }),
+          ]
+        },
+        cell,
+      )
+    },
+    out,
+  )
 }
 
-///|
-fn pattern_node_at(j : Json, path : Path) -> Node[Pattern] raise DecodeError {
-  node_at(j, path, pattern_at)
-}
+// --- patterns ---------------------------------------------------------------
 
 ///|
-fn pattern_list_at(
-  j : Json,
-  path : Path,
-) -> Array[Node[Pattern]] raise DecodeError {
-  list_at(j, path, pattern_node_at)
+fn pattern_list_step(
+  get : () -> (Json, Path) raise DecodeError,
+  out : Ref[Array[Node[Pattern]]?],
+) -> Step {
+  list_step(get, (get, cell) => node_step(get, pattern_steps, cell), out)
 }
 
 ///|
@@ -616,247 +921,491 @@ fn hex_pattern_value_at(j : Json, path : Path) -> Int64 raise DecodeError {
 }
 
 ///|
-fn pattern_at(j : Json, path : Path) -> Pattern raise DecodeError {
+fn pattern_steps(
+  j : Json,
+  path : Path,
+  out : Ref[Pattern?],
+) -> Array[Step] raise DecodeError {
   let (tag, m) = typed(j, path)
+  let done = (p : Pattern) => {
+    out.val = Some(p)
+    ([] : Array[Step])
+  }
   match tag {
-    "all" => payload(m, tag, path, (_, _) => AllPattern)
-    "unit" => payload(m, tag, path, (_, _) => UnitPattern)
+    "all" => {
+      ignore(payload(m, tag, path, pair))
+      done(AllPattern)
+    }
+    "unit" => {
+      ignore(payload(m, tag, path, pair))
+      done(UnitPattern)
+    }
     "char" =>
-      CharPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", char_at)),
+      done(
+        CharPattern(
+          payload(m, tag, path, (v, p) => field(v, p, "value", char_at)),
+        ),
       )
     "string" =>
-      StringPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", string_at)),
+      done(
+        StringPattern(
+          payload(m, tag, path, (v, p) => field(v, p, "value", string_at)),
+        ),
       )
-    "hex" => HexPattern(payload(m, tag, path, hex_pattern_value_at))
+    "hex" => done(HexPattern(payload(m, tag, path, hex_pattern_value_at)))
     "int" =>
-      IntPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", int64_at)),
+      done(
+        IntPattern(
+          payload(m, tag, path, (v, p) => field(v, p, "value", int64_at)),
+        ),
       )
     "float" =>
-      FloatPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", double_at)),
+      done(
+        FloatPattern(
+          payload(m, tag, path, (v, p) => field(v, p, "value", double_at)),
+        ),
       )
-    "tuple" =>
-      TuplePattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", pattern_list_at)),
-      )
+    "tuple" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let items : Ref[Array[Node[Pattern]]?] = Ref(None)
+      [
+        pattern_list_step(() => field(v, p, "value", pair), items),
+        Step(() => done(TuplePattern(got(items)))),
+      ]
+    }
     "record" =>
-      RecordPattern(
-        payload(m, tag, path, (v, p) => {
-          field(v, p, "value", (v, p) => list_at(v, p, string_node_at))
-        }),
-      )
-    "uncons" =>
-      payload(m, tag, path, (v, p) => {
-        UnConsPattern(
-          field(v, p, "left", pattern_node_at),
-          field(v, p, "right", pattern_node_at),
-        )
-      })
-    "list" =>
-      ListPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", pattern_list_at)),
-      )
-    "var" =>
-      VarPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", string_at)),
-      )
-    "named" =>
-      payload(m, tag, path, (v, p) => {
-        NamedPattern(
-          field(v, p, "qualified", (v, p) => {
-            module_name: field(v, p, "moduleName", module_name_at),
-            name: field(v, p, "name", string_at),
+      done(
+        RecordPattern(
+          payload(m, tag, path, (v, p) => {
+            field(v, p, "value", (v, p) => list_at(v, p, string_node_at))
           }),
-          field(v, p, "patterns", pattern_list_at),
-        )
-      })
-    "as" =>
-      payload(m, tag, path, (v, p) => {
-        AsPattern(
-          field(v, p, "pattern", pattern_node_at),
-          field(v, p, "name", string_node_at),
-        )
-      })
-    "parentisized" =>
-      ParenthesizedPattern(
-        payload(m, tag, path, (v, p) => field(v, p, "value", pattern_node_at)),
+        ),
       )
+    "uncons" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let left : Ref[Node[Pattern]?] = Ref(None)
+      let right : Ref[Node[Pattern]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "left", pair), pattern_steps, left),
+        node_step(() => field(v, p, "right", pair), pattern_steps, right),
+        Step(() => done(UnConsPattern(got(left), got(right)))),
+      ]
+    }
+    "list" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let items : Ref[Array[Node[Pattern]]?] = Ref(None)
+      [
+        pattern_list_step(() => field(v, p, "value", pair), items),
+        Step(() => done(ListPattern(got(items)))),
+      ]
+    }
+    "var" =>
+      done(
+        VarPattern(
+          payload(m, tag, path, (v, p) => field(v, p, "value", string_at)),
+        ),
+      )
+    "named" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let qualified : QualifiedNameRef = field(v, p, "qualified", (v, p) => {
+        module_name: field(v, p, "moduleName", module_name_at),
+        name: field(v, p, "name", string_at),
+      })
+      let args : Ref[Array[Node[Pattern]]?] = Ref(None)
+      [
+        pattern_list_step(() => field(v, p, "patterns", pair), args),
+        Step(() => done(NamedPattern(qualified, got(args)))),
+      ]
+    }
+    "as" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let inner : Ref[Node[Pattern]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "pattern", pair), pattern_steps, inner),
+        // The name is read after the pattern, as elm-syntax does.
+        Step(() => {
+          done(AsPattern(got(inner), field(v, p, "name", string_node_at)))
+        }),
+      ]
+    }
+    "parentisized" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let inner : Ref[Node[Pattern]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "value", pair), pattern_steps, inner),
+        Step(() => done(ParenthesizedPattern(got(inner)))),
+      ]
+    }
     _ => unknown_tag(path, tag)
   }
 }
 
+// --- expressions ------------------------------------------------------------
+
 ///|
-fn expression_node_at(
-  j : Json,
-  path : Path,
-) -> Node[Expression] raise DecodeError {
-  node_at(j, path, expression_at)
+fn expression_list_step(
+  get : () -> (Json, Path) raise DecodeError,
+  out : Ref[Array[Node[Expression]]?],
+) -> Step {
+  list_step(get, (get, cell) => node_step(get, expression_steps, cell), out)
 }
 
 ///|
-fn expression_list_at(
-  j : Json,
-  path : Path,
-) -> Array[Node[Expression]] raise DecodeError {
-  list_at(j, path, expression_node_at)
+fn record_setter_list_step(
+  get : () -> (Json, Path) raise DecodeError,
+  out : Ref[Array[Node[RecordSetter]]?],
+) -> Step {
+  list_step(
+    get,
+    (get, cell) => {
+      node_step(
+        get,
+        (v, p, setter_out) => {
+          let field_name = field(v, p, "field", string_node_at)
+          let expression : Ref[Node[Expression]?] = Ref(None)
+          [
+            node_step(
+              () => field(v, p, "expression", pair),
+              expression_steps,
+              expression,
+            ),
+            Step(() => {
+              setter_out.val = Some(
+                (
+                  { field: field_name, expression: got(expression), } :
+                  RecordSetter),
+              )
+              []
+            }),
+          ]
+        },
+        cell,
+      )
+    },
+    out,
+  )
 }
 
 ///|
-fn record_setter_list_at(
+fn expression_steps(
   j : Json,
   path : Path,
-) -> Array[Node[RecordSetter]] raise DecodeError {
-  list_at(j, path, (v, p) => {
-    node_at(v, p, (v, p) => {
-      field: field(v, p, "field", string_node_at),
-      expression: field(v, p, "expression", expression_node_at),
-    })
-  })
-}
-
-///|
-fn expression_at(j : Json, path : Path) -> Expression raise DecodeError {
+  out : Ref[Expression?],
+) -> Array[Step] raise DecodeError {
   let (tag, m) = typed(j, path)
+  let done = (e : Expression) => {
+    out.val = Some(e)
+    ([] : Array[Step])
+  }
+  // One nested expression in the payload, wrapped by `make`.
+  let nested = (make : (Node[Expression]) -> Expression) => {
+    let (v, p) = payload(m, tag, path, pair)
+    let inner : Ref[Node[Expression]?] = Ref(None)
+    [
+      node_step(() => (v, p), expression_steps, inner),
+      Step(() => done(make(got(inner)))),
+    ]
+  }
+  // A list of nested expressions in the payload, wrapped by `make`.
+  let nested_list = (make : (Array[Node[Expression]]) -> Expression) => {
+    let (v, p) = payload(m, tag, path, pair)
+    let items : Ref[Array[Node[Expression]]?] = Ref(None)
+    [
+      expression_list_step(() => (v, p), items),
+      Step(() => done(make(got(items)))),
+    ]
+  }
   match tag {
-    "unit" => payload(m, tag, path, (_, _) => UnitExpr)
-    "application" => Application(payload(m, tag, path, expression_list_at))
-    "operatorapplication" =>
-      payload(m, tag, path, (v, p) => {
-        OperatorApplication(
-          field(v, p, "operator", string_at),
-          field(v, p, "direction", infix_direction_at),
-          field(v, p, "left", expression_node_at),
-          field(v, p, "right", expression_node_at),
-        )
-      })
-    "functionOrValue" =>
-      payload(m, tag, path, (v, p) => {
+    "unit" => {
+      ignore(payload(m, tag, path, pair))
+      done(UnitExpr)
+    }
+    "application" => nested_list(xs => Application(xs))
+    "operatorapplication" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let op = field(v, p, "operator", string_at)
+      let direction = field(v, p, "direction", infix_direction_at)
+      let left : Ref[Node[Expression]?] = Ref(None)
+      let right : Ref[Node[Expression]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "left", pair), expression_steps, left),
+        node_step(() => field(v, p, "right", pair), expression_steps, right),
+        Step(() => {
+          done(OperatorApplication(op, direction, got(left), got(right)))
+        }),
+      ]
+    }
+    "functionOrValue" => {
+      let (v, p) = payload(m, tag, path, pair)
+      done(
         FunctionOrValue(
           field(v, p, "moduleName", module_name_at),
           field(v, p, "name", string_at),
-        )
-      })
-    "ifBlock" =>
-      payload(m, tag, path, (v, p) => {
-        IfBlock(
-          field(v, p, "clause", expression_node_at),
-          field(v, p, "then", expression_node_at),
-          field(v, p, "else", expression_node_at),
-        )
-      })
-    "prefixoperator" => PrefixOperator(payload(m, tag, path, string_at))
-    "operator" => Operator(payload(m, tag, path, string_at))
-    "hex" => Hex(payload(m, tag, path, int64_at))
-    "integer" => Integer(payload(m, tag, path, int64_at))
-    "float" => Floatable(payload(m, tag, path, double_at))
-    "negation" => Negation(payload(m, tag, path, expression_node_at))
-    "literal" => Literal(payload(m, tag, path, string_at))
-    "charLiteral" => CharLiteral(payload(m, tag, path, char_at))
-    "tupled" => TupledExpression(payload(m, tag, path, expression_list_at))
-    "list" => ListExpr(payload(m, tag, path, expression_list_at))
-    "parenthesized" =>
-      ParenthesizedExpression(payload(m, tag, path, expression_node_at))
-    "let" => LetExpression(payload(m, tag, path, let_block_at))
-    "case" => CaseExpression(payload(m, tag, path, case_block_at))
-    "lambda" => LambdaExpression(payload(m, tag, path, lambda_at))
-    "recordAccess" =>
-      payload(m, tag, path, (v, p) => {
-        RecordAccess(
-          field(v, p, "expression", expression_node_at),
-          field(v, p, "name", string_node_at),
-        )
-      })
+        ),
+      )
+    }
+    "ifBlock" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let clause : Ref[Node[Expression]?] = Ref(None)
+      let then_ : Ref[Node[Expression]?] = Ref(None)
+      let else_ : Ref[Node[Expression]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "clause", pair), expression_steps, clause),
+        node_step(() => field(v, p, "then", pair), expression_steps, then_),
+        node_step(() => field(v, p, "else", pair), expression_steps, else_),
+        Step(() => done(IfBlock(got(clause), got(then_), got(else_)))),
+      ]
+    }
+    "prefixoperator" => done(PrefixOperator(payload(m, tag, path, string_at)))
+    "operator" => done(Operator(payload(m, tag, path, string_at)))
+    "hex" => done(Hex(payload(m, tag, path, int64_at)))
+    "integer" => done(Integer(payload(m, tag, path, int64_at)))
+    "float" => done(Floatable(payload(m, tag, path, double_at)))
+    "negation" => nested(x => Negation(x))
+    "literal" => done(Literal(payload(m, tag, path, string_at)))
+    "charLiteral" => done(CharLiteral(payload(m, tag, path, char_at)))
+    "tupled" => nested_list(xs => TupledExpression(xs))
+    "list" => nested_list(xs => ListExpr(xs))
+    "parenthesized" => nested(x => ParenthesizedExpression(x))
+    "let" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let declarations : Ref[Array[Node[LetDeclaration]]?] = Ref(None)
+      let expression : Ref[Node[Expression]?] = Ref(None)
+      [
+        list_step(
+          () => field(v, p, "declarations", pair),
+          (get, cell) => node_step(get, let_declaration_steps, cell),
+          declarations,
+        ),
+        node_step(
+          () => field(v, p, "expression", pair),
+          expression_steps,
+          expression,
+        ),
+        Step(() => {
+          done(
+            LetExpression({
+              declarations: got(declarations),
+              expression: got(expression),
+            }),
+          )
+        }),
+      ]
+    }
+    "case" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let expression : Ref[Node[Expression]?] = Ref(None)
+      let cases : Ref[Array[Case]?] = Ref(None)
+      [
+        node_step(
+          () => field(v, p, "expression", pair),
+          expression_steps,
+          expression,
+        ),
+        list_step(
+          () => field(v, p, "cases", pair),
+          (get, cell) => {
+            Step(() => {
+              let (cv, cp) = get()
+              let pattern : Ref[Node[Pattern]?] = Ref(None)
+              let body : Ref[Node[Expression]?] = Ref(None)
+              [
+                node_step(
+                  () => field(cv, cp, "pattern", pair),
+                  pattern_steps,
+                  pattern,
+                ),
+                node_step(
+                  () => field(cv, cp, "expression", pair),
+                  expression_steps,
+                  body,
+                ),
+                Step(() => {
+                  cell.val = Some(
+                    ({ pattern: got(pattern), expression: got(body), } : Case),
+                  )
+                  []
+                }),
+              ]
+            })
+          },
+          cases,
+        ),
+        Step(() => {
+          done(
+            CaseExpression({ expression: got(expression), cases: got(cases), }),
+          )
+        }),
+      ]
+    }
+    "lambda" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let args : Ref[Array[Node[Pattern]]?] = Ref(None)
+      let expression : Ref[Node[Expression]?] = Ref(None)
+      [
+        pattern_list_step(() => field(v, p, "patterns", pair), args),
+        node_step(
+          () => field(v, p, "expression", pair),
+          expression_steps,
+          expression,
+        ),
+        Step(() => {
+          done(
+            LambdaExpression({ args: got(args), expression: got(expression), }),
+          )
+        }),
+      ]
+    }
+    "recordAccess" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let expression : Ref[Node[Expression]?] = Ref(None)
+      [
+        node_step(
+          () => field(v, p, "expression", pair),
+          expression_steps,
+          expression,
+        ),
+        // The name is read after the expression, as elm-syntax does.
+        Step(() => {
+          done(
+            RecordAccess(got(expression), field(v, p, "name", string_node_at)),
+          )
+        }),
+      ]
+    }
     "recordAccessFunction" =>
-      RecordAccessFunction(payload(m, tag, path, string_at))
-    "record" => RecordExpr(payload(m, tag, path, record_setter_list_at))
-    "recordUpdate" =>
-      payload(m, tag, path, (v, p) => {
-        RecordUpdateExpression(
-          field(v, p, "name", string_node_at),
-          field(v, p, "updates", record_setter_list_at),
-        )
-      })
-    "glsl" => GLSLExpression(payload(m, tag, path, string_at))
+      done(RecordAccessFunction(payload(m, tag, path, string_at)))
+    "record" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let setters : Ref[Array[Node[RecordSetter]]?] = Ref(None)
+      [
+        record_setter_list_step(() => (v, p), setters),
+        Step(() => done(RecordExpr(got(setters)))),
+      ]
+    }
+    "recordUpdate" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let name = field(v, p, "name", string_node_at)
+      let updates : Ref[Array[Node[RecordSetter]]?] = Ref(None)
+      [
+        record_setter_list_step(() => field(v, p, "updates", pair), updates),
+        Step(() => done(RecordUpdateExpression(name, got(updates)))),
+      ]
+    }
+    "glsl" => done(GLSLExpression(payload(m, tag, path, string_at)))
     _ => unknown_tag(path, tag)
   }
 }
 
 ///|
-fn let_block_at(j : Json, path : Path) -> LetBlock raise DecodeError {
-  {
-    declarations: field(j, path, "declarations", (v, p) => {
-      list_at(v, p, (v, p) => node_at(v, p, let_declaration_at))
-    }),
-    expression: field(j, path, "expression", expression_node_at),
-  }
-}
-
-///|
-fn let_declaration_at(
+fn let_declaration_steps(
   j : Json,
   path : Path,
-) -> LetDeclaration raise DecodeError {
+  out : Ref[LetDeclaration?],
+) -> Array[Step] raise DecodeError {
   let (tag, m) = typed(j, path)
   match tag {
-    "function" => LetFunction(payload(m, tag, path, function_at))
-    "destructuring" =>
-      payload(m, tag, path, (v, p) => {
-        LetDestructuring(
-          field(v, p, "pattern", pattern_node_at),
-          field(v, p, "expression", expression_node_at),
-        )
-      })
+    "function" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let f : Ref[Function?] = Ref(None)
+      let steps = function_steps(v, p, f)
+      steps.push(
+        Step(() => {
+          out.val = Some(LetFunction(got(f)))
+          []
+        }),
+      )
+      steps
+    }
+    "destructuring" => {
+      let (v, p) = payload(m, tag, path, pair)
+      let pattern : Ref[Node[Pattern]?] = Ref(None)
+      let expression : Ref[Node[Expression]?] = Ref(None)
+      [
+        node_step(() => field(v, p, "pattern", pair), pattern_steps, pattern),
+        node_step(
+          () => field(v, p, "expression", pair),
+          expression_steps,
+          expression,
+        ),
+        Step(() => {
+          out.val = Some(LetDestructuring(got(pattern), got(expression)))
+          []
+        }),
+      ]
+    }
     _ => unknown_tag(path, tag)
   }
 }
 
 ///|
-fn case_block_at(j : Json, path : Path) -> CaseBlock raise DecodeError {
-  {
-    expression: field(j, path, "expression", expression_node_at),
-    cases: field(j, path, "cases", (v, p) => {
-      list_at(v, p, (v, p) => {
-        pattern: field(v, p, "pattern", pattern_node_at),
-        expression: field(v, p, "expression", expression_node_at),
-      })
-    }),
-  }
-}
-
-///|
-fn lambda_at(j : Json, path : Path) -> Lambda raise DecodeError {
-  {
-    args: field(j, path, "patterns", pattern_list_at),
-    expression: field(j, path, "expression", expression_node_at),
-  }
-}
-
-///|
-fn function_at(j : Json, path : Path) -> Function raise DecodeError {
-  {
-    documentation: documentation_at(j, path),
-    signature: field(j, path, "signature", (v, p) => {
-      nullable_at(v, p, (v, p) => node_at(v, p, signature_at))
-    }),
-    declaration: field(j, path, "declaration", (v, p) => {
-      node_at(v, p, function_implementation_at)
-    }),
-  }
-}
-
-///|
-fn function_implementation_at(
+/// The steps of a function: the documentation now, then the signature, the
+/// declaration and the function itself, in elm-syntax's order.
+fn function_steps(
   j : Json,
   path : Path,
-) -> FunctionImplementation raise DecodeError {
-  {
-    name: field(j, path, "name", string_node_at),
-    arguments: field(j, path, "arguments", pattern_list_at),
-    expression: field(j, path, "expression", expression_node_at),
-  }
+  out : Ref[Function?],
+) -> Array[Step] raise DecodeError {
+  let documentation = documentation_at(j, path)
+  let signature : Ref[Node[Signature]??] = Ref(None)
+  let declaration : Ref[Node[FunctionImplementation]?] = Ref(None)
+  [
+    Step(() => {
+      let (v, p) = field(j, path, "signature", pair)
+      match v {
+        Null => {
+          signature.val = Some(None)
+          []
+        }
+        _ => {
+          let present : Ref[Node[Signature]?] = Ref(None)
+          [
+            node_step(() => (v, p), signature_steps, present),
+            Step(() => {
+              signature.val = Some(Some(got(present)))
+              []
+            }),
+          ]
+        }
+      }
+    }),
+    node_step(
+      () => field(j, path, "declaration", pair),
+      (v, p, impl_out) => {
+        let name = field(v, p, "name", string_node_at)
+        let arguments : Ref[Array[Node[Pattern]]?] = Ref(None)
+        let expression : Ref[Node[Expression]?] = Ref(None)
+        [
+          pattern_list_step(() => field(v, p, "arguments", pair), arguments),
+          node_step(
+            () => field(v, p, "expression", pair),
+            expression_steps,
+            expression,
+          ),
+          Step(() => {
+            impl_out.val = Some(
+              (
+                {
+                  name,
+                  arguments: got(arguments),
+                  expression: got(expression),
+                } : FunctionImplementation),
+            )
+            []
+          }),
+        ]
+      },
+      declaration,
+    ),
+    Step(() => {
+      out.val = Some({
+        documentation,
+        signature: got(signature),
+        declaration: got(declaration),
+      })
+      []
+    }),
+  ]
 }
 
 // ---------------------------------------------------------------------------
@@ -869,7 +1418,8 @@ fn function_implementation_at(
 /// `encode_file` and `encode_file_with`. `decode_file(encode_file(f))` gives
 /// `f` back, except for Int literals above 2^53 (use `exact_ints=true` for
 /// those). Malformed input raises `DecodeError` with the JSON path of the
-/// problem.
+/// problem. The decoder does not recurse per AST level, so a `Json` value
+/// of any depth decodes; `@json.parse` has its own `max_nesting_depth`.
 ///
 /// ```mbt check
 /// test {
@@ -894,7 +1444,7 @@ fn function_implementation_at(
 /// }
 /// ```
 pub fn decode_file(json : Json) -> File raise DecodeError {
-  file_at(json, Root)
+  decode_with(json, Root, file_steps)
 }
 
 ///|
@@ -950,7 +1500,7 @@ pub fn decode_import(json : Json) -> Import raise DecodeError {
 ///|
 /// Elm.Syntax.Declaration.decoder.
 pub fn decode_declaration(json : Json) -> Declaration raise DecodeError {
-  declaration_at(json, Root)
+  decode_with(json, Root, declaration_steps)
 }
 
 ///|
@@ -968,19 +1518,19 @@ pub fn decode_infix_direction(json : Json) -> InfixDirection raise DecodeError {
 ///|
 /// Elm.Syntax.Signature.decoder.
 pub fn decode_signature(json : Json) -> Signature raise DecodeError {
-  signature_at(json, Root)
+  decode_with(json, Root, signature_steps)
 }
 
 ///|
 /// Elm.Syntax.TypeAlias.decoder.
 pub fn decode_type_alias(json : Json) -> TypeAlias raise DecodeError {
-  type_alias_at(json, Root)
+  decode_with(json, Root, type_alias_steps)
 }
 
 ///|
 /// Elm.Syntax.Type.decoder.
 pub fn decode_type(json : Json) -> Type raise DecodeError {
-  type_at(json, Root)
+  decode_with(json, Root, type_steps)
 }
 
 ///|
@@ -988,29 +1538,29 @@ pub fn decode_type(json : Json) -> Type raise DecodeError {
 pub fn decode_value_constructor(
   json : Json,
 ) -> ValueConstructor raise DecodeError {
-  value_constructor_at(json, Root)
+  decode_with(json, Root, value_constructor_steps)
 }
 
 ///|
 /// Elm.Syntax.TypeAnnotation.decoder.
 pub fn decode_type_annotation(json : Json) -> TypeAnnotation raise DecodeError {
-  type_annotation_at(json, Root)
+  decode_with(json, Root, type_annotation_steps)
 }
 
 ///|
 /// Elm.Syntax.Pattern.decoder.
 pub fn decode_pattern(json : Json) -> Pattern raise DecodeError {
-  pattern_at(json, Root)
+  decode_with(json, Root, pattern_steps)
 }
 
 ///|
 /// Elm.Syntax.Expression.decoder.
 pub fn decode_expression(json : Json) -> Expression raise DecodeError {
-  expression_at(json, Root)
+  decode_with(json, Root, expression_steps)
 }
 
 ///|
 /// Elm.Syntax.Expression.functionDecoder.
 pub fn decode_function(json : Json) -> Function raise DecodeError {
-  function_at(json, Root)
+  decode_with(json, Root, function_steps)
 }

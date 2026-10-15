@@ -109,8 +109,8 @@ moonrockz/krueger
   calibrated against the targets' default stacks (the table at
   `NESTING_COST` in `src/parser/cursor.mbt`); more fuel needs more stack,
   which is the host's setting (cookbook: `docs/cookbook/fuel.mbt.md`). The
-  encoder, the printer and the syntax walks use explicit stacks and have no
-  depth limit:
+  encoder, the decoder, the printer and the syntax walks use explicit stacks
+  and have no depth limit:
 
 | Code | Meaning |
 |------|---------|
@@ -466,7 +466,11 @@ and `print_type_annotation`, each with `width?` (default 120) and
   depth limit. A leaf runs when it is popped, so comments are taken and
   errors are raised in source order; a plan's combine function only builds
   docs. The AST encoder (`src/ast/encode.mbt`) fills `null` slots from a
-  queue the same way.
+  queue the same way, and the decoder (`src/ast/decode.mbt`) runs `Step`s
+  from a stack: a step reads one node's shallow fields, returns the steps
+  of its nested nodes (each looks its field up when it runs, so the first
+  error reported is the depth-first one) and a last step that builds the
+  node from the cells its children filled.
 - The layout engine is the module
   [`moonrockz/pretty`](https://github.com/moonrockz/pretty) (on
   mooncakes.io): `Doc`, the `Doc` builders (`text`, `verbatim`, `line`,

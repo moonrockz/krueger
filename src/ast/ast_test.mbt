@@ -157,3 +157,72 @@ test "a non-finite float encodes as null, as elm-syntax does" {
     "\"float\":null",
   )
 }
+
+///|
+/// With two faults, the decoder reports the one a depth-first reader meets
+/// first: the deep one, before a shallow field that comes after it.
+test "decode reports the first fault in depth-first order" {
+  let node = (v : Json) => ({ "range": [1, 1, 1, 2], "value": v } : Json)
+  let bad : Json = { "type": "bogus", "bogus": 1 }
+  let cases : Array[(String, () -> Unit raise @ast.DecodeError, String)] = [
+    (
+      "as pattern: the pattern before the name",
+      () => {
+        ignore(
+          @ast.decode_pattern({ "type": "as", "as": { "pattern": node(bad) } }),
+        )
+      },
+      "$.as.pattern.value.type: No decoder for type: bogus",
+    ),
+    (
+      "record access: the expression before the name",
+      () => {
+        ignore(
+          @ast.decode_expression({
+            "type": "recordAccess",
+            "recordAccess": { "expression": node(bad) },
+          }),
+        )
+      },
+      "$.recordAccess.expression.value.type: No decoder for type: bogus",
+    ),
+    (
+      "function: the signature before the declaration",
+      () => {
+        ignore(
+          @ast.decode_function({
+            "documentation": Json::null(),
+            "signature": { "value": 1 },
+            "declaration": 1,
+          }),
+        )
+      },
+      "$.signature: Expecting an OBJECT with a field named `range`",
+    ),
+    (
+      "file: the declarations before the comments",
+      () => {
+        ignore(
+          @ast.decode_file({
+            "moduleDefinition": node({
+              "type": "normal",
+              "normal": {
+                "moduleName": node(["A"]),
+                "exposingList": node({ "type": "all", "all": [1, 1, 1, 2] }),
+              },
+            }),
+            "imports": [],
+            "declarations": [node(bad)],
+          }),
+        )
+      },
+      "$.declarations[0].value.type: No decoder for type: bogus",
+    ),
+  ]
+  @expect.expect_all(s => {
+    for c in cases {
+      let (name, run, expected) = c
+      s.expect((name, expect_error(run))).to_equal((name, expected))
+    }
+  })
+}
