@@ -130,9 +130,9 @@ test "a column after an emoji is one UTF-16 unit further than it looks" {
 ## Build the tree without recursion
 
 A recursive function that calls itself for each child is the usual way to
-build a nested tree. Do not use it here. A declaration can be up to 400 levels
-deep (krueger reports deeper ones as `TOO MUCH NESTING`), and on wasm the
-stack overflows after a few hundred frames.
+build a nested tree. Do not use it here. A declaration can be hundreds of
+levels deep (a left-associative operator chain has no limit at all), and on
+wasm the stack overflows after a few hundred frames.
 
 Use `@syntax.walk` instead. It walks the tree with its own explicit stack and
 calls `enter` before a node's children and `leave` after them. Keep your own

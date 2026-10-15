@@ -95,10 +95,22 @@ moonrockz/krueger
   range quirks; each one is marked with a comment where it is implemented.
 - On all 363 corpus files the output is byte-identical to elm-syntax. When something
   cannot be parsed, the declaration is left out of the AST and the CST, and
-  reported. Nesting deeper than 150 levels (parentheses, lists, records,
-  `let`, `case` and so on), or a declaration whose AST is more than 400 levels deep
-  (for example a very long operator chain, record access chain or type arrow
-  chain), is a syntax error (`TOO MUCH NESTING`), not a stack overflow:
+  reported. The parser spends one caller-set budget, the fuel (`fuel~` on
+  `parse_module`, `parse_tokens`, `format` and `format_parsed`; default
+  `DEFAULT_FUEL`, 1200, in `src/dialect/fuel.mbt`): a nesting level of
+  expressions, types and patterns (`Cursor::nested`) costs 8 and a step of a
+  right-recursive chain (`Cursor::chain`: `::`, `->`, a right-associative
+  operator) costs 2 plus the 8 of its operand. With the default, nesting
+  deeper than 150 levels (75 for constructor patterns and type applications,
+  which count two levels each) or a chain of more than 596 steps is a syntax
+  error (`TOO MUCH NESTING`, `KR-PARSE-010`, with the fuel and the walk in
+  `Diagnostic.detail`), not a stack overflow. Left-associative operator
+  chains and record access chains are loops and have no limit. The costs are
+  calibrated against the targets' default stacks (the table at
+  `NESTING_COST` in `src/parser/cursor.mbt`); more fuel needs more stack,
+  which is the host's setting (cookbook: `docs/cookbook/fuel.mbt.md`). The
+  encoder, the printer and the syntax walks use explicit stacks and have no
+  depth limit:
 
 | Code | Meaning |
 |------|---------|
@@ -217,7 +229,8 @@ result. It is the base for the traversal APIs and queries.
   from the root) are linear in the depth. `node_at(location)` (the innermost
   node that contains it) and `tokens_in(range)`.
 - The walks in `src/syntax` use explicit stacks, not recursion, because wasm
-  overflows at a few hundred frames and trees can be 400 levels deep. Nodes from
+  overflows at a few hundred frames and trees can be thousands of levels deep
+  (a long left-associative operator chain has no limit). Nodes from
   the tree compare by identity first (`same`), so `parent` and `ancestors` do not
   compare whole subtrees.
 - No shared mutable state: every returned array is new, and `Tree` keeps its own
@@ -447,8 +460,13 @@ and `print_type_annotation`, each with `width?` (default 120) and
   declarations) must be in the dialect's operator table; Elm 0.19 has no
   user-defined operators. Any other symbol raises `InvalidName(Operator,
   symbol)`.
-- Expression printing uses an explicit work stack, so it is stack-safe on
-  all targets. More than 400 nested printer levels raise `TooDeep`.
+- Expression, pattern and type printing use one explicit work stack
+  (`Work` in `src/printer/expressions.mbt`: `Expr`, `Pat`, `Type`, `Leaf`,
+  `Plan`, `Build`), so the printer is stack-safe on all targets and has no
+  depth limit. A leaf runs when it is popped, so comments are taken and
+  errors are raised in source order; a plan's combine function only builds
+  docs. The AST encoder (`src/ast/encode.mbt`) fills `null` slots from a
+  queue the same way.
 - The layout engine is the module
   [`moonrockz/pretty`](https://github.com/moonrockz/pretty) (on
   mooncakes.io): `Doc`, the `Doc` builders (`text`, `verbatim`, `line`,
