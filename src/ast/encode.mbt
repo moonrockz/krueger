@@ -70,6 +70,118 @@ pub fn[T] encode_node(n : Node[T], f : (T) -> Json) -> Json {
 }
 
 ///|
+/// A place in a JSON object that a nested node fills later. `Map` in `Json`
+/// is mutable and keeps its insertion order, so the slot is filled in place
+/// and the key order stays elm-syntax's.
+priv enum Slot {
+  Key(Map[String, Json], String)
+}
+
+///|
+fn Slot::fill(self : Slot, value : Json) -> Unit {
+  match self {
+    Key(m, key) => m[key] = value
+  }
+}
+
+///|
+/// A nested node whose JSON is still to be written into its slot.
+priv enum Pending {
+  E(Slot, Expression)
+  P(Slot, Pattern)
+  T(Slot, TypeAnnotation)
+  F(Slot, Function)
+}
+
+///|
+/// The encoder state. The encoder does not recurse per AST level: each
+/// encoder writes its own object with `null` in the slot of every nested
+/// expression, pattern, type or function and queues the node; `run` pops
+/// the queue until it is empty. Deep trees (long chains, many nested
+/// parentheses) encode on every target without a stack limit.
+priv struct Enc {
+  exact_ints : Bool
+  pending : Array[Pending]
+}
+
+///|
+fn Enc::new(exact_ints : Bool) -> Enc {
+  { exact_ints, pending: [], }
+}
+
+///|
+/// Encode every pending node (and the nodes they queue) into its slot.
+fn Enc::run(self : Enc) -> Unit {
+  while self.pending.pop() is Some(item) {
+    match item {
+      E(slot, e) => slot.fill(self.expression(e))
+      P(slot, p) => slot.fill(self.pattern(p))
+      T(slot, t) => slot.fill(self.type_annotation(t))
+      F(slot, f) => slot.fill(self.function(f))
+    }
+  }
+}
+
+///|
+/// `encode_node` for a nested expression: the node's object, with its
+/// `value` queued.
+fn Enc::expr_node(self : Enc, node : Node[Expression]) -> Json {
+  let m : Map[String, Json] = Map([
+    ("range", encode_range(node.range)),
+    ("value", Json::null()),
+  ])
+  self.pending.push(E(Key(m, "value"), node.value))
+  Json::object(m)
+}
+
+///|
+fn Enc::pattern_node(self : Enc, node : Node[Pattern]) -> Json {
+  let m : Map[String, Json] = Map([
+    ("range", encode_range(node.range)),
+    ("value", Json::null()),
+  ])
+  self.pending.push(P(Key(m, "value"), node.value))
+  Json::object(m)
+}
+
+///|
+fn Enc::type_node(self : Enc, node : Node[TypeAnnotation]) -> Json {
+  let m : Map[String, Json] = Map([
+    ("range", encode_range(node.range)),
+    ("value", Json::null()),
+  ])
+  self.pending.push(T(Key(m, "value"), node.value))
+  Json::object(m)
+}
+
+///|
+fn Enc::expr_list(self : Enc, xs : ArrayView[Node[Expression]]) -> Json {
+  let arr : Array[Json] = Array::make(xs.length(), Json::null())
+  for i, x in xs {
+    arr[i] = self.expr_node(x)
+  }
+  Json::array(arr)
+}
+
+///|
+fn Enc::pattern_list(self : Enc, xs : ArrayView[Node[Pattern]]) -> Json {
+  let arr : Array[Json] = Array::make(xs.length(), Json::null())
+  for i, x in xs {
+    arr[i] = self.pattern_node(x)
+  }
+  Json::array(arr)
+}
+
+///|
+fn Enc::type_list(self : Enc, xs : ArrayView[Node[TypeAnnotation]]) -> Json {
+  let arr : Array[Json] = Array::make(xs.length(), Json::null())
+  for i, x in xs {
+    arr[i] = self.type_node(x)
+  }
+  Json::array(arr)
+}
+
+///|
 /// Elm.Syntax.ModuleName.encode.
 pub fn encode_module_name(m : ModuleName) -> Json {
   encode_list(m, encode_string)
@@ -99,17 +211,20 @@ pub fn encode_module_name(m : ModuleName) -> Json {
 /// }
 /// ```
 pub fn encode_file_with(file : File, exact_ints~ : Bool) -> Json {
-  obj([
+  let enc = Enc::new(exact_ints)
+  let json = obj([
     ("moduleDefinition", encode_node(file.module_definition, encode_module)),
     ("imports", encode_list(file.imports, n => encode_node(n, encode_import))),
     (
       "declarations",
       encode_list(file.declarations, n => {
-        encode_node(n, v => encode_declaration_with(v, exact_ints~))
+        encode_node(n, v => enc.declaration(v))
       }),
     ),
     ("comments", encode_list(file.comments, n => encode_node(n, encode_string))),
   ])
+  enc.run()
+  json
 }
 
 ///|
@@ -198,22 +313,33 @@ pub fn encode_import(i : Import) -> Json {
 /// With `exact_ints`, Int literals are written with their exact digits
 /// (elm-syntax writes the nearest Double, which differs above 2^53).
 pub fn encode_declaration_with(d : Declaration, exact_ints~ : Bool) -> Json {
+  let enc = Enc::new(exact_ints)
+  let json = enc.declaration(d)
+  enc.run()
+  json
+}
+
+///|
+fn Enc::declaration(self : Enc, d : Declaration) -> Json {
   match d {
-    FunctionDeclaration(f) =>
-      encode_typed("function", encode_function_with(f, exact_ints~))
-    AliasDeclaration(a) => encode_typed("typeAlias", encode_type_alias(a))
-    CustomTypeDeclaration(t) => encode_typed("typedecl", encode_type(t))
-    PortDeclaration(s) => encode_typed("port", encode_signature(s))
+    FunctionDeclaration(f) => {
+      let m : Map[String, Json] = Map([
+        ("type", Json::string("function")),
+        ("function", Json::null()),
+      ])
+      self.pending.push(F(Key(m, "function"), f))
+      Json::object(m)
+    }
+    AliasDeclaration(a) => encode_typed("typeAlias", self.type_alias(a))
+    CustomTypeDeclaration(t) => encode_typed("typedecl", self.custom_type(t))
+    PortDeclaration(s) => encode_typed("port", self.signature(s))
     InfixDeclaration(i) => encode_typed("infix", encode_infix(i))
     Destructuring(p, e) =>
       encode_typed(
         "destructuring",
         obj([
-          ("pattern", encode_node(p, v => encode_pattern_with(v, exact_ints~))),
-          (
-            "expression",
-            encode_node(e, v => encode_expression_with(v, exact_ints~)),
-          ),
+          ("pattern", self.pattern_node(p)),
+          ("expression", self.expr_node(e)),
         ]),
       )
   }
@@ -243,15 +369,31 @@ pub fn encode_infix_direction(d : InfixDirection) -> Json {
 ///|
 /// Elm.Syntax.Signature.encode.
 pub fn encode_signature(s : Signature) -> Json {
+  let enc = Enc::new(false)
+  let json = enc.signature(s)
+  enc.run()
+  json
+}
+
+///|
+fn Enc::signature(self : Enc, s : Signature) -> Json {
   obj([
     ("name", encode_node(s.name, encode_string)),
-    ("typeAnnotation", encode_node(s.type_annotation, encode_type_annotation)),
+    ("typeAnnotation", self.type_node(s.type_annotation)),
   ])
 }
 
 ///|
 /// Elm.Syntax.TypeAlias.encode.
 pub fn encode_type_alias(a : TypeAlias) -> Json {
+  let enc = Enc::new(false)
+  let json = enc.type_alias(a)
+  enc.run()
+  json
+}
+
+///|
+fn Enc::type_alias(self : Enc, a : TypeAlias) -> Json {
   obj([
     (
       "documentation",
@@ -259,13 +401,21 @@ pub fn encode_type_alias(a : TypeAlias) -> Json {
     ),
     ("name", encode_node(a.name, encode_string)),
     ("generics", encode_list(a.generics, n => encode_node(n, encode_string))),
-    ("typeAnnotation", encode_node(a.type_annotation, encode_type_annotation)),
+    ("typeAnnotation", self.type_node(a.type_annotation)),
   ])
 }
 
 ///|
 /// Elm.Syntax.Type.encode.
 pub fn encode_type(t : Type) -> Json {
+  let enc = Enc::new(false)
+  let json = enc.custom_type(t)
+  enc.run()
+  json
+}
+
+///|
+fn Enc::custom_type(self : Enc, t : Type) -> Json {
   obj([
     (
       "documentation",
@@ -275,7 +425,9 @@ pub fn encode_type(t : Type) -> Json {
     ("generics", encode_list(t.generics, n => encode_node(n, encode_string))),
     (
       "constructors",
-      encode_list(t.constructors, n => encode_node(n, encode_value_constructor)),
+      encode_list(t.constructors, n => {
+        encode_node(n, v => self.value_constructor(v))
+      }),
     ),
   ])
 }
@@ -283,18 +435,32 @@ pub fn encode_type(t : Type) -> Json {
 ///|
 /// Elm.Syntax.Type.encodeValueConstructor.
 pub fn encode_value_constructor(c : ValueConstructor) -> Json {
+  let enc = Enc::new(false)
+  let json = enc.value_constructor(c)
+  enc.run()
+  json
+}
+
+///|
+fn Enc::value_constructor(self : Enc, c : ValueConstructor) -> Json {
   obj([
     ("name", encode_node(c.name, encode_string)),
-    (
-      "arguments",
-      encode_list(c.arguments, n => encode_node(n, encode_type_annotation)),
-    ),
+    ("arguments", self.type_list(c.arguments)),
   ])
 }
 
 ///|
 /// Elm.Syntax.TypeAnnotation.encode.
 pub fn encode_type_annotation(t : TypeAnnotation) -> Json {
+  let enc = Enc::new(false)
+  let json = enc.type_annotation(t)
+  enc.run()
+  json
+}
+
+///|
+/// The type's own object; its nested types are queued.
+fn Enc::type_annotation(self : Enc, t : TypeAnnotation) -> Json {
   match t {
     GenericType(name) =>
       encode_typed("generic", obj([("value", encode_string(name))]))
@@ -311,54 +477,40 @@ pub fn encode_type_annotation(t : TypeAnnotation) -> Json {
               ])
             }),
           ),
-          (
-            "args",
-            encode_list(args, n => encode_node(n, encode_type_annotation)),
-          ),
+          ("args", self.type_list(args)),
         ]),
       )
     Unit => encode_typed("unit", obj([]))
     Tupled(values) =>
-      encode_typed(
-        "tupled",
-        obj([
-          (
-            "values",
-            encode_list(values, n => encode_node(n, encode_type_annotation)),
-          ),
-        ]),
-      )
+      encode_typed("tupled", obj([("values", self.type_list(values))]))
     FunctionTypeAnnotation(left, right) =>
       encode_typed(
         "function",
-        obj([
-          ("left", encode_node(left, encode_type_annotation)),
-          ("right", encode_node(right, encode_type_annotation)),
-        ]),
+        obj([("left", self.type_node(left)), ("right", self.type_node(right))]),
       )
     Record(fields) =>
-      encode_typed("record", obj([("value", encode_record_definition(fields))]))
+      encode_typed("record", obj([("value", self.record_definition(fields))]))
     GenericRecord(name, fields) =>
       encode_typed(
         "genericRecord",
         obj([
           ("name", encode_node(name, encode_string)),
-          ("values", encode_node(fields, encode_record_definition)),
+          ("values", encode_node(fields, v => self.record_definition(v))),
         ]),
       )
   }
 }
 
 ///|
-fn encode_record_definition(fields : RecordDefinition) -> Json {
-  encode_list(fields, n => encode_node(n, encode_record_field))
+fn Enc::record_definition(self : Enc, fields : RecordDefinition) -> Json {
+  encode_list(fields, n => encode_node(n, v => self.record_field(v)))
 }
 
 ///|
-fn encode_record_field(f : RecordField) -> Json {
+fn Enc::record_field(self : Enc, f : RecordField) -> Json {
   obj([
     ("name", encode_node(f.name, encode_string)),
-    ("typeAnnotation", encode_node(f.type_annotation, encode_type_annotation)),
+    ("typeAnnotation", self.type_node(f.type_annotation)),
   ])
 }
 
@@ -367,6 +519,16 @@ fn encode_record_field(f : RecordField) -> Json {
 /// With `exact_ints`, Int literals are written with their exact digits
 /// (elm-syntax writes the nearest Double, which differs above 2^53).
 pub fn encode_pattern_with(p : Pattern, exact_ints~ : Bool) -> Json {
+  let enc = Enc::new(exact_ints)
+  let json = enc.pattern(p)
+  enc.run()
+  json
+}
+
+///|
+/// The pattern's own object; its nested patterns are queued.
+fn Enc::pattern(self : Enc, p : Pattern) -> Json {
+  let exact_ints = self.exact_ints
   match p {
     AllPattern => encode_typed("all", obj([]))
     UnitPattern => encode_typed("unit", obj([]))
@@ -379,17 +541,7 @@ pub fn encode_pattern_with(p : Pattern, exact_ints~ : Bool) -> Json {
       encode_typed("int", obj([("value", encode_int64(i, exact_ints~))]))
     FloatPattern(f) => encode_typed("float", obj([("value", Json::number(f))]))
     TuplePattern(ps) =>
-      encode_typed(
-        "tuple",
-        obj([
-          (
-            "value",
-            encode_list(ps, n => {
-              encode_node(n, v => encode_pattern_with(v, exact_ints~))
-            }),
-          ),
-        ]),
-      )
+      encode_typed("tuple", obj([("value", self.pattern_list(ps))]))
     RecordPattern(names) =>
       encode_typed(
         "record",
@@ -399,25 +551,12 @@ pub fn encode_pattern_with(p : Pattern, exact_ints~ : Bool) -> Json {
       encode_typed(
         "uncons",
         obj([
-          ("left", encode_node(left, v => encode_pattern_with(v, exact_ints~))),
-          (
-            "right",
-            encode_node(right, v => encode_pattern_with(v, exact_ints~)),
-          ),
+          ("left", self.pattern_node(left)),
+          ("right", self.pattern_node(right)),
         ]),
       )
     ListPattern(ps) =>
-      encode_typed(
-        "list",
-        obj([
-          (
-            "value",
-            encode_list(ps, n => {
-              encode_node(n, v => encode_pattern_with(v, exact_ints~))
-            }),
-          ),
-        ]),
-      )
+      encode_typed("list", obj([("value", self.pattern_list(ps))]))
     VarPattern(name) =>
       encode_typed("var", obj([("value", encode_string(name))]))
     NamedPattern(qualified, ps) =>
@@ -431,12 +570,7 @@ pub fn encode_pattern_with(p : Pattern, exact_ints~ : Bool) -> Json {
               ("name", encode_string(qualified.name)),
             ]),
           ),
-          (
-            "patterns",
-            encode_list(ps, n => {
-              encode_node(n, v => encode_pattern_with(v, exact_ints~))
-            }),
-          ),
+          ("patterns", self.pattern_list(ps)),
         ]),
       )
     AsPattern(destructured, name) =>
@@ -444,29 +578,13 @@ pub fn encode_pattern_with(p : Pattern, exact_ints~ : Bool) -> Json {
         "as",
         obj([
           ("name", encode_node(name, encode_string)),
-          (
-            "pattern",
-            encode_node(destructured, v => encode_pattern_with(v, exact_ints~)),
-          ),
+          ("pattern", self.pattern_node(destructured)),
         ]),
       )
     // Tag spelling "parentisized" is elm-syntax's own (sic).
     ParenthesizedPattern(inner) =>
-      encode_typed(
-        "parentisized",
-        obj([
-          (
-            "value",
-            encode_node(inner, v => encode_pattern_with(v, exact_ints~)),
-          ),
-        ]),
-      )
+      encode_typed("parentisized", obj([("value", self.pattern_node(inner))]))
   }
-}
-
-///|
-fn encode_nested(n : Node[Expression], exact_ints~ : Bool) -> Json {
-  encode_node(n, v => encode_expression_with(v, exact_ints~))
 }
 
 ///|
@@ -474,21 +592,27 @@ fn encode_nested(n : Node[Expression], exact_ints~ : Bool) -> Json {
 /// With `exact_ints`, Int literals are written with their exact digits
 /// (elm-syntax writes the nearest Double, which differs above 2^53).
 pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
+  let enc = Enc::new(exact_ints)
+  let json = enc.expression(e)
+  enc.run()
+  json
+}
+
+///|
+/// The expression's own object; its nested nodes are queued.
+fn Enc::expression(self : Enc, e : Expression) -> Json {
+  let exact_ints = self.exact_ints
   match e {
     UnitExpr => encode_typed("unit", Json::null())
-    Application(l) =>
-      encode_typed(
-        "application",
-        encode_list(l, v => encode_nested(v, exact_ints~)),
-      )
+    Application(l) => encode_typed("application", self.expr_list(l))
     OperatorApplication(op, dir, left, right) =>
       encode_typed(
         "operatorapplication",
         obj([
           ("operator", encode_string(op)),
           ("direction", encode_infix_direction(dir)),
-          ("left", encode_nested(left, exact_ints~)),
-          ("right", encode_nested(right, exact_ints~)),
+          ("left", self.expr_node(left)),
+          ("right", self.expr_node(right)),
         ]),
       )
     FunctionOrValue(module_name, name) =>
@@ -503,9 +627,9 @@ pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
       encode_typed(
         "ifBlock",
         obj([
-          ("clause", encode_nested(c, exact_ints~)),
-          ("then", encode_nested(t, exact_ints~)),
-          ("else", encode_nested(e, exact_ints~)),
+          ("clause", self.expr_node(c)),
+          ("then", self.expr_node(t)),
+          ("else", self.expr_node(e)),
         ]),
       )
     PrefixOperator(x) => encode_typed("prefixoperator", encode_string(x))
@@ -522,26 +646,21 @@ pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
           Json::number(x)
         },
       )
-    Negation(x) => encode_typed("negation", encode_nested(x, exact_ints~))
+    Negation(x) => encode_typed("negation", self.expr_node(x))
     Literal(x) => encode_typed("literal", encode_string(x))
     CharLiteral(c) => encode_typed("charLiteral", encode_char(c))
-    TupledExpression(xs) =>
-      encode_typed(
-        "tupled",
-        encode_list(xs, v => encode_nested(v, exact_ints~)),
-      )
-    ListExpr(xs) =>
-      encode_typed("list", encode_list(xs, v => encode_nested(v, exact_ints~)))
+    TupledExpression(xs) => encode_typed("tupled", self.expr_list(xs))
+    ListExpr(xs) => encode_typed("list", self.expr_list(xs))
     ParenthesizedExpression(x) =>
-      encode_typed("parenthesized", encode_nested(x, exact_ints~))
-    LetExpression(x) => encode_typed("let", encode_let_block(x, exact_ints~))
-    CaseExpression(x) => encode_typed("case", encode_case_block(x, exact_ints~))
-    LambdaExpression(x) => encode_typed("lambda", encode_lambda(x, exact_ints~))
+      encode_typed("parenthesized", self.expr_node(x))
+    LetExpression(x) => encode_typed("let", self.let_block(x))
+    CaseExpression(x) => encode_typed("case", self.case_block(x))
+    LambdaExpression(x) => encode_typed("lambda", self.lambda(x))
     RecordAccess(exp, name) =>
       encode_typed(
         "recordAccess",
         obj([
-          ("expression", encode_nested(exp, exact_ints~)),
+          ("expression", self.expr_node(exp)),
           ("name", encode_node(name, encode_string)),
         ]),
       )
@@ -550,9 +669,7 @@ pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
     RecordExpr(xs) =>
       encode_typed(
         "record",
-        encode_list(xs, n => {
-          encode_node(n, v => encode_record_setter(v, exact_ints~))
-        }),
+        encode_list(xs, n => encode_node(n, v => self.record_setter(v))),
       )
     RecordUpdateExpression(name, updates) =>
       encode_typed(
@@ -561,9 +678,7 @@ pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
           ("name", encode_node(name, encode_string)),
           (
             "updates",
-            encode_list(updates, n => {
-              encode_node(n, v => encode_record_setter(v, exact_ints~))
-            }),
+            encode_list(updates, n => encode_node(n, v => self.record_setter(v))),
           ),
         ]),
       )
@@ -572,37 +687,43 @@ pub fn encode_expression_with(e : Expression, exact_ints~ : Bool) -> Json {
 }
 
 ///|
-fn encode_let_block(b : LetBlock, exact_ints~ : Bool) -> Json {
+fn Enc::let_block(self : Enc, b : LetBlock) -> Json {
   obj([
     (
       "declarations",
       encode_list(b.declarations, n => {
-        encode_node(n, v => encode_let_declaration(v, exact_ints~))
+        encode_node(n, v => self.let_declaration(v))
       }),
     ),
-    ("expression", encode_nested(b.expression, exact_ints~)),
+    ("expression", self.expr_node(b.expression)),
   ])
 }
 
 ///|
-fn encode_record_setter(s : RecordSetter, exact_ints~ : Bool) -> Json {
+fn Enc::record_setter(self : Enc, s : RecordSetter) -> Json {
   obj([
     ("field", encode_node(s.field, encode_string)),
-    ("expression", encode_nested(s.expression, exact_ints~)),
+    ("expression", self.expr_node(s.expression)),
   ])
 }
 
 ///|
-fn encode_let_declaration(d : LetDeclaration, exact_ints~ : Bool) -> Json {
+fn Enc::let_declaration(self : Enc, d : LetDeclaration) -> Json {
   match d {
-    LetFunction(f) =>
-      encode_typed("function", encode_function_with(f, exact_ints~))
+    LetFunction(f) => {
+      let m : Map[String, Json] = Map([
+        ("type", Json::string("function")),
+        ("function", Json::null()),
+      ])
+      self.pending.push(F(Key(m, "function"), f))
+      Json::object(m)
+    }
     LetDestructuring(p, e) =>
       encode_typed(
         "destructuring",
         obj([
-          ("pattern", encode_node(p, v => encode_pattern_with(v, exact_ints~))),
-          ("expression", encode_nested(e, exact_ints~)),
+          ("pattern", self.pattern_node(p)),
+          ("expression", self.expr_node(e)),
         ]),
       )
   }
@@ -613,6 +734,14 @@ fn encode_let_declaration(d : LetDeclaration, exact_ints~ : Bool) -> Json {
 /// With `exact_ints`, Int literals are written with their exact digits
 /// (elm-syntax writes the nearest Double, which differs above 2^53).
 pub fn encode_function_with(f : Function, exact_ints~ : Bool) -> Json {
+  let enc = Enc::new(exact_ints)
+  let json = enc.function(f)
+  enc.run()
+  json
+}
+
+///|
+fn Enc::function(self : Enc, f : Function) -> Json {
   obj([
     (
       "documentation",
@@ -620,65 +749,47 @@ pub fn encode_function_with(f : Function, exact_ints~ : Bool) -> Json {
     ),
     (
       "signature",
-      encode_maybe(f.signature, n => encode_node(n, encode_signature)),
+      encode_maybe(f.signature, n => encode_node(n, v => self.signature(v))),
     ),
     (
       "declaration",
-      encode_node(f.declaration, v => {
-        encode_function_implementation(v, exact_ints~)
-      }),
+      encode_node(f.declaration, v => self.function_implementation(v)),
     ),
   ])
 }
 
 ///|
-fn encode_function_implementation(
-  f : FunctionImplementation,
-  exact_ints~ : Bool,
-) -> Json {
+fn Enc::function_implementation(self : Enc, f : FunctionImplementation) -> Json {
   obj([
     ("name", encode_node(f.name, encode_string)),
-    (
-      "arguments",
-      encode_list(f.arguments, n => {
-        encode_node(n, v => encode_pattern_with(v, exact_ints~))
-      }),
-    ),
-    ("expression", encode_nested(f.expression, exact_ints~)),
+    ("arguments", self.pattern_list(f.arguments)),
+    ("expression", self.expr_node(f.expression)),
   ])
 }
 
 ///|
 /// elm-syntax writes "cases" before "expression" here.
-fn encode_case_block(b : CaseBlock, exact_ints~ : Bool) -> Json {
+fn Enc::case_block(self : Enc, b : CaseBlock) -> Json {
   obj([
     (
       "cases",
       encode_list(b.cases, c => {
         obj([
-          (
-            "pattern",
-            encode_node(c.pattern, v => encode_pattern_with(v, exact_ints~)),
-          ),
-          ("expression", encode_nested(c.expression, exact_ints~)),
+          ("pattern", self.pattern_node(c.pattern)),
+          ("expression", self.expr_node(c.expression)),
         ])
       }),
     ),
-    ("expression", encode_nested(b.expression, exact_ints~)),
+    ("expression", self.expr_node(b.expression)),
   ])
 }
 
 ///|
 /// The Lambda field `args` is written under the key "patterns".
-fn encode_lambda(l : Lambda, exact_ints~ : Bool) -> Json {
+fn Enc::lambda(self : Enc, l : Lambda) -> Json {
   obj([
-    (
-      "patterns",
-      encode_list(l.args, n => {
-        encode_node(n, v => encode_pattern_with(v, exact_ints~))
-      }),
-    ),
-    ("expression", encode_nested(l.expression, exact_ints~)),
+    ("patterns", self.pattern_list(l.args)),
+    ("expression", self.expr_node(l.expression)),
   ])
 }
 
