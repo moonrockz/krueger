@@ -366,6 +366,7 @@ fn malformed(raw : RawAttribute, reason : String) -> @scanner.Diagnostic {
         Plain("."),
       ]),
     ],
+    detail: None,
   }
 }
 
@@ -374,6 +375,7 @@ fn malformed(raw : RawAttribute, reason : String) -> @scanner.Diagnostic {
 fn parse_attribute(
   raw : RawAttribute,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   warnings : Array[@scanner.Diagnostic],
 ) -> Result[DocAttribute, @scanner.Diagnostic] {
   let first = raw.lines[0]
@@ -417,6 +419,7 @@ fn parse_attribute(
       content,
       name_end + lead + 1,
       dialect,
+      fuel,
       warnings,
     )
   }
@@ -454,7 +457,9 @@ fn parse_attribute(
     }
     return Ok(Docs(names~, range~))
   }
-  parse_values(raw, name, name_node, range, body, name_end, dialect, warnings)
+  parse_values(
+    raw, name, name_node, range, body, name_end, dialect, fuel, warnings,
+  )
 }
 
 ///|
@@ -477,6 +482,7 @@ fn parse_values(
   body : String,
   shift : Int32,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   warnings : Array[@scanner.Diagnostic],
 ) -> Result[DocAttribute, @scanner.Diagnostic] {
   let source = @scanner.SourceText::{ module_name: None, text: body, }
@@ -486,7 +492,7 @@ fn parse_values(
   let tokens = @scanner.normalize_tokens(raw_tokens).tokens.map(t => {
     shift_token(t, raw, shift)
   })
-  let c = Cursor::new(tokens, dialect)
+  let c = Cursor::new(tokens, dialect, fuel)
   // Attribute values are not laid out like Elm code: elm-format may move
   // continuation lines to column 1.
   c.indent = 0
@@ -512,11 +518,12 @@ fn parse_values(
 fn doc_attributes(
   comment : @scanner.Comment,
   dialect : @dialect.Dialect,
+  fuel : Int32,
 ) -> (Array[DocAttribute], Array[@scanner.Diagnostic]) {
   let attributes = []
   let warnings = []
   for raw in raw_attributes(doc_lines(comment)) {
-    match parse_attribute(raw, dialect, warnings) {
+    match parse_attribute(raw, dialect, fuel, warnings) {
       Ok(a) => attributes.push(a)
       Err(w) => warnings.push(w)
     }

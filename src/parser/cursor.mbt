@@ -12,8 +12,10 @@ priv struct Cursor {
   tokens : Array[@scanner.Token]
   mut pos : Int32
   mut indent : Int32
-  mut depth : Int32
-  mut chain_depth : Int32
+  /// The fuel budget of this parse (see `@dialect.DEFAULT_FUEL`).
+  fuel : Int32
+  /// The fuel in use: the nesting and chain levels on the stack, weighted.
+  mut used : Int32
   dialect : @dialect.Dialect
   contexts : Array[Frame]
   /// Position of the token that starts the current item (declaration, let
@@ -32,13 +34,14 @@ priv struct Cursor {
 fn Cursor::new(
   tokens : Array[@scanner.Token],
   dialect : @dialect.Dialect,
+  fuel : Int32,
 ) -> Cursor {
   {
     tokens,
     pos: 0,
     indent: 1,
-    depth: 0,
-    chain_depth: 0,
+    fuel,
+    used: 0,
     dialect,
     contexts: [],
     item_start: 0,
@@ -522,60 +525,128 @@ fn[T] Cursor::with_indent(
 }
 
 ///|
-/// Deepest nesting of expressions, types and patterns the parser accepts.
-/// Deeper input gives a syntax error instead of a stack overflow.
-const MAX_DEPTH : Int32 = 150
+/// The fuel one nesting level of expressions, types and patterns costs
+/// (`Cursor::nested`). With `@dialect.DEFAULT_FUEL` (1200) the parser
+/// accepts 150 levels; `single_pattern` and `type_no_fn` with arguments
+/// count two per source level.
+///
+/// Calibration (2026-10-15, MoonBit 0.10.15, debug test builds, each
+/// construct parsed once in a cold process with the checks off; the first
+/// depth that overflows the stack):
+///
+/// | Construct | wasm (moonrun) | js (node) | wasm-gc (moonrun) | native (8 MiB) |
+/// |---|---|---|---|---|
+/// | nested `let` | 125 | 250 | 275 | above 800 |
+/// | nested `case` | 170 | above 290 | - | - |
+/// | parentheses | 182 | 330 | 400 | above 3200 |
+/// | `::` chain | 780 | 1200 | 1200 | above 12800 |
+/// | `->` chain | 1250 | 1800 | 1700 | above 6400 |
+///
+/// On wasm, V8's baseline tier (a cold process) uses about 20% more stack
+/// per level than its optimizing tier, which the warm test suite runs on.
+/// A cold wasm process with the default fuel overflows at about 125
+/// nested `let`s, inside the 150 that the fuel allows: the default keeps
+/// the thresholds of krueger 0.6, and a wasm host that must parse such
+/// input cold lowers the fuel or raises its stack.
+const NESTING_COST : Int32 = 8
 
 ///|
-/// Run `body` one step deeper in a right-recursive chain (`a :: b :: ...`,
-/// `Int -> Int -> ...`, `a ++ b ++ ...`); fail above `MAX_AST_DEPTH`, whose
-/// tree could not be encoded anyway.
-fn[T] Cursor::chain(
+/// The fuel one step of a right-recursive chain costs (`Cursor::chain`):
+/// `a :: b :: ...`, `Int -> Int -> ...`, `a <| b <| ...`. A chain step
+/// uses about a quarter of the stack of a nesting level (see the table at
+/// `NESTING_COST`: 125 `let`s against 780 `::` steps on wasm). With the
+/// default fuel a chain stops after 596 steps: a margin of 1.3 on a cold
+/// wasm process, like the nesting margin.
+const CHAIN_COST : Int32 = 2
+
+///|
+/// A `TOO MUCH NESTING` failure in `walk`, with the fuel on the problem.
+fn Cursor::out_of_fuel(
   self : Cursor,
+  walk : @scanner.Walk,
+  message : String,
+  opening : String,
+  advice : String,
+) -> SyntaxError {
+  let problem = self.titled("TOO MUCH NESTING", [Plain(opening)], [
+    plain(
+      "I ran out of fuel at \{self.fuel}. \{advice} Or give the parser more fuel, and the host more stack.",
+    ),
+  ])
+  SyntaxError(message, self.here(), {
+    ..problem,
+    detail: Some(OutOfFuel(fuel=self.fuel, walk~)),
+  })
+}
+
+///|
+/// Run `body` with `cost` more fuel in use; refuse when the budget would be
+/// exceeded, or when `reserve` more would be. The fuel comes back on exit,
+/// also on an error.
+fn[T] Cursor::spend(
+  self : Cursor,
+  cost : Int32,
+  refuse : () -> SyntaxError,
   body : () -> T raise SyntaxError,
+  reserve~ : Int32 = 0,
 ) -> T raise SyntaxError {
-  if self.chain_depth >= MAX_AST_DEPTH {
-    raise self.fail_titled(
-      "chain too long",
-      "TOO MUCH NESTING",
-      [Plain("This chain is too long for me:")],
-      [plain("Try splitting it into smaller definitions.")],
-    )
+  if self.used + cost + reserve > self.fuel {
+    raise refuse()
   }
-  self.chain_depth += 1
+  self.used += cost
   let result = body() catch {
     SyntaxError(message, span, problem) => {
-      self.chain_depth -= 1
+      self.used -= cost
       raise SyntaxError(message, span, problem)
     }
   }
-  self.chain_depth -= 1
+  self.used -= cost
   result
 }
 
 ///|
-/// Run `body` one nesting level deeper; fail above `MAX_DEPTH`.
+/// Run `body` one step deeper in a right-recursive chain (`a :: b :: ...`,
+/// `Int -> Int -> ...`, `a <| b <| ...`); refuse when the fuel runs out.
+/// A step also needs the fuel of the operand it parses (one nesting
+/// level), so that a long chain is refused as a chain, not as the nesting
+/// of its last operand.
+fn[T] Cursor::chain(
+  self : Cursor,
+  body : () -> T raise SyntaxError,
+) -> T raise SyntaxError {
+  self.spend(
+    CHAIN_COST,
+    reserve=NESTING_COST,
+    () => {
+      self.out_of_fuel(
+        Chain,
+        "chain too long",
+        "This chain is too long for me:",
+        "Try splitting it into smaller definitions.",
+      )
+    },
+    body,
+  )
+}
+
+///|
+/// Run `body` one nesting level deeper; refuse when the fuel runs out.
 fn[T] Cursor::nested(
   self : Cursor,
   body : () -> T raise SyntaxError,
 ) -> T raise SyntaxError {
-  if self.depth >= MAX_DEPTH {
-    raise self.fail_titled(
-      "nesting too deep",
-      "TOO MUCH NESTING",
-      [Plain("This expression, type or pattern is nested too deeply for me:")],
-      [plain("Try moving part of it into a separate definition.")],
-    )
-  }
-  self.depth += 1
-  let result = body() catch {
-    SyntaxError(message, span, problem) => {
-      self.depth -= 1
-      raise SyntaxError(message, span, problem)
-    }
-  }
-  self.depth -= 1
-  result
+  self.spend(
+    NESTING_COST,
+    () => {
+      self.out_of_fuel(
+        Nesting,
+        "nesting too deep",
+        "This expression, type or pattern is nested too deeply for me:",
+        "Try moving part of it into a separate definition.",
+      )
+    },
+    body,
+  )
 }
 
 ///|

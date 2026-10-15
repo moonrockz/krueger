@@ -5,8 +5,9 @@ fn parser_error(
   span : @scanner.Span,
   title~ : String,
   report~ : Array[@scanner.Block],
+  detail~ : @scanner.Detail? = None,
 ) -> @scanner.Diagnostic {
-  { code, severity: Error, message, span, title, report, }
+  { code, severity: Error, message, span, title, report, detail, }
 }
 
 ///|
@@ -243,7 +244,9 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 ///
 /// Get the tokens from a scanner built for the same `dialect` (default: Elm
 /// 0.19.1). The dialect's rules decide what is an error, and its operator
-/// table decides how operators group.
+/// table decides how operators group. `fuel` (default
+/// `@dialect.DEFAULT_FUEL`, 1200) bounds the nesting the parser accepts
+/// before it refuses with `KR-PARSE-010`; more fuel needs more stack.
 ///
 /// ```mbt check
 /// test {
@@ -270,9 +273,10 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 pub fn parse_tokens(
   tokens : @scanner.TokenStream,
   dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  fuel~ : Int32 = @dialect.DEFAULT_FUEL,
 ) -> ParseResult {
   let stream = tokens.tokens
-  let c = Cursor::new(stream, dialect)
+  let c = Cursor::new(stream, dialect, fuel)
   let diagnostics = []
   let attached = []
   let listed = []
@@ -417,7 +421,10 @@ pub fn parse_tokens(
     c.start_item()
     try declaration(c, documentation) catch {
       SyntaxError(message, span, problem) => {
-        let (code, what) = declaration_error_code(kind)
+        let (code, what) = match problem.detail {
+          Some(OutOfFuel(_)) => ("KR-PARSE-010", "Nested too deeply")
+          None => declaration_error_code(kind)
+        }
         diagnostics.push(
           parser_error(
             code,
@@ -425,30 +432,12 @@ pub fn parse_tokens(
             span,
             title=problem.title,
             report=problem.report,
+            detail=problem.detail,
           ),
         )
         skip_to_top_level(c, start)
       }
     } noraise {
-      decl if declaration_depth(decl.value) > MAX_AST_DEPTH => {
-        let (code, what) = declaration_error_code(kind)
-        let at = point(stream[start].span.start)
-        diagnostics.push(
-          parser_error(
-            code,
-            "\{what}: nested too deeply",
-            stream[start].span,
-            title="TOO MUCH NESTING",
-            report=[
-              plain("This declaration is nested too deeply for me:"),
-              Excerpt(context=at, highlight=at),
-              plain(
-                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep. Try splitting it into smaller definitions.",
-              ),
-            ],
-          ),
-        )
-      }
       decl => {
         if doc is Some(d) {
           attached.push(d.span)
@@ -542,7 +531,7 @@ fn collect_attributes(
   diagnostics : Array[@scanner.Diagnostic],
 ) -> Unit {
   guard c.dialect.attributes is DocComment else { return }
-  let (attributes, warnings) = doc_attributes(comment, c.dialect)
+  let (attributes, warnings) = doc_attributes(comment, c.dialect, c.fuel)
   diagnostics.append(warnings)
   if !attributes.is_empty() {
     groups.push({ target, attributes, })
@@ -551,7 +540,9 @@ fn collect_attributes(
 
 ///|
 /// Tokenize `source` with `scanner` and parse it in `dialect` (default: Elm
-/// 0.19.1). The caller builds `scanner` for the same dialect.
+/// 0.19.1). The caller builds `scanner` for the same dialect. `fuel`
+/// (default `@dialect.DEFAULT_FUEL`, 1200) bounds the nesting the parser
+/// accepts before it refuses with `KR-PARSE-010`.
 ///
 /// When the source does not scan, the result has no AST and no CST, and its
 /// diagnostics are the scanner's. The root package's `parse_module` builds
@@ -580,9 +571,10 @@ pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,
   dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  fuel~ : Int32 = @dialect.DEFAULT_FUEL,
 ) -> ParseResult {
   match scanner.tokenize(source) {
-    Ok(tokens) => parse_tokens(tokens, dialect~)
+    Ok(tokens) => parse_tokens(tokens, dialect~, fuel~)
     Err(errs) =>
       { ast: None, cst: None, diagnostics: errs.diagnostics, attributes: [], }
   }

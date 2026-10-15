@@ -16,3 +16,7 @@ import {
 import {
   "moonrockz/expect",
 } for "wbtest"
+
+options(
+  targets: { "fuel_deep_test.mbt": [ "native", "wasm-gc" ] },
+)

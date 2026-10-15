@@ -6,7 +6,15 @@ fn scanner_error(
   title~ : String,
   report~ : Array[Block],
 ) -> Diagnostic {
-  Diagnostic::{ code, severity: Severity::Error, message, span, title, report, }
+  Diagnostic::{
+    code,
+    severity: Severity::Error,
+    message,
+    span,
+    title,
+    report,
+    detail: None,
+  }
 }
 
 ///|

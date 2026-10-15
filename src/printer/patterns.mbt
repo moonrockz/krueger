@@ -28,47 +28,87 @@ fn pattern_parens(p : @ast.Pattern, at : PatternAt) -> Bool {
 }
 
 ///|
+/// The pattern at `path` with its comments. It runs on the work stack
+/// (`Ctx::run`), so nested patterns do not recurse: a pattern of any depth
+/// prints on every target.
 fn Ctx::pattern_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   p : @ast.Node[@ast.Pattern],
   at : PatternAt,
 ) -> @pretty.Doc raise PrintError {
-  check_level(path, level)
-  let lead = self.leading(p.range)
-  let d = self.pattern_body(path, level, p, at)
-  lead + d + self.trailing(p.range)
+  self.run(Pat(path, p, at))
 }
 
 ///|
-/// The pattern without its own comments. Patterns are on one line, so a
-/// line comment in a pattern is followed by a line break indented by 4
-/// (`Ctx::after`).
-fn Ctx::pattern_body(
+/// The plan of a pattern: its leading comments, its body and its trailing
+/// comments, in that order.
+fn Ctx::pattern_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   p : @ast.Node[@ast.Pattern],
   at : PatternAt,
-) -> @pretty.Doc raise PrintError {
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
+  let (items, combine) = self.pattern_body_plan(path, p, at)
+  (
+    [
+      Leaf(() => self.leading(p.range)),
+      Plan(items, combine),
+      Leaf(() => self.trailing(p.range)),
+    ],
+    docs => docs[0] + docs[1] + docs[2],
+  )
+}
+
+///|
+/// A plan with one leaf.
+fn leaf(
+  f : () -> @pretty.Doc raise PrintError,
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) {
+  ([Leaf(f)], docs => docs[0])
+}
+
+///|
+fn join_docs(docs : Array[@pretty.Doc]) -> @pretty.Doc {
+  let mut d = @pretty.empty()
+  for x in docs {
+    d = d + x
+  }
+  d
+}
+
+///|
+/// The plan of a pattern without its own comments. Patterns are on one
+/// line, so a line comment in a pattern is followed by a line break
+/// indented by 4 (`Ctx::after`). The leaves take comments in source
+/// order; the items of a nested pattern are `Pat` work items.
+fn Ctx::pattern_body_plan(
+  self : Ctx,
+  path : @syntax.NodePath,
+  p : @ast.Node[@ast.Pattern],
+  at : PatternAt,
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
+  let parens = pattern_parens(p.value, at)
+  let wrap = (d : @pretty.Doc) => if parens { flat_parens(d) } else { d }
   match p.value {
-    AllPattern => @pretty.text("_")
+    AllPattern => done(@pretty.text("_"))
     UnitPattern =>
-      @pretty.text("(") + self.inner_alone(p.range) + @pretty.text(")")
-    CharPattern(c) => @pretty.text(char_literal(c))
-    StringPattern(s) => self.string_doc(p.range, s)
+      leaf(() => {
+        @pretty.text("(") + self.inner_alone(p.range) + @pretty.text(")")
+      })
+    CharPattern(c) => done(@pretty.text(char_literal(c)))
+    StringPattern(s) => done(self.string_doc(p.range, s))
     IntPattern(v) => {
       guard v >= 0L else { raise PrintError(path~, problem=NegativePattern) }
-      @pretty.text(self.integer_text(p.range, v))
+      done(@pretty.text(self.integer_text(p.range, v)))
     }
     HexPattern(v) => {
       guard v >= 0L else { raise PrintError(path~, problem=NegativePattern) }
-      @pretty.text(self.hex_literal_text(p.range, v))
+      done(@pretty.text(self.hex_literal_text(p.range, v)))
     }
     FloatPattern(x) => {
       if self.float_lexeme_text(p.range, x) is Some(text) {
-        return @pretty.text(text)
+        return done(@pretty.text(text))
       }
       guard !x.is_nan() && !x.is_inf() else {
         raise PrintError(path~, problem=NonFiniteFloat(x))
@@ -76,125 +116,156 @@ fn Ctx::pattern_body(
       guard !is_negative(x) else {
         raise PrintError(path~, problem=NegativePattern)
       }
-      @pretty.text(float_text(x))
+      done(@pretty.text(float_text(x)))
     }
     TuplePattern(items) => {
       guard items.length() >= 2 else {
         raise PrintError(path~, problem=ShortTuple)
       }
-      self.flat_sequence(
-        "(",
-        ")",
-        p.range,
-        self.pattern_items(path, level, items),
-      )
+      self.flat_items_plan("(", ")", path, p.range, items)
     }
-    ListPattern(items) =>
-      self.flat_sequence(
-        "[",
-        "]",
-        p.range,
-        self.pattern_items(path, level, items),
-      )
-    RecordPattern(names) => {
-      let docs = []
-      for i, x in names {
-        let name = self.lower_name(path.child("value", i), x.value)
-        docs.push((self.with_comments(x.range, name), x.range))
-      }
-      self.flat_sequence("{", "}", p.range, docs)
-    }
-    VarPattern(name) => self.lower_name(path, name)
+    ListPattern(items) => self.flat_items_plan("[", "]", path, p.range, items)
+    RecordPattern(names) =>
+      leaf(() => {
+        let docs = []
+        for i, x in names {
+          let name = self.lower_name(path.child("value", i), x.value)
+          docs.push((self.with_comments(x.range, name), x.range))
+        }
+        self.flat_sequence("{", "}", p.range, docs)
+      })
+    VarPattern(name) => done(self.lower_name(path, name))
     NamedPattern(name_ref, args) => {
       let head = qualified_upper(path, name_ref.module_name, name_ref.name)
-      guard !args.is_empty() else { return head }
-      let mut d = head + @pretty.text(" ")
+      guard !args.is_empty() else { return done(head) }
+      let items : Array[Work] = []
       for i, a in args {
         if i > 0 {
-          d = d + self.after(args[i - 1].range, " ")
+          let previous = args[i - 1].range
+          items.push(Leaf(() => self.after(previous, " ")))
         }
-        d = d +
-          self.pattern_doc(path.child("patterns", i), level + 1, a, PatternArg)
+        items.push(Pat(path.child("patterns", i), a, PatternArg))
       }
-      if pattern_parens(p.value, at) {
-        flat_parens(d + self.after(args[args.length() - 1].range, ""))
-      } else {
-        d
+      if parens {
+        let last = args[args.length() - 1].range
+        items.push(Leaf(() => self.after(last, "")))
       }
+      (items, docs => wrap(head + @pretty.text(" ") + join_docs(docs)))
     }
     UnConsPattern(_, _) => {
+      let items : Array[Work] = []
+      // The comments after each `::` that trail the pattern before it,
+      // taken before that pattern prints (`Ctx::after_token`).
+      let moved : Array[Array[@ast.Node[String]]] = []
       let mut node = p
       let mut q = path
-      let mut d = @pretty.empty()
+      let mut step = 0
       while node.value is UnConsPattern(left, right) {
         if node.range != p.range {
-          d = d + self.leading(node.range)
+          let r = node.range
+          items.push(Leaf(() => self.leading(r)))
         }
-        let moved = self.after_token(left.range)
-        d = d +
-          self.pattern_doc(q.child("left", 0), level + 1, left, ConsLeft) +
-          self.separator(left.range, " ::", moved) +
-          @pretty.text(" ")
+        let k = step
+        items.push(
+          Leaf(() => {
+            moved.push(self.after_token(left.range))
+            @pretty.empty()
+          }),
+        )
+        items.push(Pat(q.child("left", 0), left, ConsLeft))
+        items.push(
+          Leaf(() => {
+            self.separator(left.range, " ::", moved[k]) + @pretty.text(" ")
+          }),
+        )
         q = q.child("right", 0)
         node = right
+        step += 1
       }
-      d = d + self.pattern_doc(q, level + 1, node, ConsTail)
-      if pattern_parens(p.value, at) {
-        flat_parens(d)
-      } else {
-        d
-      }
+      items.push(Pat(q, node, ConsTail))
+      (items, docs => wrap(join_docs(docs)))
     }
     AsPattern(inner, name) => {
-      let moved = self.after_token(inner.range)
-      let d = self.pattern_doc(
-          path.child("pattern", 0),
-          level + 1,
-          inner,
-          AsInner,
-        ) +
-        self.separator(inner.range, " as", moved) +
-        @pretty.text(" ") +
-        self.with_comments(
-          name.range,
-          self.lower_name(path.child("name", 0), name.value),
-        )
-      if pattern_parens(p.value, at) {
-        flat_parens(d)
-      } else {
-        d
-      }
+      let moved : Array[Array[@ast.Node[String]]] = []
+      let items : Array[Work] = [
+        Leaf(() => {
+          moved.push(self.after_token(inner.range))
+          @pretty.empty()
+        }),
+        Pat(path.child("pattern", 0), inner, AsInner),
+        Leaf(() => {
+          self.separator(inner.range, " as", moved[0]) +
+          @pretty.text(" ") +
+          self.with_comments(
+            name.range,
+            self.lower_name(path.child("name", 0), name.value),
+          )
+        }),
+      ]
+      (items, docs => wrap(join_docs(docs)))
     }
     ParenthesizedPattern(x) =>
-      flat_parens(
-        self.pattern_doc(path.child("value", 0), level + 1, x, AnyPattern) +
-        self.after(x.range, "") +
-        self.inline_inner(p.range),
+      (
+        [
+          Pat(path.child("value", 0), x, AnyPattern),
+          Leaf(() => self.after(x.range, "") + self.inline_inner(p.range)),
+        ],
+        docs => flat_parens(docs[0] + docs[1]),
       )
   }
 }
 
 ///|
-fn Ctx::pattern_items(
+/// The plan of `( a, b )` or `[ a, b ]`, always on one line (see
+/// `flat_sequence`): each item, the comments after it, and the comments of
+/// the pattern at `owner` before the closing token.
+fn Ctx::flat_items_plan(
   self : Ctx,
+  open : String,
+  close : String,
   path : @syntax.NodePath,
-  level : Int32,
+  owner : @ast.Range,
   items : ArrayView[@ast.Node[@ast.Pattern]],
-) -> Array[(@pretty.Doc, @ast.Range)] raise PrintError {
-  let docs = []
-  for i, x in items {
-    docs.push(
-      (
-        self.pattern_doc(path.child("value", i), level + 1, x, AnyPattern),
-        x.range,
-      ),
-    )
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) {
+  guard !items.is_empty() else {
+    return leaf(() => {
+      @pretty.text(open) +
+      self.inner_alone(owner, brace=open == "{") +
+      @pretty.text(close)
+    })
   }
-  docs
+  let count = items.length()
+  let work : Array[Work] = []
+  for i, x in items {
+    work.push(Pat(path.child("value", i), x, AnyPattern))
+    if i + 1 < count {
+      let r = x.range
+      work.push(Leaf(() => self.after(r, "")))
+    }
+  }
+  let last = items[count - 1].range
+  // The break after a line comment comes before the inner comments.
+  work.push(Leaf(() => self.after(last, "") + self.inline_inner(owner)))
+  (
+    work,
+    docs => {
+      let ds = []
+      for i in 0..<count {
+        ds.push(
+          if i + 1 < count {
+            docs[2 * i] + docs[2 * i + 1]
+          } else {
+            docs[2 * i]
+          },
+        )
+      }
+      flat_sequence(open, close, ds, inner=docs[2 * count - 1])
+    },
+  )
 }
 
 ///|
-/// `[ a, b ]` always on one line (see `flat_sequence`), with the comments
+/// `{ a, b }` always on one line (see `flat_sequence`), with the comments
 /// of the pattern at `owner` before the closing token.
 fn Ctx::flat_sequence(
   self : Ctx,

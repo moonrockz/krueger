@@ -384,21 +384,21 @@ test "deep nesting is a diagnostic, not a stack overflow" {
     let header = "module Main exposing (..)\n\n\n"
     let deep = 5000
     let expr = parse(header + "f = " + nested("(", "1", ")", deep) + "\n")
-    s.expect(codes(expr)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(expr)).to_equal(["KR-PARSE-010"])
     let unclosed = parse(header + "f = " + nested("(", "1", "", deep) + "\n")
-    s.expect(codes(unclosed)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(unclosed)).to_equal(["KR-PARSE-010"])
     let list = parse(header + "f = " + nested("[", "1", "]", deep) + "\n")
-    s.expect(codes(list)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(list)).to_equal(["KR-PARSE-010"])
     let typ = parse(
       header + "f : " + nested("(", "Int", ")", deep) + "\nf = 1\n",
     )
-    s.expect(codes(typ)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(typ)).to_equal(["KR-PARSE-010"])
     let pat = parse(header + "f " + nested("(", "x", ")", deep) + " = 1\n")
-    s.expect(codes(pat)).to_equal(["KR-PARSE-004"])
+    s.expect(codes(pat)).to_equal(["KR-PARSE-010"])
     let type_alias = parse(
       header + "type alias A = " + nested("(", "Int", ")", deep) + "\n",
     )
-    s.expect(codes(type_alias)).to_equal(["KR-PARSE-003"])
+    s.expect(codes(type_alias)).to_equal(["KR-PARSE-010"])
   })
 }
 
@@ -529,13 +529,18 @@ fn chain(op : String, terms : Int32, tail : String) -> String {
 }
 
 ///|
-test "very long operator chains are a diagnostic, not a stack overflow" {
-  for text in [chain(" + ", 5000, ""), chain(" :: ", 5000, " :: []")] {
-    let result = parse(text)
-    @expect.expect(result.diagnostics.map(d => d.title)).to_equal([
-      "TOO MUCH NESTING",
-    ])
-  }
+test "very long operator chains parse or are a diagnostic, never a stack overflow" {
+  // A left-associative chain is a loop in the parser: no limit. A
+  // right-recursive chain (`::`) runs out of fuel.
+  let left = parse(chain(" + ", 5000, ""))
+  let right = parse(chain(" :: ", 5000, " :: []"))
+  @expect.expect_all(s => {
+    s.expect(left.diagnostics.map(d => d.title)).to_equal([])
+    s
+    .expect(@ast.encode_file(ast(left)).stringify().length() > 5000)
+    .to_be_true()
+    s.expect(right.diagnostics.map(d => d.title)).to_equal(["TOO MUCH NESTING"])
+  })
 }
 
 ///|
@@ -563,30 +568,42 @@ fn repeated(unit : String, n : Int32) -> String {
 test "deep trees of any shape are a diagnostic, not a stack overflow" {
   let header = "module Main exposing (..)\n\n\n"
   let chain = "1" + repeated(" + 1", 399)
+  // (text, whether the parser accepts it): loops have no limit, right
+  // recursion runs out of fuel after 596 steps.
   let inputs = [
     // Left chains nested as first operands.
-    header + "f =\n    ((" + chain + ") + " + chain + ") + " + chain + "\n",
+    (
+      header + "f =\n    ((" + chain + ") + " + chain + ") + " + chain + "\n",
+      true,
+    ),
     // Record access.
-    header + "f r =\n    r" + repeated(".a", 1000) + "\n",
+    (header + "f r =\n    r" + repeated(".a", 1000) + "\n", true),
     // Type arrows.
-    header + "f : Int" + repeated(" -> Int", 1000) + "\nf =\n    1\n",
+    (header + "f : Int" + repeated(" -> Int", 1000) + "\nf =\n    1\n", false),
     // Cons patterns.
-    header +
-    "f x =\n    case x of\n        a" +
-    repeated(" :: a", 1000) +
-    " ->\n            1\n\n        _ ->\n            2\n",
+    (
+      header +
+      "f x =\n    case x of\n        a" +
+      repeated(" :: a", 1000) +
+      " ->\n            1\n\n        _ ->\n            2\n",
+      false,
+    ),
     // Right-associative operators.
-    header + "f =\n    \"a\"" + repeated(" ++ \"a\"", 1000) + "\n",
+    (header + "f =\n    \"a\"" + repeated(" ++ \"a\"", 1000) + "\n", false),
   ]
-  for text in inputs {
-    let result = parse(text)
-    @expect.expect(result.diagnostics.map(d => d.title)).to_contain_element(
-      "TOO MUCH NESTING",
-    )
-    if result.ast is Some(file) {
-      ignore(@ast.encode_file(file).stringify())
+  @expect.expect_all(s => {
+    for input in inputs {
+      let (text, accepted) = input
+      let result = parse(text)
+      let titles = result.diagnostics.map(d => d.title)
+      s
+      .expect(titles)
+      .to_equal(if accepted { [] } else { ["TOO MUCH NESTING"] })
+      if result.ast is Some(file) {
+        ignore(@ast.encode_file(file).stringify())
+      }
     }
-  }
+  })
 }
 
 ///|

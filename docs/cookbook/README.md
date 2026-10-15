@@ -42,6 +42,12 @@ so the code stays in step with the API.
 - [Generate Elm code](generate-elm.mbt.md): build an AST in code and print
   it as Elm source in the elm-format layout; handle `PrintError`.
 
+## Limits
+
+- [Set the nesting budget](fuel.mbt.md): what the parser's fuel bounds,
+  reading a `TOO MUCH NESTING` refusal and its `detail`, giving the parser
+  more fuel, and the stack settings of each target.
+
 ## Elm-like languages
 
 - [Choose a dialect](dialects.mbt.md): `elm make` rules or elm-syntax

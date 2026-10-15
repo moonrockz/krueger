@@ -19,14 +19,42 @@ test "400 nested parentheses that go print on every target" {
 }
 
 ///|
-test "401 nested levels raise TooDeep" {
+test "2000 nested levels print on every target" {
+  // `-(-(...-x))`: 2000 levels, half of them negations that keep their
+  // parentheses. The printer has no depth limit.
   let mut e : @ast.Node[@ast.Expression] = n(FunctionOrValue([][:], "x"))
-  for _ in 0..<401 {
-    e = n(ParenthesizedExpression(e))
+  for _ in 0..<1000 {
+    e = n(Negation(n(ParenthesizedExpression(e))))
   }
-  let p = problem_of(() => @printer.print_expression(e))
-  @expect.expect(p.map(x => x.0)).to_equal(Some(TooDeep))
-  @expect.expect(p.map(x => x.1.length())).to_equal(Some(401))
+  inspect(
+    @printer.print_expression(e, width=1_000_000).length(),
+    content="2999",
+  )
+}
+
+///|
+test "parsed chains of 2000 operators and accesses encode, print and format on every target" {
+  // Left-associative chains are loops in the parser and have no limit; the
+  // AST is 2000 levels deep.
+  for construct in [@lawkit.Construct::Operators, Access] {
+    let text = @lawkit.nested(construct, 2000)
+    let result = @parser.parse_module(
+      @scanner.SourceText::new(text),
+      @scanner.DefaultScanner::new(),
+    )
+    guard result.ast is Some(file) else { fail("no AST") }
+    let json = @ast.encode_file(file).stringify()
+    let printed = @printer.print_file(file, width=1_000_000)
+    let formatted = @printer.format(text)
+    @expect.expect_all(s => {
+      s
+      .expect((construct, result.diagnostics.length()))
+      .to_equal((construct, 0))
+      s.expect(json.length() > 2000).to_be_true()
+      s.expect(printed.contains("f")).to_be_true()
+      s.expect(formatted == text).to_be_true()
+    })
+  }
 }
 
 ///|
@@ -97,14 +125,25 @@ test "400 nested patterns print on every target" {
 }
 
 ///|
-test "401 nested patterns raise TooDeep" {
+test "2000 nested patterns print on every target" {
   let mut p : @ast.Node[@ast.Pattern] = pvar("x")
-  for _ in 0..<401 {
-    p = n(ParenthesizedPattern(p))
+  let mut cons : @ast.Node[@ast.Pattern] = pvar("t")
+  for _ in 0..<2000 {
+    p = n(ParenthesizedPattern(n(TuplePattern([p, pvar("z")][:]))))
+    cons = n(UnConsPattern(ctor("Just", [pvar("h")]), cons))
   }
-  let e = problem_of(() => @printer.print_pattern(p))
-  @expect.expect(e.map(x => x.0)).to_equal(Some(TooDeep))
-  @expect.expect(e.map(x => x.1.length())).to_equal(Some(401))
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_pattern(p, width=1_000_000).length())
+    .to_equal(2000 * 9 + 1)
+    s
+    .expect(
+      @printer.print_pattern(cons, width=1_000_000).has_prefix(
+        "(Just h) :: (Just h) ::",
+      ),
+    )
+    .to_be_true()
+  })
 }
 
 ///|
@@ -126,14 +165,34 @@ test "400 nested types print on every target" {
 }
 
 ///|
-test "401 nested types raise TooDeep" {
+test "2000 nested types print on every target" {
   let mut t : @ast.Node[@ast.TypeAnnotation] = tvar("a")
-  for _ in 0..<401 {
+  let mut u : @ast.Node[@ast.TypeAnnotation] = tvar("a")
+  let mut rec : @ast.Node[@ast.TypeAnnotation] = tvar("a")
+  for _ in 0..<2000 {
     t = typed("List", [t])
+    u = n(Tupled([u, tvar("b")][:]))
+    rec = n(
+      Record(
+        [n(({ name: n("f"), type_annotation: rec, } : @ast.RecordField))][:],
+      ),
+    )
   }
-  let e = problem_of(() => @printer.print_type_annotation(t))
-  @expect.expect(e.map(x => x.0)).to_equal(Some(TooDeep))
-  @expect.expect(e.map(x => x.1.length())).to_equal(Some(401))
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_type_annotation(t, width=1_000_000).length())
+    .to_equal(2000 * 7 - 1)
+    s
+    .expect(@printer.print_type_annotation(u, width=1_000_000).length())
+    .to_equal(2000 * 7 + 1)
+    s
+    .expect(
+      @printer.print_type_annotation(rec, width=1_000_000).has_prefix(
+        "{ f : { f :",
+      ),
+    )
+    .to_be_true()
+  })
 }
 
 ///|
@@ -294,5 +353,23 @@ test "normalize_file handles 2000 nested patterns and expressions on every targe
     // The parentheses in the lists go.
     s.expect(lists).to_equal(2000)
     s.expect(x.value is FunctionOrValue(_, "y")).to_be_true()
+  })
+}
+
+///|
+test "a 2000-level left-nested arrow type prints on every target" {
+  // `((a -> a) -> a) -> a`: each left operand is a function type, which the
+  // arrow chain does not flatten, so the parts of each level must be built
+  // lazily (a `Parts` work item), not while the plan of the level above is
+  // built.
+  let mut t : @ast.Node[@ast.TypeAnnotation] = tvar("a")
+  for _ in 0..<2000 {
+    t = n(FunctionTypeAnnotation(t, tvar("a")))
+  }
+  let printed = @printer.print_type_annotation(t, width=1_000_000)
+  @expect.expect_all(s => {
+    s.expect(printed.has_prefix("((((")).to_be_true()
+    s.expect(printed.has_suffix("-> a) -> a) -> a")).to_be_true()
+    s.expect(printed.length()).to_equal(2000 * 7 - 2 + 1)
   })
 }

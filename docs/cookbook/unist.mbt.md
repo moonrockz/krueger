@@ -211,10 +211,11 @@ fn un_tree(text : String, root : @krueger.NodeRef) -> Json {
 ```
 
 Do not write this converter as a recursive function. An Elm declaration can
-be up to 400 levels deep (krueger reports deeper ones as `TOO MUCH
-NESTING`). On wasm, a stack overflows at a few hundred frames. `walk` uses an
-explicit stack, and so does `Json::stringify`, so the converter works for
-every tree that krueger gives.
+be hundreds of levels deep, and a left-associative operator chain has no
+limit at all (see [Set the nesting budget](fuel.mbt.md)). On wasm, a stack
+overflows at a few hundred frames. `walk` uses an explicit stack, and so
+does `Json::stringify`, so the converter works for every tree that krueger
+gives.
 
 `field_of` looks through all the fields of the parent on each call. For a
 file with very many declarations, build a `@krueger.Tree` and use

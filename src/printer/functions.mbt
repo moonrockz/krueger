@@ -10,7 +10,9 @@ fn Ctx::documentation_doc(
   guard text.length() >= 5 && text.has_prefix("{-|") && text.has_suffix("-}") else {
     raise PrintError(path~, problem=InvalidDocumentation)
   }
-  @pretty.verbatim(format_documentation(text, self.dialect, self.doc_depth))
+  @pretty.verbatim(
+    format_documentation(text, self.dialect, self.fuel, self.doc_depth),
+  )
 }
 
 ///|
@@ -19,7 +21,6 @@ fn Ctx::documentation_doc(
 fn Ctx::signature_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   s : @ast.Signature,
   range~ : @ast.Range? = None,
 ) -> @pretty.Doc raise PrintError {
@@ -51,7 +52,6 @@ fn Ctx::signature_doc(
   }
   let chain = self.arrow_chain(
     path.child("typeAnnotation", 0),
-    level + 1,
     s.type_annotation,
     eol~,
   )
@@ -86,10 +86,9 @@ fn Ctx::signature_doc(
 fn Ctx::function_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   f : @ast.Function,
 ) -> @pretty.Doc raise PrintError {
-  self.run(self.function_plan(path, level, f))
+  self.run(self.function_plan(path, f))
 }
 
 ///|
@@ -113,7 +112,6 @@ priv enum FunctionPart {
 fn Ctx::function_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   f : @ast.Function,
   in_let~ : Bool = false,
 ) -> Work {
@@ -150,7 +148,6 @@ fn Ctx::function_plan(
       Leaf(() => {
         self.signature_doc(
           path.child("signature", 0),
-          level + 1,
           sig.value,
           range=Some(sig.range),
         )
@@ -194,15 +191,13 @@ fn Ctx::function_plan(
         let moved = if last { self.after_token(a.range) } else { [] }
         @pretty.nest(
           4,
-          self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg) +
+          self.pattern_doc(p.child("arguments", i), a, PatternArg) +
           self.separator(a.range, if last { " =" } else { " " }, moved),
         )
       }),
     )
   }
-  parts.push(
-    Expr(p.child("expression", 0), level + 1, imp.value.expression, AnyExpr),
-  )
+  parts.push(Expr(p.child("expression", 0), imp.value.expression, AnyExpr))
   Plan(parts, docs => {
     // The head and the body are one main part.
     let mut head = @pretty.empty()

@@ -50,6 +50,8 @@ pub using @scanner {
   type Span,
   type SourceText,
   type Diagnostic,
+  type Detail,
+  type Walk,
   type Block,
   type Chunk,
   type Color,
@@ -131,6 +133,7 @@ pub using @dialect {
   type AttributeSyntax,
   type Rule,
   standard_operators,
+  DEFAULT_FUEL,
 }
 
 ///|
@@ -268,8 +271,14 @@ pub fn tokenize(
 pub fn parse_module(
   source : SourceText,
   dialect~ : Dialect = Dialect::elm_0_19_1(),
+  fuel~ : Int32 = DEFAULT_FUEL,
 ) -> ParseResult {
-  @parser.parse_module(source, @scanner.DefaultScanner::new(dialect~), dialect~)
+  @parser.parse_module(
+    source,
+    @scanner.DefaultScanner::new(dialect~),
+    dialect~,
+    fuel~,
+  )
 }
 
 ///|
@@ -294,6 +303,7 @@ pub fn parse_module(
 pub fn parse_tokens(
   tokens : TokenStream,
   dialect~ : Dialect = Dialect::elm_0_19_1(),
+  fuel~ : Int32 = DEFAULT_FUEL,
 ) -> ParseResult {
-  @parser.parse_tokens(tokens, dialect~)
+  @parser.parse_tokens(tokens, dialect~, fuel~)
 }

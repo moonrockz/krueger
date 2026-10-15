@@ -373,6 +373,7 @@ test "dialect_errors names the first error" {
       span,
       title: "",
       report: [],
+      detail: None,
     }
     s
     .expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning], }))
@@ -384,6 +385,7 @@ test "dialect_errors names the first error" {
       span,
       title: "",
       report: [],
+      detail: None,
     }
     s
     .expect(dialect_errors("a/B.elm", { ..ok, diagnostics: [warning, bad], }))
@@ -405,6 +407,7 @@ test "warnings do not stop a file counting as parsed" {
       span,
       title: "NUMBER OUT OF RANGE",
       report: [],
+      detail: None,
     }
     s.expect(has_errors([warning])).to_equal(false)
     s.expect(has_errors([{ ..warning, severity: Error, }])).to_equal(true)

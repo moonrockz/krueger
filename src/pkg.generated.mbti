@@ -12,6 +12,8 @@ import {
 }
 
 // Values
+pub const DEFAULT_FUEL : Int = 1200
+
 pub fn[V : @syntax.Visitor] accept(@syntax.NodeRef, V) -> Unit
 
 pub fn diagnostic_description(String) -> String?
@@ -24,9 +26,9 @@ pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
 
 pub fn[A] fold(@syntax.NodeRef, A, (A, @syntax.NodeRef) -> (A, @syntax.Control), leave? : (A, @syntax.NodeRef) -> A) -> A
 
-pub fn format(String, layout? : @printer.Layout, dialect? : @dialect.Dialect) -> String raise @printer.FormatError
+pub fn format(String, layout? : @printer.Layout, dialect? : @dialect.Dialect, fuel? : Int) -> String raise @printer.FormatError
 
-pub fn format_parsed(@parser.ParseResult, layout? : @printer.Layout, dialect? : @dialect.Dialect) -> String raise @printer.FormatError
+pub fn format_parsed(@parser.ParseResult, layout? : @printer.Layout, dialect? : @dialect.Dialect, fuel? : Int) -> String raise @printer.FormatError
 
 pub fn is_lower_start(Char) -> Bool
 
@@ -38,9 +40,9 @@ pub fn kind_table() -> Array[(String, String, Array[String])]
 
 pub fn normalize_file(@ast.File, dialect? : @dialect.Dialect) -> @ast.File
 
-pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect) -> @parser.ParseResult
+pub fn parse_module(@scanner.SourceText, dialect? : @dialect.Dialect, fuel? : Int) -> @parser.ParseResult
 
-pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect) -> @parser.ParseResult
+pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect, fuel? : Int) -> @parser.ParseResult
 
 pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise @printer.PrintError
 
@@ -104,6 +106,8 @@ pub using @cst {type DeclarationCst}
 pub using @ast {type DecodeError}
 
 pub using @ast {type DefaultModuleData}
+
+pub using @scanner {type Detail}
 
 pub using @scanner {type Diagnostic}
 
@@ -236,6 +240,8 @@ pub using @ast {type TypeAnnotation}
 pub using @cst {type UnionTypeCst}
 
 pub using @ast {type ValueConstructor}
+
+pub using @scanner {type Walk}
 
 pub using @syntax {trait EventSource}
 

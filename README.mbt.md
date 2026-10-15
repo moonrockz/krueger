@@ -12,7 +12,9 @@ is byte for byte the same as elm-syntax's.
   lexemes of the tokens give back the source text.
 - **Parser**: tokens to AST, a concrete syntax tree (CST) and diagnostics. A
   declaration that does not parse is left out and reported; the rest of the
-  file is parsed.
+  file is parsed. One caller-set fuel bounds the nesting the parser accepts
+  before it refuses with `TOO MUCH NESTING` (see
+  [Set the nesting budget](https://github.com/moonrockz/krueger/blob/main/docs/cookbook/fuel.mbt.md)).
 - **AST**: elm-syntax 7.3.9 types, with a JSON encoder and decoder that match
   elm-syntax.
 - **Diagnostics**: `elm make`-style error reports (terminal, plain text, and

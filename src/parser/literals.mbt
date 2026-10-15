@@ -92,7 +92,7 @@ fn hex_value(c : Char) -> Int32? {
 ///|
 /// A literal error before its token is known; `with_span` places it.
 fn literal_error(title : String, message : String) -> SyntaxError {
-  SyntaxError(message, dummy_span, { title, report: [], })
+  SyntaxError(message, dummy_span, { title, report: [], detail: None, })
 }
 
 ///|
@@ -230,6 +230,7 @@ fn out_of_range(c : Cursor, token : @scanner.Token, kept : String) -> Unit {
         "I will use \{kept} instead. Elm compiles it, but the value may not be what you expect.",
       ),
     ],
+    detail: None,
   })
 }
 

@@ -11,9 +11,9 @@ import {
 }
 
 // Values
-pub fn format(String, layout? : Layout, dialect? : @dialect.Dialect) -> String raise FormatError
+pub fn format(String, layout? : Layout, dialect? : @dialect.Dialect, fuel? : Int) -> String raise FormatError
 
-pub fn format_parsed(@parser.ParseResult, layout? : Layout, dialect? : @dialect.Dialect) -> String raise FormatError
+pub fn format_parsed(@parser.ParseResult, layout? : Layout, dialect? : @dialect.Dialect, fuel? : Int) -> String raise FormatError
 
 pub fn normalize_file(@ast.File, dialect? : @dialect.Dialect) -> @ast.File
 
@@ -68,7 +68,6 @@ pub(all) enum PrintProblem {
   InvalidGlsl
   InvalidDocumentation
   LetDocumentation
-  TooDeep
   UnplacedComment(@ast.Range)
 } derive(Eq, @debug.Debug)
 

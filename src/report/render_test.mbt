@@ -35,6 +35,7 @@ fn let_diagnostic() -> @scanner.Diagnostic {
         Plain(" keyword next."),
       ]),
     ],
+    detail: None,
   }
 }
 
@@ -202,6 +203,27 @@ test "warnings are left out of the elm json" {
     fail("bad shape")
   }
   @expect.expect(errors.length()).to_equal(0)
+}
+
+///|
+test "encode_diagnostics writes the detail of a fuel refusal" {
+  let fuel = {
+    ..let_diagnostic(),
+    code: "KR-PARSE-010",
+    detail: Some(OutOfFuel(fuel=1200, walk=Chain)),
+  }
+  let json = @report.encode_diagnostics([fuel, let_diagnostic()])
+  guard json is [with_detail, without] else { fail("expected two") }
+  @expect.expect_all(s => {
+    s
+    .expect(
+      with_detail
+      .stringify()
+      .contains("\"detail\":{\"outOfFuel\":{\"fuel\":1200,\"walk\":\"chain\"}}"),
+    )
+    .to_be_true()
+    s.expect(without.stringify().contains("detail")).to_be_false()
+  })
 }
 
 ///|

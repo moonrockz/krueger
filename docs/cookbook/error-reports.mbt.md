@@ -136,6 +136,7 @@ test "describe the codes" {
 | `KR-PARSE-007` | Unexpected syntax that elm-syntax rejects (skipped tokens, stray doc comments) |
 | `KR-PARSE-008` | Syntax error in a port or infix declaration |
 | `KR-PARSE-009` | Number literal out of range (warning; the value is clamped) |
+| `KR-PARSE-010` | Nested too deeply: the parser ran out of fuel (`detail` carries the fuel and the walk) |
 | `KR-ATTR-001` | Malformed doc attribute (warning; the attribute is skipped) |
 
 Only an `Error` makes the source invalid. A `Warning` such as `KR-PARSE-009`

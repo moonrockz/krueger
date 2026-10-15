@@ -8,6 +8,8 @@ import {
 }
 
 // Values
+pub const DEFAULT_FUEL : Int = 1200
+
 pub fn standard_operators() -> Array[OperatorDef]
 
 // Errors
