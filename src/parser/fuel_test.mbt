@@ -54,3 +54,67 @@ test "a malformed declaration keeps its code and has no detail" {
     ("KR-PARSE-004", None),
   ])
 }
+
+///|
+fn parse_fuel_at(text : String, fuel : Int32) -> @parser.ParseResult {
+  @parser.parse_module(
+    @scanner.SourceText::new(text),
+    @scanner.DefaultScanner::new(),
+    fuel~,
+  )
+}
+
+///|
+fn details(r : @parser.ParseResult) -> Array[@scanner.Detail?] {
+  r.diagnostics.filter(d => d.severity is Error).map(d => d.detail)
+}
+
+///|
+test "fuel 800 refuses 100 nested parentheses and accepts 99" {
+  @expect.expect_all(s => {
+    s
+    .expect(details(parse_fuel_at(@lawkit.nested(Parens, 99), 800)))
+    .to_equal([])
+    s
+    .expect(details(parse_fuel_at(@lawkit.nested(Parens, 100), 800)))
+    .to_equal([Some(OutOfFuel(fuel=800, walk=Nesting))])
+  })
+}
+
+///|
+test "fuel at or below zero refuses the first expression, never crashes" {
+  for fuel in [0, -5] {
+    let r = parse_fuel_at("module M exposing (..)\n\n\nx =\n    1\n", fuel)
+    @expect.expect(r.diagnostics.map(d => (d.code, d.detail))).to_equal([
+      ("KR-PARSE-010", Some(OutOfFuel(fuel~, walk=Nesting))),
+    ])
+  }
+}
+
+///|
+test "a chain inside deep nesting runs out of the shared budget as Chain" {
+  // 148 lists hold 1184 of 1200 units; the cons chain inside them gets the
+  // rest and runs out before its innermost item does.
+  let text = "module M exposing (..)\n\n\nf =\n    " +
+    "[".repeat(148) +
+    "1 :: ".repeat(20) +
+    "[]" +
+    "]".repeat(148) +
+    "\n"
+  @expect.expect(details(parse_fuel_at(text, 1200))).to_equal([
+    Some(OutOfFuel(fuel=1200, walk=Chain)),
+  ])
+}
+
+///|
+test "the root entry points take the fuel" {
+  let text = @lawkit.nested(Parens, 20)
+  let tokens = match
+    @scanner.DefaultScanner::new().tokenize(@scanner.SourceText::new(text)) {
+    Ok(t) => t
+    Err(_) => fail("scan error")
+  }
+  @expect.expect(
+    @parser.parse_tokens(tokens, fuel=100).diagnostics.map(d => d.code),
+  ).to_equal(["KR-PARSE-010"])
+}

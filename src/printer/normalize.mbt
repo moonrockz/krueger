@@ -253,7 +253,10 @@ pub fn normalize_file(
 /// them (see `format_documentation`).
 fn normalize_docs(file : @ast.File, dialect : @dialect.Dialect) -> @ast.File {
   fn doc(d : @ast.Node[String]) -> @ast.Node[String] {
-    { range: d.range, value: format_documentation(d.value, dialect, 0), }
+    {
+      range: d.range,
+      value: format_documentation(d.value, dialect, @dialect.DEFAULT_FUEL, 0),
+    }
   }
 
   let declarations : Array[@ast.Node[@ast.Declaration]] = file.declarations.map(d => {

@@ -13,6 +13,7 @@ let max_doc_depth : Int32 = 3
 fn format_documentation(
   text : String,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   depth : Int32,
 ) -> String {
   guard text.length() >= 5 && text.has_prefix("{-|") && text.has_suffix("-}") else {
@@ -21,7 +22,7 @@ fn format_documentation(
   let inner = text.view(start_offset=3, end_offset=text.length() - 2).to_owned()
   let formatted = "{-|" +
     @markdown.format_doc(inner, format_code=code => {
-      format_code(code, dialect, depth)
+      format_code(code, dialect, fuel, depth)
     }) +
     "-}"
   if closes_at_end(formatted) {
@@ -75,14 +76,15 @@ fn closes_at_end(text : String) -> Bool {
 fn format_code(
   code : String,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   depth : Int32,
 ) -> String? {
   guard depth < max_doc_depth else { return None }
-  let found = code_as_declarations(code, dialect, depth)
+  let found = code_as_declarations(code, dialect, fuel, depth)
   guard found is None else { return found }
-  let found = code_as_expressions(code, dialect, depth)
+  let found = code_as_expressions(code, dialect, fuel, depth)
   guard found is None else { return found }
-  code_as_module(code, dialect, depth)
+  code_as_module(code, dialect, fuel, depth)
 }
 
 ///|
@@ -117,15 +119,17 @@ priv struct CodeRows {
 fn format_wrapped(
   source : String,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   depth : Int32,
 ) -> (String, @ast.File)? {
-  let text = format_source(source, ElmFormat, dialect, depth + 1) catch {
+  let text = format_source(source, ElmFormat, dialect, fuel, depth + 1) catch {
     _ => return None
   }
   let result = @parser.parse_module(
     @scanner.SourceText::new(text),
     @scanner.DefaultScanner::new(dialect~),
     dialect~,
+    fuel~,
   )
   guard result.ast is Some(file) &&
     result.diagnostics.iter().all(d => !(d.severity is Error)) else {
@@ -231,9 +235,10 @@ fn code_text(
 fn code_as_declarations(
   code : String,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   depth : Int32,
 ) -> String? {
-  guard format_wrapped(code_header + code + "\n", dialect, depth)
+  guard format_wrapped(code_header + code + "\n", dialect, fuel, depth)
     is Some((text, file)) &&
     file.imports.is_empty() else {
     return None
@@ -253,6 +258,7 @@ fn code_as_declarations(
 fn code_as_expressions(
   code : String,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   depth : Int32,
 ) -> String? {
   guard expression_groups(code, dialect) is Some(groups) else { return None }
@@ -267,6 +273,7 @@ fn code_as_expressions(
     @scanner.SourceText::new(wrap_expressions(groups)),
     @scanner.DefaultScanner::new(dialect~),
     dialect~,
+    fuel~,
   )
   guard first.ast is Some(parsed) else { return None }
   // elm-format reads no comment after the last expression.
@@ -298,7 +305,7 @@ fn code_as_expressions(
       }
     }
   }
-  guard format_wrapped(wrap_expressions(groups), dialect, depth)
+  guard format_wrapped(wrap_expressions(groups), dialect, fuel, depth)
     is Some((text, file)) &&
     file.imports.is_empty() else {
     return None
@@ -448,15 +455,18 @@ fn expression_row(file : @ast.File, index : Int32) -> Int32 {
 fn code_as_module(
   code : String,
   dialect : @dialect.Dialect,
+  fuel : Int32,
   depth : Int32,
 ) -> String? {
-  let (text, file, has_header) = match format_wrapped(code, dialect, depth) {
+  let (text, file, has_header) = match
+    format_wrapped(code, dialect, fuel, depth) {
     Some((text, file)) => (text, file, true)
     None =>
       match
         format_wrapped(
           "port module X__ exposing (..)\n\n" + code + "\n",
           dialect,
+          fuel,
           depth,
         ) {
         Some((text, file)) => (text, file, false)

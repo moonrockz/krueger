@@ -1,8 +1,9 @@
 ///|
-fn parse_text(text : String) -> @parser.ParseResult {
+fn parse_text(text : String, fuel? : Int32) -> @parser.ParseResult {
   @parser.parse_module(
     @scanner.SourceText::{ module_name: None, text, },
     @scanner.DefaultScanner::new(),
+    fuel=fuel.unwrap_or(@dialect.DEFAULT_FUEL),
   )
 }
 
@@ -46,8 +47,8 @@ test "law: the parser never crashes, and its diagnostics lie inside the source" 
 /// Whether the nesting was rejected: some error, all of them TOO MUCH
 /// NESTING. Any other error, or an accepted module without its declaration
 /// `f`, fails the law.
-fn rejected(text : String) -> Bool raise {
-  let r = parse_text(text)
+fn rejected(text : String, fuel? : Int32) -> Bool raise {
+  let r = parse_text(text, fuel?)
   let errs = errors(r)
   if errs.iter().any(d => d.title != "TOO MUCH NESTING") {
     fail(
@@ -133,6 +134,98 @@ test "each construct changes verdict at its pinned threshold" {
       }
     }
   })
+}
+
+///|
+/// The first rejected depth of each construct at a lower fuel: the nesting
+/// constructs scale with `fuel / 8` (a constructor pattern or a type
+/// application counts two levels per source level); a `::` or `->` chain
+/// step costs 2 and needs 8 more for its operand (`(fuel - 8) / 2` steps);
+/// left-associative chains are limited by the AST-depth check (400 levels).
+test "a lower fuel refuses at the matching lower depth for every walk" {
+  let thresholds : Array[(Int32, Array[(@lawkit.Construct, Int32)])] = [
+    (
+      800,
+      [
+        (Parens, 100),
+        (List, 100),
+        (Record, 100),
+        (Lambda, 100),
+        (Let, 100),
+        (Case, 100),
+        (Type, 100),
+        (Pattern, 100),
+        (Operators, 399),
+        (Cons, 397),
+        (Arrow, 397),
+        (ElseIf, 100),
+        (Access, 399),
+        (CtorPattern, 50),
+        (TypeApp, 50),
+      ],
+    ),
+    (
+      400,
+      [
+        (Parens, 50),
+        (List, 50),
+        (Record, 50),
+        (Lambda, 50),
+        (Let, 50),
+        (Case, 50),
+        (Type, 50),
+        (Pattern, 50),
+        (Operators, 399),
+        (Cons, 197),
+        (Arrow, 197),
+        (ElseIf, 50),
+        (Access, 399),
+        (CtorPattern, 25),
+        (TypeApp, 25),
+      ],
+    ),
+  ]
+  @expect.expect_all(s => {
+    for table in thresholds {
+      let (fuel, entries) = table
+      s.expect(entries.map(t => t.0)).to_equal(@lawkit.constructs())
+      for entry in entries {
+        let (construct, limit) = entry
+        for depth in [limit - 1, limit] {
+          s
+          .expect(
+            (
+              fuel,
+              @lawkit.Nesting::{ construct, depth, },
+              rejected(@lawkit.nested(construct, depth), fuel~),
+            ),
+          )
+          .to_equal(
+            (fuel, @lawkit.Nesting::{ construct, depth, }, depth >= limit),
+          )
+        }
+      }
+    }
+  })
+}
+
+///|
+test "law: more fuel never rejects what less fuel accepts" {
+  // Edges: every construct at every depth of `Nesting`, with a fuel from
+  // 400 to 2000 and the fuel one nesting level (8) below it.
+  @quickcheck.check(
+    (input : (@lawkit.Nesting, UInt32)) => {
+      let (n, seed) = input
+      let fuel = 400 + (seed % 1600).reinterpret_as_int()
+      let text = n.text()
+      let more = rejected(text, fuel~)
+      let less = rejected(text, fuel=fuel - 8)
+      !more || less
+    },
+    count=100,
+    max_size=24,
+    seed=349,
+  )
 }
 
 ///|

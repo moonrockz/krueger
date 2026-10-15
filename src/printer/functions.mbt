@@ -10,7 +10,9 @@ fn Ctx::documentation_doc(
   guard text.length() >= 5 && text.has_prefix("{-|") && text.has_suffix("-}") else {
     raise PrintError(path~, problem=InvalidDocumentation)
   }
-  @pretty.verbatim(format_documentation(text, self.dialect, self.doc_depth))
+  @pretty.verbatim(
+    format_documentation(text, self.dialect, self.fuel, self.doc_depth),
+  )
 }
 
 ///|

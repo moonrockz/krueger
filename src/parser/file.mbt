@@ -244,7 +244,9 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 ///
 /// Get the tokens from a scanner built for the same `dialect` (default: Elm
 /// 0.19.1). The dialect's rules decide what is an error, and its operator
-/// table decides how operators group.
+/// table decides how operators group. `fuel` (default
+/// `@dialect.DEFAULT_FUEL`, 1200) bounds the nesting the parser accepts
+/// before it refuses with `KR-PARSE-010`; more fuel needs more stack.
 ///
 /// ```mbt check
 /// test {
@@ -271,9 +273,10 @@ fn exposed_names(e : @ast.Node[@ast.Exposing]) -> Array[String] {
 pub fn parse_tokens(
   tokens : @scanner.TokenStream,
   dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  fuel~ : Int32 = @dialect.DEFAULT_FUEL,
 ) -> ParseResult {
   let stream = tokens.tokens
-  let c = Cursor::new(stream, dialect)
+  let c = Cursor::new(stream, dialect, fuel)
   let diagnostics = []
   let attached = []
   let listed = []
@@ -447,10 +450,10 @@ pub fn parse_tokens(
               plain("This declaration is nested too deeply for me:"),
               Excerpt(context=at, highlight=at),
               plain(
-                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep, and I ran out of fuel at \{DEFAULT_FUEL}. Try splitting it into smaller definitions. Or give the parser more fuel, and the host more stack.",
+                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep, and I ran out of fuel at \{c.fuel}. Try splitting it into smaller definitions. Or give the parser more fuel, and the host more stack.",
               ),
             ],
-            detail=Some(OutOfFuel(fuel=DEFAULT_FUEL, walk=Chain)),
+            detail=Some(OutOfFuel(fuel=c.fuel, walk=Chain)),
           ),
         )
       }
@@ -547,7 +550,7 @@ fn collect_attributes(
   diagnostics : Array[@scanner.Diagnostic],
 ) -> Unit {
   guard c.dialect.attributes is DocComment else { return }
-  let (attributes, warnings) = doc_attributes(comment, c.dialect)
+  let (attributes, warnings) = doc_attributes(comment, c.dialect, c.fuel)
   diagnostics.append(warnings)
   if !attributes.is_empty() {
     groups.push({ target, attributes, })
@@ -556,7 +559,9 @@ fn collect_attributes(
 
 ///|
 /// Tokenize `source` with `scanner` and parse it in `dialect` (default: Elm
-/// 0.19.1). The caller builds `scanner` for the same dialect.
+/// 0.19.1). The caller builds `scanner` for the same dialect. `fuel`
+/// (default `@dialect.DEFAULT_FUEL`, 1200) bounds the nesting the parser
+/// accepts before it refuses with `KR-PARSE-010`.
 ///
 /// When the source does not scan, the result has no AST and no CST, and its
 /// diagnostics are the scanner's. The root package's `parse_module` builds
@@ -585,9 +590,10 @@ pub fn[S : @scanner.Scanner] parse_module(
   source : @scanner.SourceText,
   scanner : S,
   dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
+  fuel~ : Int32 = @dialect.DEFAULT_FUEL,
 ) -> ParseResult {
   match scanner.tokenize(source) {
-    Ok(tokens) => parse_tokens(tokens, dialect~)
+    Ok(tokens) => parse_tokens(tokens, dialect~, fuel~)
     Err(errs) =>
       { ast: None, cst: None, diagnostics: errs.diagnostics, attributes: [], }
   }

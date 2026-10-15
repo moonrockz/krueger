@@ -94,7 +94,7 @@ test "numbers: decimal, hex, float" {
     s
     .expect(
       int_value(
-        Cursor::new([], @dialect.Dialect::elm_0_19_1()),
+        Cursor::new([], @dialect.Dialect::elm_0_19_1(), @dialect.DEFAULT_FUEL),
         lit(IntLiteral, "31536000000"),
       ),
     )
@@ -102,7 +102,7 @@ test "numbers: decimal, hex, float" {
     s
     .expect(
       int_value(
-        Cursor::new([], @dialect.Dialect::elm_0_19_1()),
+        Cursor::new([], @dialect.Dialect::elm_0_19_1(), @dialect.DEFAULT_FUEL),
         lit(IntLiteral, "0xFF"),
       ),
     )
@@ -110,7 +110,7 @@ test "numbers: decimal, hex, float" {
     s
     .expect(
       float_value(
-        Cursor::new([], @dialect.Dialect::elm_0_19_1()),
+        Cursor::new([], @dialect.Dialect::elm_0_19_1(), @dialect.DEFAULT_FUEL),
         lit(FloatLiteral, "2.5e-3"),
       ),
     )

@@ -79,6 +79,8 @@ priv struct Ctx {
   /// The number of doc comments around the code that is printed (code in
   /// a doc comment is formatted with a deeper `Ctx`).
   doc_depth : Int32
+  /// The parser fuel for the Elm code in doc comments.
+  fuel : Int32
 }
 
 ///|
@@ -88,8 +90,9 @@ fn Ctx::new(
   source~ : SourceFacts? = None,
   comments~ : CommentTable? = None,
   doc_depth~ : Int32 = 0,
+  fuel~ : Int32 = @dialect.DEFAULT_FUEL,
 ) -> Ctx {
-  { dialect, layout, source, comments, doc_depth, }
+  { dialect, layout, source, comments, doc_depth, fuel, }
 }
 
 ///|
