@@ -21,11 +21,9 @@ fn Ctx::documentation_doc(
 fn Ctx::signature_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   s : @ast.Signature,
   range~ : @ast.Range? = None,
 ) -> @pretty.Doc raise PrintError {
-  ignore(level)
   // elm-format Box.hs formatTypeAnnotation: the comments between the name
   // and the `:` follow the name (`formatTailCommented`). When one of them
   // is not one line, the name, each comment, the `:` (indented by 4) and
@@ -88,10 +86,9 @@ fn Ctx::signature_doc(
 fn Ctx::function_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   f : @ast.Function,
 ) -> @pretty.Doc raise PrintError {
-  self.run(self.function_plan(path, level, f))
+  self.run(self.function_plan(path, f))
 }
 
 ///|
@@ -115,7 +112,6 @@ priv enum FunctionPart {
 fn Ctx::function_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   f : @ast.Function,
   in_let~ : Bool = false,
 ) -> Work {
@@ -152,7 +148,6 @@ fn Ctx::function_plan(
       Leaf(() => {
         self.signature_doc(
           path.child("signature", 0),
-          level + 1,
           sig.value,
           range=Some(sig.range),
         )
@@ -202,9 +197,7 @@ fn Ctx::function_plan(
       }),
     )
   }
-  parts.push(
-    Expr(p.child("expression", 0), level + 1, imp.value.expression, AnyExpr),
-  )
+  parts.push(Expr(p.child("expression", 0), imp.value.expression, AnyExpr))
   Plan(parts, docs => {
     // The head and the body are one main part.
     let mut head = @pretty.empty()

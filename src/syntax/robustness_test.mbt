@@ -1,7 +1,7 @@
 ///|
 test "a 400-level tree builds and answers without a stack overflow" {
   @expect.expect_all(s => {
-    // 398 operators is the deepest chain the parser accepts (MAX_AST_DEPTH).
+    // A 398-operator chain: a 400-level tree (the parser has no limit on it).
     let sb = StringBuilder()
     sb.write_string("module M exposing (..)\n\n\nf =\n    1")
     for _ in 0..<398 {

@@ -19,14 +19,42 @@ test "400 nested parentheses that go print on every target" {
 }
 
 ///|
-test "401 nested levels raise TooDeep" {
+test "2000 nested levels print on every target" {
+  // `-(-(...-x))`: 2000 levels, half of them negations that keep their
+  // parentheses. The printer has no depth limit.
   let mut e : @ast.Node[@ast.Expression] = n(FunctionOrValue([][:], "x"))
-  for _ in 0..<401 {
-    e = n(ParenthesizedExpression(e))
+  for _ in 0..<1000 {
+    e = n(Negation(n(ParenthesizedExpression(e))))
   }
-  let p = problem_of(() => @printer.print_expression(e))
-  @expect.expect(p.map(x => x.0)).to_equal(Some(TooDeep))
-  @expect.expect(p.map(x => x.1.length())).to_equal(Some(401))
+  inspect(
+    @printer.print_expression(e, width=1_000_000).length(),
+    content="2999",
+  )
+}
+
+///|
+test "parsed chains of 2000 operators and accesses encode, print and format on every target" {
+  // Left-associative chains are loops in the parser and have no limit; the
+  // AST is 2000 levels deep.
+  for construct in [@lawkit.Construct::Operators, Access] {
+    let text = @lawkit.nested(construct, 2000)
+    let result = @parser.parse_module(
+      @scanner.SourceText::new(text),
+      @scanner.DefaultScanner::new(),
+    )
+    guard result.ast is Some(file) else { fail("no AST") }
+    let json = @ast.encode_file(file).stringify()
+    let printed = @printer.print_file(file, width=1_000_000)
+    let formatted = @printer.format(text)
+    @expect.expect_all(s => {
+      s
+      .expect((construct, result.diagnostics.length()))
+      .to_equal((construct, 0))
+      s.expect(json.length() > 2000).to_be_true()
+      s.expect(printed.contains("f")).to_be_true()
+      s.expect(formatted == text).to_be_true()
+    })
+  }
 }
 
 ///|

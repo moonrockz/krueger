@@ -121,14 +121,15 @@ pub fn nested(construct : Construct, depth : Int32) -> String {
 
 ///|
 pub impl @quickcheck.Arbitrary for Nesting with fn arbitrary(_, rs) {
-  // Edges: depths 1 and 2, and around both limits (twice a construct can
-  // count two levels, so around half the nesting limit too).
+  // Edges: depths 1 and 2, and around both limits (150 nesting levels and
+  // 597 chain steps; a construct can count two levels, so around half the
+  // nesting limit too).
   let near = [
-    1, 2, 73, 74, 75, 76, 77, 148, 149, 150, 151, 152, 397, 398, 399, 400, 401,
+    1, 2, 73, 74, 75, 76, 77, 148, 149, 150, 151, 152, 595, 596, 597, 598, 599,
   ]
   let all = constructs()
   let depth = if pick(rs, 4) == 0 {
-    1 + pick(rs, 450)
+    1 + pick(rs, 650)
   } else {
     near[pick(rs, near.length())]
   }

@@ -108,13 +108,11 @@ fn Ctx::declaration_start(
 fn Ctx::declaration_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   d : @ast.Node[@ast.Declaration],
 ) -> @pretty.Doc raise PrintError {
-  check_level(path, level)
   match d.value {
-    FunctionDeclaration(f) => self.function_doc(path, level, f)
-    AliasDeclaration(a) => self.alias_doc(path, level, a)
+    FunctionDeclaration(f) => self.function_doc(path, f)
+    AliasDeclaration(a) => self.alias_doc(path, a)
     CustomTypeDeclaration(t) => {
       guard !t.constructors.is_empty() else {
         raise PrintError(path~, problem=NoConstructors)
@@ -178,7 +176,7 @@ fn Ctx::declaration_doc(
       self.declaration_start(path, None, s.name.range) +
       @pretty.text("port") +
       self.space_before(None, s.name.range, 4).0 +
-      self.signature_doc(path, level, s)
+      self.signature_doc(path, s)
     InfixDeclaration(i) => {
       // elm-format pads the direction to 5 columns: `infix left  0 (|>) = apR`.
       let direction = match i.direction.value {
@@ -257,7 +255,7 @@ fn Ctx::declaration_doc(
       @pretty.nest(
         4,
         @pretty.hardline() +
-        self.expr_doc(path.child("expression", 0), level + 1, value, AnyExpr),
+        self.expr_doc(path.child("expression", 0), value, AnyExpr),
       )
     }
   }
@@ -512,7 +510,7 @@ fn Ctx::file_doc(
     let before = self.take(Leading, decl.range)
     before.append(self.before_keyword(decl))
     push_comments(entries, before)
-    let mut doc = self.declaration_doc(root.child("declarations", i), 0, decl)
+    let mut doc = self.declaration_doc(root.child("declarations", i), decl)
     if port_docs[i] is Some(pd) {
       doc = pd + @pretty.hardline() + doc
     }
@@ -604,10 +602,8 @@ fn row_or_indented(
 fn Ctx::alias_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   a : @ast.TypeAlias,
 ) -> @pretty.Doc raise PrintError {
-  ignore(level)
   let start = self.declaration_start(
     path,
     a.documentation,

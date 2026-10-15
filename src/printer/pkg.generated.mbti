@@ -68,7 +68,6 @@ pub(all) enum PrintProblem {
   InvalidGlsl
   InvalidDocumentation
   LetDocumentation
-  TooDeep
   UnplacedComment(@ast.Range)
 } derive(Eq, @debug.Debug)
 

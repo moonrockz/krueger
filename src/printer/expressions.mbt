@@ -137,8 +137,8 @@ fn parens_at(e : @ast.Expression, at : ExprAt) -> Bool {
 /// empty, so deep ASTs do not overflow the call stack (wasm overflows at a
 /// few hundred frames).
 priv enum Work {
-  /// Print this expression: check its level, then push its plan.
-  Expr(@syntax.NodePath, Int32, @ast.Node[@ast.Expression], ExprAt)
+  /// Print this expression: push its plan.
+  Expr(@syntax.NodePath, @ast.Node[@ast.Expression], ExprAt)
   /// Make a doc that has no nested expression (a name, a literal, a
   /// comment). It runs when it is popped, so errors come in source order.
   Leaf(() -> @pretty.Doc raise PrintError)
@@ -168,8 +168,7 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
 
   while work.pop() is Some(item) {
     match item {
-      Expr(path, level, e, at) => {
-        check_level(path, level)
+      Expr(path, e, at) => {
         // The leading comments are taken now, before the parts; the
         // trailing comments after them.
         let lead = self.leading(e.range)
@@ -180,12 +179,12 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         if e.value is ParenthesizedExpression(x) &&
           !parens_at(x.value, at) &&
           !self.comment_in_parens(e.range, x.range) {
-          push_plan([Expr(path.child("parenthesized", 0), level + 1, x, at)], docs => {
+          push_plan([Expr(path.child("parenthesized", 0), x, at)], docs => {
             wrap(docs[0])
           })
           continue
         }
-        let (items, combine) = self.expr_plan(path, level, e)
+        let (items, combine) = self.expr_plan(path, e)
         if parens_at(e.value, at) {
           let split = self.join()
           push_plan(items, docs => wrap(parens(split, combine(docs))))
@@ -221,11 +220,10 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
 fn Ctx::expr_doc(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   e : @ast.Node[@ast.Expression],
   at : ExprAt,
 ) -> @pretty.Doc raise PrintError {
-  self.run(Expr(path, level, e, at))
+  self.run(Expr(path, e, at))
 }
 
 ///|
@@ -242,7 +240,6 @@ fn Ctx::setter_items(
   self : Ctx,
   path : @syntax.NodePath,
   field_name : String,
-  level : Int32,
   setters : ArrayView[@ast.Node[@ast.RecordSetter]],
 ) -> Array[Work] {
   let items = []
@@ -273,7 +270,7 @@ fn Ctx::setter_items(
         self.separator(name.range, " =", moved)
       }),
     )
-    items.push(Expr(p.child("expression", 0), level + 1, value, AnyExpr))
+    items.push(Expr(p.child("expression", 0), value, AnyExpr))
     items.push(
       Leaf(() => {
         comments_after(value_trail) + self.trailing_before_comma(s.range, next)
@@ -340,7 +337,6 @@ fn number_doc(
 fn Ctx::expr_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   e : @ast.Node[@ast.Expression],
 ) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   match e.value {
@@ -373,7 +369,6 @@ fn Ctx::expr_plan(
         parts.push(
           Expr(
             path.child("application", i),
-            level + 1,
             x,
             if i == 0 {
               Head
@@ -408,10 +403,10 @@ fn Ctx::expr_plan(
         },
       )
     }
-    OperatorApplication(_, _, _, _) => self.chain_plan(path, level, e)
+    OperatorApplication(_, _, _, _) => self.chain_plan(path, e)
     FunctionOrValue(module_, name) =>
       done(self.qualified_value(path, module_, name))
-    IfBlock(c, t, f) => self.if_plan(path, level, c, t, f)
+    IfBlock(c, t, f) => self.if_plan(path, c, t, f)
     PrefixOperator(symbol) =>
       done(@pretty.text("(" + self.operator_symbol(path, symbol) + ")"))
     Operator(symbol) => done(@pretty.text(self.operator_symbol(path, symbol)))
@@ -432,7 +427,7 @@ fn Ctx::expr_plan(
     }
     Negation(x) =>
       (
-        [Expr(path.child("negation", 0), level + 1, x, Negated)],
+        [Expr(path.child("negation", 0), x, Negated)],
         docs => @pretty.text("-") + docs[0],
       )
     Literal(s) => done(self.string_doc(e.range, s))
@@ -446,7 +441,7 @@ fn Ctx::expr_plan(
         _ => [],
       )
       (
-        self.sequence_items(path, "tupled", level, items, after=Some(after)),
+        self.sequence_items(path, "tupled", items, after=Some(after)),
         docs => {
           let (items, leads) = item_docs(docs)
           // elm-format Box.hs Tuple (`formatC2Eol`): the comments before a
@@ -472,7 +467,7 @@ fn Ctx::expr_plan(
     }
     ParenthesizedExpression(x) =>
       (
-        [Expr(path.child("parenthesized", 0), level + 1, x, AnyExpr)],
+        [Expr(path.child("parenthesized", 0), x, AnyExpr)],
         // elm-format Box.hs `Parens` has no source rule: the parentheses
         // break only when the expression in them is multi-line.
         // A comment before the `)` goes in the column after the `(`.
@@ -494,8 +489,7 @@ fn Ctx::expr_plan(
         }
         parts.push(Leaf(() => self.moved_then_leading(previous, dn.range)))
         match dn.value {
-          LetFunction(f) =>
-            parts.push(self.function_plan(p, level + 1, f, in_let=true))
+          LetFunction(f) => parts.push(self.function_plan(p, f, in_let=true))
           LetDestructuring(pattern, value) =>
             parts.push(
               Plan(
@@ -506,7 +500,7 @@ fn Ctx::expr_plan(
                     self.pattern_doc(p.child("pattern", 0), pattern, PatternArg) +
                     self.separator(pattern.range, " =", moved)
                   }),
-                  Expr(p.child("expression", 0), level + 1, value, AnyExpr),
+                  Expr(p.child("expression", 0), value, AnyExpr),
                 ],
                 docs => {
                   @pretty.nest(4, docs[0]) +
@@ -537,7 +531,7 @@ fn Ctx::expr_plan(
           }
         }),
       )
-      parts.push(Expr(path.child("expression", 0), level + 1, body, AnyExpr))
+      parts.push(Expr(path.child("expression", 0), body, AnyExpr))
       (
         parts,
         docs => {
@@ -571,9 +565,7 @@ fn Ctx::expr_plan(
       // Three docs per branch: its comments, the pattern with ` ->`, the
       // body. The comments after a branch go before the next one
       // (elm-format).
-      let parts = [
-        Expr(path.child("expression", 0), level + 1, b.expression, AnyExpr),
-      ]
+      let parts = [Expr(path.child("expression", 0), b.expression, AnyExpr)]
       for i, c in b.cases {
         let p = path.child("cases", i)
         let previous = if i > 0 {
@@ -592,9 +584,7 @@ fn Ctx::expr_plan(
             )
           }),
         )
-        parts.push(
-          Expr(p.child("expression", 0), level + 1, c.expression, AnyExpr),
-        )
+        parts.push(Expr(p.child("expression", 0), c.expression, AnyExpr))
       }
       // elm-format Parse/Expression.hs caseExpr (`trackNewline` around the
       // padded subject): a line break after `case`, in the subject or
@@ -655,9 +645,7 @@ fn Ctx::expr_plan(
           }),
         )
       }
-      parts.push(
-        Expr(path.child("expression", 0), level + 1, l.expression, AnyExpr),
-      )
+      parts.push(Expr(path.child("expression", 0), l.expression, AnyExpr))
       let split = self.split_within(e.range)
       (
         parts,
@@ -679,7 +667,7 @@ fn Ctx::expr_plan(
     }
     RecordExpr(setters) =>
       (
-        self.setter_items(path, "record", level, setters),
+        self.setter_items(path, "record", setters),
         docs => {
           let (fields, leads) = self.setter_docs(setters, docs, 0)
           let inner = if setters.is_empty() {
@@ -694,7 +682,7 @@ fn Ctx::expr_plan(
       )
     ListExpr(items) =>
       (
-        self.sequence_items(path, "list", level, items),
+        self.sequence_items(path, "list", items),
         docs => {
           let (items, leads) = item_docs(docs)
           // elm-format Parse/Expression.hs listTerm (`checkMultiline`): a
@@ -718,7 +706,7 @@ fn Ctx::expr_plan(
         p = p.child("expression", 0)
         node = target
       }
-      let parts = [Expr(p, level + 1, node, Target)]
+      let parts = [Expr(p, node, Target)]
       for i = names.length() - 1; i >= 0; i = i - 1 {
         let (np, name) = names[i]
         parts.push(
@@ -763,7 +751,7 @@ fn Ctx::expr_plan(
           )
         }),
       ]
-      parts.append(self.setter_items(path, "updates", level, setters))
+      parts.append(self.setter_items(path, "updates", setters))
       (
         parts,
         docs => {
@@ -799,7 +787,6 @@ fn Ctx::sequence_items(
   self : Ctx,
   path : @syntax.NodePath,
   field_name : String,
-  level : Int32,
   items : ArrayView[@ast.Node[@ast.Expression]],
   after~ : Array[Array[@ast.Node[String]]]? = None,
 ) -> Array[Work] {
@@ -837,7 +824,7 @@ fn Ctx::sequence_items(
       }),
     )
     parts.push(Leaf(() => comments_before(moved[i], x.range.start)))
-    parts.push(Expr(path.child(field_name, i), level + 1, x, AnyExpr))
+    parts.push(Expr(path.child(field_name, i), x, AnyExpr))
   }
   parts
 }
@@ -865,11 +852,10 @@ fn item_docs(
 fn Ctx::if_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   c : @ast.Node[@ast.Expression],
   t : @ast.Node[@ast.Expression],
   f : @ast.Node[@ast.Expression],
-) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) {
   let parts = []
   // Per clause: the comments before `then` and those before `else`.
   let before_then : Array[Array[@ast.Node[String]]] = []
@@ -897,12 +883,11 @@ fn Ctx::if_plan(
         @pretty.empty()
       }),
     )
-    parts.push(Expr(p.child("clause", 0), level + 1, cond, AnyExpr))
-    parts.push(Expr(p.child("then", 0), level + 1, then_, AnyExpr))
+    parts.push(Expr(p.child("clause", 0), cond, AnyExpr))
+    parts.push(Expr(p.child("then", 0), then_, AnyExpr))
     match else_.value {
       IfBlock(c2, t2, f2) => {
         p = p.child("else", 0)
-        check_level(p, level)
         let r = else_.range
         parts.push(Leaf(() => self.leading(r)))
         cond = c2
@@ -910,7 +895,7 @@ fn Ctx::if_plan(
         else_ = f2
       }
       _ => {
-        parts.push(Expr(p.child("else", 0), level + 1, else_, AnyExpr))
+        parts.push(Expr(p.child("else", 0), else_, AnyExpr))
         more = false
       }
     }

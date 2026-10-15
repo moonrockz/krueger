@@ -73,7 +73,6 @@ fn Ctx::chain_step(
 fn Ctx::chain_plan(
   self : Ctx,
   path : @syntax.NodePath,
-  level : Int32,
   e : @ast.Node[@ast.Expression],
 ) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
   let steps : Array[ChainStep] = []
@@ -212,13 +211,10 @@ fn Ctx::chain_plan(
     )
     parts.push(
       if wrapped {
-        Plan([Expr(p, level + 1, node, AnyExpr)], docs => {
-          parens(self.join(), docs[0])
-        })
+        Plan([Expr(p, node, AnyExpr)], docs => parens(self.join(), docs[0]))
       } else {
         Expr(
           p,
-          level + 1,
           node,
           if k < last {
             Operand

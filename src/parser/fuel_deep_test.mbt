@@ -5,7 +5,7 @@
 
 ///|
 test "a higher fuel passes deeper input" {
-  for construct in [@lawkit.Construct::Parens, Case] {
+  for construct in [@lawkit.Construct::Parens, Let, Case] {
     let r = @parser.parse_module(
       @scanner.SourceText::new(@lawkit.nested(construct, 300)),
       @scanner.DefaultScanner::new(),

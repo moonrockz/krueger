@@ -126,7 +126,7 @@ pub fn print_expression(
   dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
-  @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), 0, e, AnyExpr), width~)
+  @pretty.render(ctx.expr_doc(@syntax.NodePath::root(), e, AnyExpr), width~)
 }
 
 ///|
@@ -168,7 +168,7 @@ pub fn print_declaration(
   dialect~ : @dialect.Dialect = @dialect.Dialect::elm_0_19_1(),
 ) -> String raise PrintError {
   let ctx = Ctx::new(dialect, layout=Width(width))
-  @pretty.render(ctx.declaration_doc(@syntax.NodePath::root(), 0, d), width~)
+  @pretty.render(ctx.declaration_doc(@syntax.NodePath::root(), d), width~)
 }
 
 ///|

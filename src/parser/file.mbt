@@ -438,25 +438,6 @@ pub fn parse_tokens(
         skip_to_top_level(c, start)
       }
     } noraise {
-      decl if declaration_depth(decl.value) > MAX_AST_DEPTH => {
-        let at = point(stream[start].span.start)
-        diagnostics.push(
-          parser_error(
-            "KR-PARSE-010",
-            "Nested too deeply: declaration nested too deeply",
-            stream[start].span,
-            title="TOO MUCH NESTING",
-            report=[
-              plain("This declaration is nested too deeply for me:"),
-              Excerpt(context=at, highlight=at),
-              plain(
-                "Its expressions, types or patterns go more than \{MAX_AST_DEPTH} levels deep, and I ran out of fuel at \{c.fuel}. Try splitting it into smaller definitions. Or give the parser more fuel, and the host more stack.",
-              ),
-            ],
-            detail=Some(OutOfFuel(fuel=c.fuel, walk=Chain)),
-          ),
-        )
-      }
       decl => {
         if doc is Some(d) {
           attached.push(d.span)

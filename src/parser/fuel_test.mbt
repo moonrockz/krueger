@@ -12,8 +12,8 @@ test "each nesting refusal has code KR-PARSE-010, its title and its walk" {
     (Parens, 150, Nesting),
     (CtorPattern, 75, Nesting),
     (TypeApp, 75, Nesting),
-    (Cons, 399, Chain),
-    (Arrow, 399, Chain),
+    (Cons, 597, Chain),
+    (Arrow, 597, Chain),
   ]
   @expect.expect_all(s => {
     for c in cases {

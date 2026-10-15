@@ -53,8 +53,6 @@ pub(all) enum PrintProblem {
   InvalidDocumentation
   /// Documentation on a function in a `let`; Elm has no doc comments there.
   LetDocumentation
-  /// More than 400 nested printer levels.
-  TooDeep
   /// A regular comment at this range that the formatter did not print.
   UnplacedComment(@ast.Range)
 } derive(Eq, Debug)
@@ -93,17 +91,4 @@ fn Ctx::new(
   fuel~ : Int32 = @dialect.DEFAULT_FUEL,
 ) -> Ctx {
   { dialect, layout, source, comments, doc_depth, fuel, }
-}
-
-///|
-/// The deepest nesting the printer accepts. Operator chains, record access
-/// chains, function type arrows, `else if` chains and application items do
-/// not add levels, so every AST the parser returns is inside this limit.
-let max_level : Int32 = 400
-
-///|
-fn check_level(path : @syntax.NodePath, level : Int32) -> Unit raise PrintError {
-  if level > max_level {
-    raise PrintError(path~, problem=TooDeep)
-  }
 }
