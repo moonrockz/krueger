@@ -97,14 +97,25 @@ test "400 nested patterns print on every target" {
 }
 
 ///|
-test "401 nested patterns raise TooDeep" {
+test "2000 nested patterns print on every target" {
   let mut p : @ast.Node[@ast.Pattern] = pvar("x")
-  for _ in 0..<401 {
-    p = n(ParenthesizedPattern(p))
+  let mut cons : @ast.Node[@ast.Pattern] = pvar("t")
+  for _ in 0..<2000 {
+    p = n(ParenthesizedPattern(n(TuplePattern([p, pvar("z")][:]))))
+    cons = n(UnConsPattern(ctor("Just", [pvar("h")]), cons))
   }
-  let e = problem_of(() => @printer.print_pattern(p))
-  @expect.expect(e.map(x => x.0)).to_equal(Some(TooDeep))
-  @expect.expect(e.map(x => x.1.length())).to_equal(Some(401))
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_pattern(p, width=1_000_000).length())
+    .to_equal(2000 * 9 + 1)
+    s
+    .expect(
+      @printer.print_pattern(cons, width=1_000_000).has_prefix(
+        "(Just h) :: (Just h) ::",
+      ),
+    )
+    .to_be_true()
+  })
 }
 
 ///|
@@ -126,14 +137,34 @@ test "400 nested types print on every target" {
 }
 
 ///|
-test "401 nested types raise TooDeep" {
+test "2000 nested types print on every target" {
   let mut t : @ast.Node[@ast.TypeAnnotation] = tvar("a")
-  for _ in 0..<401 {
+  let mut u : @ast.Node[@ast.TypeAnnotation] = tvar("a")
+  let mut rec : @ast.Node[@ast.TypeAnnotation] = tvar("a")
+  for _ in 0..<2000 {
     t = typed("List", [t])
+    u = n(Tupled([u, tvar("b")][:]))
+    rec = n(
+      Record(
+        [n(({ name: n("f"), type_annotation: rec, } : @ast.RecordField))][:],
+      ),
+    )
   }
-  let e = problem_of(() => @printer.print_type_annotation(t))
-  @expect.expect(e.map(x => x.0)).to_equal(Some(TooDeep))
-  @expect.expect(e.map(x => x.1.length())).to_equal(Some(401))
+  @expect.expect_all(s => {
+    s
+    .expect(@printer.print_type_annotation(t, width=1_000_000).length())
+    .to_equal(2000 * 7 - 1)
+    s
+    .expect(@printer.print_type_annotation(u, width=1_000_000).length())
+    .to_equal(2000 * 7 + 1)
+    s
+    .expect(
+      @printer.print_type_annotation(rec, width=1_000_000).has_prefix(
+        "{ f : { f :",
+      ),
+    )
+    .to_be_true()
+  })
 }
 
 ///|

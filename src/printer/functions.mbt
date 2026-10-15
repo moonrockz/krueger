@@ -25,6 +25,7 @@ fn Ctx::signature_doc(
   s : @ast.Signature,
   range~ : @ast.Range? = None,
 ) -> @pretty.Doc raise PrintError {
+  ignore(level)
   // elm-format Box.hs formatTypeAnnotation: the comments between the name
   // and the `:` follow the name (`formatTailCommented`). When one of them
   // is not one line, the name, each comment, the `:` (indented by 4) and
@@ -53,7 +54,6 @@ fn Ctx::signature_doc(
   }
   let chain = self.arrow_chain(
     path.child("typeAnnotation", 0),
-    level + 1,
     s.type_annotation,
     eol~,
   )
@@ -196,7 +196,7 @@ fn Ctx::function_plan(
         let moved = if last { self.after_token(a.range) } else { [] }
         @pretty.nest(
           4,
-          self.pattern_doc(p.child("arguments", i), level + 1, a, PatternArg) +
+          self.pattern_doc(p.child("arguments", i), a, PatternArg) +
           self.separator(a.range, if last { " =" } else { " " }, moved),
         )
       }),

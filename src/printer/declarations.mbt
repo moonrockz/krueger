@@ -153,9 +153,7 @@ fn Ctx::declaration_doc(
         let name = c.value.name
         let args = []
         for j, a in c.value.arguments {
-          args.push(
-            self.type_doc(p.child("arguments", j), level + 1, a, TypeArg),
-          )
+          args.push(self.type_doc(p.child("arguments", j), a, TypeArg))
         }
         ctors = ctors +
           lead +
@@ -253,12 +251,7 @@ fn Ctx::declaration_doc(
       // As in a let: a destructuring pattern is a term.
       @pretty.nest(
         4,
-        self.pattern_doc(
-          path.child("pattern", 0),
-          level + 1,
-          pattern,
-          PatternArg,
-        ) +
+        self.pattern_doc(path.child("pattern", 0), pattern, PatternArg) +
         self.separator(pattern.range, " =", moved),
       ) +
       @pretty.nest(
@@ -614,6 +607,7 @@ fn Ctx::alias_doc(
   level : Int32,
   a : @ast.TypeAlias,
 ) -> @pretty.Doc raise PrintError {
+  ignore(level)
   let start = self.declaration_start(
     path,
     a.documentation,
@@ -670,7 +664,7 @@ fn Ctx::alias_doc(
     join=true,
   )
   let body = comment_block(body_pre, after=true) +
-    self.type_doc(path.child("typeAnnotation", 0), level + 1, t, AnyType)
+    self.type_doc(path.child("typeAnnotation", 0), t, AnyType)
   start +
   head +
   (if one_line {

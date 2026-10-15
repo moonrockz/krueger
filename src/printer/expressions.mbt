@@ -139,9 +139,13 @@ fn parens_at(e : @ast.Expression, at : ExprAt) -> Bool {
 priv enum Work {
   /// Print this expression: check its level, then push its plan.
   Expr(@syntax.NodePath, Int32, @ast.Node[@ast.Expression], ExprAt)
-  /// Make a doc that has no nested expression (a name, a pattern, a type).
-  /// It runs when it is popped, so errors come in source order.
+  /// Make a doc that has no nested expression (a name, a literal, a
+  /// comment). It runs when it is popped, so errors come in source order.
   Leaf(() -> @pretty.Doc raise PrintError)
+  /// Print this pattern: its comments and its plan (`Ctx::pattern_plan`).
+  Pat(@syntax.NodePath, @ast.Node[@ast.Pattern], PatternAt)
+  /// Print this type: its comments and its plan (`Ctx::type_parts_plan`).
+  Type(@syntax.NodePath, @ast.Node[@ast.TypeAnnotation], TypeAt)
   /// Run these items in order, then combine their docs into one.
   Plan(Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc)
   /// Pop this many docs and push their combination.
@@ -190,6 +194,14 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         }
       }
       Leaf(f) => results.push(f())
+      Pat(path, p, at) => {
+        let (items, combine) = self.pattern_plan(path, p, at)
+        push_plan(items, combine)
+      }
+      Type(path, t, at) =>
+        push_plan(self.type_parts_plan(path, t, at), docs => {
+          docs[0] + docs[1] + docs[2]
+        })
       Plan(items, combine) => push_plan(items, combine)
       Build(count, combine) => {
         let start = results.length() - count
@@ -491,12 +503,7 @@ fn Ctx::expr_plan(
                   Leaf(() => {
                     let moved = self.after_token(pattern.range)
                     // Elm reads a destructuring pattern as a term: `(Wrap w) =`.
-                    self.pattern_doc(
-                      p.child("pattern", 0),
-                      level + 1,
-                      pattern,
-                      PatternArg,
-                    ) +
+                    self.pattern_doc(p.child("pattern", 0), pattern, PatternArg) +
                     self.separator(pattern.range, " =", moved)
                   }),
                   Expr(p.child("expression", 0), level + 1, value, AnyExpr),
@@ -580,12 +587,7 @@ fn Ctx::expr_plan(
             let moved = self.after_token(c.pattern.range)
             @pretty.nest(
               4,
-              self.pattern_doc(
-                p.child("pattern", 0),
-                level + 1,
-                c.pattern,
-                AnyPattern,
-              ) +
+              self.pattern_doc(p.child("pattern", 0), c.pattern, AnyPattern) +
               self.separator(c.pattern.range, " ->", moved),
             )
           }),
@@ -639,7 +641,7 @@ fn Ctx::expr_plan(
             let moved = if i == last { self.after_token(a.range) } else { [] }
             @pretty.nest(
               4,
-              self.pattern_doc(p, level + 1, a, PatternArg) +
+              self.pattern_doc(p, a, PatternArg) +
               self.separator(
                 a.range,
                 if i == last {
