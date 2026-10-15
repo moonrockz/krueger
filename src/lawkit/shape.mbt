@@ -52,24 +52,44 @@ pub fn without_ranges(file : @ast.File) -> Json {
 }
 
 ///|
+/// `j` without ranges (see `without_ranges`), built without recursion: a
+/// JSON value from a deep AST (a long operator chain has no parser limit)
+/// is thousands of levels deep, and wasm overflows at a few hundred
+/// frames. Each container is copied with `null` in the slot of each child;
+/// the child is queued and fills its slot when it is popped. `Map` keeps
+/// its insertion order, so the keys keep theirs.
 fn strip_ranges(j : Json) -> Json {
-  match j {
-    Object(o) => {
-      let out : Map[String, Json] = Map([])
-      for k, v in o {
-        match (k, v) {
-          ("range", _) => ()
-          ("all" | "open", Array(_)) => out[k] = Json::boolean(true)
-          _ => out[k] = strip_ranges(v)
+  let root : Array[Json] = [Json::null()]
+  let pending : Array[(Json, (Json) -> Unit)] = [(j, v => root[0] = v)]
+  while pending.pop() is Some((value, fill)) {
+    match value {
+      Object(o) => {
+        let out : Map[String, Json] = Map([])
+        for k, v in o {
+          match (k, v) {
+            ("range", _) => ()
+            ("all" | "open", Array(_)) => out[k] = Json::boolean(true)
+            _ => {
+              out[k] = Json::null()
+              pending.push((v, stripped => out[k] = stripped))
+            }
+          }
         }
+        fill(Json::object(out))
       }
-      Json::object(out)
+      Array(xs) => {
+        let out : Array[Json] = Array::make(xs.length(), Json::null())
+        for i, x in xs {
+          pending.push((x, stripped => out[i] = stripped))
+        }
+        fill(Json::array(out))
+      }
+      // An Int that the Double does not hold exactly; `==` on `Json` would
+      // see only the Double.
+      Number(d, repr=Some(digits)) if d.to_int64().to_string() != digits =>
+        fill(Json::string(digits))
+      _ => fill(value)
     }
-    Array(xs) => Json::array(xs.map(strip_ranges))
-    // An Int that the Double does not hold exactly; `==` on `Json` would
-    // see only the Double.
-    Number(d, repr=Some(digits)) if d.to_int64().to_string() != digits =>
-      Json::string(digits)
-    _ => j
   }
+  root[0]
 }

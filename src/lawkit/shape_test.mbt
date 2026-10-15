@@ -45,3 +45,39 @@ test "without_ranges tells Ints above 2^53 apart" {
     .to_be_true()
   })
 }
+
+///|
+fn sh_parsed(text : String) -> @ast.File raise {
+  guard @parser.parse_module(
+      @scanner.SourceText::new(text),
+      @scanner.DefaultScanner::new(),
+    ).ast
+    is Some(file) else {
+    fail("no AST")
+  }
+  file
+}
+
+///|
+test "without_ranges takes a 2000-level tree on every target" {
+  // A left-associative chain has no parser limit; its JSON is about four
+  // levels per operator. The two texts differ only in their spaces, so
+  // only the ranges differ.
+  let tight = sh_parsed(
+    "module M exposing (..)\n\n\nf =\n    1" + " + 1".repeat(2000) + "\n",
+  )
+  let loose = sh_parsed(
+    "module M exposing (..)\n\n\nf =\n    1" + "  +  1".repeat(2000) + "\n",
+  )
+  let a = @lawkit.without_ranges(tight).stringify()
+  let b = @lawkit.without_ranges(loose).stringify()
+  @expect.expect_all(s => {
+    s.expect(a == b).to_be_true()
+    s.expect(a.contains("\"range\"")).to_be_false()
+    s
+    .expect(
+      @ast.encode_file(tight).stringify() == @ast.encode_file(loose).stringify(),
+    )
+    .to_be_false()
+  })
+}
