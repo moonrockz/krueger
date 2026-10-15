@@ -146,6 +146,10 @@ priv enum Work {
   Pat(@syntax.NodePath, @ast.Node[@ast.Pattern], PatternAt)
   /// Print this type: its comments and its plan (`Ctx::type_parts_plan`).
   Type(@syntax.NodePath, @ast.Node[@ast.TypeAnnotation], TypeAt)
+  /// The three items of a type (`Ctx::type_parts_plan`), built when it is
+  /// popped: three docs, not one, for an arrow chain. Built lazily, so a
+  /// chain whose left operands are function types does not recurse.
+  Parts(@syntax.NodePath, @ast.Node[@ast.TypeAnnotation], TypeAt)
   /// Run these items in order, then combine their docs into one.
   Plan(Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc)
   /// Pop this many docs and push their combination.
@@ -160,7 +164,15 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
   let work : Array[Work] = [start]
   let results : Array[@pretty.Doc] = []
   fn push_plan(items : Array[Work], combine) {
-    work.push(Build(items.length(), combine))
+    // A `Parts` item gives three docs; every other item one.
+    let mut count = 0
+    for item in items {
+      count += match item {
+        Parts(_, _, _) => 3
+        _ => 1
+      }
+    }
+    work.push(Build(count, combine))
     for i = items.length() - 1; i >= 0; i = i - 1 {
       work.push(items[i])
     }
@@ -198,9 +210,13 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         push_plan(items, combine)
       }
       Type(path, t, at) =>
-        push_plan(self.type_parts_plan(path, t, at), docs => {
-          docs[0] + docs[1] + docs[2]
-        })
+        push_plan([Parts(path, t, at)], docs => docs[0] + docs[1] + docs[2])
+      Parts(path, t, at) => {
+        let items = self.type_parts_plan(path, t, at)
+        for i = items.length() - 1; i >= 0; i = i - 1 {
+          work.push(items[i])
+        }
+      }
       Plan(items, combine) => push_plan(items, combine)
       Build(count, combine) => {
         let start = results.length() - count

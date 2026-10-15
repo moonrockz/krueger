@@ -22,6 +22,9 @@ fn Ctx::type_doc(
 ///|
 /// The three items of a type: its leading comments, its body and its
 /// trailing comments, in that order (an arrow chain places them apart).
+/// Build them when their `Parts` item is popped, not while the plan of
+/// the type above is built: the leaves then run, and errors come, in
+/// source order, and nothing recurses per level.
 fn Ctx::type_parts_plan(
   self : Ctx,
   path : @syntax.NodePath,
@@ -441,7 +444,7 @@ fn Ctx::arrow_chain_plan(
   path : @syntax.NodePath,
   t : @ast.Node[@ast.TypeAnnotation],
   eol~ : Array[@ast.Node[String]] = [],
-) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) raise PrintError {
+) -> (Array[Work], (Array[@pretty.Doc]) -> @pretty.Doc) {
   let split = self.split_within(t.range)
   // `-> t`, with the comments `after` the `->`.
   let arrow = (
@@ -509,7 +512,7 @@ fn Ctx::arrow_chain_plan(
         @pretty.empty()
       }),
     )
-    work.append(self.type_parts_plan(p.child("left", 0), left, ArrowLeft))
+    work.push(Parts(p.child("left", 0), left, ArrowLeft))
     first = false
     p = p.child("right", 0)
     node = right
@@ -532,13 +535,12 @@ fn Ctx::arrow_chain_plan(
     steps += 1
   }
   if first {
-    let items = self.type_parts_plan(p, node, AnyType)
-    return (items, docs => docs[0] + docs[1] + docs[2])
+    return ([Parts(p, node, AnyType)], docs => docs[0] + docs[1] + docs[2])
   }
   // A signature's type has no `Type` item of its own: its comments are
   // taken here.
   work.push(Leaf(() => self.leading(t.range)))
-  work.append(self.type_parts_plan(p, node, ArrowLeft))
+  work.push(Parts(p, node, ArrowLeft))
   work.push(Leaf(() => self.trailing(t.range)))
   (
     work,

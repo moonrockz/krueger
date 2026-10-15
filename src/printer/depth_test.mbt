@@ -355,3 +355,21 @@ test "normalize_file handles 2000 nested patterns and expressions on every targe
     s.expect(x.value is FunctionOrValue(_, "y")).to_be_true()
   })
 }
+
+///|
+test "a 2000-level left-nested arrow type prints on every target" {
+  // `((a -> a) -> a) -> a`: each left operand is a function type, which the
+  // arrow chain does not flatten, so the parts of each level must be built
+  // lazily (a `Parts` work item), not while the plan of the level above is
+  // built.
+  let mut t : @ast.Node[@ast.TypeAnnotation] = tvar("a")
+  for _ in 0..<2000 {
+    t = n(FunctionTypeAnnotation(t, tvar("a")))
+  }
+  let printed = @printer.print_type_annotation(t, width=1_000_000)
+  @expect.expect_all(s => {
+    s.expect(printed.has_prefix("((((")).to_be_true()
+    s.expect(printed.has_suffix("-> a) -> a) -> a")).to_be_true()
+    s.expect(printed.length()).to_equal(2000 * 7 - 2 + 1)
+  })
+}

@@ -554,7 +554,9 @@ const NESTING_COST : Int32 = 8
 /// The fuel one step of a right-recursive chain costs (`Cursor::chain`):
 /// `a :: b :: ...`, `Int -> Int -> ...`, `a <| b <| ...`. A chain step
 /// uses about a quarter of the stack of a nesting level (see the table at
-/// `NESTING_COST`: 125 `let`s against 780 `::` steps on wasm).
+/// `NESTING_COST`: 125 `let`s against 780 `::` steps on wasm). With the
+/// default fuel a chain stops after 596 steps: a margin of 1.3 on a cold
+/// wasm process, like the nesting margin.
 const CHAIN_COST : Int32 = 2
 
 ///|

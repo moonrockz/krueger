@@ -15,10 +15,11 @@ enters a nested construct and gets them back when it leaves. When the budget
 would be exceeded, the declaration is refused with `TOO MUCH NESTING`
 (`KR-PARSE-010`) instead of a stack overflow.
 
-The default is `DEFAULT_FUEL`, 1200. With it the parser accepts 150 nested
-parentheses, lists, records, lambdas, `let`s or `case`s, 75 nested
-constructor patterns or type applications (they count two levels each), and
-596 steps of a `::`, `->` or right-associative operator chain. A
+The default is `DEFAULT_FUEL`, 1200. With it the parser accepts 150 nesting
+levels: a declaration body and 149 nested parentheses, lists, records,
+lambdas, `let`s or `case`s, or 74 nested constructor patterns or type
+applications (they count two levels each); and 596 steps of a `::`, `->` or
+right-associative operator chain. A
 left-associative operator chain (`a + b + c + ...`) and a record access chain
 (`r.a.b.c...`) are loops in the parser and have no limit.
 
@@ -152,9 +153,10 @@ Two things follow:
   steps; the default fuel is far inside an 8 MiB stack.
 - On wasm under V8, a cold process (the baseline tier) overflows at about
   125 nested `let`s, inside the 150 that the default fuel allows; a warm
-  process (the optimizing tier) parses 150. A wasm host that must parse such
-  input in a cold process lowers the fuel to 960 (120 levels) or raises its
-  stack.
+  process (the optimizing tier) parses 150. A `::` chain overflows cold at
+  about 780 steps against the 596 the fuel allows (a margin of 1.3). A wasm
+  host that must parse such input in a cold process lowers the fuel to 960
+  (120 levels, 476 chain steps) or raises its stack.
 
 Raising the fuel without more stack turns a `TOO MUCH NESTING` diagnostic
 into a stack overflow. Raise both.
