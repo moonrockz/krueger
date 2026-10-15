@@ -23,9 +23,11 @@ right-associative operator chain. A
 left-associative operator chain (`a + b + c + ...`) and a record access chain
 (`r.a.b.c...`) are loops in the parser and have no limit.
 
-Only the parser spends fuel. The AST encoder, the printer, the formatter and
-the syntax tree walks use explicit stacks and print or encode a tree of any
-depth.
+Only the parser spends fuel. The AST encoder and decoder, the printer, the
+formatter and the syntax tree walks use explicit stacks and encode, decode
+or print a tree of any depth. (`@json.parse` recurses per level and stops at
+its own `max_nesting_depth`, 1024 by default; a `Json` value built in memory
+has no such limit.)
 
 ```mbt check
 ///|
