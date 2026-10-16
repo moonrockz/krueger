@@ -6,6 +6,25 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.8.0] - 2026-10-16
+
+Queries on a `Tree` are much faster on large files, and the API does not change. On a module with 1000 declarations and about 2000 comments (native), `tokens_in` is more than 200 times faster, `node_path` about 100 times faster and `node_at` about 30 times faster than in 0.7.0. `Tree::new` and `parent` take about half and a quarter or less of their earlier time, and `children()` of a file with comments between its declarations takes about one sixth. For maintainers, `mise run release:prepare` now opens the release pull request as a draft, and `release:refresh` marks it ready when the highlights are written.
+
+### 🚀 Features
+
+- *(release)* Open the release PR as a draft; refresh marks it ready ([#58](https://github.com/moonrockz/krueger/pull/58)) by @DamianReeves
+
+### ⚡ Performance
+
+- *(syntax)* Fast tokens_in, node_path and children() of wide nodes ([#60](https://github.com/moonrockz/krueger/pull/60)) by @DamianReeves
+- *(syntax)* Struct index keys and cached root children in Tree ([#61](https://github.com/moonrockz/krueger/pull/61)) by @DamianReeves
+
+### 🚜 Refactoring
+
+- *(syntax)* Call EventSource::next explicitly in EventReader::iter ([#59](https://github.com/moonrockz/krueger/pull/59)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.7.0...v0.8.0
+
 ## [0.7.0] - 2026-10-16
 
 The parser's fixed depth limits are replaced by one budget that you set: pass `fuel` to `parse_module`, `parse_tokens`, `format` or `format_parsed` (default `DEFAULT_FUEL`, 1200, which keeps the limits of 0.6). A nesting refusal now has its own code, `KR-PARSE-010`, and carries the fuel and the walk that ran out in the new `Diagnostic.detail` field, so tools can tell "too deep" from "malformed" without reading the message. The AST encoder and decoder and the pattern and type printing use explicit stacks: a 2000-level AST encodes, decodes and prints on wasm, wasm-gc, js and native, and a left-associative operator chain or a record access chain has no limit. The new cookbook article "Set the nesting budget" explains the fuel and the stack setting of each target.
