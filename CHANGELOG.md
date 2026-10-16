@@ -6,6 +6,27 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.7.0] - 2026-10-16
+
+The parser's fixed depth limits are replaced by one budget that you set: pass `fuel` to `parse_module`, `parse_tokens`, `format` or `format_parsed` (default `DEFAULT_FUEL`, 1200, which keeps the limits of 0.6). A nesting refusal now has its own code, `KR-PARSE-010`, and carries the fuel and the walk that ran out in the new `Diagnostic.detail` field, so tools can tell "too deep" from "malformed" without reading the message. The AST encoder and decoder and the pattern and type printing use explicit stacks: a 2000-level AST encodes, decodes and prints on wasm, wasm-gc, js and native, and a left-associative operator chain or a record access chain has no limit. The new cookbook article "Set the nesting budget" explains the fuel and the stack setting of each target.
+
+### ⚠️ Breaking changes
+
+- *(scanner)* `Diagnostic` has a new field `detail`. Code that builds a `Diagnostic` literal must add `detail: None`. ([#54](https://github.com/moonrockz/krueger/pull/54))
+- *(printer)* `PrintProblem::TooDeep` is removed: the printer prints an AST of any depth. Remove `TooDeep` from matches on `PrintProblem`. ([#54](https://github.com/moonrockz/krueger/pull/54))
+- *(parser)* A `::`, `->` or right-associative operator chain is refused after 596 steps (was 399), and a left-associative operator chain or a record access chain is no longer refused. A refusal is `KR-PARSE-010`, not the declaration's `KR-PARSE-003`, `004` or `008`. ([#54](https://github.com/moonrockz/krueger/pull/54))
+
+### 🚀 Features
+
+- *(parser)* [**breaking**] One caller-set fuel, KR-PARSE-010 for nesting refusals, stack-safe encoder and printer ([#54](https://github.com/moonrockz/krueger/pull/54)) by @DamianReeves
+- *(ast)* Decode with an explicit stack, not recursion ([#55](https://github.com/moonrockz/krueger/pull/55)) by @DamianReeves
+
+### 🐛 Bug fixes
+
+- *(lawkit)* Strip ranges without recursion; test deep comments in format ([#56](https://github.com/moonrockz/krueger/pull/56)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.6.0...v0.7.0
+
 ## [0.6.0] - 2026-10-14
 
 This is a maintenance release. The parser, printer and formatter give the same output as in 0.5.0, and the public API does not change. krueger is now built and tested with MoonBit 0.10.15. It now depends on `moonrockz/pretty` 0.1.1, `moonbit-community/cmark` 0.4.12 and `moonrockz/expect` 0.6.1. The release process also improved: `release:refresh` updates the release pull request body, `release:plan` stops a release that has no highlights, and `release:prepare` warns about breaking commits without a `BREAKING CHANGE:` footer.
