@@ -7,6 +7,9 @@ pub struct Tree {
   /// The root's `children_with_fields()`, built once: a file can have
   /// thousands, and every `node_at` starts there.
   priv root_children : Array[(PathStep, NodeRef)]
+  /// The root's range, built once: a file's range reads all its imports,
+  /// declarations and comments.
+  priv root_range : @ast.Range
   /// Key → the first index entry with that key; one entry for every node
   /// below the root.
   priv parents : Map[Key, Entry]
@@ -160,7 +163,7 @@ pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
     Some(cst) => cst.tokens.map(copy_token)
     None => []
   }
-  Some({ root, root_children, parents, tokens, })
+  Some({ root, root_children, root_range: root.range(), parents, tokens, })
 }
 
 ///|
@@ -302,23 +305,31 @@ fn within(a : @ast.Range, b : @ast.Range) -> Bool {
 /// ranges the deeper node wins, then the first in source order. See
 /// `node_path` for an example.
 pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
-  innermost_at(self.root, p, start_children=self.root_children).map(found => {
-    found.0
-  })
+  innermost_at(
+    self.root,
+    p,
+    start_children=self.root_children,
+    start_range=self.root_range,
+  ).map(found => found.0)
 }
 
 ///|
 /// The innermost node at or below `start` whose range contains `p` (the rule
 /// of `Tree::node_at`), with each step down: the child's index among its
 /// siblings and the siblings (its parent's `children_with_fields()`), or
-/// `None` when `start` does not contain `p`. `start_children` are the start
-/// node's children when the caller has them already.
+/// `None` when `start` does not contain `p`. `start_children` and
+/// `start_range` are the start node's children and range when the caller has
+/// them already.
 fn innermost_at(
   start : NodeRef,
   p : @ast.Location,
   start_children? : Array[(PathStep, NodeRef)],
+  start_range? : @ast.Range,
 ) -> (NodeRef, Array[(Int32, Array[(PathStep, NodeRef)])])? {
-  let start_range = start.range()
+  let start_range = match start_range {
+    Some(r) => r
+    None => start.range()
+  }
   if !contains(start_range, p) {
     return None
   }
