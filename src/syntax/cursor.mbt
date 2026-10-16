@@ -103,9 +103,19 @@ fn TreeCursor::descend(
 ) -> Bool {
   let kids = self.node().children_with_fields().map(x => (Some(x.0), x.1))
   guard choose(kids) is Some(i) else { return false }
+  self.enter(kids, i)
+  true
+}
+
+///|
+/// Move to child `i` of the node, given the node's children.
+fn TreeCursor::enter(
+  self : TreeCursor,
+  kids : Array[(PathStep?, NodeRef)],
+  i : Int32,
+) -> Unit {
   let parent_path = self.path()
   self.frames.push({ siblings: kids, parent_path, index: i, })
-  true
 }
 
 ///|
@@ -275,9 +285,11 @@ pub fn TreeCursor::goto_first_child_for(
 /// }
 /// ```
 pub fn TreeCursor::goto_node_at(self : TreeCursor, p : @ast.Location) -> Bool {
-  guard innermost_at(self.node(), p) is Some((_, indices)) else { return false }
-  for i in indices {
-    ignore(self.descend(_ => Some(i)))
+  guard innermost_at(self.node(), p) is Some((_, steps)) else { return false }
+  // The search built each level's children; the frames reuse them.
+  for step in steps {
+    let (i, kids) = step
+    self.enter(kids.map(x => (Some(x.0), x.1)), i)
   }
   true
 }

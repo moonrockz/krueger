@@ -132,3 +132,38 @@ test "tokens_in returns the tokens of a range" {
     "f", "=", "g", "1",
   ])
 }
+
+///|
+test "a file that holds one declaration twice: every node is found and its path leads to it" {
+  // Every node below the declarations has a twin with the same key (case
+  // and range), so the index tells them apart only by its buckets.
+  let result = parse_result(
+    "module M exposing (..)\n\n\nf x =\n    ( x, [ x ] )\n",
+  )
+  guard result.ast is Some(file) else { fail("no AST") }
+  let twice : @parser.ParseResult = {
+    ..result,
+    ast: Some({
+      ..file,
+      declarations: [file.declarations[0], file.declarations[0]],
+    }),
+  }
+  guard @syntax.Tree::new(twice) is Some(tree) else { fail("no tree") }
+  @expect.expect_all(s => {
+    let nodes = all_nodes(tree.root())
+    s.expect(nodes.length() > 10).to_be_true()
+    for entry in nodes {
+      let (node, parent) = entry
+      s.expect(tree.parent(node)).to_equal(parent)
+      guard tree.node_path(node) is Some(path) else {
+        s.expect(Some(node.kind())).to_equal(None)
+        continue
+      }
+      s.expect(path.resolve(tree.root())).to_equal(Some(node))
+      s.expect(tree.step(node)).to_equal(path.last())
+    }
+    s
+    .expect(tree.step(tree.root().field("declarations")[1]))
+    .to_equal(Some({ field: "declarations", index: 0, }))
+  })
+}
