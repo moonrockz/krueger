@@ -141,6 +141,7 @@ pub fn TreeCursor::new(NodeRef) -> Self
 pub fn TreeCursor::node(Self) -> NodeRef
 pub fn TreeCursor::path(Self) -> NodePath
 pub fn TreeCursor::reset(Self, NodeRef) -> Unit
+pub fn TreeCursor::restore(Self, Self) -> Unit
 
 // Type aliases
 

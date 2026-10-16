@@ -13,7 +13,8 @@ priv struct CursorFrame {
 /// A tree-sitter-style cursor: the caller moves it with the `goto_*` methods.
 /// Each `goto_*` returns `false` and leaves the cursor in place when there is
 /// nowhere to go. Its state is a stack of frames, not recursion. A cursor
-/// belongs to its caller; `copy` gives an independent cursor.
+/// belongs to its caller; `copy` saves an independent cursor and `restore`
+/// returns to its position, with its ancestors and start node.
 ///
 /// ```mbt check
 /// test {
@@ -314,5 +315,43 @@ pub fn TreeCursor::copy(self : TreeCursor) -> TreeCursor {
       parent_path: f.parent_path,
       index: f.index,
     }),
+  }
+}
+
+///|
+/// Copy `saved`'s full position into this cursor, including its start node,
+/// ancestors, sibling positions and path. Use `copy()` to save a position.
+/// Both cursors can then move and reset independently; `saved` can be reused.
+/// Restoring from this cursor itself leaves it in place. A position from a
+/// different start node or parse result replaces this cursor's start node too.
+/// Like `copy`, this takes O(depth) time and space and shares the read-only
+/// nodes and sibling lists.
+///
+/// ```mbt check
+/// test {
+///   let src = "module Main exposing (..)\n\nadd x y =\n    x + y\n"
+///   let result = @parser.parse_module(
+///     @scanner.SourceText::new(src),
+///     @scanner.DefaultScanner::new(),
+///   )
+///   let root = @syntax.NodeRef::of_result(result).unwrap()
+///   let cursor = @syntax.TreeCursor::new(root)
+///   ignore(cursor.goto_last_child())
+///   let saved = cursor.copy()
+///   ignore(cursor.goto_first_child())
+///   cursor.restore(saved)
+///   inspect(cursor.node().kind(), content="function")
+///   inspect(cursor.path(), content="declarations[0]")
+///   inspect(cursor.goto_parent(), content="true")
+///   inspect(cursor.node().kind(), content="file")
+///   inspect(saved.node().kind(), content="function")
+/// }
+/// ```
+pub fn TreeCursor::restore(self : TreeCursor, saved : TreeCursor) -> Unit {
+  // Copy before clearing: saved may be self or another reference to self.
+  let frames = saved.copy().frames
+  self.frames.clear()
+  for frame in frames {
+    self.frames.push(frame)
   }
 }

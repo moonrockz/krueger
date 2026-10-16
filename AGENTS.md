@@ -378,6 +378,11 @@ The kind table below is checked against `kind_table()` by
   has children after the location. `node()`, `field_name()`
   (the role in the parent, `None` at the start node), `depth()`, `path()`,
   `reset(node)` and `copy()` (an independent cursor at the same place).
+  `restore(saved)` copies a saved cursor's full state, including its start
+  node, ancestors, sibling positions and path. Both cursors remain independent;
+  the saved cursor can be reused. It accepts a different start node or parse
+  result; restoring from itself leaves it in place. Like `copy`, it takes
+  O(depth) time and space.
 - With equivalent `Control` decisions, `walk`, `fold`, `accept`, an
   `EventReader` and `push_events` produce the same enter and leave sequence,
   and a full cursor navigation enters the same nodes. With `Continue` throughout, enters follow

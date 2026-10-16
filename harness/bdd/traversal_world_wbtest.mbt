@@ -4,11 +4,13 @@ struct TraversalWorld {
   mut text : String
   mut tree : @krueger.Tree?
   mut entered : Array[String]
+  mut cursor : @krueger.TreeCursor?
+  mut saved : @krueger.TreeCursor?
 }
 
 ///|
 fn TraversalWorld::new() -> TraversalWorld {
-  { text: "", tree: None, entered: [], }
+  { text: "", tree: None, entered: [], cursor: None, saved: None, }
 }
 
 ///|
@@ -344,6 +346,41 @@ impl @moonspec.World for TraversalWorld with fn configure(self, setup) {
   ) raise {
     @expect.expect(self.entered.join("\n")).to_equal(doc.content)
   })
+  setup.when0("I save a cursor at the first declaration", fn() raise {
+    let c = @krueger.TreeCursor::new(self.root())
+    @expect.expect(c.goto_first_child()).to_be_true()
+    while c.field_name() != Some("declarations") {
+      @expect.expect(c.goto_next_sibling()).to_be_true()
+    }
+    self.cursor = Some(c)
+    self.saved = Some(c.copy())
+  })
+  setup.when0("I reset the cursor to its current node", fn() raise {
+    let c = self.cursor.unwrap()
+    c.reset(c.node())
+    @expect.expect(c.goto_parent()).to_be_false()
+  })
+  setup.when0("I restore its saved position", fn() {
+    self.cursor.unwrap().restore(self.saved.unwrap())
+  })
+  setup.then0(
+    "the cursor can return to the file and the saved position is unchanged",
+    fn() raise {
+      let c = self.cursor.unwrap()
+      let saved = self.saved.unwrap()
+      @expect.expect_all(s => {
+        s.expect(c.node()).to_equal(saved.node())
+        s.expect(c.path()).to_equal(saved.path())
+        s.expect(c.field_name()).to_equal(Some("declarations"))
+        s.expect(c.depth()).to_equal(1)
+        s.expect(c.goto_parent()).to_be_true()
+        s.expect(c.node()).to_equal(self.root())
+        s.expect(c.goto_parent()).to_be_false()
+        s.expect(saved.field_name()).to_equal(Some("declarations"))
+        s.expect(saved.depth()).to_equal(1)
+      })
+    },
+  )
 }
 
 ///|

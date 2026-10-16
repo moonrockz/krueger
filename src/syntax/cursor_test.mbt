@@ -116,6 +116,92 @@ test "a copy moves independently of its cursor" {
 }
 
 ///|
+test "restore returns to a saved position with its ancestors and siblings" {
+  let root = parse_root(small)
+  let c = @syntax.TreeCursor::new(root)
+  @expect.expect(c.goto_first_child()).to_be_true()
+  let saved = c.copy()
+  c.reset(root)
+  c.restore(saved)
+  @expect.expect_all(s => {
+    s.expect(at(c)).to_equal("module/normal moduleDefinition 1")
+    s.expect(c.path()).to_equal(saved.path())
+    s.expect(c.node()).to_equal(saved.node())
+    s.expect(c.goto_next_sibling()).to_be_true()
+    s.expect(at(c)).to_equal("declaration/function declarations 1")
+    s.expect(at(saved)).to_equal("module/normal moduleDefinition 1")
+    s.expect(c.goto_parent()).to_be_true()
+    s.expect(c.node()).to_equal(root)
+    s.expect(c.goto_parent()).to_be_false()
+  })
+}
+
+///|
+test "restore accepts another start node, a root position and itself" {
+  let root = parse_root(small)
+  let c = @syntax.TreeCursor::new(root)
+  let other_root = parse_root(docs_source)
+  let saved = @syntax.TreeCursor::new(other_root)
+  @expect.expect(saved.goto_last_child()).to_be_true()
+  @expect.expect(saved.goto_first_child()).to_be_true()
+  c.restore(saved)
+  let path = c.path()
+  let node = c.node()
+  c.restore(c)
+  @expect.expect_all(s => {
+    s.expect(c.node()).to_equal(node)
+    s.expect(c.path()).to_equal(path)
+    s.expect(c.field_name()).to_equal(saved.field_name())
+    s.expect(c.depth()).to_equal(saved.depth())
+    s.expect(c.goto_parent()).to_be_true()
+    s.expect(c.goto_parent()).to_be_true()
+    s.expect(c.node()).to_equal(other_root)
+    s.expect(c.goto_parent()).to_be_false()
+  })
+  // Resetting the source cursor does not change the restored cursor.
+  saved.reset(root)
+  @expect.expect(c.node()).to_equal(other_root)
+  c.restore(saved)
+  @expect.expect_all(s => {
+    s.expect(c.node()).to_equal(root)
+    s.expect(c.depth()).to_equal(0)
+    s.expect(c.path()).to_equal(@syntax.NodePath::root())
+    s.expect(c.field_name()).to_equal(None)
+    s.expect(c.goto_parent()).to_be_false()
+  })
+}
+
+///|
+test "a saved deep position can be restored repeatedly after moves and resets" {
+  let root = tree_of(deep_source()).root()
+  let c = @syntax.TreeCursor::new(root)
+  for _ in 0..<3 {
+    @expect.expect(c.goto_last_child()).to_be_true()
+  }
+  while c.goto_first_child() {
+
+  }
+  let saved = c.copy()
+  for _ in 0..<2 {
+    c.reset(root)
+    c.restore(saved)
+    @expect.expect_all(s => {
+      s.expect(at(c)).to_equal("expression/integer left 401")
+      s.expect(c.path()).to_equal(saved.path())
+      s.expect(c.goto_next_sibling()).to_be_true()
+      s.expect(c.field_name()).to_equal(Some("right"))
+      s.expect(saved.field_name()).to_equal(Some("left"))
+    })
+    while c.goto_parent() {
+
+    }
+    @expect.expect(c.node()).to_equal(root)
+  }
+  // Resetting the destination also leaves its saved position intact.
+  @expect.expect(saved.depth()).to_equal(401)
+}
+
+///|
 /// The tags a full navigation (first child, next sibling, parent) enters. It
 /// fails unless the navigation ends back at the start node.
 fn navigate(root : @syntax.NodeRef) -> Array[String] raise {
