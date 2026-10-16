@@ -6,6 +6,25 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.7.0] - 2026-10-16
+
+<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+### ⚠️ Breaking changes
+
+- *(parser)* Diagnostic has a new field detail (add detail: None to literals); PrintProblem::TooDeep is removed. ([#54](https://github.com/moonrockz/krueger/pull/54))
+
+### 🚀 Features
+
+- *(parser)* [**breaking**] One caller-set fuel, KR-PARSE-010 for nesting refusals, stack-safe encoder and printer ([#54](https://github.com/moonrockz/krueger/pull/54)) by @DamianReeves
+- *(ast)* Decode with an explicit stack, not recursion ([#55](https://github.com/moonrockz/krueger/pull/55)) by @DamianReeves
+
+### 🐛 Bug fixes
+
+- *(lawkit)* Strip ranges without recursion; test deep comments in format ([#56](https://github.com/moonrockz/krueger/pull/56)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.6.0...v0.7.0
+
 ## [0.6.0] - 2026-10-14
 
 This is a maintenance release. The parser, printer and formatter give the same output as in 0.5.0, and the public API does not change. krueger is now built and tested with MoonBit 0.10.15. It now depends on `moonrockz/pretty` 0.1.1, `moonbit-community/cmark` 0.4.12 and `moonrockz/expect` 0.6.1. The release process also improved: `release:refresh` updates the release pull request body, `release:plan` stops a release that has no highlights, and `release:prepare` warns about breaking commits without a `BREAKING CHANGE:` footer.
