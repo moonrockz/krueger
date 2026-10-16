@@ -91,6 +91,17 @@ test "law: tokens_in keeps exactly the whole tokens inside the range" {
       guard result.cst is Some(cst) else { return false }
       let all = cst.tokens.map(token_range)
       let candidates : Array[@ast.Range] = nodes.map(n => n.range())
+      // Before every token, after every token, and backwards (end before
+      // start).
+      let origin : @ast.Location = { row: 1, column: 1, }
+      let far : @ast.Location = { row: 100000, column: 1, }
+      candidates.push({ start: origin, end: origin, })
+      candidates.push({ start: far, end: far, })
+      candidates.push({ start: origin, end: far, })
+      candidates.push({ start: far, end: origin, })
+      if all.get(1) is Some(second) {
+        candidates.push({ start: second.end, end: second.start, })
+      }
       for i, r in all {
         candidates.push(r)
         candidates.push({ start: r.start, end: r.start, })

@@ -71,6 +71,57 @@ fn declaration_attributes(
 }
 
 ///|
+/// Whether the keys ascend (equal neighbours allowed).
+fn ascending(keys : Array[(Int32, Int32, Int32, Int32)]) -> Bool {
+  for i in 1..<keys.length() {
+    if keys[i - 1].compare(keys[i]) > 0 {
+      return false
+    }
+  }
+  true
+}
+
+///|
+/// The doc attributes of each declaration in `declarations` (empty when it
+/// has none), as `declaration_attributes` gives them. A parse result lists
+/// both the declarations and the groups in source order, so one merge of the
+/// two lists finds them without a map; a file built by hand in another order
+/// takes the map.
+fn attributes_of_declarations(
+  declarations : ArrayView[@ast.Node[@ast.Declaration]],
+  groups : ArrayView[@parser.AttributeGroup],
+) -> Array[ArrayView[@parser.DocAttribute]] {
+  let targets = []
+  for g in groups {
+    if g.target is Declaration(range~, ..) {
+      targets.push((range_key(range), g.attributes))
+    }
+  }
+  let none : ArrayView[@parser.DocAttribute] = []
+  if targets.is_empty() {
+    return declarations.map(_ => none)
+  }
+  let keys = declarations.map(d => range_key(d.range))
+  if !ascending(keys) || !ascending(targets.map(t => t.0)) {
+    let by_range = declaration_attributes(groups)
+    return keys.map(k => by_range.get(k).unwrap_or(none))
+  }
+  // Skip the groups before each declaration; the first group with its range
+  // wins, and stays for a next declaration with the same range.
+  let mut j = 0
+  keys.map(k => {
+    while j < targets.length() && targets[j].0.compare(k) < 0 {
+      j += 1
+    }
+    if j < targets.length() && targets[j].0 == k {
+      targets[j].1
+    } else {
+      none
+    }
+  })
+}
+
+///|
 /// The node's fields in elm-syntax JSON order, each with its child nodes.
 fn NodeRef::entries(self : NodeRef) -> Array[(String, Array[NodeRef])] {
   match self {
@@ -81,15 +132,13 @@ fn NodeRef::entries(self : NodeRef) -> Array[(String, Array[NodeRef])] {
           module_attributes.append(g.attributes.map(a => Attribute(a)))
         }
       }
-      let attributes = declaration_attributes(groups)
+      let attributes = attributes_of_declarations(file.declarations, groups)
       [
         ("moduleDefinition", [Module(file.module_definition)]),
         ("imports", file.imports.map(i => Import(i))),
         (
           "declarations",
-          file.declarations.map(d => {
-            Declaration(d, attributes.get(range_key(d.range)).unwrap_or([]))
-          }),
+          file.declarations.mapi((i, d) => Declaration(d, attributes[i])),
         ),
         ("comments", file.comments.map(c => Comment(c))),
         ("attributes", module_attributes),
@@ -323,42 +372,98 @@ pub fn NodeRef::field(self : NodeRef, name : String) -> Array[NodeRef] {
 }
 
 ///|
-fn start_before(a : NodeRef, b : NodeRef) -> Int32 {
-  let x = a.range().start
-  let y = b.range().start
-  if x.row != y.row {
-    x.row.compare(y.row)
+/// The order of `a` and `b`: by row, then by column.
+fn compare_locations(a : @ast.Location, b : @ast.Location) -> Int32 {
+  if a.row != b.row {
+    a.row.compare(b.row)
   } else {
-    x.column.compare(y.column)
+    a.column.compare(b.column)
   }
+}
+
+///|
+/// The indices of `keys` in the order of their keys; among equal keys, in
+/// their order in `keys`. `None` when `keys` is in order already.
+///
+/// A natural merge sort: it finds the runs that are in order and merges
+/// neighbouring runs until one is left, taking from the left run on a tie.
+/// A node's fields are each in source order, so there are few runs and the
+/// sort is close to linear (a file with comments between its declarations
+/// has about four).
+fn stable_order(keys : Array[@ast.Location]) -> Array[Int32]? {
+  let n = keys.length()
+  // The start of each run, then `n`.
+  let bounds = [0]
+  for i in 1..<n {
+    if compare_locations(keys[i - 1], keys[i]) > 0 {
+      bounds.push(i)
+    }
+  }
+  if bounds.length() == 1 {
+    return None
+  }
+  bounds.push(n)
+  let mut order = Array::makei(n, i => i)
+  let mut spare = Array::make(n, 0)
+  let mut bounds = bounds
+  while bounds.length() > 2 {
+    let merged = [0]
+    let mut r = 0
+    while r + 1 < bounds.length() {
+      let lo = bounds[r]
+      let mid = bounds[r + 1]
+      // A last run with no partner (`hi == mid`) is copied as it is.
+      let hi = if r + 2 < bounds.length() { bounds[r + 2] } else { mid }
+      let mut i = lo
+      let mut j = mid
+      for k in lo..<hi {
+        if j >= hi ||
+          (i < mid && compare_locations(keys[order[i]], keys[order[j]]) <= 0) {
+          spare[k] = order[i]
+          i += 1
+        } else {
+          spare[k] = order[j]
+          j += 1
+        }
+      }
+      merged.push(hi)
+      r += 2
+    }
+    let swap = order
+    order = spare
+    spare = swap
+    bounds = merged
+  }
+  Some(order)
 }
 
 ///|
 /// `xs` in the start order of `node(x)`; among equal starts, in their order
 /// in `xs`. Most nodes list their fields in source order, so `xs` comes back
-/// as it is when it is in order already, and is sorted only otherwise.
+/// as it is when it is in order already; that check reads each start once
+/// and allocates nothing.
 fn[T] in_source_order(xs : Array[T], node : (T) -> NodeRef) -> Array[T] {
+  let n = xs.length()
+  if n < 2 {
+    return xs
+  }
+  let mut previous = node(xs[0]).range().start
   let mut sorted = true
-  for i in 1..<xs.length() {
-    if start_before(node(xs[i - 1]), node(xs[i])) > 0 {
+  for i in 1..<n {
+    let start = node(xs[i]).range().start
+    if compare_locations(previous, start) > 0 {
       sorted = false
       break
     }
+    previous = start
   }
   if sorted {
     return xs
   }
-  // Array::sort_by is not stable, so the original position breaks ties.
-  let keyed = xs.mapi((i, x) => (i, x))
-  keyed.sort_by((a, b) => {
-    let c = start_before(node(a.1), node(b.1))
-    if c != 0 {
-      c
-    } else {
-      a.0.compare(b.0)
-    }
-  })
-  keyed.map(x => x.1)
+  match stable_order(xs.map(x => node(x).range().start)) {
+    None => xs
+    Some(order) => order.map(i => xs[i])
+  }
 }
 
 ///|

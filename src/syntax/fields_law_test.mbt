@@ -88,3 +88,56 @@ test "Tree::step and Tree::field_of give None for a node of another tree" {
     s.expect(tree.step(tree.root())).to_equal(None)
   })
 }
+
+///|
+/// The children of `node` by the model: every field's nodes, in field order,
+/// then a stable insertion sort by start.
+fn model_children(node : @syntax.NodeRef) -> Array[@syntax.NodeRef] {
+  let all : Array[@syntax.NodeRef] = []
+  for f in node.fields() {
+    all.append(node.field(f))
+  }
+  let before = (a : @ast.Location, b : @ast.Location) => {
+    a.row < b.row || (a.row == b.row && a.column < b.column)
+  }
+  for i in 1..<all.length() {
+    let x = all[i]
+    let mut j = i
+    while j > 0 && before(x.range().start, all[j - 1].range().start) {
+      all[j] = all[j - 1]
+      j -= 1
+    }
+    all[j] = x
+  }
+  all
+}
+
+///|
+test "law: children is the stable sort of the field lists by start, also when comments interleave with declarations" {
+  // Edges: a file whose comments sit in every gap (many interleaved runs of
+  // declarations and comments); children of different fields that start at
+  // the same place; nodes whose fields are out of source order (`as`).
+  @quickcheck.check(
+    (m : @lawkit.Commented) => {
+      let text = m.text()
+      let result = parse_result(text)
+      if !result.diagnostics.is_empty() {
+        fail("generated Elm does not parse:\n\{text}")
+      }
+      guard @syntax.NodeRef::of_result(result) is Some(root) else {
+        fail("no AST")
+      }
+      nodes_with_parents(root)
+      .iter()
+      .all(entry => {
+        let node = entry.0
+        let expected = model_children(node)
+        node.children() == expected &&
+        node.children_with_fields().map(x => x.1) == expected
+      })
+    },
+    count=100,
+    max_size=24,
+    seed=239,
+  )
+}
