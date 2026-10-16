@@ -267,6 +267,63 @@ test "law: a cursor's copy moves independently" {
 }
 
 ///|
+test "law: restore preserves the path model and both cursors move independently" {
+  // Edges: the root, leaves and internal nodes, failed moves, self-restore,
+  // a different start node, resets and reuse of the saved position.
+  @quickcheck.check(
+    (input : (ElmModule, Array[UInt32], Array[UInt32])) => {
+      let (m, first, second) = input
+      let root = elm_root(m)
+      let saved = @syntax.TreeCursor::new(root)
+      let saved_path = []
+      for mv in first {
+        ignore(cursor_move(saved, mv))
+        ignore(model_move(root, saved_path, mv))
+      }
+      let c = @syntax.TreeCursor::new(saved.node())
+      c.restore(saved)
+      c.restore(c)
+      let path = saved_path.copy()
+      let mut ok = agrees(c, root, path)
+      for mv in second {
+        let same = cursor_move(c, mv) == model_move(root, path, mv)
+        ok = ok &&
+          same &&
+          agrees(c, root, path) &&
+          agrees(saved, root, saved_path)
+      }
+      // Source frame indices must also be independent of the destination.
+      for mv in second {
+        let same = cursor_move(saved, mv) == model_move(root, saved_path, mv)
+        ok = ok &&
+          same &&
+          agrees(saved, root, saved_path) &&
+          agrees(c, root, path)
+      }
+      // A reset must not clear the other cursor's stack.
+      saved.reset(saved.node())
+      ok = ok && agrees(c, root, path)
+      saved.restore(c)
+      ok = ok && agrees(saved, root, path)
+      c.reset(root)
+      ok = ok && agrees(saved, root, path)
+      for _ in 0..<2 {
+        c.restore(saved)
+        ok = ok && agrees(c, root, path)
+        while c.goto_parent() {
+
+        }
+        ok = ok && c.node() == root && c.depth() == 0
+      }
+      ok && agrees(saved, root, path)
+    },
+    count=100,
+    max_size=24,
+    seed=251,
+  )
+}
+
+///|
 test "law: a full cursor navigation enters children() pre-order and ends at the start" {
   @quickcheck.check(
     (m : ElmModule) => {

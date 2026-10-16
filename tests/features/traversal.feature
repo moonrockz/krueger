@@ -42,6 +42,20 @@ Feature: Traversal
       declaration/function
       """
 
+  Scenario: Restoring a saved cursor keeps its ancestors after a reset
+    Given Elm source:
+      """elm
+      module M exposing (..)
+
+      f =
+          1
+      """
+    When I build the syntax tree
+    And I save a cursor at the first declaration
+    And I reset the cursor to its current node
+    And I restore its saved position
+    Then the cursor can return to the file and the saved position is unchanged
+
   Scenario: Reading events with their depth and path
     Given Elm source:
       """elm

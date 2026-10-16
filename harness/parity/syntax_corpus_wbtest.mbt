@@ -219,11 +219,26 @@ fn walk_problems(
   // A full cursor navigation: first child, next sibling, parent.
   let navigated = []
   let c = @krueger.TreeCursor::new(root)
-  navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+  let record = () => {
+    // Restoring at every entered node must preserve the whole navigation.
+    let saved = c.copy()
+    let node = c.node()
+    let path = c.path()
+    c.reset(root)
+    c.restore(saved)
+    if c.node() != node ||
+      c.path() != path ||
+      c.field_name() != saved.field_name() ||
+      c.depth() != saved.depth() {
+      problems.push("\{key}: restoring a cursor changes its position")
+    }
+    navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+  }
+  record()
   let mut going = true
   while going {
     if c.goto_first_child() {
-      navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+      record()
       continue
     }
     while !c.goto_next_sibling() {
@@ -233,7 +248,7 @@ fn walk_problems(
       }
     }
     if going {
-      navigated.push("\{c.depth()} \{walk_tag(c.node())}")
+      record()
     }
   }
   if navigated != pre {

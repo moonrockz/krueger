@@ -192,6 +192,10 @@ A `TreeCursor` keeps a current node and moves on your command, like the
 cursor of tree-sitter. Each `goto_*` method returns `true` when it moves.
 It returns `false` and stays in place when there is nowhere to go.
 `field_name()` gives the role of the current node in its parent.
+Use `copy()` to save a position and `restore(saved)` to return to it.
+This restores the start node and ancestors too, so `goto_parent()` still
+works. Both cursors can move independently. You can reuse the saved cursor,
+even after `reset()` on the other cursor.
 
 ```mbt check
 ///|
@@ -281,13 +285,9 @@ fn ef_up_to_declaration(c : @syntax.TreeCursor) -> Bool {
 fn ef_next_declaration(c : @syntax.TreeCursor) -> Bool {
   // Look ahead with a copy, so that `c` moves only on success.
   let probe = c.copy()
-  let mut steps = 0
   while probe.goto_next_sibling() {
-    steps += 1
     if probe.field_name() == Some("declarations") {
-      for _ in 0..<steps {
-        ignore(c.goto_next_sibling())
-      }
+      c.restore(probe)
       return true
     }
   }
@@ -317,6 +317,9 @@ test "select the parent and go to the next declaration" {
   // There is no declaration after `main`.
   debug_inspect(ef_next_declaration(c), content="false")
   inspect(ef_label(c.node()), content="declaration/function 13:1-14:25")
+  // Restoring the probe kept the path to the file.
+  debug_inspect(c.goto_parent(), content="true")
+  debug_inspect(c.node() == tree.root(), content="true")
 }
 ```
 
