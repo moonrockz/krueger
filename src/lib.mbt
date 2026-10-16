@@ -165,7 +165,7 @@ pub using @printer {
 /// }
 /// ```
 pub fn version() -> String {
-  "0.7.0"
+  "0.8.0"
 }
 
 ///|

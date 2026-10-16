@@ -6,6 +6,25 @@ is 0.x, a minor release can contain breaking changes.
 
 <!-- git-cliff: end of header -->
 
+## [0.8.0] - 2026-10-16
+
+<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+
+### 🚀 Features
+
+- *(release)* Open the release PR as a draft; refresh marks it ready ([#58](https://github.com/moonrockz/krueger/pull/58)) by @DamianReeves
+
+### ⚡ Performance
+
+- *(syntax)* Fast tokens_in, node_path and children() of wide nodes ([#60](https://github.com/moonrockz/krueger/pull/60)) by @DamianReeves
+- *(syntax)* Struct index keys and cached root children in Tree ([#61](https://github.com/moonrockz/krueger/pull/61)) by @DamianReeves
+
+### 🚜 Refactoring
+
+- *(syntax)* Call EventSource::next explicitly in EventReader::iter ([#59](https://github.com/moonrockz/krueger/pull/59)) by @DamianReeves
+
+**Full changelog**: https://github.com/moonrockz/krueger/compare/v0.7.0...v0.8.0
+
 ## [0.7.0] - 2026-10-16
 
 The parser's fixed depth limits are replaced by one budget that you set: pass `fuel` to `parse_module`, `parse_tokens`, `format` or `format_parsed` (default `DEFAULT_FUEL`, 1200, which keeps the limits of 0.6). A nesting refusal now has its own code, `KR-PARSE-010`, and carries the fuel and the walk that ran out in the new `Diagnostic.detail` field, so tools can tell "too deep" from "malformed" without reading the message. The AST encoder and decoder and the pattern and type printing use explicit stacks: a 2000-level AST encodes, decodes and prints on wasm, wasm-gc, js and native, and a left-associative operator chain or a record access chain has no limit. The new cookbook article "Set the nesting budget" explains the fuel and the stack setting of each target.
