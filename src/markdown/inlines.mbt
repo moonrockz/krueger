@@ -41,11 +41,24 @@ priv struct InlineParser {
   chars : Array[Char]
   mut pos : Int32
   mut depth : Int32
+  /// The runs of `` ` `` in `chars`, built by the first `tick_runs`.
+  mut tick_runs : TickRuns?
+}
+
+///|
+/// The runs of `` ` `` in a text: each run as long as it goes.
+priv struct TickRuns {
+  /// The start of each run, in order.
+  starts : Array[Int32]
+  /// The end of each run (after its last `` ` ``), in order.
+  ends : Array[Int32]
+  /// The starts of the runs by run length, in order.
+  by_length : Map[Int32, Array[Int32]]
 }
 
 ///|
 fn InlineParser::new(text : String, depth : Int32) -> InlineParser {
-  { chars: text.to_array(), pos: 0, depth, }
+  { chars: text.to_array(), pos: 0, depth, tick_runs: None, }
 }
 
 ///|
@@ -497,28 +510,67 @@ fn InlineParser::three(
 }
 
 ///|
-/// Cheapskate `pCode'`: a code span, and its text as written.
-fn InlineParser::code(self : InlineParser) -> (Inline, String)? {
-  let start = self.pos
-  guard self.take_while1(x => x == '`') is Some(ticks) else { return None }
-  let contents = StringBuilder()
-  while true {
-    let save = self.pos
-    if self.string(ticks) && self.peek() != Some('`') {
-      let text = contents.to_string()
-      return Some((Code(strip(text)), ticks + text + ticks))
+/// The runs of `` ` `` in the text.
+fn InlineParser::tick_runs(self : InlineParser) -> TickRuns {
+  if self.tick_runs is Some(runs) {
+    return runs
+  }
+  let runs = { starts: [], ends: [], by_length: Map([]), }
+  let n = self.chars.length()
+  let mut i = 0
+  while i < n {
+    if self.chars[i] != '`' {
+      i += 1
+      continue
     }
-    self.pos = save
-    if self.take_while1(x => x != '`') is Some(t) {
-      contents.write_string(t)
-    } else if self.take_while1(x => x == '`') is Some(t) {
-      contents.write_string(t)
-    } else {
-      break
+    let start = i
+    while i < n && self.chars[i] == '`' {
+      i += 1
+    }
+    runs.starts.push(start)
+    runs.ends.push(i)
+    match runs.by_length.get(i - start) {
+      Some(starts) => starts.push(start)
+      None => runs.by_length[i - start] = [start]
     }
   }
-  self.pos = start
-  None
+  self.tick_runs = Some(runs)
+  runs
+}
+
+///|
+/// The index of the first element of `xs` (in order) at or after `x`.
+fn first_at_or_after(xs : Array[Int32], x : Int32) -> Int32 {
+  match xs.binary_search_by(y => y.compare(x)) {
+    Ok(i) | Err(i) => i
+  }
+}
+
+///|
+/// Cheapskate `pCode'`: a code span, and its text as written.
+///
+/// Cheapskate reads to the first run of exactly as many `` ` `` as the
+/// opening run. When there is none, it reads to the end of the text, and
+/// the caller tries again one `` ` `` later with a run one shorter. So that
+/// a long run does not read the text or the run once per `` ` ``, the
+/// opening and the closing run come from an index of the runs
+/// (`tick_runs`).
+fn InlineParser::code(self : InlineParser) -> (Inline, String)? {
+  guard self.peek() == Some('`') else { return None }
+  let start = self.pos
+  let runs = self.tick_runs()
+  // The opening run goes to the end of the run that holds `start`, so the
+  // closing run is a whole run after it.
+  let end = runs.ends[first_at_or_after(runs.starts, start + 1) - 1]
+  let length = end - start
+  guard runs.by_length.get(length) is Some(starts) &&
+    starts.get(first_at_or_after(starts, end)) is Some(close) else {
+    return None
+  }
+  let text = String::from_array(self.chars[end:close])
+  self.pos = close + length
+  let ticks = String::make(length, '`')
+  Some((Code(strip(text)), ticks + text + ticks))
 }
 
 ///|
