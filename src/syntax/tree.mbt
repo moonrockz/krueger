@@ -120,6 +120,7 @@ fn case_number(n : NodeRef) -> Int32 {
 pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
   guard NodeRef::of_result(result) is Some(root) else { return None }
   let parents : Map[Key, Entry] = Map([])
+  let tails : Map[Key, Entry] = Map([])
   let root_children = root.children_with_fields()
   // An explicit stack: trees can be deeper than the call stack allows. A
   // child's path is one step on its parent's path, so it shares its steps.
@@ -143,13 +144,12 @@ pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
         next: None,
       }
       match parents.get(key) {
-        // Rare: the item goes last, so the first entry stays first.
+        // The item goes last, so the first entry stays first. `tails` has
+        // the last entry of each chain longer than one, so that many nodes
+        // with one key (a hand-built AST with one range) stay linear.
         Some(first) => {
-          let mut last = first
-          while last.next is Some(e) {
-            last = e
-          }
-          last.next = Some(item)
+          tails.get(key).unwrap_or(first).next = Some(item)
+          tails[key] = item
         }
         None => parents[key] = item
       }
