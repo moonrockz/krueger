@@ -331,9 +331,12 @@ fn latest(items : Array[(String, ResultsFile)]) -> (String, ResultsFile)? {
 ///|
 /// The baseline run file in `history` for `against` (the caller reads a
 /// `File`). The current run is never its own baseline. The latest `main`
-/// run is the latest one that measured every target of the current run, or
-/// else the latest `main` run (so a partial run on `main` does not hide the
-/// other targets from the next full run).
+/// run is the latest one that measured every target of the current run on
+/// the same CPU (GitHub runners vary in CPU, and a run on another CPU
+/// marks cases slower or faster that did not change). Else it is the latest
+/// one that measured every target, or else the latest `main` run (so a
+/// partial run on `main` does not hide the other targets from the next full
+/// run); `compare_runs` then warns when the CPU differs.
 fn select_baseline(
   history : Array[(String, ResultsFile)],
   current : ResultsFile,
@@ -348,9 +351,10 @@ fn select_baseline(
       let covering = main.filter(h => {
         current.targets.iter().all(t => h.1.targets.contains(t))
       })
-      match latest(covering) {
-        Some(found) => Some(found)
-        None => latest(main)
+      let same_cpu = covering.filter(h => h.1.env.cpu == current.env.cpu)
+      match (latest(same_cpu), latest(covering)) {
+        (Some(found), _) | (None, Some(found)) => Some(found)
+        (None, None) => latest(main)
       }
     }
     Commit(prefix) => latest(others.filter(h => h.1.run.sha.has_prefix(prefix)))
@@ -1298,6 +1302,7 @@ impl @moonspec.World for BenchWorld with fn configure(self, setup) {
   setup.when0("I compare the runs with the history", fn() {
     let baseline = select_baseline(self.history, self.current, LatestMain)
     let c = compare_runs(self.current, baseline, default_threshold)
+    self.comparison = Some(c)
     self.html = render_html(
       c,
       trend_history(self.history, self.current, 20),
@@ -1332,6 +1337,16 @@ impl @moonspec.World for BenchWorld with fn configure(self, setup) {
       h.0,
       { ..h.1, targets: targets.split(",").map(t => t.to_owned()).to_array(), },
     )
+  })
+  setup.given2("history run {string} ran on CPU {string}", fn(
+    path : String,
+    cpu : String,
+  ) raise {
+    guard self.history.search_by(h => h.0 == path) is Some(i) else {
+      fail("no history run \{path}")
+    }
+    let h = self.history[i]
+    self.history[i] = (h.0, { ..h.1, env: { ..h.1.env, cpu, }, })
   })
   setup.then2("choosing the baseline {string} fails with {string}", fn(
     spec : String,

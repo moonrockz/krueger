@@ -1073,9 +1073,12 @@ Benchmarks measure krueger's speed over time. They are not a CI gate.
   `_build/reports/bench/benchmark-results.json` (the results file). Times
   are microseconds per call (from 10 batches).
 - `mise run bench:compare` compares the results file with a run from the
-  history (default: the latest `main` run; `--against <sha|run:<id>|file>`)
-  and writes `summary.md` and `report.html` (the tables and a trend of the
-  last 20 `main` runs per case).
+  history and writes `summary.md` and `report.html` (the tables and a
+  trend of the last 20 `main` runs per case). The default baseline is the
+  latest `main` run on the same CPU that measured every target of this
+  run; when there is none, the latest `main` run that measured every
+  target, then the latest `main` run. `--against <sha|run:<id>|file>`
+  names another.
 - A case is marked `slower` or `faster` only when the median changes by
   more than 10% and the interquartile ranges do not overlap. GitHub runners
   vary by 10 to 20 percent between runs; the summary warns when the
