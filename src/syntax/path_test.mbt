@@ -85,6 +85,11 @@ test "a tree gives the path of a node, or None for a node not in it" {
     .to_equal(Some("declarations[0]"))
     let made_up = @syntax.NodeRef::Name({ range: r0, value: "nowhere", })
     s.expect(tree.node_path(made_up)).to_equal(None)
+    // The root of another parse of the same text is equal to the root; the
+    // root of another text is not.
+    s.expect(tree.node_path(elsewhere).map(p => p.depth())).to_equal(Some(0))
+    let different = parse_root("module M exposing (..)\n\n\nb =\n    2\n")
+    s.expect(tree.node_path(different)).to_equal(None)
   })
 }
 

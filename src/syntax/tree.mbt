@@ -4,10 +4,34 @@
 /// never changes; its indexes are private.
 pub struct Tree {
   priv root : NodeRef
-  /// identity key → (node, parent, step in the parent) for every node below
-  /// the root.
-  priv parents : Map[String, Array[(NodeRef, NodeRef, PathStep)]]
+  /// identity key → index entries, one for every node below the root.
+  priv parents : Map[String, Array[Entry]]
+  /// In source order: starts and ends both ascend.
   priv tokens : Array[@scanner.Token]
+}
+
+///|
+/// A node below the root, with its parent and its path from the root: the
+/// steps innermost first (the first is the step from the parent) and their
+/// number. A child's steps are one list cell on its parent's, so the index
+/// holds one cell per node, not a whole path.
+priv struct Entry {
+  node : NodeRef
+  parent : NodeRef
+  steps : @list.List[PathStep]
+  depth : Int32
+}
+
+///|
+/// The step from the parent to the entry's node.
+fn Entry::step(self : Entry) -> PathStep? {
+  self.steps.head()
+}
+
+///|
+/// The path from the root to the entry's node.
+fn Entry::path(self : Entry) -> NodePath {
+  { reversed: self.steps, length: self.depth, }
 }
 
 ///|
@@ -46,19 +70,27 @@ fn identity(n : NodeRef) -> String {
 /// ```
 pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
   guard NodeRef::of_result(result) is Some(root) else { return None }
-  let parents : Map[String, Array[(NodeRef, NodeRef, PathStep)]] = Map([])
-  // An explicit stack: trees can be deeper than the call stack allows.
-  let stack = [root]
-  while stack.pop() is Some(node) {
+  let parents : Map[String, Array[Entry]] = Map([])
+  // An explicit stack: trees can be deeper than the call stack allows. A
+  // child's path is one step on its parent's path, so it shares its steps.
+  let stack : Array[(NodeRef, @list.List[PathStep], Int32)] = [
+    (root, @list.List([]), 0),
+  ]
+  while stack.pop() is Some((node, steps, depth)) {
     for entry in node.children_with_fields() {
       let (step, child) = entry
       let key = identity(child)
-      let item = (child, node, step)
+      let item = {
+        node: child,
+        parent: node,
+        steps: steps.prepend(step),
+        depth: depth + 1,
+      }
       match parents.get(key) {
         Some(bucket) => bucket.push(item)
         None => parents[key] = [item]
       }
-      stack.push(child)
+      stack.push((child, item.steps, item.depth))
     }
   }
   let tokens = match result.cst {
@@ -77,7 +109,7 @@ pub fn Tree::root(self : Tree) -> NodeRef {
 ///|
 /// The parent of `n`, or `None` for the root and for nodes not in the tree.
 pub fn Tree::parent(self : Tree, n : NodeRef) -> NodeRef? {
-  self.parent_entry(n).map(e => e.0)
+  self.entry(n).map(e => e.parent)
 }
 
 ///|
@@ -104,7 +136,7 @@ pub fn Tree::parent(self : Tree, n : NodeRef) -> NodeRef? {
 /// }
 /// ```
 pub fn Tree::step(self : Tree, n : NodeRef) -> PathStep? {
-  self.parent_entry(n).map(e => e.1)
+  self.entry(n).bind(e => e.step())
 }
 
 ///|
@@ -113,16 +145,17 @@ pub fn Tree::step(self : Tree, n : NodeRef) -> PathStep? {
 /// reads the tree's index, so a walk can call it for every node. See `step`
 /// for an example.
 pub fn Tree::field_of(self : Tree, n : NodeRef) -> String? {
-  self.parent_entry(n).map(e => e.1.field)
+  self.entry(n).bind(e => e.step()).map(s => s.field)
 }
 
 ///|
-/// The parent of `n` and the step from the parent to `n`.
-fn Tree::parent_entry(self : Tree, n : NodeRef) -> (NodeRef, PathStep)? {
+/// The index entry of `n`, or `None` for the root and for nodes not in the
+/// tree.
+fn Tree::entry(self : Tree, n : NodeRef) -> Entry? {
   guard self.parents.get(identity(n)) is Some(bucket) else { return None }
   for entry in bucket {
-    if same(entry.0, n) {
-      return Some((entry.1, entry.2))
+    if same(entry.node, n) {
+      return Some(entry)
     }
   }
   None
@@ -171,19 +204,12 @@ pub fn Tree::path(self : Tree, n : NodeRef) -> Array[NodeRef] {
 /// }
 /// ```
 pub fn Tree::node_path(self : Tree, n : NodeRef) -> NodePath? {
-  // Up the parent index (the steps nearest first), then down from the root.
-  let steps = []
-  let mut current = n
-  while self.parent_entry(current) is Some((parent, step)) {
-    steps.push(step)
-    current = parent
+  // One lookup: the index keeps each node's path. Only a node that is not
+  // below the root is compared with the root.
+  match self.entry(n) {
+    Some(entry) => Some(entry.path())
+    None => if same(n, self.root) { Some(NodePath::root()) } else { None }
   }
-  guard same(current, self.root) else { return None }
-  let mut path = NodePath::root()
-  for step in steps.rev_iter() {
-    path = path.child(step.field, step.index)
-  }
-  Some(path)
 }
 
 ///|
@@ -285,17 +311,34 @@ fn copy_token(t : @scanner.Token) -> @scanner.Token {
 /// }
 /// ```
 pub fn Tree::tokens_in(self : Tree, r : @ast.Range) -> Array[@scanner.Token] {
-  self.tokens
-  .filter(t => {
-    let start : @ast.Location = {
-      row: t.span.start.line,
-      column: t.span.start.column,
+  // The tokens tile the source, so their starts and their ends both ascend:
+  // search for the first token that starts at or after `r.start`, then take
+  // tokens until one ends after `r.end`.
+  let tokens = self.tokens
+  let mut lo = 0
+  let mut hi = tokens.length()
+  while lo < hi {
+    let mid = lo + (hi - lo) / 2
+    if at_or_before(r.start, token_start(tokens[mid])) {
+      hi = mid
+    } else {
+      lo = mid + 1
     }
-    let end : @ast.Location = {
-      row: t.span.end.line,
-      column: t.span.end.column,
-    }
-    at_or_before(r.start, start) && at_or_before(end, r.end)
-  })
-  .map(copy_token)
+  }
+  let found = []
+  for i in lo..<tokens.length() {
+    guard at_or_before(token_end(tokens[i]), r.end) else { break }
+    found.push(copy_token(tokens[i]))
+  }
+  found
+}
+
+///|
+fn token_start(t : @scanner.Token) -> @ast.Location {
+  { row: t.span.start.line, column: t.span.start.column, }
+}
+
+///|
+fn token_end(t : @scanner.Token) -> @ast.Location {
+  { row: t.span.end.line, column: t.span.end.column, }
 }
