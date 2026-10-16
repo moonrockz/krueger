@@ -10,7 +10,7 @@ on:
         required: false
         default: ""
       compare_to:
-        description: "Baseline: empty for the latest main run, a commit SHA, run:<id>, or a run file path"
+        description: "Baseline: empty for the latest main run (same CPU first), a commit SHA, run:<id>, or a run file path"
         required: false
         default: ""
       record:

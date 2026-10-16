@@ -216,3 +216,42 @@ Feature: Benchmarks
     Then choosing the baseline "main" fails with "no run file for main in the history"
     And choosing the baseline "run:77" fails with "no run file for run:77 in the history"
     And choosing the baseline "" gives "runs/a.json"
+
+  Scenario: The default baseline ran on the same CPU
+    Given the history:
+      """
+      runs/a.json refs/heads/main 1111111aaaa 1 2026-09-01T00:00:00Z
+      runs/b.json refs/heads/main 2222222bbbb 2 2026-09-15T00:00:00Z
+      """
+    And history run "runs/a.json" measured "native"
+    And history run "runs/b.json" measured "native"
+    And history run "runs/b.json" ran on CPU "cpu-b"
+    And a results file from "refs/heads/main" at commit "4444444dddd" on "2026-10-01T10:00:00Z" with run id "4"
+    And the current run has "native" "syntax/walk/large" with median 100, q1 95 and q3 105
+    When I compare the runs with the history
+    Then the baseline for "" is "runs/a.json"
+    And the warnings are:
+      """
+      """
+
+  Scenario: The default baseline on the same CPU must cover every target of the run
+    Given the history:
+      """
+      runs/native.json refs/heads/main 1111111aaaa 1 2026-09-01T00:00:00Z
+      runs/full.json refs/heads/main 2222222bbbb 2 2026-09-15T00:00:00Z
+      runs/later.json refs/heads/main 3333333cccc 3 2026-09-20T00:00:00Z
+      """
+    And history run "runs/native.json" measured "native"
+    And history run "runs/full.json" measured "native,js"
+    And history run "runs/full.json" ran on CPU "cpu-b"
+    And history run "runs/later.json" measured "native,js"
+    And history run "runs/later.json" ran on CPU "cpu-c"
+    And a results file from "refs/heads/main" at commit "4444444dddd" on "2026-10-01T10:00:00Z" with run id "4"
+    And the current run has "native" "syntax/walk/large" with median 100, q1 95 and q3 105
+    And the current run has "js" "syntax/walk/large" with median 100, q1 95 and q3 105
+    When I compare the runs with the history
+    Then the baseline for "" is "runs/later.json"
+    And the warnings are:
+      """
+      The baseline ran on another CPU (cpu-c; this run: cpu-a). Compare with care.
+      """
