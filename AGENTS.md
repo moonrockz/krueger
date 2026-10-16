@@ -926,7 +926,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 |---------------------|------------------------------------------------|
 | `hooks:install`     | Install project git hooks via lefthook         |
 | `info:generate`     | Run `moon info` to generate interfaces         |
-| `lint:check`        | Run lint/type checks (`moon check`)            |
+| `lint:check`        | Run lint/type checks (`moon check --deny-warn`; a warning fails) |
 | `format:check`      | Run formatting checks (`moon fmt --check`)     |
 | `check`             | Run all checks (lint + format + tests)         |
 | `test:unit`         | Run MoonBit unit tests                         |

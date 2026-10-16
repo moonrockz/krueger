@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Run lint checks"
+#MISE description="Run lint checks (moon check; a warning fails)"
 set -euo pipefail
 
-moon check
+moon check --deny-warn
