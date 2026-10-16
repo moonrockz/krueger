@@ -8,7 +8,7 @@ is 0.x, a minor release can contain breaking changes.
 
 ## [0.8.0] - 2026-10-16
 
-<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+Queries on a `Tree` are much faster on large files, and the API does not change. On a module with 1000 declarations and about 2000 comments (native), `tokens_in` is more than 200 times faster, `node_path` about 100 times faster and `node_at` about 30 times faster than in 0.7.0. `Tree::new` and `parent` take about half and a quarter or less of their earlier time, and `children()` of a file with comments between its declarations takes about one sixth. For maintainers, `mise run release:prepare` now opens the release pull request as a draft, and `release:refresh` marks it ready when the highlights are written.
 
 ### 🚀 Features
 
