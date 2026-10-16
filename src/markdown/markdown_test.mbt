@@ -203,3 +203,20 @@ test "HTML blocks end where CommonMark ends them" {
     .to_equal(" A.\n\n<pre>\na_b\n\nc_d\n</pre>\n\n")
   })
 }
+
+///|
+test "a long run of backticks takes linear time" {
+  // bd krueger-jod: a run with no closing run, and a run closed by its
+  // last backtick. The outputs for n = 5 come from elm-format 0.8.7.
+  @expect.expect_all(s => {
+    for n in [5, 100000] {
+      let escaped = "\\`".repeat(n)
+      s
+      .expect(@markdown.format_doc(" x " + "`".repeat(n) + " aaa\n"))
+      .to_equal(" x " + escaped + " aaa\n")
+      s
+      .expect(@markdown.format_doc("`".repeat(n) + "a`\n"))
+      .to_equal(" " + "\\`".repeat(n - 1) + "`a`\n")
+    }
+  })
+}

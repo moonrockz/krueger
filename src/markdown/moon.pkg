@@ -8,3 +8,7 @@ import {
   "moonrockz/krueger/lawkit",
   "moonbitlang/core/quickcheck",
 } for "test"
+
+import {
+  "moonrockz/expect",
+} for "wbtest"
