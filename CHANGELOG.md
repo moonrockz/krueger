@@ -8,11 +8,13 @@ is 0.x, a minor release can contain breaking changes.
 
 ## [0.7.0] - 2026-10-16
 
-<!-- Highlights: replace this comment with a few sentences on what this release brings. -->
+The parser's fixed depth limits are replaced by one budget that you set: pass `fuel` to `parse_module`, `parse_tokens`, `format` or `format_parsed` (default `DEFAULT_FUEL`, 1200, which keeps the limits of 0.6). A nesting refusal now has its own code, `KR-PARSE-010`, and carries the fuel and the walk that ran out in the new `Diagnostic.detail` field, so tools can tell "too deep" from "malformed" without reading the message. The AST encoder and decoder and the pattern and type printing use explicit stacks: a 2000-level AST encodes, decodes and prints on wasm, wasm-gc, js and native, and a left-associative operator chain or a record access chain has no limit. The new cookbook article "Set the nesting budget" explains the fuel and the stack setting of each target.
 
 ### ⚠️ Breaking changes
 
-- *(parser)* Diagnostic has a new field detail (add detail: None to literals); PrintProblem::TooDeep is removed. ([#54](https://github.com/moonrockz/krueger/pull/54))
+- *(scanner)* `Diagnostic` has a new field `detail`. Code that builds a `Diagnostic` literal must add `detail: None`. ([#54](https://github.com/moonrockz/krueger/pull/54))
+- *(printer)* `PrintProblem::TooDeep` is removed: the printer prints an AST of any depth. Remove `TooDeep` from matches on `PrintProblem`. ([#54](https://github.com/moonrockz/krueger/pull/54))
+- *(parser)* A `::`, `->` or right-associative operator chain is refused after 596 steps (was 399), and a left-associative operator chain or a record access chain is no longer refused. A refusal is `KR-PARSE-010`, not the declaration's `KR-PARSE-003`, `004` or `008`. ([#54](https://github.com/moonrockz/krueger/pull/54))
 
 ### 🚀 Features
 
