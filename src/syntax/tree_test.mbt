@@ -132,3 +132,82 @@ test "tokens_in returns the tokens of a range" {
     "f", "=", "g", "1",
   ])
 }
+
+///|
+test "a file that holds one declaration twice: every node is found and its path leads to it" {
+  // Every node below the declarations has a twin with the same key (case
+  // and range), so the index tells them apart only by its buckets.
+  let result = parse_result(
+    "module M exposing (..)\n\n\nf x =\n    ( x, [ x ] )\n",
+  )
+  guard result.ast is Some(file) else { fail("no AST") }
+  let twice : @parser.ParseResult = {
+    ..result,
+    ast: Some({
+      ..file,
+      declarations: [file.declarations[0], file.declarations[0]],
+    }),
+  }
+  guard @syntax.Tree::new(twice) is Some(tree) else { fail("no tree") }
+  @expect.expect_all(s => {
+    let nodes = all_nodes(tree.root())
+    s.expect(nodes.length() > 10).to_be_true()
+    for entry in nodes {
+      let (node, parent) = entry
+      s.expect(tree.parent(node)).to_equal(parent)
+      guard tree.node_path(node) is Some(path) else {
+        s.expect(Some(node.kind())).to_equal(None)
+        continue
+      }
+      s.expect(path.resolve(tree.root())).to_equal(Some(node))
+      s.expect(tree.step(node)).to_equal(path.last())
+    }
+    s
+    .expect(tree.step(tree.root().field("declarations")[1]))
+    .to_equal(Some({ field: "declarations", index: 0, }))
+  })
+}
+
+///|
+test "many different nodes with one key: a hand-built list whose items share one range" {
+  // 1000 different integers with one range have one key, so they form one
+  // chain in the index; the index must still find each, in its place.
+  let result = parse_result("module M exposing (..)\n\n\nf =\n    0\n")
+  guard result.ast is Some(file) else { fail("no AST") }
+  let r = file.declarations[0].range
+  let items : Array[@ast.Node[@ast.Expression]] = Array::makei(1000, i => {
+    range: r,
+    value: Integer(i.to_int64()),
+  })
+  let declaration : @ast.Node[@ast.Declaration] = {
+    range: r,
+    value: FunctionDeclaration({
+      documentation: None,
+      signature: None,
+      declaration: {
+        range: r,
+        value: {
+          name: { range: r, value: "f", },
+          arguments: [],
+          expression: { range: r, value: ListExpr(items), },
+        },
+      },
+    }),
+  }
+  let built : @parser.ParseResult = {
+    ..result,
+    ast: Some({ ..file, declarations: [declaration], }),
+  }
+  guard @syntax.Tree::new(built) is Some(tree) else { fail("no tree") }
+  let list = tree.root().field("declarations")[0].field("declaration")[0].field(
+      "expression",
+    )[0]
+  let kids = list.field("list")
+  @expect.expect(kids.length()).to_equal(1000)
+  @expect.expect_all(s => {
+    for i, kid in kids {
+      s.expect(tree.step(kid)).to_equal(Some({ field: "list", index: i, }))
+      s.expect(tree.parent(kid)).to_equal(Some(list))
+    }
+  })
+}

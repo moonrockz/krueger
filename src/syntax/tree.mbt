@@ -4,8 +4,12 @@
 /// never changes; its indexes are private.
 pub struct Tree {
   priv root : NodeRef
-  /// identity key → index entries, one for every node below the root.
-  priv parents : Map[String, Array[Entry]]
+  /// The root's `children_with_fields()`, built once: a file can have
+  /// thousands, and every `node_at` starts there.
+  priv root_children : Array[(PathStep, NodeRef)]
+  /// Key → the first index entry with that key; one entry for every node
+  /// below the root.
+  priv parents : Map[Key, Entry]
   /// In source order: starts and ends both ascend.
   priv tokens : Array[@scanner.Token]
 }
@@ -14,12 +18,14 @@ pub struct Tree {
 /// A node below the root, with its parent and its path from the root: the
 /// steps innermost first (the first is the step from the parent) and their
 /// number. A child's steps are one list cell on its parent's, so the index
-/// holds one cell per node, not a whole path.
+/// holds one cell per node, not a whole path. `next` is the next entry with
+/// the same key, in the order of `Tree::new`.
 priv struct Entry {
   node : NodeRef
   parent : NodeRef
   steps : @list.List[PathStep]
   depth : Int32
+  mut next : Entry?
 }
 
 ///|
@@ -35,11 +41,54 @@ fn Entry::path(self : Entry) -> NodePath {
 }
 
 ///|
-/// The index key of a node: category, kind and range. Two different nodes
+/// The index key of a node: its case and its range. Two different nodes
 /// with the same key are told apart by structural equality.
-fn identity(n : NodeRef) -> String {
+priv struct Key {
+  case_ : Int32
+  start_row : Int32
+  start_column : Int32
+  end_row : Int32
+  end_column : Int32
+} derive(Eq, Hash)
+
+///|
+fn key_of(n : NodeRef) -> Key {
   let r = n.range()
-  "\{n.category()}/\{n.kind()}/\{r.start.row}:\{r.start.column}-\{r.end.row}:\{r.end.column}"
+  {
+    case_: case_number(n),
+    start_row: r.start.row,
+    start_column: r.start.column,
+    end_row: r.end.row,
+    end_column: r.end.column,
+  }
+}
+
+///|
+/// The number of the node's case: a key part that needs no string.
+fn case_number(n : NodeRef) -> Int32 {
+  match n {
+    File(_, _) => 0
+    Module(_) => 1
+    ModuleName(_) => 2
+    Exposing(_) => 3
+    Expose(_) => 4
+    Import(_) => 5
+    Declaration(_, _) => 6
+    Documentation(_) => 7
+    Signature(_) => 8
+    Implementation(_) => 9
+    Constructor(_) => 10
+    Expression(_) => 11
+    LetDeclaration(_) => 12
+    Case(_) => 13
+    RecordSetter(_) => 14
+    Pattern(_) => 15
+    TypeAnnotation(_) => 16
+    RecordField(_) => 17
+    Name(_) => 18
+    Comment(_) => 19
+    Attribute(_) => 20
+  }
 }
 
 ///|
@@ -70,25 +119,39 @@ fn identity(n : NodeRef) -> String {
 /// ```
 pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
   guard NodeRef::of_result(result) is Some(root) else { return None }
-  let parents : Map[String, Array[Entry]] = Map([])
+  let parents : Map[Key, Entry] = Map([])
+  let tails : Map[Key, Entry] = Map([])
+  let root_children = root.children_with_fields()
   // An explicit stack: trees can be deeper than the call stack allows. A
   // child's path is one step on its parent's path, so it shares its steps.
   let stack : Array[(NodeRef, @list.List[PathStep], Int32)] = [
     (root, @list.List([]), 0),
   ]
   while stack.pop() is Some((node, steps, depth)) {
-    for entry in node.children_with_fields() {
+    let kids = if depth == 0 {
+      root_children
+    } else {
+      node.children_with_fields()
+    }
+    for entry in kids {
       let (step, child) = entry
-      let key = identity(child)
+      let key = key_of(child)
       let item = {
         node: child,
         parent: node,
         steps: steps.prepend(step),
         depth: depth + 1,
+        next: None,
       }
       match parents.get(key) {
-        Some(bucket) => bucket.push(item)
-        None => parents[key] = [item]
+        // The item goes last, so the first entry stays first. `tails` has
+        // the last entry of each chain longer than one, so that many nodes
+        // with one key (a hand-built AST with one range) stay linear.
+        Some(first) => {
+          tails.get(key).unwrap_or(first).next = Some(item)
+          tails[key] = item
+        }
+        None => parents[key] = item
       }
       stack.push((child, item.steps, item.depth))
     }
@@ -97,7 +160,7 @@ pub fn Tree::new(result : @parser.ParseResult) -> Tree? {
     Some(cst) => cst.tokens.map(copy_token)
     None => []
   }
-  Some({ root, parents, tokens, })
+  Some({ root, root_children, parents, tokens, })
 }
 
 ///|
@@ -152,11 +215,12 @@ pub fn Tree::field_of(self : Tree, n : NodeRef) -> String? {
 /// The index entry of `n`, or `None` for the root and for nodes not in the
 /// tree.
 fn Tree::entry(self : Tree, n : NodeRef) -> Entry? {
-  guard self.parents.get(identity(n)) is Some(bucket) else { return None }
-  for entry in bucket {
+  let mut next = self.parents.get(key_of(n))
+  while next is Some(entry) {
     if same(entry.node, n) {
       return Some(entry)
     }
+    next = entry.next
   }
   None
 }
@@ -238,43 +302,63 @@ fn within(a : @ast.Range, b : @ast.Range) -> Bool {
 /// ranges the deeper node wins, then the first in source order. See
 /// `node_path` for an example.
 pub fn Tree::node_at(self : Tree, p : @ast.Location) -> NodeRef? {
-  innermost_at(self.root, p).map(found => found.0)
+  innermost_at(self.root, p, start_children=self.root_children).map(found => {
+    found.0
+  })
 }
 
 ///|
 /// The innermost node at or below `start` whose range contains `p` (the rule
-/// of `Tree::node_at`), with the index of each step down in its parent's
-/// `children()`, or `None` when `start` does not contain `p`.
-fn innermost_at(start : NodeRef, p : @ast.Location) -> (NodeRef, Array[Int32])? {
-  if !contains(start.range(), p) {
+/// of `Tree::node_at`), with each step down: the child's index among its
+/// siblings and the siblings (its parent's `children_with_fields()`), or
+/// `None` when `start` does not contain `p`. `start_children` are the start
+/// node's children when the caller has them already.
+fn innermost_at(
+  start : NodeRef,
+  p : @ast.Location,
+  start_children? : Array[(PathStep, NodeRef)],
+) -> (NodeRef, Array[(Int32, Array[(PathStep, NodeRef)])])? {
+  let start_range = start.range()
+  if !contains(start_range, p) {
     return None
   }
   let mut best = start
-  let mut best_trail : @list.List[Int32] = @list.List([])
+  let mut best_range = start_range
+  let mut best_trail : @list.List[(Int32, Array[(PathStep, NodeRef)])] = @list.List([],
+  )
   let mut best_depth = 0
-  // An explicit stack, visited in source order. A trail holds the child
-  // indices from `start`, innermost first.
-  let stack : Array[(NodeRef, Int32, @list.List[Int32])] = [
-    (start, 0, @list.List([])),
-  ]
-  while stack.pop() is Some((node, depth, trail)) {
-    let r = node.range()
-    let b = best.range()
+  // An explicit stack, visited in source order, with each node's range. A
+  // trail holds the steps from `start`, innermost first.
+  let stack : Array[
+    (
+      NodeRef,
+      @ast.Range,
+      Int32,
+      @list.List[(Int32, Array[(PathStep, NodeRef)])],
+    ),
+  ] = [(start, start_range, 0, @list.List([]))]
+  while stack.pop() is Some((node, r, depth, trail)) {
+    let b = best_range
     if (within(r, b) && r != b) || (r == b && depth > best_depth) {
       best = node
+      best_range = r
       best_trail = trail
       best_depth = depth
     }
-    let kids = node.children()
+    let kids = match (depth, start_children) {
+      (0, Some(kids)) => kids
+      _ => node.children_with_fields()
+    }
     for i = kids.length() - 1; i >= 0; i = i - 1 {
-      if contains(kids[i].range(), p) {
-        stack.push((kids[i], depth + 1, trail.prepend(i)))
+      let kid_range = kids[i].1.range()
+      if contains(kid_range, p) {
+        stack.push((kids[i].1, kid_range, depth + 1, trail.prepend((i, kids))))
       }
     }
   }
-  let indices = best_trail.to_array()
-  indices.rev_in_place()
-  Some((best, indices))
+  let steps = best_trail.to_array()
+  steps.rev_in_place()
+  Some((best, steps))
 }
 
 ///|
