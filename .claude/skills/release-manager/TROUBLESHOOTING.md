@@ -73,6 +73,14 @@ Fix: write the highlights, commit, push, run `mise run release:refresh`
 again. `gh pr ready` on a pull request that is already ready does nothing,
 so repeating `refresh` is safe.
 
+**`warning: CHANGELOG.md differs from origin/release/vX.Y.Z`**
+Cause: `refresh` reads `CHANGELOG.md` from the pushed branch, and the local
+file has changes that are not pushed (not committed, or committed but not
+pushed). The pull request shows only pushed text, so `refresh` does not use
+the local file to decide whether to mark the pull request ready.
+Fix: commit and push the highlights, then run `mise run release:refresh`
+again.
+
 ## Release workflow
 
 **`plan` fails: "still has the highlights placeholder"**

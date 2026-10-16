@@ -322,6 +322,14 @@ Feature: Release tooling
       | yes        | pr edit, pr ready |
       | no         | pr edit           |
 
+  Scenario Outline: Refresh uses the pushed changelog and warns about local changes
+    Then refreshing with the local changelog "<local>" and the pushed changelog "<pushed>" warns "<warning>"
+
+    Examples:
+      | local       | pushed      | warning                                                                                                                              |
+      | highlights  | highlights  |                                                                                                                                      |
+      | highlights  | placeholder | warning: CHANGELOG.md differs from origin/release/v0.5.0; refresh uses the pushed text. Commit and push, then run release:refresh again |
+
   Scenario Outline: A breaking commit needs a BREAKING CHANGE footer
     Given the commit "<subject>" with the footer "<footer>"
     Then the breaking commits without a footer are "<missing>"

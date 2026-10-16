@@ -437,6 +437,24 @@ fn pr_create_args(
 }
 
 ///|
+/// `release:refresh` reads CHANGELOG.md from the pushed branch, because the
+/// pull request shows what is pushed: a local edit must not mark the pull
+/// request ready. When the local file differs, it warns.
+fn unpushed_warning(
+  branch : String,
+  working : String,
+  pushed : String,
+) -> String? {
+  if working == pushed {
+    None
+  } else {
+    Some(
+      "warning: \{changelog_path} differs from origin/\{branch}; refresh uses the pushed text. Commit and push, then run release:refresh again",
+    )
+  }
+}
+
+///|
 /// The `gh` commands that `release:refresh` runs: write the new body, then,
 /// when the section has its highlights, mark the pull request ready for
 /// review. Without highlights it stays a draft. `gh pr ready` on a pull
@@ -829,9 +847,23 @@ async fn refresh() -> Unit {
       return
     }
   }
-  guard changelog_section(@fs.read_file(changelog_path).text(), version)
-    is Some(section) else {
-    fail_with("CHANGELOG.md has no section for \{version}")
+  run_or_fail("git", ["fetch", "--quiet", "origin", branch])
+  let (code, pushed) = stdout_of("git", [
+    "show",
+    "origin/\{branch}:\{changelog_path}",
+  ])
+  if code != 0 {
+    fail_with(
+      "cannot read \{changelog_path} on origin/\{branch}; push the branch first",
+    )
+    return
+  }
+  if unpushed_warning(branch, @fs.read_file(changelog_path).text(), pushed)
+    is Some(message) {
+    eprintln(message)
+  }
+  guard changelog_section(pushed, version) is Some(section) else {
+    fail_with("CHANGELOG.md on origin/\{branch} has no section for \{version}")
     return
   }
   let highlights = has_highlights(section)
@@ -1178,6 +1210,15 @@ impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
       let v = version_of(version)
       let args = pr_create_args("release/v\{v}", "v\{v}", "")
       @expect.expect(args.contains(flag)).to_be_true()
+    },
+  )
+  setup.then3(
+    "refreshing with the local changelog {string} and the pushed changelog {string} warns {string}",
+    fn(working : String, pushed : String, expected : String) raise {
+      let actual = unpushed_warning("release/v0.5.0", working, pushed).unwrap_or(
+        "",
+      )
+      @expect.expect(actual).to_equal(expected)
     },
   )
   setup.then1("refreshing runs the gh commands {string}", fn(

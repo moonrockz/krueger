@@ -1139,8 +1139,9 @@ design is final and meant for readers, write it up in a committed location on pu
 - In the pull request, replace the highlights comment at the top of the new section
   with a few sentences on what the release brings, and reword the generated lines
   where needed. Push, then run `mise run release:refresh` on the release branch: it
-  writes the new notes into the pull request body and, when the section has its
-  highlights, marks the pull request ready for review. So Codex, which reviews a
+  reads `CHANGELOG.md` from the pushed branch, writes the notes into the pull
+  request body and, when the section has its highlights, marks the pull request
+  ready for review. So Codex, which reviews a
   pull request when it becomes ready, reads the final text. Then merge. Do not bump the version in any other pull request.
 - Merge the release pull request before other pull requests. A pull request that
   merges first is not in the new section and goes into no later section either (the
