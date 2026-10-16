@@ -955,7 +955,7 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `release:version`   | Compute next version from conventional commits |
 | `release:plan`      | Decide whether a Release workflow run releases (CI) |
 | `release:notes`     | Print a version's GitHub release notes from `CHANGELOG.md` |
-| `release:refresh`   | Update the release pull request body from `CHANGELOG.md` |
+| `release:refresh`   | Update the release pull request body from `CHANGELOG.md`; mark it ready once the highlights exist |
 | `release:status`    | Check that main, the tags, the GitHub release and mooncakes.io agree |
 | `release:credentials` | Set up mooncakes.io credentials (CI only)    |
 | `release:publish`   | Publish package to mooncakes.io               |
@@ -1128,7 +1128,7 @@ design is final and meant for readers, write it up in a committed location on pu
   configured in `cliff.toml`; on 0.x a `feat` or a breaking change bumps the minor,
   anything else the patch), sets `version` in `moon.mod`, prepends the version's
   section to `CHANGELOG.md`, commits `chore(release): v<version>` on branch
-  `release/v<version>`, pushes it and opens the pull request. It also sets the
+  `release/v<version>`, pushes it and opens a draft pull request. It also sets the
   string that `version()` in `src/lib.mbt` returns; `harness/bdd/version_wbtest.mbt`
   checks that it equals `moon.mod`'s version. Give a version to
   override git-cliff (`mise run release:prepare 1.0.0`); `--local` stops before the
@@ -1139,8 +1139,10 @@ design is final and meant for readers, write it up in a committed location on pu
 - In the pull request, replace the highlights comment at the top of the new section
   with a few sentences on what the release brings, and reword the generated lines
   where needed. Push, then run `mise run release:refresh` on the release branch: it
-  writes the new notes into the pull request body. Then merge. Do not bump the
-  version in any other pull request.
+  reads `CHANGELOG.md` from the pushed branch, writes the notes into the pull
+  request body and, when the section has its highlights, marks the pull request
+  ready for review. So Codex, which reviews a
+  pull request when it becomes ready, reads the final text. Then merge. Do not bump the version in any other pull request.
 - Merge the release pull request before other pull requests. A pull request that
   merges first is not in the new section and goes into no later section either (the
   tag covers it). If that happens, close the release pull request, delete its branch

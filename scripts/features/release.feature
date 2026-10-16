@@ -310,6 +310,26 @@ Feature: Release tooling
   Scenario: The release pull request body tells how to refresh it
     Then the pull request body for "0.5.0" mentions "mise run release:refresh"
 
+  Scenario: The release pull request opens as a draft
+    Then opening the release pull request for "0.5.0" passes "--draft" to gh
+
+  Scenario Outline: Refresh marks the release pull request ready once it has highlights
+    Given the changelog section has highlights: "<highlights>"
+    Then refreshing runs the gh commands "<commands>"
+
+    Examples:
+      | highlights | commands          |
+      | yes        | pr edit, pr ready |
+      | no         | pr edit           |
+
+  Scenario Outline: Refresh uses the pushed changelog and warns about local changes
+    Then refreshing with the local changelog "<local>" and the pushed changelog "<pushed>" warns "<warning>"
+
+    Examples:
+      | local       | pushed      | warning                                                                                                                              |
+      | highlights  | highlights  |                                                                                                                                      |
+      | highlights  | placeholder | warning: CHANGELOG.md differs from origin/release/v0.5.0; refresh uses the pushed text. Commit and push, then run release:refresh again |
+
   Scenario Outline: A breaking commit needs a BREAKING CHANGE footer
     Given the commit "<subject>" with the footer "<footer>"
     Then the breaking commits without a footer are "<missing>"

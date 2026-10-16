@@ -40,7 +40,8 @@ Copy this checklist and tick it off:
    `bd update <id> --claim`. Record what happens in this issue's notes.
 3. **Prepare.** Get the user's approval, because this pushes a branch and
    opens a pull request. Then run `mise run release:prepare` (add a version to
-   override git-cliff, for example `1.0.0`).
+   override git-cliff, for example `1.0.0`). The pull request opens as a
+   draft, so Codex does not review it before the highlights exist.
 4. **Highlights.** In `CHANGELOG.md` on `release/vX.Y.Z`, replace the
    highlights comment with 2–5 plain sentences: what a user can now do, what
    breaks and how to migrate. Read the bodies of the included pull requests
@@ -48,7 +49,8 @@ Copy this checklist and tick it off:
    unclear. If `prepare` warned about breaking commits without a
    `BREAKING CHANGE:` footer, rewrite their lines to say what breaks. Commit
    as `chore(release): highlights for vX.Y.Z` and push. Run
-   `mise run release:refresh` to put the notes into the pull request body.
+   `mise run release:refresh` to put the notes into the pull request body
+   and mark the pull request ready for review (Codex reviews it then).
    Check the result with `mise run release:notes X.Y.Z`. Ask the user to
    review the text.
 5. **Merge.** Get the user's approval. Make sure no other pull request merged
