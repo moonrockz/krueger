@@ -57,6 +57,22 @@ Cause: `prepare` writes the body before the highlights exist.
 Fix: on `release/vX.Y.Z`, after the highlights commit is pushed, run
 `mise run release:refresh`.
 
+**Codex flags the highlights placeholder (P1) on the prepare commit**
+Cause: the release pull request was ready for review before the highlights
+commit, so Codex reviewed the `chore(release): vX.Y.Z` commit. Since
+krueger-7ku, `prepare` opens a draft and `refresh` marks it ready only when
+the section has highlights.
+Fix: if the highlights commit is pushed, the finding is stale: reply that
+the highlights commit replaced the placeholder and resolve the thread.
+History: v0.7.0 (#57).
+
+**`release:refresh` leaves the pull request a draft**
+Cause: the section for the version still has the highlights placeholder;
+`refresh` warns `the pull request stays a draft`.
+Fix: write the highlights, commit, push, run `mise run release:refresh`
+again. `gh pr ready` on a pull request that is already ready does nothing,
+so repeating `refresh` is safe.
+
 ## Release workflow
 
 **`plan` fails: "still has the highlights placeholder"**

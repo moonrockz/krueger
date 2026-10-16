@@ -388,7 +388,8 @@ fn pr_body(
     $|Before you merge, edit the highlights comment at the top of the
     $|`## [\{version}]` section in `CHANGELOG.md`: a few sentences on what this
     $|release brings. You can also reword the generated lines. Then run
-    $|`mise run release:refresh` to update the preview below.
+    $|`mise run release:refresh`: it updates the preview below and marks this
+    $|draft pull request ready for review.
     $|
     $|When this pull request merges, the Release workflow tags the merge
     $|commit `v\{version}`, publishes to mooncakes.io and creates the GitHub
@@ -408,6 +409,48 @@ fn refresh_branch(branch : String, version : Version) -> Result[String, String] 
     Ok(branch)
   } else {
     Err("run release:refresh on \{expected}, not on \{branch}")
+  }
+}
+
+///|
+/// The `gh` arguments that open the release pull request. It opens as a
+/// draft: a reviewer that reviews a pull request when it opens (Codex) then
+/// waits until `release:refresh` marks it ready, after the highlights.
+fn pr_create_args(
+  branch : String,
+  tag : String,
+  body : String,
+) -> Array[String] {
+  [
+    "pr",
+    "create",
+    "--draft",
+    "--base",
+    "main",
+    "--head",
+    branch,
+    "--title",
+    "chore(release): \{tag}",
+    "--body",
+    body,
+  ]
+}
+
+///|
+/// The `gh` commands that `release:refresh` runs: write the new body, then,
+/// when the section has its highlights, mark the pull request ready for
+/// review. Without highlights it stays a draft. `gh pr ready` on a pull
+/// request that is already ready does nothing, so a second refresh is safe.
+fn refresh_commands(
+  branch : String,
+  body : String,
+  highlights~ : Bool,
+) -> Array[Array[String]] {
+  let edit = ["pr", "edit", branch, "--body", body]
+  if highlights {
+    [edit, ["pr", "ready", branch]]
+  } else {
+    [edit]
   }
 }
 
@@ -700,20 +743,12 @@ async fn prepare(requested : String?, local_only : Bool) -> Unit {
     return
   }
   run_or_fail("git", ["push", "--set-upstream", "origin", branch])
-  run_or_fail("gh", [
-    "pr",
-    "create",
-    "--base",
-    "main",
-    "--head",
-    branch,
-    "--title",
-    "chore(release): \{tag}",
-    "--body",
-    pr_body(version, notes, missing_footers~),
-  ])
+  run_or_fail(
+    "gh",
+    pr_create_args(branch, tag, pr_body(version, notes, missing_footers~)),
+  )
   println(
-    "Opened the release pull request. Edit the highlights in CHANGELOG.md on \{branch}, then merge.",
+    "Opened the release pull request as a draft. Write the highlights in CHANGELOG.md on \{branch}, push, then run `mise run release:refresh`: it marks the pull request ready.",
   )
 }
 
@@ -799,23 +834,27 @@ async fn refresh() -> Unit {
     fail_with("CHANGELOG.md has no section for \{version}")
     return
   }
-  if !has_highlights(section) {
+  let highlights = has_highlights(section)
+  if !highlights {
     eprintln(
-      "warning: the section for \{version} still has the highlights placeholder",
+      "warning: the section for \{version} still has the highlights placeholder; the pull request stays a draft",
     )
   }
-  run_or_fail("gh", [
-    "pr",
-    "edit",
-    branch,
-    "--body",
-    pr_body(
-      version,
-      release_notes(version, section),
-      missing_footers=breaking_commits_without_footer(),
-    ),
-  ])
-  println("Updated the body of the release pull request for \{branch}.")
+  let body = pr_body(
+    version,
+    release_notes(version, section),
+    missing_footers=breaking_commits_without_footer(),
+  )
+  for args in refresh_commands(branch, body, highlights~) {
+    run_or_fail("gh", args)
+  }
+  if highlights {
+    println(
+      "Updated the body of the release pull request for \{branch} and marked it ready for review.",
+    )
+  } else {
+    println("Updated the body of the release pull request for \{branch}.")
+  }
 }
 
 ///|
@@ -1133,6 +1172,24 @@ impl @moonspec.World for ReleaseWorld with fn configure(self, setup) {
       @expect.expect(actual).to_equal(expected)
     },
   )
+  setup.then2(
+    "opening the release pull request for {string} passes {string} to gh",
+    fn(version : String, flag : String) raise {
+      let v = version_of(version)
+      let args = pr_create_args("release/v\{v}", "v\{v}", "")
+      @expect.expect(args.contains(flag)).to_be_true()
+    },
+  )
+  setup.then1("refreshing runs the gh commands {string}", fn(
+    expected : String,
+  ) raise {
+    let actual = refresh_commands(
+      "release/v0.5.0",
+      "",
+      highlights=self.highlights,
+    ).map(args => "\{args[0]} \{args[1]}")
+    @expect.expect(actual.join(", ")).to_equal(expected)
+  })
   setup.then2("the pull request body for {string} mentions {string}", fn(
     version : String,
     text : String,
