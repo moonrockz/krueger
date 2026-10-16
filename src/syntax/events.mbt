@@ -160,7 +160,7 @@ pub fn EventReader::new(root : NodeRef) -> EventReader {
 /// }
 /// ```
 pub fn EventReader::iter(self : EventReader) -> Iter[Event] {
-  Iter::new(() => self.next())
+  Iter::new(() => EventSource::next(self))
 }
 
 ///|
