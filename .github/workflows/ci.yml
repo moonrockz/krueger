@@ -34,8 +34,8 @@ jobs:
           moon fmt scripts/*.mbtx
           git diff --exit-code -- '*.mbt' '*.mbtx' || (echo "::error::moon fmt produced changes — run 'moon fmt' locally and commit" && exit 1)
 
-      - name: Check code
-        run: moon check
+      - name: Check code (a warning fails)
+        run: mise run lint:check
 
   unit-tests:
     runs-on: ubuntu-latest

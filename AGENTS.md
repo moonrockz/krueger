@@ -926,15 +926,15 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 |---------------------|------------------------------------------------|
 | `hooks:install`     | Install project git hooks via lefthook         |
 | `info:generate`     | Run `moon info` to generate interfaces         |
-| `lint:check`        | Run lint/type checks (`moon check`)            |
+| `lint:check`        | Run lint/type checks (`moon check --deny-warn`; a warning fails) |
 | `format:check`      | Run formatting checks (`moon fmt --check`)     |
 | `check`             | Run all checks (lint + format + tests)         |
 | `test:unit`         | Run MoonBit unit tests                         |
 | `test:bdd`          | Run MoonSpec BDD tests                         |
 | `test:e2e`          | Run end-to-end tests                           |
-| `test:scripts`      | Run MoonBit script tests (`scripts/*.mbtx`)    |
+| `test:scripts`      | Run MoonBit script tests (`scripts/*.mbtx`; a warning fails) |
 | `test:docs`         | Run the cookbook articles (`docs/cookbook/*.mbt.md`) |
-| `test:targets`      | Check and test the library on wasm, wasm-gc, js and native |
+| `test:targets`      | Check and test the library on wasm, wasm-gc, js and native (a warning fails) |
 | `test:parity`       | Score Elm parity against the golden lock (needs `corpus:fetch`) |
 | `parity:ratchet`    | Raise `tests/corpus/baseline.json` to the current counts |
 | `corpus:fetch`      | Download and verify the pinned corpus into `.corpus/` |

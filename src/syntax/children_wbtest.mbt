@@ -118,10 +118,10 @@ test "attributes_of_declarations agrees with the map for declarations and groups
         }
         let by_range = declaration_attributes(groups)
         let expected = declarations.map(d => {
-          by_range.get(range_key(d.range)).unwrap_or([]).to_array()
+          by_range.get(range_key(d.range)).unwrap_or([]).to_owned()
         })
         let got = attributes_of_declarations(declarations, groups).map(a => {
-          a.to_array()
+          a.to_owned()
         })
         if got != expected {
           fail(
