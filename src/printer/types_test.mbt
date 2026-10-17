@@ -108,3 +108,19 @@ test "bad types raise with the path of the bad node" {
     .to_equal(Some((InvalidName(Upper, "bad"), [])))
   })
 }
+
+///|
+test "a broken arrow operand starts after the arrow on its own line" {
+  let fields : Array[@ast.Node[@ast.RecordField]] = [
+    n({ name: n("first"), type_annotation: typed("LongTypeName", []), }),
+    n({ name: n("second"), type_annotation: typed("LongTypeName", []), }),
+  ]
+  @expect.expect(
+    @printer.print_type_annotation(
+      arrow(tvar("a"), n(Record(fields[:]))),
+      width=28,
+    ),
+  ).to_equal(
+    "a\n->\n    { first : LongTypeName\n    , second : LongTypeName\n    }",
+  )
+}

@@ -283,3 +283,15 @@ test "normalize_file wraps a lower-precedence operand of a built AST" {
     ),
   ).to_be_true()
 }
+
+///|
+test "commented tuple items and application arguments unwrap their parentheses" {
+  let source = parens_module(
+    "a = ( ({- c -} x), (y {- e -}) )\nb = f ({- c -} x) (y {- e -})\nc = f ({- c -} g x)\nd = if ({- c -} x) then 1 else 0\n",
+  )
+  let expected = parens_module(
+    "a =\n    ( {- c -} x, y {- e -} )\n\n\nb =\n    f {- c -} x (y {- e -})\n\n\nc =\n    f {- c -} (g x)\n\n\nd =\n    if {- c -} x then\n        1\n\n    else\n        0\n",
+  )
+  @expect.expect(@printer.format(source)).to_equal(expected)
+  @expect.expect(@printer.format(expected)).to_equal(expected)
+}

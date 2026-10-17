@@ -159,7 +159,7 @@ fn Ctx::declaration_doc(
           after_bar +
           // elm-format Box.hs `Datatype`: the arguments go on their own
           // lines when one of them is multi-line.
-          spaced(
+          constructor_args(
             self.join(),
             self.with_comments(
               name.range,

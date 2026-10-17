@@ -1,6 +1,6 @@
 {
   "TSFoster/elm-bytes-extra@1.3.0/src/Bytes/Decode/Extra.elm": {
-    "sha256": "4e11342334c5cb17132d21339a003fe8a00d27a18fb40ec9a5f976a337e4c00b",
+    "sha256": "ae075701397a4d5956429d0a2a357225ac7350148c07a65a4187daf3eae377e8",
     "elm_format": "stable"
   },
   "TSFoster/elm-bytes-extra@1.3.0/src/Bytes/Encode/Extra.elm": {
@@ -8,7 +8,7 @@
     "elm_format": "stable"
   },
   "TSFoster/elm-bytes-extra@1.3.0/src/Bytes/Extra.elm": {
-    "sha256": "3c08122e504b5dd7f06e6db42c381496f312831ffb9cf8347236f931a5956d0d",
+    "sha256": "1059212bd0fc03f4981f238ff74d03d132bc0c7dfe439415f64e87ddd362b91a",
     "elm_format": "stable"
   },
   "TSFoster/elm-md5@2.0.1/src/MD5.elm": {
@@ -16,7 +16,7 @@
     "elm_format": "stable"
   },
   "TSFoster/elm-sha1@2.1.1/src/SHA1.elm": {
-    "sha256": "ecc211e1a44a0437d240fe43e52f8eaac100fcddd27354c42002167f03fbf4d7",
+    "sha256": "a3c75c1ae3a08643dd84673c6102c1cfe60b4aaf9395ebb18601bb80f1030df7",
     "elm_format": "stable"
   },
   "TSFoster/elm-uuid@4.3.1/src/UUID.elm": {
@@ -32,8 +32,8 @@
     "elm_format": "stable"
   },
   "chain-partners/elm-bignum@1.0.1/src/Decimal.elm": {
-    "sha256": "bc782ea5c2f2ead652d453d428807a7a359fe691425b4f4d2bfa54d1780d4d27",
-    "elm_format": "changed"
+    "sha256": "3e34febe1a8a75d141f96ca22f035a850f48aabefe5075265661003d9a42a002",
+    "elm_format": "stable"
   },
   "chain-partners/elm-bignum@1.0.1/src/Integer.elm": {
     "sha256": "c8150ab8d750d4019714abba2e8d4292fdb2fa5d4596108cb4f4d9564c1ff450",
@@ -68,7 +68,7 @@
     "elm_format": "stable"
   },
   "danfishgold/base64-bytes@1.1.0/src/Decode.elm": {
-    "sha256": "2604d1d78bcef891277284338964a4320fff4afcb0bdbd3c65b55ac8100f0dbf",
+    "sha256": "2fa1625023667b3ac7cd1b142424c9fe80ac870836f394027ca3f888b49bc391",
     "elm_format": "stable"
   },
   "danfishgold/base64-bytes@1.1.0/src/Encode.elm": {
@@ -84,7 +84,7 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/HtmlParser.elm": {
-    "sha256": "09691a6b74813c892efb7388efccfebf80d57c7df3ee1f4a55ba3670ee3ee88f",
+    "sha256": "bb5a209acbd026a4e0b29b8cece84d7cccd5722307bf1c84651f0d061862fdae",
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/List/Helpers.elm": {
@@ -112,7 +112,7 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Html.elm": {
-    "sha256": "d879a459fd7374b790a7e82e95fbd95364f40f8433acf4f44cd9419470675e1a",
+    "sha256": "b040cba486b702158ac5e933614930eced474aa25d9e07a86409b4e9c278f9fa",
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/HtmlRenderer.elm": {
@@ -124,8 +124,8 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/InlineParser.elm": {
-    "sha256": "ab68ef960f9f6c02ed1542ded7d23eb5afc84b847fadc0f4e921a3d31e6fbf0a",
-    "elm_format": "changed"
+    "sha256": "b33e90d2db5cf3c1a4c8eabaed7fb927a27c229f1ed51e1ca7945b169fd751e7",
+    "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/LinkReferenceDefinition.elm": {
     "sha256": "dcba691ce4786c3a469883413c04f96106ce33c31ffdf75f8ce2436dda7ae8a7",
@@ -136,11 +136,11 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/OrderedList.elm": {
-    "sha256": "079b0850bee0230196ab29f3b03b60dc4aa9cd83ec0840450a0a070deea38d28",
+    "sha256": "aa1c33a7f8ab175e4b76840d86671e33ac427824ab07a937c9d2da7a43858b38",
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Parser.elm": {
-    "sha256": "fb31e0621b53269bbb9c128bcac384c8dead91f21bd5292db4e38ec28fcfd1ce",
+    "sha256": "f5144cba12b3de8b513a392d5cfea6e383a9b38a0342ca1f4d431e5818ff3433",
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/RawBlock.elm": {
@@ -148,7 +148,7 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Renderer.elm": {
-    "sha256": "455db27eead4a3fa5d1e36cec36e5f05f3e1c7f5edaa9575d02c2ea4b4c97ac3",
+    "sha256": "c15d9b11e1db389e9ae75e9e2aaecd36eb7c50f84c26d3976676e8876c25a156",
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/Table.elm": {
@@ -156,11 +156,11 @@
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/TableParser.elm": {
-    "sha256": "9502d114dadbf5923aa4d4f49ce6453757e16c5c10ca23f07819e877bbb24dff",
-    "elm_format": "changed"
+    "sha256": "dbc50e1a61e8394a3dc6578cf60219532601cbd396db31cffb89d8be27d580bd",
+    "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Markdown/UnorderedList.elm": {
-    "sha256": "89068fff5342dd6a60589972630b7809a945b09576c3da7247840b4b06a9b1ef",
+    "sha256": "5feca369d16ebb1e4913459e453aadd847420f7e83bfe46c485ed83020d82314",
     "elm_format": "stable"
   },
   "dillonkearns/elm-markdown@7.0.1/src/Parser/Extra.elm": {
@@ -180,20 +180,20 @@
     "elm_format": "stable"
   },
   "dosarf/elm-tree-view@3.0.0/src/Tree.elm": {
-    "sha256": "27cef3a86741845a83a9fc72f3266b538376189edb2497d5e82915763541f3ac",
+    "sha256": "eabd9df0d872fff8ddbbb37b5d975f74dafb1dda2576c16995629beadb44fa4c",
     "elm_format": "stable"
   },
   "dosarf/elm-tree-view@3.0.0/src/TreeView.elm": {
-    "sha256": "ea05db55a2b1c5c35b704a38b58dfcc987dd248c53318eca5c57d688d90dbac4",
+    "sha256": "f4137b2af2f54d9f38bc8729dbac486a16c14dc090c8189307268bdf5fa02664",
     "elm_format": "stable"
   },
   "elm-community/array-extra@2.6.0/src/Array/Extra.elm": {
-    "sha256": "f07fa41b135eeac15394a7c5f367338017b061f3aa1557127f2b983bf32c1fe9",
+    "sha256": "9ec7942e79bb80e88f35a173ad4a4bdd06845548b5474789ec55b265898eaa9c",
     "elm_format": "stable"
   },
   "elm-community/graph@6.0.0/src/Graph.elm": {
-    "sha256": "742cf204a04c3c09bfacfd613c2f80fb6494908e34d2a16ac87847bd0bea2502",
-    "elm_format": "changed"
+    "sha256": "c2939e6caa3215192d7f5cfb5e2b97b245f5b145295dfa306a2477c053ccbd53",
+    "elm_format": "stable"
   },
   "elm-community/graph@6.0.0/src/Graph/DOT.elm": {
     "sha256": "2894f0c46d49c82d3389d4843506c22ab78d78ff6454401f2f2659b68ba4fd62",
@@ -208,8 +208,8 @@
     "elm_format": "stable"
   },
   "elm-community/intdict@3.1.0/src/IntDict.elm": {
-    "sha256": "1127607e5bb9b62f6991f357a5beee4b367730ea9f2b623c3497863fcab938df",
-    "elm_format": "changed"
+    "sha256": "422675e7f0b9111398a45af852dfa18b9c071641e521cb8fe0cc94c41f05d998",
+    "elm_format": "stable"
   },
   "elm-community/intdict@3.1.0/src/IntDict/Safe.elm": {
     "sha256": "231c8d46a0f38ba6a23f59a4b8eb50c073b96c6cbd04a16eab056bf81ae77d68",
@@ -224,7 +224,7 @@
     "elm_format": "stable"
   },
   "elm-community/list-extra@8.7.0/src/List/Extra.elm": {
-    "sha256": "51d58764bc8c56a8bee237737a89b803eacf3d041ef94faeca03ea810b1e643f",
+    "sha256": "ad2a16189226bb54f53042bd5b58df113ac3d068fa80d9e4a89a3210eb9aae61",
     "elm_format": "stable"
   },
   "elm-community/maybe-extra@5.3.0/src/Maybe/Extra.elm": {
@@ -248,8 +248,8 @@
     "elm_format": "stable"
   },
   "elm-community/random-extra@3.2.0/src/Random/Extra.elm": {
-    "sha256": "eea17d58993ea75047dd0ce40146ede43e41a4e9f2d6c2afcba6e75d5239ee3b",
-    "elm_format": "changed"
+    "sha256": "d0d6bc5372a58c899b270562857b42463a3eb28e42ed216ff12d049e2bd49ce8",
+    "elm_format": "stable"
   },
   "elm-community/random-extra@3.2.0/src/Random/Float.elm": {
     "sha256": "8d4db5ad828f8647513d5b4ed76662a7dd7b7b810282fee0c07c1ac5705027ea",
@@ -276,7 +276,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/markdown@1.0.0/src/Markdown.elm": {
-    "sha256": "f159a904fe5123423ec4bf9a21369fb638c3c0da3bc39fddd84c11955b34b0b9",
+    "sha256": "462b1eba2e12f825153a07f82d052a05318f46899aab7fc24e372d6206bb6095",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/AsciiTable.elm": {
@@ -288,7 +288,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Fuzz.elm": {
-    "sha256": "82b9d4debfd9dbac5ef0baf0eedbc3c962d7e9c9c5c046cda9c3216986a53701",
+    "sha256": "06cec0dfa835f796c178e62ee38313c908b0d0c9917913765cf4252dde4039ad",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Fuzz/Float.elm": {
@@ -328,7 +328,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/RandomRun.elm": {
-    "sha256": "ec5ac26462247e4a0f2198949dae75eb7db1bcaf36b059ab1ffa04e1e0cb03e0",
+    "sha256": "ec4967836074c31f53e88c958cc57740e336d989eee15bfdc4d0d5a0291d5b8e",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Simplify.elm": {
@@ -336,7 +336,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Simplify/Cmd.elm": {
-    "sha256": "a96a12f1eea9939034cf60e5e17922f8ac984d3cc0a6a1feeee924522578a7f0",
+    "sha256": "298d91cb65c144627ea4c212d9b8487eeefb4e3a8c49dce61ef3a9709c4ca65c",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test.elm": {
@@ -356,7 +356,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Fuzz.elm": {
-    "sha256": "5fc28987a55602a45dc109cc637c0995b52dfe66b1dbfffd08d4f74ba7cd4c90",
+    "sha256": "ea375c9adf1bf0a7d8dea0b765232384b6a326d71692fc16a4ca98ed195b1d3f",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Html/Descendant.elm": {
@@ -384,7 +384,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/Query.elm": {
-    "sha256": "cb365aee278c454add50b621ce4c610f8954b1951cb77cf0f2bb8f8428f10f48",
+    "sha256": "825dffd2dcb14c7622016ff86ed1e3ffa8ca64cdcfe69376bfb8026bb975d35e",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Html/Internal/ElmHtml/ToString.elm": {
@@ -396,7 +396,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Html/Query.elm": {
-    "sha256": "378a5923eee2df69d6a062015ab78c389eacf9dde544b8b107b54e541d7909ad",
+    "sha256": "a526dbb3c77f1c496f319efb7706c55cb53649fbe234fe2bc74bce44da1cdb74",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Html/Query/Internal.elm": {
@@ -408,7 +408,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Html/Selector/Internal.elm": {
-    "sha256": "971a5cce4f13b59f7b222588ac6402f3ab6b6550b97f155d91f649d4bf2f7dc0",
+    "sha256": "031fa8492084b54076db22c336b3ab0392bae420bde13935bb7457c84ffd5d5e",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Internal.elm": {
@@ -424,7 +424,7 @@
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Runner/Distribution.elm": {
-    "sha256": "1590a286b3f0828826c5339167f1729b93e1010a23d7a7a0b8957e5e196e2549",
+    "sha256": "fcfe5da1e122916e6236f6b0817a27273af721f61e3c90de7604c012cd3b0c37",
     "elm_format": "stable"
   },
   "elm-explorations/test@2.2.1/src/Test/Runner/Failure.elm": {
@@ -432,7 +432,7 @@
     "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Browser.elm": {
-    "sha256": "b0ea0e877e63438aa47c44b00cd41950de00dcfa5e68059367ed6b40b734f232",
+    "sha256": "e1f0e149f2abd02639cbae3e9233f9cb3f654f7a5de4dc2bf05a2998210fa03a",
     "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Browser/AnimationManager.elm": {
@@ -456,11 +456,11 @@
     "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Debugger/History.elm": {
-    "sha256": "299b999c5a92b6fe256c4f6afbc55623f0f1dec60bcab5548cc1155a7f3cb403",
+    "sha256": "fe0aba368d01bb14143dd93b5327393ba99e82fcb7b4918a4beee942f66732f0",
     "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Debugger/Main.elm": {
-    "sha256": "b1e43ea72378f85831f2ca13b30a0dded1ab3fb3bc92576dc847a30e926242fb",
+    "sha256": "d47b4aab968e004664e41b5b55c08f24e76ce18f2077ab87e9b846fbdef46850",
     "elm_format": "stable"
   },
   "elm/browser@1.0.2/src/Debugger/Metadata.elm": {
@@ -480,7 +480,7 @@
     "elm_format": "stable"
   },
   "elm/bytes@1.0.8/src/Bytes/Decode.elm": {
-    "sha256": "f59b1548733a80c9dfe45df742fe9f710601335e1dfb83e269445310b9a87c22",
+    "sha256": "8cde450ae67c6f72dd23e448fab39f4d98fe04ab7311c8c70a13be33e699d38d",
     "elm_format": "stable"
   },
   "elm/bytes@1.0.8/src/Bytes/Encode.elm": {
@@ -492,28 +492,28 @@
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Basics.elm": {
-    "sha256": "68f41913becee346348ccdf1a7301ec681f53cd6e7aa499a794f4c2a09e11096",
-    "elm_format": "changed"
+    "sha256": "78455ded9022b5746350177bbf35e56861b359bef3ae18e5ffda25c00663457c",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Bitwise.elm": {
     "sha256": "faddf512a2e184931ae7c42f477eaed15de868145b8da98274dd39bec6f6a596",
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Char.elm": {
-    "sha256": "f247a6e209e0e87f48801b914e4ca25d1051b42317711fcfdc4755ec73ce4a9b",
-    "elm_format": "changed"
+    "sha256": "da842eb45b49c2050578174b87623ba3f8b4a8cce43770d85eeda1738d6c478a",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Debug.elm": {
     "sha256": "43f0559d2cfcde013ad73defbecff6a2c6584d01ee087029af5aafab56cd3abf",
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Dict.elm": {
-    "sha256": "0d14b50bf89dd1d84a0a0c99ac66aeb23bcb7751fcfa32b93db00445a54691d9",
+    "sha256": "67dd7c98586d9d9c455b65365cd23e6a4655820721226255d141fb8350b782fd",
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Elm/JsArray.elm": {
-    "sha256": "1a5775b652717bdee9db19e0c90fc5a56d82a1560d602b9414f50f07bda1abe5",
-    "elm_format": "changed"
+    "sha256": "84b6d8ee39692dd0dc692133c100939f46f0a910ad572de7f981156b6eaccaf8",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/List.elm": {
     "sha256": "d22a24ebd8017ab89fbf316e790763c1f8888758407e569cb441377cb8842692",
@@ -524,7 +524,7 @@
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Platform.elm": {
-    "sha256": "661983ed7f801365e2f56abd10bba6434e3dfab75b4290fc4e889f9cd77c4df5",
+    "sha256": "eebaaf977557d6ba0164228805baa3d62c8a919ffc59e88e08498c6814801b65",
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Platform/Cmd.elm": {
@@ -540,12 +540,12 @@
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Result.elm": {
-    "sha256": "77fed7cb48352b9f1dc4a25ca60aaa5b78ca2e5bb80222d5e0ff0c8aefb7b176",
+    "sha256": "bc44ac4737dffeefd5b4830cf804d7d19d40a86cb817f797af2f7ee12163bb56",
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Set.elm": {
-    "sha256": "df0267bbc1dee5e86f29eece736aeee02f3c6602d613a483993b81a8bca67e88",
-    "elm_format": "changed"
+    "sha256": "9ccb6d8f139e80732bc970c40121b809ae70daacee5f1d3c43cdad42cac8cbd8",
+    "elm_format": "stable"
   },
   "elm/core@1.0.5/src/String.elm": {
     "sha256": "9e5735b6a441bd8d6c77cfe8841518150cc5f7d1979112e9307d61ba2aa93b80",
@@ -593,27 +593,27 @@
     "elm_format": "stable"
   },
   "elm/http@2.0.0/src/Http.elm": {
-    "sha256": "4c1524211b14e5d13115df4cbb09a361539799c624d7f28053a01dfe827c93cd",
+    "sha256": "4d0c673ad0924eccd5f71d64fb142756a214430463b22c773ff8297922d95631",
     "elm_format": "stable"
   },
   "elm/json@1.1.4/src/Json/Decode.elm": {
-    "sha256": "924230a9e1ec1602ab8e1d24032213261b912550e5e3dc1ea28c672157ead503",
-    "elm_format": "changed"
+    "sha256": "5e14acb557561e69fd5b02e0457bb3ff2606b0fba01d61b4041b6eb6789cd9d5",
+    "elm_format": "stable"
   },
   "elm/json@1.1.4/src/Json/Encode.elm": {
     "sha256": "1258395ea910603a8330625b71ac512d22a6eb2c911380596815b1fc51a33b80",
     "elm_format": "stable"
   },
   "elm/parser@1.1.0/src/Parser.elm": {
-    "sha256": "2cf8281eb518c11a74e9e359019738135a9895307a9af7f593886f8b4c9bcdaf",
-    "elm_format": "changed"
+    "sha256": "5379c4d05873888ea10fe577b8179207c00ef996f09dafed0bb14d8d25d5cdd8",
+    "elm_format": "stable"
   },
   "elm/parser@1.1.0/src/Parser/Advanced.elm": {
-    "sha256": "35126e0447b59cf23eaf7aa41f027bbbc48f192282568500d81541ca522d0dca",
+    "sha256": "693abf007becd2f18e05976c2774dde19f131e64da7eeced6da44370fbb51954",
     "elm_format": "stable"
   },
   "elm/random@1.0.0/src/Random.elm": {
-    "sha256": "598972598a1149e69ee6c5848d89788b7058fd387e3ee973e8c9e67c54dc5b51",
+    "sha256": "3ba81cfef2868443736872ea4f9873ddb4d6eb36f74c1849667c9ea2d62b4a6e",
     "elm_format": "stable"
   },
   "elm/regex@1.0.0/src/Regex.elm": {
@@ -641,7 +641,7 @@
     "elm_format": "stable"
   },
   "elm/time@1.0.0/src/Time.elm": {
-    "sha256": "df0253f043353ab6e846b15d19a98b7c13ea9901a6c4375a50dba61ec437e847",
+    "sha256": "28486be13b0297df036c925064ae8253bfbe0569451e151b8ded7f91b0669838",
     "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url.elm": {
@@ -661,7 +661,7 @@
     "elm_format": "stable"
   },
   "elm/url@1.0.0/src/Url/Parser/Query.elm": {
-    "sha256": "5d44645a84e353b1339347352eb8d0d067ce0232bfc6d3b4d98ac37c9686c7d0",
+    "sha256": "9d569173590c8b27e616a13a9307e43fe37d28db1d17bfcfc1c515215710164e",
     "elm_format": "stable"
   },
   "elm/virtual-dom@1.0.5/src/VirtualDom.elm": {
@@ -673,8 +673,8 @@
     "elm_format": "stable"
   },
   "fabhof/elm-ui-datepicker@5.0.0/src/DatePicker.elm": {
-    "sha256": "eae04f711cb60208725524c53d3c35f323e900a0e680bd350989c1e22c68abbc",
-    "elm_format": "changed"
+    "sha256": "dd5cefb9577d234e9931fcb9783b7ddb6a26fce0081730137f2e718ee5283dcb",
+    "elm_format": "stable"
   },
   "fabhof/elm-ui-datepicker@5.0.0/src/Internal/Date.elm": {
     "sha256": "881c4f290ba2ccce987ac626ce062b7eb8fe7acd1a7c4527cb6add4e33017a61",
@@ -689,7 +689,7 @@
     "elm_format": "stable"
   },
   "justinmimbs/date@4.0.1/src/Date.elm": {
-    "sha256": "aa8aab583bf37c6635af5530bc1fb2ccb9c16d7d1ff1001294733ae76b3c5875",
+    "sha256": "21cce47a6aa1edc90f05f4e38a5ac89dda68c3ed63e7ec4772e76f3cd1179839",
     "elm_format": "stable"
   },
   "justinmimbs/date@4.0.1/src/Pattern.elm": {
@@ -705,7 +705,7 @@
     "elm_format": "stable"
   },
   "justinmimbs/timezone-data@2.1.4/src/TimeZone/Specification.elm": {
-    "sha256": "e81fc96c5e2e8eee851a1edff7ffdac4c95a12fdc69c415f537e01eef8990412",
+    "sha256": "34eda6834a8af54daf4f59ab25e8841d6743000bd1a4718cb22fea8f75e1ffc9",
     "elm_format": "stable"
   },
   "lattyware/elm-fontawesome@6.0.0/src/FontAwesome.elm": {
@@ -765,16 +765,16 @@
     "elm_format": "stable"
   },
   "matthewsj/elm-ordering@2.0.0/src/Ordering.elm": {
-    "sha256": "a282deaf6f85027514501b0a0f2eae519e6a30f18e4a6d7c31b294a512f89b4e",
-    "elm_format": "changed"
+    "sha256": "68d061108c4819b25553abce212e92a2f55d320e482322affd6df99c8d3a23ee",
+    "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element.elm": {
-    "sha256": "7082aa8f73865e2cdd114e654653f65594319d3c64409f59e01d879f21cd6f85",
-    "elm_format": "changed"
+    "sha256": "77856141e9172eb6a9848f85afdaaa170445790d30ad0ec2cb5d7e80c9b729a2",
+    "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Background.elm": {
-    "sha256": "47f7ba5b91ed3a05cff26bee898a0a45245d89960143846a92875f3e7fe78af8",
-    "elm_format": "changed"
+    "sha256": "f0464803e756c11f8bcc05e289c577c405f6bab198b0ed31b0cf9c6bfe241ec6",
+    "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Border.elm": {
     "sha256": "467851e0900a4993e0c539c9f18548202d063a5f1fde787be7202eade43421e9",
@@ -789,12 +789,12 @@
     "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Input.elm": {
-    "sha256": "e7474a1711465f045d685b1a47451613a305d298bba77ed1ab1b4ce2232048d4",
-    "elm_format": "changed"
+    "sha256": "e1e9a264fc89f0f6ec875072fc7a18b66816382d55678298f6c01a8332f60ea9",
+    "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Keyed.elm": {
-    "sha256": "0876c5602afa9c0dd6cadae5efb1fe50e230071f5bfb34e53e1dff4ea1efe724",
-    "elm_format": "changed"
+    "sha256": "9481f0d9fa0b4e5e6fe433a267771c25f954be2f877a1d94878c1757d4f924e6",
+    "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Element/Lazy.elm": {
     "sha256": "842d94da1620abd26ced574c57703d564781e19d0eef809f53e2b43dc08a9410",
@@ -809,11 +809,11 @@
     "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Internal/Grid.elm": {
-    "sha256": "e0363fdf1eac54b54d4a8b37901695df151faab57bcaed1443241b5a54e05df4",
-    "elm_format": "changed"
+    "sha256": "59f65beea03980d9432815b95dab52d4313af6c44d28dded03a2299818b6f104",
+    "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Internal/Model.elm": {
-    "sha256": "3f847f28be75195441ca8829acc1897615e576788f28a9029d938f59807e8931",
+    "sha256": "7cf01b3bc1dd4a6717cf0ae8ccd0ad84402a66bdab1e86183a4cdd0405886996",
     "elm_format": "stable"
   },
   "mdgriffith/elm-ui@1.1.8/src/Internal/Style.elm": {
@@ -821,8 +821,8 @@
     "elm_format": "stable"
   },
   "miniBill/elm-unicode@1.0.3/src/Unicode.elm": {
-    "sha256": "24ba49d6ea24146a2e254d1b6f891073962696c6fb47865c372e5bdaffcd48b9",
-    "elm_format": "changed"
+    "sha256": "0abfb6bfa1675fe29c9dd80002a0a81a5725c03d992bb31373e676af737e0b9d",
+    "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Failure.elm": {
     "sha256": "941fe8b8caecc768fd15c438a83be522926af4679c0fbea367cd735c2b7245b7",
@@ -833,7 +833,7 @@
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/ConsoleColor.elm": {
-    "sha256": "e059368ae9961ae2bd181d8635903eec5287b412fd080816fe4ea752cd4ed291",
+    "sha256": "bf74c64887c6c99f041a760bccddb6ea031417ee5bf4cf5a58efa1d75e022e85",
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Reporter/ConsoleDebug.elm": {
@@ -857,8 +857,8 @@
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Result.elm": {
-    "sha256": "29d31e38260cc0db3c10fb2d60e83f34645274a3b0f9d7299a7f9557e18c947e",
-    "elm_format": "changed"
+    "sha256": "4f51ffe1aa460d6d2208c37b4e0e451647c91472aaf6bb39a6db237a85e532c3",
+    "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Runner.elm": {
     "sha256": "a1526cad7ed6c3dd0482b14da10eedf87dd6402a97c8220b8c18db27678736a1",
@@ -869,7 +869,7 @@
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/ConsoleFormat.elm": {
-    "sha256": "b1124971928a23402bdf32b2fb1f7c302bdf89a1fcf522743beb6f137a549a74",
+    "sha256": "7798ca24f81a8827fb019cfecf02c994cb8d9993483d0a9c2311fa6f9a8f9751",
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/ConsoleText.elm": {
@@ -877,7 +877,7 @@
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/Diff.elm": {
-    "sha256": "90e564182ad877d5da958196c53cbeaf7c21ae346ded59f7d90362189bbd5451",
+    "sha256": "d767fa98ef0d18c5cd49c308edf5ec72d5743c599561da2996e6dacad2222c03",
     "elm_format": "stable"
   },
   "mpizenberg/elm-test-runner@6.0.0/src/ElmTestRunner/Vendor/FormatColor.elm": {
@@ -901,7 +901,7 @@
     "elm_format": "stable"
   },
   "myrho/elm-round@1.0.5/src/Round.elm": {
-    "sha256": "afd7ac3076bbfd03c2425c107288b4a015563c107df4799564553f66f216b6b8",
+    "sha256": "297aeffa2681af5ed8b94e7f58d4809449b815e157ddc34b15df43107d2ada62",
     "elm_format": "stable"
   },
   "perzanko/elm-loading@2.0.5/src/Loading.elm": {
@@ -933,7 +933,7 @@
     "elm_format": "stable"
   },
   "pzp1997/assoc-list@1.0.0/src/AssocList.elm": {
-    "sha256": "aeaeb7092bc715943fa5e20b1ab36751ed3528bef73f5b1309df14bb5b3703c1",
+    "sha256": "3df90cdf6e602cc9d0bf92670b1a206d8b91ac822fdbc58403fe7c0ac87f2c00",
     "elm_format": "stable"
   },
   "robinheghan/murmur3@1.0.0/src/Murmur3.elm": {
@@ -941,8 +941,8 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Css.elm": {
-    "sha256": "c7a4cd4b359b7aa52fe90a8243192471b1dab6d06404c73400346a37fc9a408d",
-    "elm_format": "changed"
+    "sha256": "e9fcadf743aefe500e607acacf6b7a9db6ffc79f48f3bda849434d5bf044ca18",
+    "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Css/Animations.elm": {
     "sha256": "d8f38d0c1e0aefee6e32749c70c2d73a1d707bbb64a56234734f128aba0faa33",
@@ -965,7 +965,7 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Css/Preprocess/Resolve.elm": {
-    "sha256": "d98aaf8c5726662f6b63004dc71f7f14cc0bb4c842a6731762aa4123fc09e0d4",
+    "sha256": "7f2e634b94eb13f64fb127215dbfe872821508c139b50e2ef26b8ced357dab5d",
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Css/String.elm": {
@@ -973,7 +973,7 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Css/Structure.elm": {
-    "sha256": "fe08ee447ab289b7896f85bd0f6d261c4f79ecdc56a7e69e33ab0566870e1373",
+    "sha256": "267f47e732f1090d2895a822a1d8cb867c1d463203c82e1d46c0ea612a376b1c",
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Css/Structure/Output.elm": {
@@ -993,7 +993,7 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Html/Styled.elm": {
-    "sha256": "ff37e909a6b46bcc5642ed51ea6467da86b6ab90dca452fb64242998e449e014",
+    "sha256": "f125093902e3c569eb401cb3af07bc463c726b150872ebc503e358fdb91f9427",
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Html/Styled/Attributes.elm": {
@@ -1017,7 +1017,7 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Svg/Styled.elm": {
-    "sha256": "2dc6fc8aa610cb5d673514289832d3595af7a5450779c5bf0bd5227cc891b2b6",
+    "sha256": "661918f8220fe984bccf38e90102f4b40a6bea23631e515cba94d703daadfb53",
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/Svg/Styled/Attributes.elm": {
@@ -1041,7 +1041,7 @@
     "elm_format": "stable"
   },
   "rtfeldman/elm-css@17.1.1/src/VirtualDom/Styled.elm": {
-    "sha256": "184ef144744f6576bae4330af45b1a840d360667b993dcbba74c6faec5e4a10c",
+    "sha256": "01c91915a1a6059ea5dfbda2cd1a1c60141cfd008b68321f85d6fad36085ded3",
     "elm_format": "stable"
   },
   "rtfeldman/elm-hex@1.0.0/src/Hex.elm": {
@@ -1057,11 +1057,11 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Accordion.elm": {
-    "sha256": "988b2561d8e059b1d7eeafa926f08fd4a27b538a0fde0b24837958a8eeb6bb7f",
-    "elm_format": "changed"
+    "sha256": "1a81078053e147f7fcee33feb85df2cb53f15b4a2b1319d1880281b2e18b053f",
+    "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Alert.elm": {
-    "sha256": "8678d8d0136cbfd4bed826c68c2bdcdbe34a7437f0c83d3b7ad4200fa428f786",
+    "sha256": "2761b01308985fed7579db27951e7fb27dd13d5b159688abc3081aaa0dff413f",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Badge.elm": {
@@ -1077,7 +1077,7 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/ButtonGroup.elm": {
-    "sha256": "7b035b87a02acb4bbbbc9d729bda140bbc256616d36da815041594ee8e416812",
+    "sha256": "853da4166836ffe0728e164720a6929a9c3a3c1920759017a6f9e788e0f73411",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/CDN.elm": {
@@ -1085,19 +1085,19 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Card.elm": {
-    "sha256": "f918afc95ab85d36d6e8b83fe69fa4548346b2fe3b68bd1fa7618e7979feed43",
+    "sha256": "ccb08279167ca1ee445d8e54691ee3a9bdec32af3088eaa8040713a453550175",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Card/Block.elm": {
-    "sha256": "cc42040d87dc237d18edfb53848c8bfb38d2c9f24fd2fe6a0000b62812ac1f23",
+    "sha256": "6cda8ea2cd00b2bd38389709cb8e328b21eb998d5387148a8d56c3e280651c5d",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Card/Internal.elm": {
-    "sha256": "2b0e51e5129a0168f37abb88d19b4627a3a6cf50821778147e8ae5130ece72d9",
+    "sha256": "5b4cce1e5cc305130633355b314f8f341d749363bfa650249074606db030c14f",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Carousel.elm": {
-    "sha256": "3acac9b7c0028924d18c9d05346e81c621eb2947001369420d230e7cde95295c",
+    "sha256": "0c6b73a9d4ef3cdfdf92eec14eb16bf5b25eaf9e35614cf1654a48a267c727a6",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Carousel/Slide.elm": {
@@ -1109,20 +1109,20 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Dropdown.elm": {
-    "sha256": "a420547f65352aafd4e6cc7cb3eb8c29620a1091bad220d668120d7373d5501f",
-    "elm_format": "changed"
+    "sha256": "abc41aa5481c72a015bdcbdcc46d6e55f2b58c2e8a4a75698affa2a595bf9b6c",
+    "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form.elm": {
     "sha256": "391c068f850fa4340653d6f62478cdb5e8c0610fc3705f60bab68aa7445ef524",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Checkbox.elm": {
-    "sha256": "7ad9368e96238269ce01fd75eca9687df07978d46b7c54c09eddc69137eace65",
+    "sha256": "63b41f41e2a8d7d90e87fc1fee502c5c2d660ed62e11b0c9de80ccaa35b6f1a1",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Fieldset.elm": {
-    "sha256": "6883796fe00fbe6376e4c101ada1ebcc6413908b131eeb4d58cfdd3a140222c2",
-    "elm_format": "changed"
+    "sha256": "a355fff7e2d62abb974e4072b49550a417b63843b02e08703587606cc688e261",
+    "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/FormInternal.elm": {
     "sha256": "e9cd1651dc01c481c6ae6c44cf25130f8618b8bb0160b39a06d5b16b88260230",
@@ -1133,11 +1133,11 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/InputGroup.elm": {
-    "sha256": "a5b815aa3e66f3264417b982fc4526dc203d3bf39aa79f6803bfffbcb531cbf5",
-    "elm_format": "changed"
+    "sha256": "5aacd4a0ace857679502fd68fc3825de0d46add7da0e041a7d9974c88a4d3a40",
+    "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Radio.elm": {
-    "sha256": "61ef2318c8771ed1db838eccda26203d927b4bfafb73c27bb48cdf9f5f033650",
+    "sha256": "1256ca381558c3394699a30ed83f62cd44fcbd1fa77b0ef14e185ff609305b0f",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Form/Range.elm": {
@@ -1169,7 +1169,7 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Grid/Internal.elm": {
-    "sha256": "035ac77663aa556448ac2e67a3e50f1dfbf7c3fc0cea424caefc6e3167d39c6f",
+    "sha256": "f7c691a01db11c5609c13abf2575ddb912f7e0f49fe2460729c2dce141457800",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Grid/Row.elm": {
@@ -1177,7 +1177,7 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Internal/Button.elm": {
-    "sha256": "09a4f225e7b0d01ef878c3e4a48adafa4a12e3ce1392183d6d8184772dd7e929",
+    "sha256": "4dec690ef15ac9649b166bf25d5783796aa42ea7bea36576bfa914088ba371c0",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Internal/ListGroup.elm": {
@@ -1197,19 +1197,19 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Modal.elm": {
-    "sha256": "0fc33e30f23ea4b302cd381558ca18f16fbb32a94b3216254fcbcb7be8382308",
+    "sha256": "2b7106b197d8261dcae9109eb567445e30c6763ccade931123a503c5985d7656",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Navbar.elm": {
-    "sha256": "b9e84fa6665290da7489cd5b5436dc0f5c209fad1a42ced1dc7f2f91e91ad33c",
+    "sha256": "c22e4312c2ef5112121996abd756cf35dc28179569c215a3a8c1443701a59ae5",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Pagination.elm": {
-    "sha256": "0e7e04b92a03a7be2a9266e738360ce91bab7821064e1c713a5c06e34457981e",
+    "sha256": "a93a4d258b6477074693134f7f8e5e4451feee2adaa5dd4b81d1c97c3df248b0",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Pagination/Internal.elm": {
-    "sha256": "65bd8d9d6aa38c33d7b88075d7494462db649abf340eff457c7882dea0a4414c",
+    "sha256": "de3eb838535814f41ea160c617f067fde1c2df5db00e9dd954f77d3b3abc87e5",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Pagination/Item.elm": {
@@ -1217,7 +1217,7 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Popover.elm": {
-    "sha256": "1b36b79f1007c17cbaf8985be3bf88cd7ebb802cb48ef0eeb9d9277e90d812f0",
+    "sha256": "5964e8240a8e9321a046051c7bc8ac584b367a6e1f323b497fa6e2a3df3fa75b",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Progress.elm": {
@@ -1229,11 +1229,11 @@
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Tab.elm": {
-    "sha256": "f23a47c0cb79acdd446666b23f269b47b36cae9d022bba9450faf253fac4e294",
-    "elm_format": "changed"
+    "sha256": "ef71489955e5a7949d90ecac24222d3d503a43783597a2ab974bad60eb336fd8",
+    "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Table.elm": {
-    "sha256": "052a0811ba28c5c7f7d1025f2e54c4c53d770d636f8a3f812d04ff389d0bd008",
+    "sha256": "202be5b8645970e83808acd7aa93c0a56cd4b79bd95cb0c1c2a3e17fe8585798",
     "elm_format": "stable"
   },
   "rundis/elm-bootstrap@5.2.0/src/Bootstrap/Text.elm": {
@@ -1269,8 +1269,8 @@
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Char/Extra.elm": {
-    "sha256": "c67fa30aca1215960e3fcd84715c20f788d9ee20398f43e67a518398c4af8445",
-    "elm_format": "changed"
+    "sha256": "ceffa8067c56d9721accdaf433424b19a48daf5952bd3d759b46ac9dc466db0c",
+    "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Dependency.elm": {
     "sha256": "11f67c0385f34c2c91b197970b75bc05b36efd12acbd26bdf68cd2fa0b40333f",
@@ -1301,15 +1301,15 @@
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Declarations.elm": {
-    "sha256": "8a9d9a64d8a43e042ca66d28216467d261df8a1cdc344abfa4d1f735ea1d5dfa",
-    "elm_format": "changed"
+    "sha256": "c74026d4be8d7409ae117983a4c2f96791e6266033dc0ecd7fed90067d5d710e",
+    "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Expose.elm": {
     "sha256": "283b1d1c62f915b336dcde139154baae1995b43130ab7a9cd6237c724b1f076b",
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Expression.elm": {
-    "sha256": "e6950accdb618b040a355d76c709c6ef2298e50a441ab4598de3d9f274e20c3e",
+    "sha256": "341aaec68e53390fe3436ca8f8d451dc354e7d7523e005c451b067105e2b7361",
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/File.elm": {
@@ -1329,7 +1329,7 @@
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Patterns.elm": {
-    "sha256": "c216c123ad3b99ba0b0a3addef5a03e9ad47ddeeabe83002f5135beac6c62b64",
+    "sha256": "188e7da6e8e901402570fb503bc88dff14623650d0cf481409cc3693e7d75c1c",
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/Tokens.elm": {
@@ -1337,7 +1337,7 @@
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Parser/TypeAnnotation.elm": {
-    "sha256": "6400ceb1b634334c148bd78e34cb1968d3274566a7e4f10ff768b4ef9f1d560a",
+    "sha256": "0158629eb3944f02220d7e416490a40d17116ac14306c9e4be3c2a4adc21ed4e",
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Processing.elm": {
@@ -1413,8 +1413,8 @@
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Syntax/TypeAnnotation.elm": {
-    "sha256": "51bd0b7be0cda3275377916ec355316c3a9f15d00ea05ebc317132b87e6e26ca",
-    "elm_format": "changed"
+    "sha256": "991848a6bc7014dd86489cece4535c6f8fa9f9bc8c2869ffa1073de4c431619d",
+    "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/Elm/Writer.elm": {
     "sha256": "cb53eda33d15ded62514a14114c47c26b17b529d9c2a544588a473ed7e632297",
@@ -1425,8 +1425,8 @@
     "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/ParserFast.elm": {
-    "sha256": "2b8e58574a4f4f435e04158c82cd947d4edc742416ea3b3f968f4c2de524853d",
-    "elm_format": "changed"
+    "sha256": "ec97458a8a5a2ae9df5f757de48dbd64e110afef616d0d9d512216605f84dfc6",
+    "elm_format": "stable"
   },
   "stil4m/elm-syntax@7.3.9/src/ParserWithComments.elm": {
     "sha256": "a2458adffcbd176501f51494d46458c988dd076073a05b27ce83ade1d880bb3a",
@@ -1449,7 +1449,7 @@
     "elm_format": "stable"
   },
   "waratuman/time-extra@1.1.0/src/Time/Extra.elm": {
-    "sha256": "f8049e302315e7f6aec390d637fadd72d0c37a1858311797e5461e7f14c1c3ca",
+    "sha256": "f310c4163ae9512e0606e38e109bf66fab5ca8a4d9124ac166449ee0d8be35eb",
     "elm_format": "stable"
   }
 }

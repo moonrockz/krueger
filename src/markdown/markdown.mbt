@@ -74,13 +74,14 @@ pub fn format_doc(
   if too_nested(md) {
     return text
   }
+  let reparse = Reparse::new(md)
   // Where elm-format's parser reads the text differently, a pass edits
   // the text so that cmark reads it the same way, then parses again (an
   // edit can change what comes after it).
   for pass in 0..<8 {
     let doc = @cmark.Doc::from_string(md, layout=true, locs=true, strict=true)
     let edits = []
-    let blocks = to_blocks(doc.block, md, edits) catch {
+    let blocks = to_blocks(doc.block, md, edits, reparse) catch {
       TooDeep => return text
     }
     if edits.is_empty() || pass == 7 {
@@ -341,6 +342,7 @@ fn to_blocks(
   root : @cmark.Block,
   src : String,
   edits : Array[Edit],
+  reparse : Reparse,
 ) -> Array[Block] raise TooDeep {
   let stack : Array[Conv] = [
     ConvSeq({ items: flatten(root), next: 0, out: [], }),
@@ -375,6 +377,14 @@ fn to_blocks(
           Paragraph(p) => {
             let starts = []
             let lines = inline_lines(p.v.inline, src, starts~)
+            let key = lines.join("\n")
+            if reparse.stops.contains(key) {
+              continue
+            }
+            if reparse.html.get(key) is Some(html) {
+              s.out.push(Leaf(Html(html)))
+              continue
+            }
             edits.append(renumber_marks(lines, starts, src))
             // cheapskate difference (bd krueger-rne.12): an HTML block does not
             // interrupt a paragraph; its lines continue the paragraph.
@@ -385,6 +395,20 @@ fn to_blocks(
               s.next += 1
             }
             para_blocks(lines, s.out)
+          }
+          HtmlBlock(h) if h.v.0.to_array() is [first, ..] &&
+            starts_html_block(first.v) => {
+            let end = s.items
+              .last()
+              .map(b => b.meta().loc.last_ccode + 1)
+              .unwrap_or(src.length())
+            let edit = reparse.html_block(h, src, end)
+            while s.items.get(s.next) is Some(next) &&
+                  next.meta().loc.first_ccode < edit.end {
+              s.next += 1
+            }
+            edits.push(edit)
+            leaf_blocks(block, src, s.out, after_reference)
           }
           CodeBlock(c) => {
             edits.append(fence_closes(c, src))
@@ -406,7 +430,9 @@ fn to_blocks(
       ConvList(l) if l.next < l.items.length() => {
         let item = l.items[l.next]
         l.next += 1
-        stack.push(ConvSeq({ items: flatten(item), next: 0, out: [], }))
+        let items = flatten(item)
+        edits.append(reparse.list_end(items, src))
+        stack.push(ConvSeq({ items, next: 0, out: [], }))
       }
       ConvList(l) => {
         ignore(stack.pop())
@@ -967,4 +993,109 @@ fn ensure_newline(text : String) -> String {
   } else {
     text + "\n"
   }
+}
+
+///|
+/// Fresh paragraph markers let cmark reparse block boundaries without
+/// exposing implementation text in the formatted documentation.
+priv struct Reparse {
+  prefix : String
+  html : Map[String, String]
+  stops : @hashset.HashSet[String]
+}
+
+///|
+fn Reparse::new(src : String) -> Reparse {
+  let mut prefix = "kruegerblock"
+  while src.contains(prefix) {
+    prefix += "x"
+  }
+  { prefix, html: Map([]), stops: @hashset.HashSet([]), }
+}
+
+///|
+fn Reparse::marker(self : Reparse) -> String {
+  self.prefix + (self.html.length() + self.stops.length()).to_string() + "x"
+}
+
+///|
+/// Cheapskate reads HTML through the first blank line, regardless of
+/// CommonMark's closing tag or comment rules. Replace that whole run with
+/// a paragraph marker so the rest is parsed as Markdown on the next pass.
+fn Reparse::html_block(
+  self : Reparse,
+  h : @cmark.Node[@cmark.HtmlBlock],
+  src : String,
+  limit : Int32,
+) -> Edit {
+  let lines = h.v.0.to_array()
+  let start = lines[0].meta.loc.first_ccode
+  let raw = []
+  let mut at = start
+  let mut end = start
+  let mut i = 0
+  while at < limit {
+    let eol = find_newline(src, at, src.length())
+    let line = if i < lines.length() {
+      lines[i].v
+    } else {
+      slice(src, skip_prefix(src, at, eol), eol)
+    }
+    if strip(line) == "" {
+      break
+    }
+    raw.push(line)
+    end = eol
+    at = eol + 1
+    i += 1
+  }
+  let marker = self.marker()
+  self.html[marker] = raw.join("\n")
+  { start, end, text: marker, }
+}
+
+///|
+/// Two blank lines end a list item in Cheapskate. A paragraph at column
+/// one closes cmark's list before the following indented code. The marker
+/// is omitted from the converted blocks, so the code still follows the list.
+fn Reparse::list_end(
+  self : Reparse,
+  items : Array[@cmark.Block],
+  src : String,
+) -> Array[Edit] {
+  let edits = []
+  let mut blanks = 0
+  for item in items {
+    match item {
+      BlankLine(_) => blanks += 1
+      _ => {
+        if blanks >= 2 {
+          let @cmark_base.LinePos(_, start) = item.meta().loc.first_line
+          if start >= 0 {
+            let marker = self.marker()
+            self.stops.add(marker)
+            // Keep an outer block quote, but leave the list's indentation.
+            let end = skip_prefix(
+              src,
+              start,
+              find_newline(src, start, src.length()),
+            )
+            let prefix = slice(src, start, end)
+            let quotes = prefix.to_array().iter().filter(c => c == '>').count()
+            edits.push({
+              start,
+              end: start,
+              text: "> ".repeat(quotes) +
+              marker +
+              "\n" +
+              "> ".repeat(quotes) +
+              "\n",
+            })
+          }
+        }
+        blanks = 0
+      }
+    }
+  }
+  edits
 }

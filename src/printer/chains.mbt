@@ -294,12 +294,24 @@ fn chain_doc(
   let mut acc = leads[0] + docs[0]
   for i, s in symbols {
     if s == "<|" {
-      let before = if !fit || i > start || line_lead[i + 1] {
+      if fit && i == start && !line_lead[i + 1] {
+        acc = @pretty.ungroup(acc)
+      }
+      let before = if !fit ||
+        i > start ||
+        line_lead[i + 1] ||
+        @pretty.can_break(acc) {
         @pretty.line()
       } else {
         @pretty.text(" ")
       }
-      piped.push(group(acc + before + leads[i + 1] + @pretty.text("<|")))
+      piped.push(
+        if fit && i > start {
+          acc + before + leads[i + 1] + @pretty.text("<|")
+        } else {
+          @pretty.group(acc + before + leads[i + 1] + @pretty.text("<|"))
+        },
+      )
       acc = docs[i + 1]
       start = i + 1
     } else {

@@ -189,18 +189,14 @@ test "text at the nesting limits is formatted" {
 }
 
 ///|
-test "HTML blocks end where CommonMark ends them" {
-  // cheapskate difference, bd krueger-uyd: elm-format ends an HTML block
-  // at the first blank line. These pin krueger's output; elm-format gives
-  // " A.\n\n<!-- a_b -->\nc_d\n\n" and
-  // " A.\n\n<pre>\na_b\n\nc\\_d\n</pre>\n\n".
+test "HTML blocks end at the first blank line" {
   @expect.expect_all(s => {
     s
     .expect(@markdown.format_doc(" A.\n\n<!-- a_b -->\nc_d\n"))
-    .to_equal(" A.\n\n<!-- a_b -->\n\nc\\_d\n\n")
+    .to_equal(" A.\n\n<!-- a_b -->\nc_d\n\n")
     s
     .expect(@markdown.format_doc(" A.\n\n<pre>\na_b\n\nc_d\n</pre>\n"))
-    .to_equal(" A.\n\n<pre>\na_b\n\nc_d\n</pre>\n\n")
+    .to_equal(" A.\n\n<pre>\na_b\n\nc\\_d\n</pre>\n\n")
   })
 }
 
@@ -217,6 +213,46 @@ test "a long run of backticks takes linear time" {
       s
       .expect(@markdown.format_doc("`".repeat(n) + "a`\n"))
       .to_equal(" " + "\\`".repeat(n - 1) + "`a`\n")
+    }
+  })
+}
+
+///|
+test "two blank lines end a list before indented code" {
+  let source = " A.\n\n  - one\n  - two\n\n\n    x_y\n"
+  let expected = " A.\n\n  - one\n  - two\n\n```\nx_y\n```\n\n"
+  @expect.expect(@markdown.format_doc(source)).to_equal(expected)
+  @expect.expect(@markdown.format_doc(expected)).to_equal(expected)
+}
+
+///|
+test "HTML and list boundaries preserve nested containers and fenced code" {
+  @expect.expect_all(s => {
+    for
+      (source, expected) in [
+        (
+          "> <pre>\n> a_b\n>\n> c_d\n> </pre>\n", "\n\n> <pre>\n> a_b\n>\n> c\\_d\n> </pre>\n\n",
+        ),
+        (
+          "- <pre>\n  a_b\n\n  c_d\n  </pre>\n", "\n\n  - <pre>\n    a_b\n\n    c\\_d\n    </pre>\n\n",
+        ),
+        (
+          "<!-- a_b -->\n# raw_header\n- raw_item\n\n*c_d*\n", "\n\n<!-- a_b -->\n# raw_header\n- raw_item\n\n_c\\_d_\n\n",
+        ),
+        (
+          "> - one\n>\n>\n>     x_y\n", "\n\n>   - one\n>\n> ```\n> x_y\n> ```\n\n",
+        ),
+        (
+          "- one\n  - inner\n\n\n    x_y\n", "\n\n  - one\n      - inner\n\n```\nx_y\n```\n\n",
+        ),
+        (
+          " A.\n\n```text\n<pre>\na_b\n\nc_d\n</pre>\n```\n", " A.\n\n```text\n<pre>\na_b\n\nc_d\n</pre>\n```\n\n",
+        ),
+        (
+          " A.\n\nkruegerblock0x\n\n<!-- a_b -->\nc_d\n", " A.\n\nkruegerblock0x\n\n<!-- a_b -->\nc_d\n\n",
+        ),
+      ] {
+      s.expect(@markdown.format_doc(source)).to_equal(expected)
     }
   })
 }
