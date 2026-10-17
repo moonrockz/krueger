@@ -52,6 +52,70 @@ test "code that does not parse stays as written" {
 }
 
 ///|
+test "doc code preserves a multiline expression with a trailing line comment" {
+  // Recorded with elm-format 0.8.7: its expression parser leaves this code alone.
+  let input = " A.\n\n    f\n        [1,2] -- x\n"
+  let expected = doc_module(input + "\n")
+  @expect.expect(@printer.format(doc_module(input))).to_equal(expected)
+}
+
+///|
+test "doc code formats a multiline trailing comment when another expression follows" {
+  // Recorded with elm-format 0.8.7: the comment leads the next expression.
+  let input = " A.\n\n    f\n        [1,2] -- x\n    g [3,4]\n"
+  let output = " A.\n\n    f\n        [ 1, 2 ]\n\n    -- x\n    g [ 3, 4 ]\n\n"
+  @expect.expect(@printer.format(doc_module(input))).to_equal(
+    doc_module(output),
+  )
+}
+
+///|
+test "doc code keeps a comment between the module header and imports" {
+  // Recorded with elm-format 0.8.7.
+  let input = " A.\n\n    module B exposing (x)\n    -- c\n    import C\n    x = 1\n"
+  let output = " A.\n\n    module B exposing (x)\n\n    -- c\n\n    import C\n\n    x =\n        1\n\n"
+  @expect.expect(@printer.format(doc_module(input))).to_equal(
+    doc_module(output),
+  )
+}
+
+///|
+test "law: a final multiline expression with a line comment keeps its source text" {
+  // Edges: one to four argument lines, ASCII and non-ASCII comments,
+  // indented and fenced code, LF and CRLF input.
+  @quickcheck.check(
+    (input : (UInt32, Bool, Bool)) => {
+      let (n, fenced, crlf) = input
+      let lines = ["f"]
+      for _ in 0..<(1 + (n % 4).reinterpret_as_int()) {
+        lines.push("    [\{n % 100},2]")
+      }
+      let comment = if n % 2 == 0 { "-- x" } else { "-- café 😀" }
+      lines[lines.length() - 1] += " " + comment
+      let indented = lines.map(l => "    " + l).join("\n")
+      let expected = doc_module(" A.\n\n" + indented + "\n\n")
+      let doc = if fenced {
+        " A.\n\n```elm\n" + lines.join("\n") + "\n```\n"
+      } else {
+        " A.\n\n" + indented + "\n"
+      }
+      let source = doc_module(doc)
+      let source = if crlf {
+        source.replace_all(old="\n", new="\r\n")
+      } else {
+        source
+      }
+      let formatted = @printer.format(source) catch { _ => return false }
+      formatted == expected &&
+      (@printer.format(formatted) catch { _ => return false }) == expected
+    },
+    count=100,
+    max_size=24,
+    seed=257,
+  )
+}
+
+///|
 /// Recorded with elm-format 0.8.7: the doc comment of `doc_module(input)`
 /// becomes the doc comment of `doc_module(output)`.
 let code_recordings : Array[(String, String)] = [
@@ -78,6 +142,22 @@ let code_recordings : Array[(String, String)] = [
   (
     " Doc.\n\n    module B exposing (x)\n    import C\n    import B\n    x = 1\n\n",
     " Doc.\n\n    module B exposing (x)\n\n    import B\n    import C\n\n    x =\n        1\n\n",
+  ),
+  // Header comments stay in the import section, with or without imports.
+  (
+    " A.\n\n    module B exposing (x)\n    -- a\n    {- b -}\n    import Z\n    -- d\n    import C\n    x = 1\n",
+    " A.\n\n    module B exposing (x)\n\n    -- a\n    {- b -}\n    -- d\n\n    import C\n    import Z\n\n    x =\n        1\n\n",
+  ),
+  (
+    " A.\n\n    module B exposing (x)\n    -- c\n    x = 1\n", " A.\n\n    module B exposing (x)\n\n    -- c\n\n    x =\n        1\n\n",
+  ),
+  (
+    " A.\n\n    module B exposing (x)\n    {-| Module. -}\n    -- c\n    import C\n    x = 1\n",
+    " A.\n\n    module B exposing (x)\n\n    {-| Module.\n    -}\n\n    -- c\n\n    import C\n\n    x =\n        1\n\n",
+  ),
+  // A comment inside an expression does not prevent formatting it.
+  (
+    " A.\n\n    f -- x\n        [1,2]\n    g [3,4]\n", " A.\n\n    f\n        -- x\n        [ 1, 2 ]\n\n    g [ 3, 4 ]\n\n",
   ),
   // elm-format reads no comment after the last expression: the code stays.
   (" A.\n\n    f [1,2]\n    --> x\n", " A.\n\n    f [1,2]\n    --> x\n\n"),

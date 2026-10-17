@@ -252,7 +252,8 @@ fn code_as_declarations(
 /// The code as expressions: each line in column 1 starts one (a comment
 /// line is a comment). Each expression is the body of a definition
 /// `x__N =`; the formatted bodies lose that line and 4 columns. A line
-/// comment after an expression on one line stays after it (elm-format
+/// comment after the last multi-line expression makes the code stay as written.
+/// A line comment after an expression on one line stays after it (elm-format
 /// `withEol`, `formatEolCommented`): on the same line, or on the next line
 /// when the formatted expression takes more lines.
 fn code_as_expressions(
@@ -290,12 +291,21 @@ fn code_as_expressions(
     return None
   }
   for i, g in groups {
-    guard g is [line] && !is_comment_line(line) else { continue }
+    guard g is [line, ..] && !is_comment_line(line) else { continue }
     // The definition of group `i` starts on row `row`; its body is the
     // row after it.
     let row = expression_row(parsed, i)
     for c in parsed.comments {
-      if c.value.has_prefix("--") && c.range.start.row == row + 1 {
+      if c.value.has_prefix("--") && c.range.start.row == row + g.length() {
+        // elm-format's withEol only accepts a comment after a single-line
+        // expression. On a multi-line one it must lead a later expression,
+        // or the whole code block stays as written.
+        guard g.length() == 1 else {
+          if c.range.start.row == last_end {
+            return None
+          }
+          continue
+        }
         eol[i] = c.value
         let chars = line.to_array()
         let cut = c.range.start.column - 1 - 4
@@ -447,11 +457,11 @@ fn expression_row(file : @ast.File, index : Int32) -> Int32 {
 ///|
 /// The code as a module, laid out as elm-format's `formatModule` lays out
 /// a module in a doc comment: the comments before the header, then two
-/// blank lines; the header, the module documentation and the imports, with
-/// one blank line between them; then one blank line before the body, or two when the body starts
-/// with a comment (also when there is nothing before it). Without a module
-/// header (elm-format reads one as optional), the code gets one, and the
-/// formatted text loses it again.
+/// blank lines; the header, the module documentation, the import comments
+/// and the imports, with one blank line between them; then one blank line
+/// before the body, or two when the body starts with a comment (also when
+/// there is nothing before it). Without a module header (elm-format reads
+/// one as optional), the code gets one, and the formatted text loses it again.
 fn code_as_module(
   code : String,
   dialect : @dialect.Dialect,
@@ -478,6 +488,7 @@ fn code_as_module(
   let rows = (item : CodeRows) => lines[item.start - 1:item.end].to_owned()
   let initial = []
   let docs = []
+  let import_comments = []
   let mut header : CodeRows? = None
   let mut imports : CodeRows? = None
   let body = []
@@ -495,6 +506,10 @@ fn code_as_module(
         imports is None &&
         body.is_empty() &&
         lines[item.start - 1].has_prefix("{-|") => docs.push(item)
+      Comment if has_header &&
+        header is Some(_) &&
+        imports is None &&
+        body.is_empty() => import_comments.push(item)
       _ => body.push(item)
     }
   }
@@ -510,6 +525,12 @@ fn code_as_module(
     for d in docs {
       out.push("")
       out.append(rows(d))
+    }
+    if !import_comments.is_empty() {
+      out.push("")
+      for c in import_comments {
+        out.append(rows(c))
+      }
     }
     if imports is Some(i) {
       out.push("")
