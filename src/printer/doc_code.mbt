@@ -506,7 +506,9 @@ fn code_as_module(
         imports is None &&
         body.is_empty() &&
         lines[item.start - 1].has_prefix("{-|") => docs.push(item)
-      Comment if has_header &&
+      // Headerless code still has an import section. The wrapper formatter
+      // moves comments from all but the last import above the imports.
+      Comment if (has_header || !file.imports.is_empty()) &&
         header is Some(_) &&
         imports is None &&
         body.is_empty() => import_comments.push(item)
@@ -526,17 +528,19 @@ fn code_as_module(
       out.push("")
       out.append(rows(d))
     }
-    if !import_comments.is_empty() {
+  }
+  if !import_comments.is_empty() {
+    if has_header {
       out.push("")
-      for c in import_comments {
-        out.append(rows(c))
-      }
     }
-    if imports is Some(i) {
+    for c in import_comments {
+      out.append(rows(c))
+    }
+  }
+  if imports is Some(i) {
+    if has_header || !import_comments.is_empty() {
       out.push("")
-      out.append(rows(i))
     }
-  } else if imports is Some(i) {
     out.append(rows(i))
   }
   match body {

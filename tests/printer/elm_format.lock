@@ -552,8 +552,9 @@
     "elm_format": "stable"
   },
   "elm/core@1.0.5/src/Task.elm": {
-    "sha256": "e2ca7e63be8a2768066f01b728a9d63c2c7cff0adc94bc869bc7cc1a16d446e2",
-    "elm_format": "stable"
+    "sha256": "e086729161956c05d21282fd5a9617541c08e0838efe81a7bd1a3418ed6b6a46",
+    "elm_format": "oracle_second_pass",
+    "second": "c8a6912f037d4f4461bf338a51123a87b0adb8bed9cf0a98a754d2549b94ceac"
   },
   "elm/core@1.0.5/src/Tuple.elm": {
     "sha256": "1a159935006f7196131d81879142de41f1b75a2ac62ec006d511ddb04802016e",

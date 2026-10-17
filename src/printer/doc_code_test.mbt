@@ -119,6 +119,192 @@ test "doc code keeps a comment between the module header and imports" {
 }
 
 ///|
+test "doc code moves a trailing import comment before the imports" {
+  // Recorded with elm-format 0.8.7.
+  let input =
+    #| A.
+    #|
+    #|    import Time -- elm install elm/time
+    #|    import Task
+    #|    x = 1
+    #|
+  let output =
+    #| A.
+    #|
+    #|    -- elm install elm/time
+    #|
+    #|    import Task
+    #|    import Time
+    #|
+    #|    x =
+    #|        1
+    #|
+    #|
+  @expect.expect(@printer.format(doc_module(input))).to_equal(
+    doc_module(output),
+  )
+}
+
+///|
+test "doc code keeps leading, moved and final import comments in their sections" {
+  // Recorded with elm-format 0.8.7. Comments follow source order even when
+  // sorting reverses the imports.
+  let input =
+    #| A.
+    #|
+    #|    -- leading
+    #|    import Z -- first
+    #|    import M -- middle
+    #|    import A -- last
+    #|    x = 1
+    #|
+  let output =
+    #| A.
+    #|
+    #|    -- leading
+    #|
+    #|
+    #|    -- first
+    #|    -- middle
+    #|
+    #|    import A
+    #|    import M
+    #|    import Z
+    #|
+    #|
+    #|    -- last
+    #|    x =
+    #|        1
+    #|
+    #|
+  @expect.expect(@printer.format(doc_module(input))).to_equal(
+    doc_module(output),
+  )
+}
+
+///|
+test "doc code keeps the only import's trailing comment after it" {
+  // Recorded with elm-format 0.8.7: the last import is different.
+  let input =
+    #| A.
+    #|
+    #|    import Time -- last
+    #|
+  let output =
+    #| A.
+    #|
+    #|    import Time
+    #|
+    #|
+    #|    -- last
+    #|
+    #|
+  @expect.expect(@printer.format(doc_module(input))).to_equal(
+    doc_module(output),
+  )
+}
+
+///|
+test "doc code moves a block comment from an earlier import before the imports" {
+  // Recorded with elm-format 0.8.7.
+  let input =
+    #| A.
+    #|
+    #|    import Z {- first -}
+    #|    import A
+    #|    x = 1
+    #|
+  let output =
+    #| A.
+    #|
+    #|    {- first -}
+    #|
+    #|    import A
+    #|    import Z
+    #|
+    #|    x =
+    #|        1
+    #|
+    #|
+  @expect.expect(@printer.format(doc_module(input))).to_equal(
+    doc_module(output),
+  )
+}
+
+///|
+test "law: import comments follow elm-format's first and second passes" {
+  // Enumerate all header, fence and line-ending combinations for every
+  // generated comment. Both the moved and final comments must survive once.
+  @quickcheck.check(
+    (n : UInt32) => {
+      [false, true]
+      .iter()
+      .all(header => {
+        let prefix = if header { "module B exposing (x)\n" } else { "" }
+        let comment = "café 😀 \{n}"
+        let code = prefix +
+          "import Z -- before " +
+          comment +
+          "\nimport A -- after " +
+          comment +
+          "\nx = 1\n"
+        let output = prefix +
+          (if header { "\n" } else { "" }) +
+          "-- before " +
+          comment +
+          "\n\nimport A\nimport Z\n\n\n-- after " +
+          comment +
+          "\nx =\n    1\n\n"
+        let indent = (s : String) => {
+          s
+          .split("\n")
+          .map(l => if l == "" { "" } else { "    " + l.to_owned() })
+          .join("\n")
+        }
+        let expected = doc_module(" A.\n\n" + indent(output))
+        [false, true]
+        .iter()
+        .all(fenced => {
+          let doc = if fenced {
+            " A.\n\n```elm\n" + code + "```\n"
+          } else {
+            " A.\n\n" + indent(code)
+          }
+          [false, true]
+          .iter()
+          .all(crlf => {
+            let source = doc_module(doc)
+            let source = if crlf {
+              source.replace_all(old="\n", new="\r\n")
+            } else {
+              source
+            }
+            let formatted = @printer.format(source) catch { _ => return false }
+            guard formatted == expected else { return false }
+            // elm-format treats the moved comment as a leading comment
+            // on the next pass, adding a blank line before headerless imports.
+            let stable = if header {
+              expected
+            } else {
+              expected.replace_all(
+                old="-- before " + comment + "\n\n",
+                new="-- before " + comment + "\n\n\n",
+              )
+            }
+            let second = @printer.format(formatted) catch { _ => return false }
+            second == stable &&
+            (@printer.format(second) catch { _ => return false }) == stable
+          })
+        })
+      })
+    },
+    count=20,
+    max_size=24,
+    seed=263,
+  )
+}
+
+///|
 test "law: a final multiline expression with a line comment keeps its source text" {
   // Edges: one to four argument lines, ASCII and non-ASCII comments,
   // indented and fenced code, LF and CRLF input.

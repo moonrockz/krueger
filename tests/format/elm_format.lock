@@ -1137,7 +1137,8 @@
   },
   "elm/core@1.0.5/src/Task.elm": {
     "source": "f546ccb07a58b26fcf791ed45a6236e80e45aaed00c29cbaeced5dcd6da034fa",
-    "expected": "36831b0fa165e344c4abe47af97229a8fed924272bd5f8e1f5e6f3065bf7bb3e"
+    "expected": "36831b0fa165e344c4abe47af97229a8fed924272bd5f8e1f5e6f3065bf7bb3e",
+    "second": "9c97cb8d7202d026608b10fd2425abc6be3ccac319a6abc516e74d5b3e944201"
   },
   "elm/core@1.0.5/src/Tuple.elm": {
     "source": "b970211ee185cf3184634702aa54f6ec33e2aafb8930caead713ee7929236b46",

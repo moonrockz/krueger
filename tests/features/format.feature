@@ -1,6 +1,42 @@
 Feature: Formatter
   krueger formats Elm source as elm-format 0.8.7 does.
 
+  Scenario: Doc code moves a comment from an earlier import before the imports
+    Given the Elm source:
+      """
+      module A exposing (f)
+
+      {-| A.
+
+          import Time -- elm install elm/time
+          import Task
+          x = 1
+      -}
+
+      f = 1
+      """
+    When I format it
+    Then the output is:
+      """
+      module A exposing (f)
+
+      {-| A.
+
+          -- elm install elm/time
+
+          import Task
+          import Time
+
+          x =
+              1
+
+      -}
+
+
+      f =
+          1
+      """
+
   Scenario: Doc code keeps a final multiline expression with a trailing comment as written
     Given the Elm source:
       """

@@ -28,7 +28,8 @@ import {
 /// byte-stable, so the archive itself is not pinned). `record` reads
 /// `<out-dir>/keys.json` (written by `KRUEGER_PARITY_MODE=write-formatted`),
 /// runs elm-format on every key that krueger parses, writes
-/// `<out-dir>/expected/<key>` and the lock. With `<pending.json>`, it also
+/// `<out-dir>/expected/<key>` and the lock. A changed second pass gets a
+/// `second` hash in the lock. With `<pending.json>`, it also
 /// writes the keys whose krueger output differs from elm-format's; use that
 /// only to start or reset the list.
 
@@ -66,6 +67,7 @@ priv struct Verdict {
   parsed : Bool
   exit_code : Int32
   output : String
+  second_output : String?
 }
 
 ///|
@@ -106,7 +108,14 @@ fn lock_json(verdicts : Array[Verdict]) -> Json {
         "skipped": Json("elm-format exited with code \{v.exit_code}"),
       }
     } else {
-      { "source": Json(v.source), "expected": Json(sha256_hex(v.output)) }
+      let entry : Map[String, Json] = {
+        "source": Json(v.source),
+        "expected": Json(sha256_hex(v.output)),
+      }
+      if v.second_output is Some(second) && second != v.output {
+        entry["second"] = Json(sha256_hex(second))
+      }
+      Json::object(entry)
     }
   }
   Json::object(entries)
@@ -290,6 +299,7 @@ async fn record(
     let parsed = krueger == "parsed"
     let mut exit_code = 0
     let mut output = ""
+    let mut second_output = None
     if parsed {
       let (code, stdout) = @process.collect_stdout(
         "mise",
@@ -305,9 +315,24 @@ async fn record(
         let path = "\{out}/expected/\{key}"
         ensure_dir(parent_dir(path))
         @fs.write_file(path, output)
+        let (second_code, second) = @process.collect_stdout(
+          "mise",
+          [
+            "x", "github:avh4/elm-format@0.8.7", "--", "elm-format", "--stdin", "--elm-version=0.19",
+          ],
+          stdin=@process.redirect_from_file(path),
+          stderr=@process.redirect_to_file("/dev/null"),
+        )
+        if second_code != 0 {
+          eprintln("format: elm-format rejected its own output for \{key}")
+          @sys.exit(1)
+        }
+        if second.text() != output {
+          second_output = Some(second.text())
+        }
       }
     }
-    verdicts.push({ key, source, parsed, exit_code, output, })
+    verdicts.push({ key, source, parsed, exit_code, output, second_output, })
   }
   @fs.write_file(lock, lock_json(verdicts).stringify(indent=2) + "\n")
   let recorded = verdicts.filter(v => v.parsed && v.exit_code == 0)
@@ -425,6 +450,7 @@ impl @moonspec.World for FormatWorld with fn configure(self, setup) {
           _ => 0
         },
         output: row.get("output").unwrap_or(""),
+        second_output: row.get("second_output"),
       })
     }
   })
