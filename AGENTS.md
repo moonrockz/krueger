@@ -485,8 +485,12 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 332 are stable
-  under elm-format 0.8.7. `tests/printer/pending.json` lists the 31 files
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 331 are stable
+  under elm-format 0.8.7, and one follows its recorded second pass (a moved
+  import comment in doc code gets another blank line on that pass).
+  The lock records both printed hashes for that known oracle transition;
+  reprinting and printing the normalized AST must match the second hash.
+  `tests/printer/pending.json` lists the 31 files
   that elm-format still changes. Each pending file has a bd issue, and the
   list only shrinks: a fix removes entries, and the check fails when a
   listed file becomes stable.
@@ -534,10 +538,13 @@ and `print_type_annotation`, each with `width?` (default 120) and
   `tests/format/elm_format.lock` (needs elm-format through `mise x`);
   `mise run test:format` (CI job `parity`) compares krueger's output, and
   checks on every file that formats that a second format gives the same
-  text and that the regular comments stay, in order. Of the corpus files,
-  297 of the 299 that elm-format leaves unchanged and 54 of the 64 that it
+  text, or elm-format's recorded second-pass hash when the first-pass hash
+  also matches, and that the regular comments stay, in order. The oracle
+  recorder writes `second` only when elm-format changes its own output.
+  Of the corpus files,
+  297 of the 299 that elm-format leaves unchanged and 55 of the 64 that it
   changes match; 70 of the 71 elm-format test files match.
-  `tests/format/pending.json` lists the 13 files that differ; each has a
+  `tests/format/pending.json` lists the 12 files that differ; each has a
   bd issue, and the list only shrinks.
 - Expected outputs in tests come from elm-format 0.8.7:
   `printf '%s' "$SRC" | mise x github:avh4/elm-format@0.8.7 -- elm-format --stdin --elm-version=0.19`.

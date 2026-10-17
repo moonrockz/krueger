@@ -34,7 +34,11 @@ fn printer_doc_comments_only(file : @ast.File) -> @ast.File {
 /// The printed text of one corpus file (when it prints), and the problems
 /// of the printer laws on it: lossless CST (LF and CRLF), round trip
 /// through printing, idempotence.
-fn printer_check(key : String, text : String) -> (String?, Array[String]) {
+fn printer_check(
+  key : String,
+  text : String,
+  oracle_second~ : String? = None,
+) -> (String?, Array[String]) {
   let problems = []
   let dialect = corpus_dialect(key)
   let parse = (t : String) => {
@@ -81,17 +85,16 @@ fn printer_check(key : String, text : String) -> (String?, Array[String]) {
       } noraise {
         t => Some(t)
       }
-      if from_normalized != Some(printed) {
-        problems.push("\{key}: print_file of normalize_file differs")
-      }
       let reprinted = try @krueger.print_file(second, dialect~) catch {
         _ => None
       } noraise {
         t => Some(t)
       }
-      if reprinted != Some(printed) {
-        problems.push("\{key}: printing is not idempotent")
-      }
+      problems.append(
+        printer_repeat_problems(
+          key, printed, from_normalized, reprinted, oracle_second,
+        ),
+      )
     }
     None => problems.push("\{key}: the printed source has no AST")
   }
@@ -99,8 +102,84 @@ fn printer_check(key : String, text : String) -> (String?, Array[String]) {
 }
 
 ///|
-/// `<key> -> (sha256, stable)` from the lock.
-fn read_printer_lock() -> Map[String, (String, Bool)] raise {
+/// Reprinting and printing the normalized AST must both match the original
+/// print, or the exact next pass recorded from a non-idempotent oracle.
+fn printer_repeat_problems(
+  key : String,
+  printed : String,
+  normalized : String?,
+  reprinted : String?,
+  oracle_second : String?,
+) -> Array[String] {
+  let expected = oracle_second.unwrap_or_else(() => sha256_hex(printed))
+  let problems = []
+  if normalized.map(sha256_hex) != Some(expected) {
+    problems.push("\{key}: print_file of normalize_file differs")
+  }
+  if reprinted.map(sha256_hex) != Some(expected) {
+    problems.push("\{key}: printing differs from the expected next pass")
+  }
+  problems
+}
+
+///|
+test "printer_repeat_problems requires the exact recorded next pass on both paths" {
+  @expect.expect_all(s => {
+    s
+    .expect(
+      printer_repeat_problems(
+        "a",
+        "first",
+        Some("second"),
+        Some("second"),
+        Some(sha256_hex("second")),
+      ),
+    )
+    .to_equal([])
+    s
+    .expect(
+      printer_repeat_problems(
+        "a",
+        "first",
+        Some("second"),
+        Some("first"),
+        Some(sha256_hex("second")),
+      ).length(),
+    )
+    .to_equal(1)
+    s
+    .expect(
+      printer_repeat_problems(
+        "a",
+        "first",
+        Some("first"),
+        Some("second"),
+        Some(sha256_hex("second")),
+      ).length(),
+    )
+    .to_equal(1)
+    s
+    .expect(
+      printer_repeat_problems(
+        "a",
+        "first",
+        Some("second"),
+        Some("second"),
+        None,
+      ).length(),
+    )
+    .to_equal(2)
+    s
+    .expect(
+      printer_repeat_problems("a", "first", Some("first"), Some("first"), None),
+    )
+    .to_equal([])
+  })
+}
+
+///|
+/// `<key> -> (sha256, stable, oracle second pass)` from the lock.
+fn read_printer_lock() -> Map[String, (String, Bool, String?)] raise {
   if !@fs.path_exists(printer_lock_path) {
     fail("missing \{printer_lock_path}; run mise run printer:record")
   }
@@ -114,7 +193,11 @@ fn read_printer_lock() -> Map[String, (String, Bool)] raise {
       e.get("elm_format") is Some(String(verdict)) else {
       fail("\{printer_lock_path}: malformed entry \{key}")
     }
-    lock[key] = (hash, verdict == "stable")
+    let second = match e.get("second") {
+      Some(String(second)) if verdict == "oracle_second_pass" => Some(second)
+      _ => None
+    }
+    lock[key] = (hash, verdict == "stable", second)
   }
   lock
 }
@@ -145,11 +228,20 @@ fn parent_dir(path : String) -> String {
 /// Print every corpus file to `printed_dir`. The law problems do not stop
 /// the run (`test:parity` reports them); the first 20 are printed.
 fn write_printed() -> Unit raise {
+  let lock = read_printer_lock()
   let mut count = 0
   let problems = []
   for source in manifest_sources() {
     let (key, sha256) = source
-    let (printed, found) = printer_check(key, verified_source(key, sha256))
+    let oracle_second = match lock.get(key) {
+      Some((_, _, second)) => second
+      None => None
+    }
+    let (printed, found) = printer_check(
+      key,
+      verified_source(key, sha256),
+      oracle_second~,
+    )
     problems.append(found)
     if printed is Some(text) {
       let path = "\{printed_dir}/\{key}"
@@ -174,11 +266,20 @@ fn check_printer_corpus() -> Unit raise {
   let problems = []
   let changed = []
   let mut stable = 0
+  let mut second_pass = 0
   let mut total = 0
   for source in manifest_sources() {
     let (key, sha256) = source
     total += 1
-    let (printed, found) = printer_check(key, verified_source(key, sha256))
+    let oracle_second = match lock.get(key) {
+      Some((_, _, second)) => second
+      None => None
+    }
+    let (printed, found) = printer_check(
+      key,
+      verified_source(key, sha256),
+      oracle_second~,
+    )
     problems.append(found)
     guard printed is Some(text) else { continue }
     match lock.get(key) {
@@ -186,13 +287,15 @@ fn check_printer_corpus() -> Unit raise {
         problems.push(
           "\{key}: not in \{printer_lock_path}; run mise run printer:record",
         )
-      Some((hash, ok)) =>
+      Some((hash, ok, second)) =>
         if hash != sha256_hex(text) {
           problems.push(
             "\{key}: the printed text changed after the lock; run mise run printer:record",
           )
         } else if ok {
           stable += 1
+        } else if second is Some(_) {
+          second_pass += 1
         } else {
           changed.push(key)
         }
@@ -213,7 +316,7 @@ fn check_printer_corpus() -> Unit raise {
     }
   }
   println(
-    "printer: \{stable} of \{total} corpus files are stable under elm-format 0.8.7",
+    "printer: \{stable} of \{total} corpus files are stable under elm-format 0.8.7; \{second_pass} follow its recorded second pass",
   )
   if !problems.is_empty() {
     fail("printer corpus:\n" + problems.iter().take(20).collect().join("\n"))

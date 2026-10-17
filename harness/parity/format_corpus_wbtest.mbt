@@ -124,6 +124,7 @@ fn write_formatted() -> Unit raise {
 priv struct FormatLockEntry {
   source : String
   expected : String?
+  second : String?
   skipped : String?
 }
 
@@ -143,6 +144,10 @@ fn read_format_lock() -> Map[String, FormatLockEntry] raise {
     lock[key] = {
       source,
       expected: match e.get("expected") {
+        Some(String(h)) => Some(h)
+        _ => None
+      },
+      second: match e.get("second") {
         Some(String(h)) => Some(h)
         _ => None
       },
@@ -285,20 +290,31 @@ fn regular_comments(key : String, text : String) -> Array[String]? {
 
 ///|
 /// The corpus laws for a source that formats to `output`: formatting
-/// `output` gives `output` again, and `output` has the regular comments of
-/// the source, in the same order.
+/// `output` gives `output` again, or the exact second pass recorded from
+/// elm-format when `output` matches its first pass. `output` has the regular
+/// comments of the source, in the same order.
 fn format_law_problems(
   key : String,
   source : String,
   output : String,
+  oracle~ : (String, String)? = None,
 ) -> Array[String] {
   let problems = []
   match format_one(key, output) {
     Ok(again) =>
-      if again != output {
-        problems.push(
-          "\{key}: format is not idempotent: \{first_text_difference(output, again)}",
-        )
+      match oracle {
+        Some((first, second)) if sha256_hex(output) == first =>
+          if sha256_hex(again) != second {
+            problems.push(
+              "\{key}: the second format differs from elm-format's recorded second pass",
+            )
+          }
+        _ =>
+          if again != output {
+            problems.push(
+              "\{key}: format is not idempotent: \{first_text_difference(output, again)}",
+            )
+          }
       }
     Err(reason) =>
       problems.push("\{key}: the formatted text does not format: \{reason}")
@@ -398,6 +414,70 @@ test "format_law_problems names a second format that changes the text, and lost 
 }
 
 ///|
+test "format_law_problems permits only the exact recorded oracle transition" {
+  let source =
+    #|module A exposing (..)
+    #|
+    #|x=1
+    #|
+  guard format_one("a/1/src/A.elm", source) is Ok(formatted) else {
+    fail("the source does not format")
+  }
+  let first = sha256_hex(source)
+  let second = sha256_hex(formatted)
+  @expect.expect_all(s => {
+    s
+    .expect(
+      format_law_problems(
+        "a/1/src/A.elm",
+        source,
+        source,
+        oracle=Some((first, second)),
+      ),
+    )
+    .to_equal([])
+    // A different first pass cannot use the recorded transition.
+    s
+    .expect(
+      format_law_problems(
+        "a/1/src/A.elm",
+        source,
+        source,
+        oracle=Some(("wrong", second)),
+      )
+      .iter()
+      .any(p => p.contains("not idempotent")),
+    )
+    .to_be_true()
+    s
+    .expect(
+      format_law_problems(
+        "a/1/src/A.elm",
+        source,
+        source,
+        oracle=Some((first, "wrong")),
+      ),
+    )
+    .to_equal([
+      "a/1/src/A.elm: the second format differs from elm-format's recorded second pass",
+    ])
+    // Becoming stable too soon also differs from the oracle.
+    s
+    .expect(
+      format_law_problems(
+        "a/1/src/A.elm",
+        formatted,
+        formatted,
+        oracle=Some((second, first)),
+      ),
+    )
+    .to_equal([
+      "a/1/src/A.elm: the second format differs from elm-format's recorded second pass",
+    ])
+  })
+}
+
+///|
 fn check_format_corpus() -> Unit raise {
   let lock = read_format_lock()
   let pending = read_format_pending()
@@ -455,7 +535,14 @@ fn check_format_corpus() -> Unit raise {
     let source = @fs.read_file_to_string(file)
     let (actual_hash, actual_text) = match format_one(key, source) {
       Ok(output) => {
-        problems.append(format_law_problems(key, source, output))
+        problems.append(
+          format_law_problems(
+            key,
+            source,
+            output,
+            oracle=entry.second.map(second => (expected, second)),
+          ),
+        )
         (sha256_hex(output), output)
       }
       Err(reason) => ("", reason)

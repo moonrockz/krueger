@@ -26,6 +26,8 @@ import {
 /// `.elm` file, stops the script with an error and writes nothing. With
 /// `<pending.json>`, the script also writes the changed files there; use it
 /// only to start or reset the list.
+/// Files whose formatter lock records a changed second pass get the verdict
+/// `oracle_second_pass` and the hash of elm-format's next output instead.
 
 ///|
 let usage : String = "Usage: printer.mbtx record <printed-dir> <lock> [<pending.json>]"
@@ -35,6 +37,7 @@ struct Verdict {
   key : String
   sha256 : String
   stable : Bool
+  oracle_second : String?
 }
 
 ///|
@@ -42,10 +45,22 @@ struct Verdict {
 fn lock_text(verdicts : Array[Verdict]) -> String {
   let entries : Map[String, Json] = Map([])
   for v in verdicts {
-    entries[v.key] = {
+    let entry : Map[String, Json] = {
       "sha256": Json(v.sha256),
-      "elm_format": Json(if v.stable { "stable" } else { "changed" }),
+      "elm_format": Json(
+        if v.stable {
+          "stable"
+        } else if v.oracle_second is Some(_) {
+          "oracle_second_pass"
+        } else {
+          "changed"
+        },
+      ),
     }
+    if v.oracle_second is Some(hash) {
+      entry["second"] = Json(hash)
+    }
+    entries[v.key] = Json::object(entry)
   }
   Json::object(entries).stringify(indent=2) + "\n"
 }
@@ -55,7 +70,7 @@ fn lock_text(verdicts : Array[Verdict]) -> String {
 fn pending_text(verdicts : Array[Verdict]) -> String {
   let keys : Array[Json] = []
   for v in verdicts {
-    if !v.stable {
+    if !v.stable && v.oracle_second is None {
       keys.push(Json(v.key))
     }
   }
@@ -114,6 +129,19 @@ fn compare_lexical(a : String, b : String) -> Int32 {
 
 ///|
 async fn record(dir : String, lock : String, pending : String?) -> Unit {
+  // Only a recorded non-idempotent oracle source can use a second-pass
+  // verdict. Ordinary printer differences remain pending.
+  let oracle = @fs.read_file("tests/format/elm_format.lock").json()
+  let has_second = (key : String) => {
+    match oracle {
+      Object(entries) =>
+        match entries.get(key) {
+          Some(Object(entry)) => entry.get("second") is Some(String(_))
+          _ => false
+        }
+      _ => false
+    }
+  }
   let verdicts = []
   let files = elm_files(dir)
   if files.is_empty() {
@@ -133,16 +161,36 @@ async fn record(dir : String, lock : String, pending : String?) -> Unit {
       )
       @sys.exit(1)
     }
+    let oracle_second = if !stable && has_second(file) {
+      let (code, output) = @process.collect_stdout(
+        "mise",
+        [
+          "x", "github:avh4/elm-format@0.8.7", "--", "elm-format", "--stdin", "--elm-version=0.19",
+        ],
+        stdin=@process.redirect_from_file(path),
+      )
+      if code != 0 {
+        eprintln("printer: elm-format rejected the printed text for \{file}")
+        @sys.exit(1)
+      }
+      Some(sha256_hex(output.text()))
+    } else {
+      None
+    }
     verdicts.push({
       key: file,
       sha256: sha256_hex(@fs.read_file(path).text()),
       stable,
+      oracle_second,
     })
   }
   @fs.write_file(lock, lock_text(verdicts))
-  let changed = verdicts.filter(v => !v.stable).length()
+  let changed = verdicts
+    .filter(v => !v.stable && v.oracle_second is None)
+    .length()
+  let second = verdicts.filter(v => v.oracle_second is Some(_)).length()
   println(
-    "printer: \{verdicts.length() - changed} stable, \{changed} changed; wrote \{lock}",
+    "printer: \{verdicts.length() - changed - second} stable, \{second} oracle second pass, \{changed} changed; wrote \{lock}",
   )
   if pending is Some(p) {
     @fs.write_file(p, pending_text(verdicts))
@@ -182,6 +230,7 @@ impl @moonspec.World for PrinterLockWorld with fn configure(self, setup) {
         key: row.get("key").unwrap_or(""),
         sha256: row.get("sha256").unwrap_or(""),
         stable: row.get("stable") == Some("yes"),
+        oracle_second: row.get("second"),
       })
     }
   })

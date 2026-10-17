@@ -27,7 +27,8 @@ fn format_in(text : String, layout : @printer.Layout) -> String? {
 test "law: format is idempotent in both layouts" {
   // The shapes on which elm-format 0.8.7 is not idempotent are all in doc
   // comments (`@docs T(..)`, emphasis after a letter, two bullet lists,
-  // `[a] [a]`, a fenced code block that starts with a blank line; see
+  // `[a] [a]`, a fenced code block that starts with a blank line, moved
+  // import comments in headerless code; see
   // `normalize_file`). `Spaced` has no doc comments, so it excludes them.
   @quickcheck.check(
     (m : @lawkit.Spaced) => {

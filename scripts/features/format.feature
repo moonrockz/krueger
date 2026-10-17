@@ -59,3 +59,24 @@ Feature: Formatter oracle
       | b.elm | h2       | h3     |
     When I build the pending list
     Then the pending list is "b.elm"
+
+  Scenario: Record a second-pass hash only when elm-format changes its output
+    Given the verdicts:
+      | key   | source | krueger | elm_format_exit | output | second_output |
+      | a.elm | s1     | parsed  | 0               | x      | y             |
+      | b.elm | s2     | parsed  | 0               | x      | x             |
+    When I build the lock
+    Then the lock is:
+      """
+      {
+        "a.elm": {
+          "source": "s1",
+          "expected": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+          "second": "a1fce4363854ff888cff4b8e7875d600c2682390412a8cf79b37d0b11148b0fa"
+        },
+        "b.elm": {
+          "source": "s2",
+          "expected": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
+        }
+      }
+      """

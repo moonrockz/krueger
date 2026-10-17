@@ -212,7 +212,8 @@ fn normalize_imports(
 ///   emphasis that starts after a letter (`a*b c*` gives `a_b c_`, then
 ///   text), two bullet lists in a row (one list the next time), `[a] [a]`
 ///   (one link), and a fenced Elm code block that starts with a blank line
-///   (the line goes the next time).
+///   (the line goes the next time). In headerless Elm code, a comment moved
+///   above the imports gets one more blank line after it on the next pass.
 ///
 /// Nodes keep their ranges; an expression that replaces its parentheses
 /// takes their range. Nothing else changes.

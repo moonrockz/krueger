@@ -38,3 +38,22 @@ Feature: Printer elm-format lock
       | 2    | error   |
       | 127  | error   |
       | -1   | error   |
+
+  Scenario: A recorded oracle second pass is separate from pending differences
+    Given the verdicts:
+      | key               | sha256 | stable | second |
+      | a/1.0.0/src/A.elm | aa     | no     | cc     |
+    Then the lock is:
+      """
+      {
+        "a/1.0.0/src/A.elm": {
+          "sha256": "aa",
+          "elm_format": "oracle_second_pass",
+          "second": "cc"
+        }
+      }
+      """
+    And the pending list is:
+      """
+      []
+      """
