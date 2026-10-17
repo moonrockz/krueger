@@ -2,6 +2,39 @@ Feature: Printer elm-format lock
   The recording script writes, for each printed corpus file, its SHA-256 and
   whether elm-format 0.8.7 leaves it unchanged.
 
+  Scenario Outline: Only an exact pinned oracle transition gets an exemption
+    Given the known oracle transitions:
+      """
+      {
+        "known.elm": { "first": "aa", "second": "bb" }
+      }
+      """
+    And the printed candidate:
+      | key   | sha256  | stable   | formatted |
+      | <key> | <first> | <stable> | <second>  |
+    When I classify the printed candidate
+    Then the recorded verdict is "<verdict>"
+    And the pending keys are "<pending>"
+
+    Examples:
+      | key         | first | stable | second | verdict            | pending     |
+      | known.elm   | aa    | no     | bb     | oracle_second_pass |             |
+      | known.elm   | cc    | no     | bb     | changed            | known.elm   |
+      | known.elm   | aa    | no     | cc     | changed            | known.elm   |
+      | known.elm   | cc    | no     | cc     | changed            | known.elm   |
+      | unknown.elm | aa    | no     | bb     | changed            | unknown.elm |
+      | unknown.elm | cc    | no     | bb     | changed            | unknown.elm |
+      | unknown.elm | aa    | no     | cc     | changed            | unknown.elm |
+      | unknown.elm | cc    | no     | cc     | changed            | unknown.elm |
+      | known.elm   | aa    | yes    | bb     | stable             |             |
+      | known.elm   | cc    | yes    | bb     | stable             |             |
+      | known.elm   | aa    | yes    | cc     | stable             |             |
+      | known.elm   | cc    | yes    | cc     | stable             |             |
+      | unknown.elm | aa    | yes    | bb     | stable             |             |
+      | unknown.elm | cc    | yes    | bb     | stable             |             |
+      | unknown.elm | aa    | yes    | cc     | stable             |             |
+      | unknown.elm | cc    | yes    | cc     | stable             |             |
+
   Scenario: Lock and pending list
     Given the verdicts:
       | key               | sha256 | stable |
