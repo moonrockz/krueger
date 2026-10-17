@@ -54,7 +54,12 @@ test "code that does not parse stays as written" {
 ///|
 test "doc code preserves a multiline expression with a trailing line comment" {
   // Recorded with elm-format 0.8.7: its expression parser leaves this code alone.
-  let input = " A.\n\n    f\n        [1,2] -- x\n"
+  let input =
+    #| A.
+    #|
+    #|    f
+    #|        [1,2] -- x
+    #|
   let expected = doc_module(input + "\n")
   @expect.expect(@printer.format(doc_module(input))).to_equal(expected)
 }
@@ -62,8 +67,23 @@ test "doc code preserves a multiline expression with a trailing line comment" {
 ///|
 test "doc code formats a multiline trailing comment when another expression follows" {
   // Recorded with elm-format 0.8.7: the comment leads the next expression.
-  let input = " A.\n\n    f\n        [1,2] -- x\n    g [3,4]\n"
-  let output = " A.\n\n    f\n        [ 1, 2 ]\n\n    -- x\n    g [ 3, 4 ]\n\n"
+  let input =
+    #| A.
+    #|
+    #|    f
+    #|        [1,2] -- x
+    #|    g [3,4]
+    #|
+  let output =
+    #| A.
+    #|
+    #|    f
+    #|        [ 1, 2 ]
+    #|
+    #|    -- x
+    #|    g [ 3, 4 ]
+    #|
+    #|
   @expect.expect(@printer.format(doc_module(input))).to_equal(
     doc_module(output),
   )
@@ -72,8 +92,27 @@ test "doc code formats a multiline trailing comment when another expression foll
 ///|
 test "doc code keeps a comment between the module header and imports" {
   // Recorded with elm-format 0.8.7.
-  let input = " A.\n\n    module B exposing (x)\n    -- c\n    import C\n    x = 1\n"
-  let output = " A.\n\n    module B exposing (x)\n\n    -- c\n\n    import C\n\n    x =\n        1\n\n"
+  let input =
+    #| A.
+    #|
+    #|    module B exposing (x)
+    #|    -- c
+    #|    import C
+    #|    x = 1
+    #|
+  let output =
+    #| A.
+    #|
+    #|    module B exposing (x)
+    #|
+    #|    -- c
+    #|
+    #|    import C
+    #|
+    #|    x =
+    #|        1
+    #|
+    #|
   @expect.expect(@printer.format(doc_module(input))).to_equal(
     doc_module(output),
   )
