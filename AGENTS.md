@@ -416,8 +416,10 @@ and `print_type_annotation`, each with `width?` (default 120) and
   `case` or `let` at the end of an operator chain, except after `<|`; a
   constructor pattern with arguments before or after `::` and in an
   `as`). Parentheses in the AST that neither needs go (`case (f x) of`
-  gives `case f x of`); parentheses with a comment inside stay in
-  `format`. The printer never removes parentheses that the parser needs
+  gives `case f x of`). `format` moves comments out of parentheses in
+  tuple items and conditional subjects, and moves leading comments out of
+  application-argument parentheses. Other commented parentheses stay.
+  The printer never removes parentheses that the parser needs
   (elm-format writes `-(-x)` as `--x` and `("s").length` as
   `"s".length`; krueger does not). For a parsed AST, `print_file` then
   `parse_module` gives `normalize_file(ast)` without ranges and regular
@@ -427,8 +429,9 @@ and `print_type_annotation`, each with `width?` (default 120) and
   (`src/printer/parens.mbt`), so comments and error paths stay those of
   the source; laws over `ElmModule` and `ElmAst` and the corpus check
   that the two agree. `format` differs from `normalize_file` in two
-  places, as elm-format does: it keeps parentheses with a comment inside,
-  and with source it keeps a chain of operators of the same precedence
+  places, as elm-format does: it keeps commented parentheses except in
+  the unwrapping contexts above, and with source it keeps a chain of
+  operators of the same precedence
   and different directions flat (`a |> f <| g`). `print_file` and
   `normalize_file` have `(a |> f) <| g`, which `elm make` accepts.
 - Literals: a string or char literal escapes `\n`, `\t`, `\\`, its quote
@@ -442,6 +445,11 @@ and `print_type_annotation`, each with `width?` (default 120) and
   (`1.0e3` or `1000.0`, Haskell `showEFloat` and `showFFloat`), and an
   integer keeps its digits. Without source, and in the `Width` layout,
   literals print from their value.
+  Out-of-range integers deliberately keep their source digits in `ElmFormat`
+  instead of copying elm-format's Int64 wrap-around. For example,
+  `9223372036854775808` stays positive and `0xFFFFFFFFFFFFFFFF` stays as
+  written. The parser reports `KR-PARSE-009`; formatting must not replace
+  an overflowing literal with a different signed value (decision `krueger-b20`).
 - Comments: `print_file` prints the documentation fields, the module
   documentation and the port doc comments (both in `File.comments`).
   `format` also prints the regular comments (see "Formatter").
@@ -451,8 +459,11 @@ and `print_type_annotation`, each with `width?` (default 120) and
   wraps the code in a module (as declarations, then as expressions, then
   as a module), formats it with the `ElmFormat` layout and removes the
   wrapper, with elm-format's doc-comment spacing (one blank line between
-  items, none after a comment; `formatModule` for a module). Code that
-  does not parse stays as written, and so does a doc comment whose
+  items, none after a comment; `formatModule` for a module). A token-based
+  adapter also reads elm-format's documentation-only fragments: tuple
+  functions, orphan annotations, top-level destructuring, legacy backtick
+  operators, and column-one operator continuations. These forms do not
+  change the parser's module grammar. Code that does not parse stays as written, and so does a doc comment whose
   formatted text would not end the comment at its end. Code in doc
   comments nested more than 3 deep is not formatted. Doc comments get LF
   line ends.
@@ -485,7 +496,7 @@ and `print_type_annotation`, each with `width?` (default 120) and
 - `ModuleCst::to_source()` rebuilds the scanned text byte for byte.
 - `mise run test:parity` checks the round trip, idempotence and the
   lossless CST on the corpus, and compares the printed text with
-  `tests/printer/elm_format.lock`. Of the 363 corpus files, 331 are stable
+  `tests/printer/elm_format.lock`. Of the 363 corpus files, 362 are stable
   under elm-format 0.8.7, and one follows its recorded second pass (a moved
   import comment in doc code gets another blank line on that pass).
   The lock records both printed hashes for that known oracle transition;
@@ -493,12 +504,8 @@ and `print_type_annotation`, each with `width?` (default 120) and
   `tests/printer/oracle_transitions.json` pins the permitted first/second
   pairs independently of the generated lock. The recorder grants an
   exemption only when both actual hashes match a pin; it never updates pins.
-  `tests/printer/pending.json` lists the 31 files
-  that elm-format still changes. Each pending file has a bd issue, and the
-  list only shrinks: a fix removes entries, and the check fails when a
-  listed file becomes stable.
-  Differences that are known and not yet fixed are in the issues that
-  the pending list names.
+  `tests/printer/pending.json` is empty. The list only shrinks: a fix removes
+  entries, and the check fails when a listed file becomes stable.
 - After a printer change, run `mise run printer:record` (needs
   elm-format through `mise x`) and commit the lock. Give a pending path to
   reset the list: `mise run printer:record tests/printer/pending.json`. Use
@@ -544,11 +551,10 @@ and `print_type_annotation`, each with `width?` (default 120) and
   text, or elm-format's recorded second-pass hash when the first-pass hash
   also matches, and that the regular comments stay, in order. The oracle
   recorder writes `second` only when elm-format changes its own output.
-  Of the corpus files,
-  297 of the 299 that elm-format leaves unchanged and 55 of the 64 that it
-  changes match; 70 of the 71 elm-format test files match.
-  `tests/format/pending.json` lists the 12 files that differ; each has a
-  bd issue, and the list only shrinks.
+  All 299 corpus files that elm-format leaves unchanged and all 64 that it changes
+  match; all 71 applicable elm-format test files match.
+  `tests/format/pending.json` is empty. The check rejects an unlisted difference
+  and a pending file whose output now matches.
 - Expected outputs in tests come from elm-format 0.8.7:
   `printf '%s' "$SRC" | mise x github:avh4/elm-format@0.8.7 -- elm-format --stdin --elm-version=0.19`.
 

@@ -454,15 +454,20 @@ fn Ctx::arrow_chain_plan(
   ) => {
     let (l_lead, l_body, l_trail) = parts
     match split {
-      Fit =>
+      Fit => {
+        let body = @pretty.ungroup(l_lead + l_body)
+        let gap = if @pretty.can_break(body) {
+          @pretty.line()
+        } else {
+          @pretty.text(" ")
+        }
         @pretty.line() +
         lead +
         @pretty.text("->") +
         comments_after(after) +
-        @pretty.text(" ") +
-        l_lead +
-        l_body +
+        @pretty.group(@pretty.tab(4, gap + body)) +
         l_trail
+      }
       Join | Split =>
         split_line(split) +
         lead +

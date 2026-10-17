@@ -498,3 +498,23 @@ test "a doc comment that formatting would not close at its end stays as written"
     }
   })
 }
+
+///|
+test "orphan doc-code annotations keep their trailing comments" {
+  @expect.expect_all(s => {
+    for
+      (source, expected) in [
+        (
+          " A.\n\n    f : Int -- why\n\n", "module A exposing (f)\n\n{-| A.\n\n\n    f : Int\n\n    -- why\n\n-}\n\n\nf =\n    1\n",
+        ),
+        (
+          " A.\n\n    f : Int {- why -}\n\n", "module A exposing (f)\n\n{-| A.\n\n\n    f : Int\n\n    {- why -}\n\n-}\n\n\nf =\n    1\n",
+        ),
+        (
+          " A.\n\n    f : Int {- multi\n    line -}\n\n", "module A exposing (f)\n\n{-| A.\n\n\n    f : Int\n\n    {- multi\n       line\n    -}\n\n-}\n\n\nf =\n    1\n",
+        ),
+      ] {
+      s.expect(@printer.format(doc_module(source))).to_equal(expected)
+    }
+  })
+}

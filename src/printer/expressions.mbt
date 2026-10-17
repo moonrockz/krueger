@@ -3,6 +3,7 @@
 /// the plan, and spec section 4.3).
 priv enum ExprAt {
   AnyExpr
+  CommentedExpr // elm-format formatCommentedExpression
   /// An operand of an operator chain, other than the last.
   Operand
   /// The last operand of a chain, after an operator other than `<|`.
@@ -41,7 +42,7 @@ fn is_atom(e : @ast.Expression) -> Bool {
 ///|
 fn needs_parens(e : @ast.Expression, at : ExprAt) -> Bool {
   match at {
-    AnyExpr | LastOperand | Piped => false
+    AnyExpr | CommentedExpr | LastOperand | Piped => false
     Operand =>
       e
       is (LambdaExpression(_)
@@ -100,7 +101,7 @@ fn syntax_context(e : @ast.Expression) -> SyntaxContext {
 /// elm-format's `formatExpression` and `formatBinops`).
 fn place_context(at : ExprAt) -> SyntaxContext {
   match at {
-    AnyExpr => SyntaxSeparated
+    AnyExpr | CommentedExpr => SyntaxSeparated
     Operand | LastOperand | Head => InfixSeparated
     Piped => AmbiguousEnd
     ExprArg | Negated | Target => SpaceSeparated
@@ -188,13 +189,17 @@ fn Ctx::run(self : Ctx, start : Work) -> @pretty.Doc raise PrintError {
         // elm-format Box.hs formatExpression `Parens`: parentheses with
         // no comments inside go, and the expression in them takes their
         // place (see `normalize_file`).
-        if e.value is ParenthesizedExpression(x) &&
-          !parens_at(x.value, at) &&
-          !self.comment_in_parens(e.range, x.range) {
-          push_plan([Expr(path.child("parenthesized", 0), x, at)], docs => {
-            wrap(docs[0])
-          })
-          continue
+        if e.value is ParenthesizedExpression(x) {
+          let uncommented = !self.comment_in_parens(e.range, x.range)
+          let unwrap_comments = at is CommentedExpr ||
+            (at is ExprArg && !self.comment_after_parens_body(e.range, x.range))
+          if (uncommented && !parens_at(x.value, at)) || unwrap_comments {
+            let (pre, post) = self.take_paren_comments(e.range, x.range)
+            push_plan([Expr(path.child("parenthesized", 0), x, at)], docs => {
+              wrap(commented(pre, docs[0], post).0)
+            })
+            continue
+          }
         }
         let (items, combine) = self.expr_plan(path, e)
         if parens_at(e.value, at) {
@@ -581,7 +586,9 @@ fn Ctx::expr_plan(
       // Three docs per branch: its comments, the pattern with ` ->`, the
       // body. The comments after a branch go before the next one
       // (elm-format).
-      let parts = [Expr(path.child("expression", 0), b.expression, AnyExpr)]
+      let parts = [
+        Expr(path.child("expression", 0), b.expression, CommentedExpr),
+      ]
       for i, c in b.cases {
         let p = path.child("cases", i)
         let previous = if i > 0 {
@@ -612,12 +619,7 @@ fn Ctx::expr_plan(
       (
         parts,
         docs => {
-          let head = @pretty.group(
-            @pretty.text("case") +
-            @pretty.tab(4, split_line(subject_split) + docs[0]) +
-            split_line(subject_split) +
-            @pretty.text("of"),
-          )
+          let head = headed("case", docs[0], "of", subject_split)
           let mut branches = @pretty.empty()
           for i = 1; i + 2 < docs.length(); i = i + 3 {
             branches = branches +
@@ -840,7 +842,17 @@ fn Ctx::sequence_items(
       }),
     )
     parts.push(Leaf(() => comments_before(moved[i], x.range.start)))
-    parts.push(Expr(path.child(field_name, i), x, AnyExpr))
+    parts.push(
+      Expr(
+        path.child(field_name, i),
+        x,
+        if field_name == "tupled" {
+          CommentedExpr
+        } else {
+          AnyExpr
+        },
+      ),
+    )
   }
   parts
 }
@@ -899,7 +911,7 @@ fn Ctx::if_plan(
         @pretty.empty()
       }),
     )
-    parts.push(Expr(p.child("clause", 0), cond, AnyExpr))
+    parts.push(Expr(p.child("clause", 0), cond, CommentedExpr))
     parts.push(Expr(p.child("then", 0), then_, AnyExpr))
     match else_.value {
       IfBlock(c2, t2, f2) => {
@@ -934,12 +946,7 @@ fn Ctx::if_plan(
         let (cond_doc, _) = commented([], docs[i + 1], before_then[k])
         let after_branch = before_else[k]
         d = d +
-          @pretty.group(
-            @pretty.text("if") +
-            @pretty.tab(4, @pretty.line() + cond_doc) +
-            @pretty.line() +
-            @pretty.text("then"),
-          ) +
+          headed("if", cond_doc, "then", self.join()) +
           @pretty.tab(
             4,
             @pretty.hardline() +

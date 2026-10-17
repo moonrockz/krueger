@@ -636,3 +636,38 @@ fn Ctx::comment_in_parens(
   t.has_between(parens.start, inner.start) ||
   t.has_between(inner.end, parens.end)
 }
+
+///|
+fn Ctx::comment_after_parens_body(
+  self : Ctx,
+  parens : @ast.Range,
+  inner : @ast.Range,
+) -> Bool {
+  self.comments is Some(t) && t.has_between(inner.end, parens.end)
+}
+
+///|
+/// Move the comments outside a removed pair of parentheses to its item.
+/// Take them before the child prints, including comments owned by the
+/// parentheses rather than by the child.
+fn Ctx::take_paren_comments(
+  self : Ctx,
+  parens : @ast.Range,
+  inner : @ast.Range,
+) -> (Array[@ast.Node[String]], Array[@ast.Node[String]]) {
+  let pre = self.take_if(Leading, inner, c => {
+    at_or_before(c.range.end, inner.start)
+  })
+  pre.append(
+    self.take_if(Inner, parens, c => at_or_before(c.range.end, inner.start)),
+  )
+  let post = self.take_if(Trailing, inner, c => {
+    at_or_before(inner.end, c.range.start)
+  })
+  post.append(
+    self.take_if(Inner, parens, c => at_or_before(inner.end, c.range.start)),
+  )
+  pre.sort_by((a, b) => compare_location(a.range.start, b.range.start))
+  post.sort_by((a, b) => compare_location(a.range.start, b.range.start))
+  (pre, post)
+}

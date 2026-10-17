@@ -666,3 +666,38 @@ test "documentation on a let function raises LetDocumentation" {
     .to_equal("{-| d\n-}\ny =\n    x")
   })
 }
+
+///|
+test "width layout joins atomic if and case heads regardless of their length" {
+  @expect.expect_all(s => {
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("if veryLongCondition then 1 else 0"),
+        width=12,
+      ),
+    )
+    .to_equal("if veryLongCondition then\n    1\n\nelse\n    0")
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("case veryLongSubject of\n        _ -> 1"),
+        width=12,
+      ),
+    )
+    .to_equal("case veryLongSubject of\n    _ ->\n        1")
+    s
+    .expect(
+      @printer.print_expression(expr_of("f (longFunction argument)"), width=15),
+    )
+    .to_equal("f\n    (longFunction\n        argument\n    )")
+    s
+    .expect(
+      @printer.print_expression(
+        expr_of("longFunction argument <| value"),
+        width=15,
+      ),
+    )
+    .to_equal("longFunction\n    argument\n<|\n    value")
+  })
+}

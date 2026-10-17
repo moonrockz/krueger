@@ -38,3 +38,41 @@ Feature: Elm printer
               [ class "a" ]
               [ text "first", text "second" ]
       """
+
+  Scenario: An atomic condition keeps the if head on one line
+    Given the Elm module:
+      """elm
+      module Main exposing (..)
+
+
+      main =
+          if veryLongCondition then
+              1
+
+          else
+              0
+      """
+    When I print its AST with width 12
+    Then the printed source equals the module
+
+  Scenario: A multiline left operand puts the backward pipe on its own line
+    Given the Elm module:
+      """elm
+      module Main exposing (..)
+
+
+      main =
+          longFunction argument <| value
+      """
+    When I print its AST with width 20
+    Then the printed source is:
+      """elm
+      module Main exposing (..)
+
+
+      main =
+          longFunction
+              argument
+          <|
+              value
+      """

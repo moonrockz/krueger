@@ -71,10 +71,20 @@ fn Ctx::signature_doc(
       @pretty.nest(4, @pretty.hardline() + chain)
   }
   let name = name + comments_after(name_post)
+  let chain = if self.layout is Width(_) {
+    @pretty.ungroup(chain)
+  } else {
+    chain
+  }
+  let gap = if @pretty.can_break(chain) {
+    @pretty.line()
+  } else {
+    @pretty.text(" ")
+  }
   @pretty.group(
     name +
     self.separator(s.name.range, " :", moved) +
-    @pretty.nest(4, @pretty.line() + chain),
+    @pretty.nest(4, gap + chain),
   )
 }
 

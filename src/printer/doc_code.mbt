@@ -80,11 +80,40 @@ fn format_code(
   depth : Int32,
 ) -> String? {
   guard depth < max_doc_depth else { return None }
-  let found = code_as_declarations(code, dialect, fuel, depth)
-  guard found is None else { return found }
-  let found = code_as_expressions(code, dialect, fuel, depth)
-  guard found is None else { return found }
-  code_as_module(code, dialect, fuel, depth)
+  // elm-format's documentation parser accepts expression fragments that
+  // Elm modules reject. Keep that dialect local to documentation code.
+  let dialect = {
+    ..dialect,
+    operators: [
+      ..dialect.operators.map(op => {
+        if op.direction is Non {
+          { ..op, direction: Left, }
+        } else {
+          op
+        }
+      }),
+      { symbol: "...", precedence: 1, direction: Left, },
+    ],
+    operator_symbols: [..dialect.operator_symbols, "..."],
+  }
+  let (code, dialect, restored) = prepare_infix_functions(code, dialect)
+  let (code, replacements) = prepare_code(code, dialect)
+  replacements.append(restored)
+  let found = match code_as_declarations(code, dialect, fuel, depth) {
+    Some(text) => Some(text)
+    None =>
+      match code_as_expressions(code, dialect, fuel, depth) {
+        Some(text) => Some(text)
+        None => code_as_module(code, dialect, fuel, depth)
+      }
+  }
+  found.map(text => {
+    let mut out = text
+    for (placeholder, original) in replacements {
+      out = out.replace_all(old=placeholder, new=original)
+    }
+    out
+  })
 }
 
 ///|
@@ -238,6 +267,7 @@ fn code_as_declarations(
   fuel : Int32,
   depth : Int32,
 ) -> String? {
+  let (code, marker) = complete_annotations(code, dialect)
   guard format_wrapped(code_header + code + "\n", dialect, fuel, depth)
     is Some((text, file)) &&
     file.imports.is_empty() else {
@@ -245,7 +275,7 @@ fn code_as_declarations(
   }
   let items = code_items(file).filter(i => !(i.kind is Header))
   guard !(items.last() is Some({ kind: Comment, .. })) else { return None }
-  code_text(text, items, (_, rows) => Some(rows))
+  code_text(text, items, (_, rows) => Some(annotation_rows(rows, marker)))
 }
 
 ///|
@@ -393,10 +423,24 @@ fn expression_groups(
     marks_trivia(t.trivia_before)
     marks_trivia(t.trivia_after)
   }
+  let operator_rows : @hashset.HashSet[Int32] = @hashset.HashSet([])
+  for i, token in stream.tokens {
+    if token.span.start.column == 1 && token.kind is Operator(_) {
+      operator_rows.add(token.span.start.line)
+    }
+    if i > 0 &&
+      stream.tokens[i - 1].kind is Operator(_) &&
+      token.span.start.line > stream.tokens[i - 1].span.end.line {
+      operator_rows.add(token.span.start.line)
+    }
+  }
   let groups : Array[Array[String]] = []
   for i, line in code.split("\n").collect() {
     let l = line.to_owned()
-    if l != "" && !l.has_prefix(" ") && !inside.contains(i + 1) {
+    if l != "" &&
+      !l.has_prefix(" ") &&
+      !inside.contains(i + 1) &&
+      (!operator_rows.contains(i + 1) || groups.is_empty()) {
       groups.push([l])
     } else {
       match groups.last() {
@@ -468,6 +512,7 @@ fn code_as_module(
   fuel : Int32,
   depth : Int32,
 ) -> String? {
+  let (code, marker) = complete_annotations(code, dialect)
   let (text, file, has_header) = match
     format_wrapped(code, dialect, fuel, depth) {
     Some((text, file)) => (text, file, true)
@@ -553,7 +598,8 @@ fn code_as_module(
     sb.write_string(line)
     sb.write_char('\n')
   }
-  guard code_text(text, body, (_, r) => Some(r)) is Some(rest) else {
+  guard code_text(text, body, (_, rows) => Some(annotation_rows(rows, marker)))
+    is Some(rest) else {
     return None
   }
   Some(sb.to_string() + rest)

@@ -80,12 +80,15 @@ fn parens(
   d : @pretty.Doc,
   inner~ : @pretty.Doc = @pretty.empty(),
 ) -> @pretty.Doc {
+  let d = if split is Fit { @pretty.ungroup(d) } else { d }
+  let gap = if @pretty.can_break(d + inner) {
+    split_softline(split)
+  } else {
+    @pretty.empty()
+  }
   @pretty.group(
     @pretty.align(
-      @pretty.text("(") +
-      @pretty.nest(1, d + inner) +
-      split_softline(split) +
-      @pretty.text(")"),
+      @pretty.text("(") + @pretty.nest(1, d + inner) + gap + @pretty.text(")"),
     ),
   )
 }
@@ -170,4 +173,47 @@ fn line_breaks(n : Int32) -> @pretty.Doc {
     d = d + @pretty.hardline()
   }
   d
+}
+
+///|
+/// A head that follows its child's line breaks. Atomic children can exceed
+/// the width; a compound child shares the head's group so they break together.
+fn headed(
+  keyword : String,
+  child : @pretty.Doc,
+  suffix : String,
+  split : Split,
+) -> @pretty.Doc {
+  let child = if split is Fit { @pretty.ungroup(child) } else { child }
+  let gap = if split is Split || @pretty.can_break(child) {
+    split_line(split)
+  } else {
+    @pretty.text(" ")
+  }
+  @pretty.group(
+    @pretty.text(keyword) +
+    @pretty.tab(4, gap + child) +
+    gap +
+    @pretty.text(suffix),
+  )
+}
+
+///|
+/// Constructor arguments split only together with a multi-line argument.
+fn constructor_args(
+  split : Split,
+  head : @pretty.Doc,
+  args : Array[@pretty.Doc],
+) -> @pretty.Doc {
+  let args = if split is Fit { args.map(@pretty.ungroup) } else { args }
+  let gap = if args.iter().any(@pretty.can_break) {
+    @pretty.line()
+  } else {
+    @pretty.text(" ")
+  }
+  let mut rest = @pretty.empty()
+  for arg in args {
+    rest = rest + gap + arg
+  }
+  @pretty.group(head + @pretty.tab(4, rest))
 }

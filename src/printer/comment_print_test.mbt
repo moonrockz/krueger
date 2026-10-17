@@ -889,3 +889,12 @@ test "comment tricks keep the declaration between them" {
     }
   })
 }
+
+///|
+test "effect module: block comments between where and its record stay inline" {
+  let dialect = @dialect.Dialect::elm_syntax_7_3_9()
+  let source = "effect module Task where {- w -} {- x -} { command = MyCmd } exposing (a, b)\n\n\na = 1\n"
+  let expected = "effect module Task where {- w -} {- x -} { command = MyCmd } exposing (a, b)\n\n\na =\n    1\n"
+  @expect.expect(@printer.format(source, dialect~)).to_equal(expected)
+  @expect.expect(@printer.format(expected, dialect~)).to_equal(expected)
+}

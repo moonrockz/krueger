@@ -426,7 +426,7 @@ fn Ctx::module_doc(
         raise PrintError(path~, problem=NoFields)
       }
       // The comments after the name: before `where` they stay with the
-      // name; between `where` and `{` they go before `where`; after `{`
+      // name; between `where` and `{` they follow `where`; after `{`
       // they go before the first field.
       let where_at = self.token_after(name.range.end)
       let brace = self.token_back_to(first.range.start, "{", 3)
@@ -490,13 +490,15 @@ fn Ctx::module_doc(
       }
       let name_breaks = after_name.iter().any(is_line_comment)
       if !name_breaks &&
-        before_where.is_empty() &&
+        before_where.iter().all(one_line) &&
         !breaks &&
         before_exposing.is_empty() {
         let (_, last) = names[names.length() - 1]
         return head +
           comments_after(after_name) +
-          @pretty.text(" where { ") +
+          @pretty.text(" where") +
+          comments_after(before_where) +
+          @pretty.text(" { ") +
           @pretty.join(fields, @pretty.text(", ")) +
           @pretty.text(" }") +
           self.exposing_doc(

@@ -184,3 +184,37 @@ test "without source, and in the Width layout, literals print from their value" 
     s.expect(@printer.format(source, layout=Width(120))).to_equal(expected)
   })
 }
+
+///|
+test "triple-quoted strings do not split surrounding applications and operators" {
+  @expect.expect_all(s => {
+    for
+      (input, output) in [
+        ("text \"\"\"a\nb\"\"\"", "text \"\"\"a\nb\"\"\""),
+        ("x \"\"\"a\nb\"\"\" ++ rules", "x \"\"\"a\nb\"\"\" ++ rules"),
+        ("[ text \"\"\"a\nb\"\"\" ]", "[ text \"\"\"a\nb\"\"\" ]"),
+      ] {
+      let expected = literal_module("s =\n    " + output + "\n")
+      s
+      .expect(@printer.format(literal_module("s = " + input + "\n")))
+      .to_equal(expected)
+      s.expect(@printer.format(expected)).to_equal(expected)
+    }
+  })
+}
+
+///|
+test "out-of-range integers preserve decimal and hex source digits without wrapping" {
+  @expect.expect_all(s => {
+    for
+      value in [
+        "9223372036854775808", "18446744073709551616", "0xFFFFFFFFFFFFFFFF", "0x10000000000000000",
+      ] {
+      let expected = literal_module("i =\n    " + value + "\n")
+      s
+      .expect(@printer.format(literal_module("i = " + value + "\n")))
+      .to_equal(expected)
+      s.expect(@printer.format(expected)).to_equal(expected)
+    }
+  })
+}

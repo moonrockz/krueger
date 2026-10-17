@@ -372,3 +372,13 @@ test "doc comments get LF line ends" {
     ),
   )
 }
+
+///|
+test "atomic signatures and constructor arguments do not split just for width" {
+  let source = "module A exposing (..)\n\n\nf : VeryLongAtomicTypeName\nf = 1\n\ntype T = C VeryLongAtomicTypeName\n"
+  let printed = @printer.print_file(file_of(source), width=12)
+  @expect.expect_all(s => {
+    s.expect(printed).to_contain("f : VeryLongAtomicTypeName\n")
+    s.expect(printed).to_contain("    = C VeryLongAtomicTypeName\n")
+  })
+}

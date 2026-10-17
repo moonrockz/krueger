@@ -313,7 +313,7 @@ fn Ctx::string_doc(self : Ctx, r : @ast.Range, s : String) -> @pretty.Doc {
       let text = triple_literal(s)
       // Its line breaks are part of the value: no indentation after them.
       if text.contains_char('\n') {
-        @pretty.verbatim(text)
+        @pretty.raw_text(text)
       } else {
         @pretty.text(text)
       }

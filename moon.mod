@@ -4,7 +4,7 @@ version = "0.8.0"
 
 import {
   "moonrockz/expect@0.6.1",
-  "moonrockz/pretty@0.1.1",
+  "moonrockz/pretty@0.3.0",
   "moonbit-community/cmark@0.4.12",
 }
 

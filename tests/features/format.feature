@@ -143,3 +143,34 @@ Feature: Formatter
           -- lead
           1
       """
+
+  Scenario: Doc code formats tuple functions and negative list items
+    Given the Elm source:
+      """
+      module A exposing (..)
+
+      {-| Examples.
+
+          (,)  1  2
+          [-2,-1,0]
+
+      -}
+      main = 1
+      """
+    When I format it
+    Then the output is:
+      """
+      module A exposing (..)
+
+      {-| Examples.
+
+          (,) 1 2
+
+          [ -2, -1, 0 ]
+
+      -}
+
+
+      main =
+          1
+      """
