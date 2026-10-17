@@ -180,6 +180,10 @@ test "printer_repeat_problems requires the exact recorded next pass on both path
 ///|
 /// `<key> -> (sha256, stable, oracle second pass)` from the lock.
 fn read_printer_lock() -> Map[String, (String, Bool, String?)] raise {
+  let pins_path = "../tests/printer/oracle_transitions.json"
+  guard @json.parse(@fs.read_file_to_string(pins_path)) is Object(pins) else {
+    fail("\{pins_path}: not a JSON object")
+  }
   if !@fs.path_exists(printer_lock_path) {
     fail("missing \{printer_lock_path}; run mise run printer:record")
   }
@@ -196,6 +200,15 @@ fn read_printer_lock() -> Map[String, (String, Bool, String?)] raise {
     let second = match e.get("second") {
       Some(String(second)) if verdict == "oracle_second_pass" => Some(second)
       _ => None
+    }
+    if verdict == "oracle_second_pass" {
+      guard second is Some(second_hash) &&
+        hash != second_hash &&
+        pins.get(key) is Some(Object(pin)) &&
+        pin.get("first") == Some(Json(hash)) &&
+        pin.get("second") == Some(Json(second_hash)) else {
+        fail("\{printer_lock_path}: unpinned oracle transition for \{key}")
+      }
     }
     lock[key] = (hash, verdict == "stable", second)
   }

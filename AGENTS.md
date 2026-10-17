@@ -490,6 +490,9 @@ and `print_type_annotation`, each with `width?` (default 120) and
   import comment in doc code gets another blank line on that pass).
   The lock records both printed hashes for that known oracle transition;
   reprinting and printing the normalized AST must match the second hash.
+  `tests/printer/oracle_transitions.json` pins the permitted first/second
+  pairs independently of the generated lock. The recorder grants an
+  exemption only when both actual hashes match a pin; it never updates pins.
   `tests/printer/pending.json` lists the 31 files
   that elm-format still changes. Each pending file has a bd issue, and the
   list only shrinks: a fix removes entries, and the check fails when a

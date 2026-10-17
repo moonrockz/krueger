@@ -26,8 +26,8 @@ import {
 /// `.elm` file, stops the script with an error and writes nothing. With
 /// `<pending.json>`, the script also writes the changed files there; use it
 /// only to start or reset the list.
-/// Files whose formatter lock records a changed second pass get the verdict
-/// `oracle_second_pass` and the hash of elm-format's next output instead.
+/// Only exact first/second hash pairs in `tests/printer/oracle_transitions.json`
+/// get the verdict `oracle_second_pass`. Recording never changes those pins.
 
 ///|
 let usage : String = "Usage: printer.mbtx record <printed-dir> <lock> [<pending.json>]"
@@ -38,6 +38,40 @@ struct Verdict {
   sha256 : String
   stable : Bool
   oracle_second : String?
+}
+
+///|
+fn recorded_verdict(
+  key : String,
+  first : String,
+  stable : Bool,
+  second : String,
+  transitions : Json,
+) -> Verdict {
+  let oracle_second = if stable {
+    None
+  } else {
+    match expected_second(transitions, key, first) {
+      Some(expected) if second == expected => Some(second)
+      _ => None
+    }
+  }
+  { key, sha256: first, stable, oracle_second, }
+}
+
+///|
+/// The pinned next hash, only when this key and its current printed bytes
+/// match a known first pass. Unrelated changes cannot update the pin.
+fn expected_second(transitions : Json, key : String, first : String) -> String? {
+  guard transitions is Object(entries) &&
+    entries.get(key) is Some(Object(entry)) &&
+    entry.get("first") is Some(String(known_first)) &&
+    entry.get("second") is Some(String(second)) &&
+    first == known_first &&
+    first != second else {
+    return None
+  }
+  Some(second)
 }
 
 ///|
@@ -129,19 +163,7 @@ fn compare_lexical(a : String, b : String) -> Int32 {
 
 ///|
 async fn record(dir : String, lock : String, pending : String?) -> Unit {
-  // Only a recorded non-idempotent oracle source can use a second-pass
-  // verdict. Ordinary printer differences remain pending.
-  let oracle = @fs.read_file("tests/format/elm_format.lock").json()
-  let has_second = (key : String) => {
-    match oracle {
-      Object(entries) =>
-        match entries.get(key) {
-          Some(Object(entry)) => entry.get("second") is Some(String(_))
-          _ => false
-        }
-      _ => false
-    }
-  }
+  let transitions = @fs.read_file("tests/printer/oracle_transitions.json").json()
   let verdicts = []
   let files = elm_files(dir)
   if files.is_empty() {
@@ -161,7 +183,9 @@ async fn record(dir : String, lock : String, pending : String?) -> Unit {
       )
       @sys.exit(1)
     }
-    let oracle_second = if !stable && has_second(file) {
+    let first = sha256_hex(@fs.read_file(path).text())
+    let second = if !stable &&
+      expected_second(transitions, file, first) is Some(_) {
       let (code, output) = @process.collect_stdout(
         "mise",
         [
@@ -173,16 +197,11 @@ async fn record(dir : String, lock : String, pending : String?) -> Unit {
         eprintln("printer: elm-format rejected the printed text for \{file}")
         @sys.exit(1)
       }
-      Some(sha256_hex(output.text()))
+      sha256_hex(output.text())
     } else {
-      None
+      ""
     }
-    verdicts.push({
-      key: file,
-      sha256: sha256_hex(@fs.read_file(path).text()),
-      stable,
-      oracle_second,
-    })
+    verdicts.push(recorded_verdict(file, first, stable, second, transitions))
   }
   @fs.write_file(lock, lock_text(verdicts))
   let changed = verdicts
@@ -214,15 +233,56 @@ async fn main {
 /// Scenario state for `features/printer.feature`.
 struct PrinterLockWorld {
   verdicts : Array[Verdict]
+  mut transitions : Json
+  mut candidate : (String, String, Bool, String)?
 }
 
 ///|
 fn PrinterLockWorld::new() -> PrinterLockWorld {
-  { verdicts: [], }
+  { verdicts: [], transitions: Json::object(Map([])), candidate: None, }
 }
 
 ///|
 impl @moonspec.World for PrinterLockWorld with fn configure(self, setup) {
+  setup.given1("the known oracle transitions:", fn(
+    doc : @moonspec.DocString,
+  ) raise {
+    self.transitions = @json.parse(doc.content)
+  })
+  setup.given1("the printed candidate:", fn(table : @moonspec.DataTable) {
+    let row = table.as_maps()[0]
+    self.candidate = Some(
+      (
+        row.get("key").unwrap_or(""),
+        row.get("sha256").unwrap_or(""),
+        row.get("stable") == Some("yes"),
+        row.get("formatted").unwrap_or(""),
+      ),
+    )
+  })
+  setup.when0("I classify the printed candidate", fn() {
+    let (key, first, stable, second) = self.candidate.unwrap()
+    self.verdicts.push(
+      recorded_verdict(key, first, stable, second, self.transitions),
+    )
+  })
+  setup.then1("the recorded verdict is {string}", fn(expected : String) raise {
+    guard @json.parse(lock_text(self.verdicts)) is Object(entries) &&
+      entries.get(self.candidate.unwrap().0) is Some(Object(entry)) else {
+      fail("no lock entry for the candidate")
+    }
+    @expect.expect(entry.get("elm_format")).to_equal(Some(Json(expected)))
+  })
+  setup.then1("the pending keys are {string}", fn(expected : String) raise {
+    let keys : Array[Json] = if expected == "" {
+      []
+    } else {
+      expected.split(",").map(k => Json(k.to_owned())).collect()
+    }
+    @expect.expect(@json.parse(pending_text(self.verdicts))).to_equal(
+      Json::array(keys),
+    )
+  })
   setup.given1("the verdicts:", fn(table : @moonspec.DataTable) {
     // as_maps() keys each row by the header row.
     for row in table.as_maps() {
