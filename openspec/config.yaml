@@ -1,0 +1,16 @@
+schema: html-design
+githubCopilot:
+  cloudAgent: false
+context: |
+  Krueger is a MoonBit parser, lossless scanner, AST/CST, printer and formatter for Elm and Elm-like dialects. Preserve Elm 0.19.1 and elm-syntax parity and the documented source-position contracts.
+  Follow AGENTS.md for repository conventions, toolchain, testing and local beads tracking.
+  OpenSpec holds versioned requirements and designs; beads holds ownership and status.
+rules:
+  proposal:
+    - State scope and affected public contracts. Link repository-local tracking under a Tracking section.
+  specs:
+    - Describe observable behavior with concrete success and failure scenarios.
+  design:
+    - Use the shared offline design.html template and discuss compatibility and migration.
+  tasks:
+    - Include verification, tests and documentation with each task group.

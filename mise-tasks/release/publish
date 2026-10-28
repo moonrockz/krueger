@@ -3,8 +3,8 @@
 set -euo pipefail
 
 echo "==> Pre-publish checks"
-moon check
-moon test
+mise exec -- moon check
+mise exec -- moon test
 
 echo "==> Publishing to mooncakes.io"
-exec moon run -q --target wasm scripts/publish.mbtx
+exec mise exec -- moon run -q --target wasm scripts/publish.mbtx

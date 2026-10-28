@@ -2,4 +2,4 @@
 #MISE description="Run coverage gate (fails if coverage is below threshold)"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/coverage.mbtx -- gate 80
+exec mise exec -- moon run -q --target wasm scripts/coverage.mbtx -- gate 80

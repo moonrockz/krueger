@@ -3,5 +3,5 @@
 #MISE depends=["corpus:fetch"]
 set -euo pipefail
 
-moon run -q --target wasm scripts/goldens.mbtx -- tests/corpus/manifest.json .corpus tools/elm-syntax-oracle .dev/out/goldens/raw
+mise exec -- moon run -q --target wasm scripts/goldens.mbtx -- tests/corpus/manifest.json .corpus tools/elm-syntax-oracle .dev/out/goldens/raw
 KRUEGER_PARITY_MODE=write-lock moon test harness/parity --target js

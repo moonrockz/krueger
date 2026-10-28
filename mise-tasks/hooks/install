@@ -2,4 +2,4 @@
 #MISE description="Install project git hooks via lefthook"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/hooks_install.mbtx
+exec mise exec -- moon run -q --target wasm scripts/hooks_install.mbtx

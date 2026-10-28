@@ -2,4 +2,4 @@
 #MISE description="Generate MoonBit interfaces"
 set -euo pipefail
 
-moon info
+mise exec -- moon info

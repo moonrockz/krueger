@@ -2,4 +2,4 @@
 #MISE description="Download and verify the pinned parity corpus into .corpus/"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/corpus.mbtx -- fetch tests/corpus/manifest.json .corpus
+exec mise exec -- moon run -q --target wasm scripts/corpus.mbtx -- fetch tests/corpus/manifest.json .corpus
