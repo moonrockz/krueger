@@ -2,4 +2,4 @@
 #MISE description="Update the release pull request body from CHANGELOG.md (run on release/vX.Y.Z after the highlights commit)"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/release.mbtx -- refresh
+exec mise exec -- moon run -q --target wasm scripts/release.mbtx -- refresh

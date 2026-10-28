@@ -4,4 +4,4 @@
 #USAGE flag "--local" help="Create the branch and commit, but do not push or open the pull request"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/release.mbtx -- prepare "$@"
+exec mise exec -- moon run -q --target wasm scripts/release.mbtx -- prepare "$@"

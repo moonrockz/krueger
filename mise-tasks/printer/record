@@ -3,4 +3,4 @@
 set -euo pipefail
 
 KRUEGER_PARITY_MODE=write-printed moon test harness/parity --target js
-exec moon run -q --target wasm scripts/printer.mbtx -- record .dev/out/printed tests/printer/elm_format.lock "$@"
+exec mise exec -- moon run -q --target wasm scripts/printer.mbtx -- record .dev/out/printed tests/printer/elm_format.lock "$@"

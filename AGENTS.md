@@ -1372,3 +1372,6 @@ machine, complete that exact installation before running checks:
 curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
 MOON_HOME="$(mise where http:moonbit)" bash /tmp/install-moonbit.sh '0.10.15+943464bfa'
 ```
+
+Task launchers resolve MoonBit through `mise exec -- moon` so Git hooks and
+subprocesses also use the pin when their caller has a global compiler on PATH.

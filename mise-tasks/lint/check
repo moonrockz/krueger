@@ -2,4 +2,4 @@
 #MISE description="Run lint checks (moon check; a warning fails)"
 set -euo pipefail
 
-moon check --deny-warn
+mise exec -- moon check --deny-warn

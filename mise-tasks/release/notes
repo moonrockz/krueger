@@ -3,4 +3,4 @@
 #USAGE arg "<version>" help="Version, for example 0.3.0"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/release.mbtx -- notes "$@"
+exec mise exec -- moon run -q --target wasm scripts/release.mbtx -- notes "$@"

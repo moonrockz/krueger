@@ -2,4 +2,4 @@
 #MISE description="Regenerate the lexer's Unicode identifier table (src/scanner/unicode_table.mbt), the printer's literal table (src/printer/unicode_table.mbt) and the Markdown character classes (src/markdown/unicode_table.mbt)"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/unicode_table.mbtx -- generate
+exec mise exec -- moon run -q --target wasm scripts/unicode_table.mbtx -- generate

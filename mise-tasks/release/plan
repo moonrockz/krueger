@@ -2,4 +2,4 @@
 #MISE description="Decide whether a Release workflow run releases (writes GITHUB_OUTPUT)"
 set -euo pipefail
 
-exec moon run -q --target wasm scripts/release.mbtx -- plan
+exec mise exec -- moon run -q --target wasm scripts/release.mbtx -- plan

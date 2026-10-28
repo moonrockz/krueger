@@ -2,6 +2,6 @@
 #MISE description="Run format checks"
 set -euo pipefail
 
-moon fmt --check
+mise exec -- moon fmt --check
 # moon fmt skips standalone .mbtx scripts unless their paths are given.
-moon fmt --check scripts/*.mbtx
+mise exec -- moon fmt --check scripts/*.mbtx

@@ -2,5 +2,5 @@
 #MISE description="Run MoonBit unit tests"
 set -euo pipefail
 for pkg in src src/dialect src/scanner src/parser src/report src/syntax src/cst src/ast src/lawkit src/printer src/markdown; do
-  moon test "$pkg" --target js
+  mise exec -- moon test "$pkg" --target js
 done

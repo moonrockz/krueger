@@ -2,4 +2,4 @@
 #MISE description="Run the benchmark cases once on small input (smoke check)"
 set -euo pipefail
 
-exec moon test harness/bench --target js
+exec mise exec -- moon test harness/bench --target js

@@ -2,4 +2,4 @@
 #MISE description="Run MoonSpec BDD tests"
 set -euo pipefail
 
-moon test harness/bdd --target js
+mise exec -- moon test harness/bdd --target js

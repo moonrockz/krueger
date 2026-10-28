@@ -3,4 +3,4 @@
 set -euo pipefail
 
 git fetch -q origin +refs/heads/benchmarks:refs/remotes/origin/benchmarks 2>/dev/null || true
-exec moon run -q --target wasm scripts/bench.mbtx -- compare "$@"
+exec mise exec -- moon run -q --target wasm scripts/bench.mbtx -- compare "$@"
