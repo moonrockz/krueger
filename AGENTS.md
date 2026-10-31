@@ -1370,7 +1370,7 @@ machine, complete that exact installation before running checks:
 
 ```shell
 curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
-MOON_HOME="$(mise where http:moonbit)" bash /tmp/install-moonbit.sh '0.10.15+943464bfa'
+MOON_HOME="$(mise where http:moonbit)" bash /tmp/install-moonbit.sh '0.10.18+6c83a7f62'
 ```
 
 Task launchers resolve MoonBit through `mise exec -- moon` so Git hooks and

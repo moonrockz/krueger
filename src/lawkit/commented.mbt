@@ -127,7 +127,7 @@ fn closing_bracket_lines(
 /// Every comment that this generator adds holds the marker `\u{A7}` once, so
 /// that a test can count them. The base module has none.
 pub impl @quickcheck.Arbitrary for Commented with fn arbitrary(size, rs) {
-  let ElmModule(base) = ElmModule::arbitrary(size, rs)
+  let ElmModule(base) = (@quickcheck.Arbitrary::arbitrary(size, rs) : ElmModule)
   let eol = if base.contains("\r\n") { "\r\n" } else { "\n" }
   let lines : Array[String] = base
     .replace_all(old="\r\n", new="\n")

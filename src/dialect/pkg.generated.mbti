@@ -8,7 +8,7 @@ import {
 }
 
 // Values
-pub const DEFAULT_FUEL : Int = 1200
+pub const DEFAULT_FUEL : Int32 = 1200
 
 pub fn standard_operators() -> Array[OperatorDef]
 
@@ -37,7 +37,7 @@ pub fn Dialect::validate(Self) -> Array[String]
 
 pub(all) struct OperatorDef {
   symbol : String
-  precedence : Int
+  precedence : Int32
   direction : @ast.InfixDirection
 } derive(Eq, @debug.Debug)
 

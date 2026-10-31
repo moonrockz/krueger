@@ -101,7 +101,8 @@ async test "tokenizer feature: comments and doc comments scenario" {
     @moonspec.FeatureSource::File("../tests/features/tokenizer.feature"),
   ])
   options.scenario_name("Tokenize module with comments and doc comment")
-  @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
+  @moonspec.run_or_fail(() => (Default::default() : TokenizerWorld), options)
+  |> ignore
 }
 
 ///|
@@ -110,7 +111,8 @@ async test "tokenizer feature: malformed comment diagnostics scenario" {
     @moonspec.FeatureSource::File("../tests/features/tokenizer.feature"),
   ])
   options.scenario_name("Report malformed block comment")
-  @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
+  @moonspec.run_or_fail(() => (Default::default() : TokenizerWorld), options)
+  |> ignore
 }
 
 ///|
@@ -119,5 +121,6 @@ async test "tokenizer feature: invalid character diagnostics scenario" {
     @moonspec.FeatureSource::File("../tests/features/tokenizer.feature"),
   ])
   options.scenario_name("Report invalid character sequence")
-  @moonspec.run_or_fail(TokenizerWorld::default, options) |> ignore
+  @moonspec.run_or_fail(() => (Default::default() : TokenizerWorld), options)
+  |> ignore
 }
