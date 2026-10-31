@@ -299,7 +299,11 @@ test "an empty source has no tree" {
 ///|
 test "law: for any text with an AST, every node lies inside the source and inside its parent" {
   // Edges: any ElmText (fragments, cut or changed modules, edge characters);
-  // parses with errors included when they still give an AST.
+  // parses with errors included when they still give an AST. Exception: a
+  // GLSL range ends two columns late (an elm-syntax quirk that the parser
+  // keeps), so the end of a GLSL literal, and of each node that ends with it,
+  // can lie past its line. Such an end must be two columns after a position
+  // in the source.
   @quickcheck.check(
     (t : @lawkit.ElmText) => {
       let text = t.text()
@@ -310,6 +314,21 @@ test "law: for any text with an AST, every node lies inside the source and insid
       match @syntax.NodeRef::of_result(result) {
         None => true
         Some(root) => {
+          let glsl_ends : Array[@ast.Location] = []
+          @syntax.walk(root, n => {
+            if n.category() == "expression" && n.kind() == "glsl" {
+              glsl_ends.push(n.range().end)
+            }
+            Continue
+          })
+          let end_in_source = (end : @ast.Location) => {
+            @lawkit.offset_of(text, end) is Some(_) ||
+            (
+              glsl_ends.contains(end) &&
+              @lawkit.offset_of(text, { ..end, column: end.column - 2, })
+              is Some(_)
+            )
+          }
           let mut ok = true
           let open : Array[@syntax.NodeRef] = []
           @syntax.walk(
@@ -318,7 +337,7 @@ test "law: for any text with an AST, every node lies inside the source and insid
               let r = n.range()
               ok = ok &&
                 @lawkit.offset_of(text, r.start) is Some(_) &&
-                @lawkit.offset_of(text, r.end) is Some(_) &&
+                end_in_source(r.end) &&
                 @lawkit.at_or_before(r.start, r.end) &&
                 (match open.last() {
                   Some(parent) => @lawkit.within(r, parent.range())

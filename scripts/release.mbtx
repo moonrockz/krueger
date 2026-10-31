@@ -1,14 +1,15 @@
-///|
+----
 import {
-  "moonbitlang/async@0.22.4",
-  "moonbitlang/async@0.22.4/fs",
-  "moonbitlang/async@0.22.4/process",
+  "moonbitlang/async@0.22.7",
+  "moonbitlang/async@0.22.7/fs",
+  "moonbitlang/async@0.22.7/process",
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonrockz/moonspec@0.11.0",
   "moonrockz/expect@0.6.1",
 }
+----
 
 ///|
 /// Release tooling. A release is a pull request that sets the version in

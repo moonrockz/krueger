@@ -9,3 +9,7 @@ import {
   "moonrockz/krueger/parser",
   "moonrockz/krueger/scanner",
 } for "test"
+
+import {
+  "moonrockz/expect",
+} for "wbtest"
