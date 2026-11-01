@@ -194,7 +194,7 @@ pub(all) struct Import {
 
 pub(all) struct Infix {
   direction : Node[InfixDirection]
-  precedence : Node[Int]
+  precedence : Node[Int32]
   operator : Node[String]
   function : Node[String]
 } derive(Eq, @debug.Debug)
@@ -221,8 +221,8 @@ pub(all) enum LetDeclaration {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Location {
-  row : Int
-  column : Int
+  row : Int32
+  column : Int32
 } derive(Eq, @debug.Debug)
 
 pub(all) enum Module {

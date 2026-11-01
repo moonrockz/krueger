@@ -9,7 +9,8 @@
 /// argument of each application; only before the last; in random gaps;
 /// indentation one column right of the layout column and up to 8 columns
 /// more; CRLF line ends; a tab inside a string literal; an application
-/// with one argument (first and last at once).
+/// with one argument (first and last at once). No `if` in parentheses
+/// after `else` (see `ElmModule`).
 pub(all) struct Spaced(String) derive(Debug)
 
 ///|
@@ -157,7 +158,7 @@ fn Spacer::expr(self : Spacer, size : Int32, column : Int32) -> String {
       g() +
       "else" +
       g() +
-      self.atom(s, column)
+      else_branch(self.atom(s, column))
     _ => self.atom(size, column)
   }
 }

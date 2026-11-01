@@ -11,7 +11,8 @@
 /// Float that rounds to zero, the first and last code point, escapes). No Int
 /// literal above 2^53: the default encoder writes Ints as Doubles, as
 /// elm-syntax does (`IntLiteral` reaches them). No GLSL: its elm-syntax range
-/// ends two columns late, which the range laws reject.
+/// ends two columns late, which the range laws reject. No `if` in
+/// parentheses after `else`: elm-format 0.8.7 is not idempotent there.
 pub(all) struct ElmModule(String) derive(Debug)
 
 ///|
@@ -88,9 +89,45 @@ fn gen_inline(size : Int32, rs : @splitmix.RandomState) -> String {
       " then " +
       gen_atom(s, rs) +
       " else " +
-      gen_atom(s, rs)
+      else_branch(gen_atom(s, rs))
     _ => gen_atom(size, rs)
   }
+}
+
+///|
+/// The `else` branch for `atom`: `x` when `atom` is an `if` in parentheses,
+/// else `atom`. elm-format 0.8.7 is not idempotent on `else (if …)`: its
+/// first pass removes the parentheses and writes a nested `if`, and its
+/// second pass reads that as `else if`. The printer does the same, so the
+/// idempotence laws exclude this shape.
+fn else_branch(atom : String) -> String {
+  if is_parenthesized_if(atom) {
+    "x"
+  } else {
+    atom
+  }
+}
+
+///|
+/// Whether `atom` is an `if` in one or more parentheses, with or without
+/// whitespace or line breaks between them.
+fn is_parenthesized_if(atom : String) -> Bool {
+  let space = (i : Int32) => {
+    atom[i] == ' ' || atom[i] == '\n' || atom[i] == '\r'
+  }
+  let mut i = 0
+  let mut parens = 0
+  while i < atom.length() && (atom[i] == '(' || space(i)) {
+    if atom[i] == '(' {
+      parens += 1
+    }
+    i += 1
+  }
+  parens > 0 &&
+  i + 2 < atom.length() &&
+  atom[i] == 'i' &&
+  atom[i + 1] == 'f' &&
+  space(i + 2)
 }
 
 ///|

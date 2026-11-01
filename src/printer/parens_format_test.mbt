@@ -295,3 +295,31 @@ test "commented tuple items and application arguments unwrap their parentheses" 
   @expect.expect(@printer.format(source)).to_equal(expected)
   @expect.expect(@printer.format(expected)).to_equal(expected)
 }
+
+///|
+test "an if in parentheses after else becomes a nested if, as in elm-format" {
+  // elm-format 0.8.7 is not idempotent here: its second pass reads the
+  // nested `if` as `else if`. The idempotence laws leave this shape out
+  // (`@lawkit.ElmModule`, `@lawkit.Spaced`).
+  let once = @printer.format(
+    parens_module(
+      "f x =\n    if x then\n        1\n\n    else (if x then 2 else 3)\n",
+    ),
+  )
+  @expect.expect_all(s => {
+    s
+    .expect(once)
+    .to_equal(
+      parens_module(
+        "f x =\n    if x then\n        1\n\n    else\n        if x then\n            2\n\n        else\n            3\n",
+      ),
+    )
+    s
+    .expect(@printer.format(once))
+    .to_equal(
+      parens_module(
+        "f x =\n    if x then\n        1\n\n    else if x then\n        2\n\n    else\n        3\n",
+      ),
+    )
+  })
+}

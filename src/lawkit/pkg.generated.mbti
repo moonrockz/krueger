@@ -12,7 +12,7 @@ import {
 // Values
 pub fn at_or_before(@ast.Location, @ast.Location) -> Bool
 
-pub fn between_characters(String, Int) -> Bool
+pub fn between_characters(String, Int32) -> Bool
 
 pub fn constructs() -> Array[Construct]
 
@@ -26,35 +26,35 @@ pub fn elm_json_problems(Json) -> Array[(@ast.Range?, String)]?
 
 pub fn end_of_text(String) -> @ast.Location
 
-pub fn excerpt_lines(String) -> Array[(Int, String)]
+pub fn excerpt_lines(String) -> Array[(Int32, String)]
 
-pub fn line_count(String) -> Int
+pub fn line_count(String) -> Int32
 
 pub fn literal_edge_chars() -> Array[String]
 
 pub fn literal_forms() -> Array[(String, String)]
 
-pub fn nested(Construct, Int) -> String
+pub fn nested(Construct, Int32) -> String
 
-pub fn offset_of(String, @ast.Location) -> Int?
+pub fn offset_of(String, @ast.Location) -> Int32?
 
 pub fn overflow_literal() -> String
 
-pub fn position_of(String, Int) -> @ast.Location?
+pub fn position_of(String, Int32) -> @ast.Location?
 
-pub fn positions_of(String, Array[Int]) -> Array[@ast.Location?]
+pub fn positions_of(String, Array[Int32]) -> Array[@ast.Location?]
 
 pub fn range_edges(Array[@ast.Range]) -> Array[@ast.Location]
 
 pub fn range_in_source(String, @ast.Range) -> Bool
 
-pub fn shows_source(String, String, Array[Int]) -> Bool
+pub fn shows_source(String, String, Array[Int32]) -> Bool
 
 pub fn source_lines(String) -> Array[String]
 
 pub fn strip_ansi(String) -> String
 
-pub fn units(Array[Int]) -> String
+pub fn units(Array[Int32]) -> String
 
 pub fn within(@ast.Range, @ast.Range) -> Bool
 
@@ -125,7 +125,7 @@ pub impl @shrink.Shrink for IntLiteral
 
 pub(all) struct Nesting {
   construct : Construct
-  depth : Int
+  depth : Int32
 } derive(Eq, @debug.Debug)
 pub fn Nesting::text(Self) -> String
 pub impl @quickcheck.Arbitrary for Nesting

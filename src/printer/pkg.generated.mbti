@@ -11,21 +11,21 @@ import {
 }
 
 // Values
-pub fn format(String, layout? : Layout, dialect? : @dialect.Dialect, fuel? : Int) -> String raise FormatError
+pub fn format(String, layout? : Layout, dialect? : @dialect.Dialect, fuel? : Int32) -> String raise FormatError
 
-pub fn format_parsed(@parser.ParseResult, layout? : Layout, dialect? : @dialect.Dialect, fuel? : Int) -> String raise FormatError
+pub fn format_parsed(@parser.ParseResult, layout? : Layout, dialect? : @dialect.Dialect, fuel? : Int32) -> String raise FormatError
 
 pub fn normalize_file(@ast.File, dialect? : @dialect.Dialect) -> @ast.File
 
-pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+pub fn print_declaration(@ast.Node[@ast.Declaration], width? : Int32, dialect? : @dialect.Dialect) -> String raise PrintError
 
-pub fn print_expression(@ast.Node[@ast.Expression], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+pub fn print_expression(@ast.Node[@ast.Expression], width? : Int32, dialect? : @dialect.Dialect) -> String raise PrintError
 
-pub fn print_file(@ast.File, width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+pub fn print_file(@ast.File, width? : Int32, dialect? : @dialect.Dialect) -> String raise PrintError
 
-pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int32, dialect? : @dialect.Dialect) -> String raise PrintError
 
-pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int, dialect? : @dialect.Dialect) -> String raise PrintError
+pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int32, dialect? : @dialect.Dialect) -> String raise PrintError
 
 // Errors
 pub suberror FormatError {
@@ -40,7 +40,7 @@ pub suberror PrintError {
 // Types and methods
 pub(all) enum Layout {
   ElmFormat
-  Width(Int)
+  Width(Int32)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum NameKind {
@@ -64,7 +64,7 @@ pub(all) enum PrintProblem {
   NoConstructors
   NoLambdaArguments
   UnknownOperator(String)
-  InvalidPrecedence(Int)
+  InvalidPrecedence(Int32)
   InvalidGlsl
   InvalidDocumentation
   LetDocumentation

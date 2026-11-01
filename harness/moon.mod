@@ -6,7 +6,7 @@ import {
   "moonrockz/krueger@0.0.0",
   "moonbitlang/x@0.5.5",
   "moonrockz/moonspec@0.11.0",
-  "moonbitlang/async@0.22.4",
+  "moonbitlang/async@0.22.7",
   "moonrockz/expect@0.6.1",
 }
 

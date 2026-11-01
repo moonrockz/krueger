@@ -97,7 +97,7 @@ pub fn DefaultScanner::tokenize(Self, SourceText) -> Result[TokenStream, ScanErr
 pub impl Scanner for DefaultScanner
 
 pub(all) enum Detail {
-  OutOfFuel(fuel~ : Int, walk~ : Walk)
+  OutOfFuel(fuel~ : Int32, walk~ : Walk)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Diagnostic {
@@ -129,9 +129,9 @@ pub(all) enum KeywordKind {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Position {
-  offset : Int
-  line : Int
-  column : Int
+  offset : Int32
+  line : Int32
+  column : Int32
 } derive(Eq, @debug.Debug)
 
 pub(all) struct RawToken {
