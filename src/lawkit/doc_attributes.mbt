@@ -6,7 +6,8 @@
 /// attributes block; values with characters outside the BMP and integers
 /// too large for 64 bits (`overflow_literal`); LF, CRLF and mixed line ends
 /// inside the comment.
-pub(all) struct DocAttributes(String) derive(Debug)
+#derive(Debug)
+pub(all) struct DocAttributes(String)
 
 ///|
 /// An integer literal too large for 64 bits: the parser warns on it.

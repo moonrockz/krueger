@@ -2,3 +2,6 @@
 # byte for byte; never convert their line endings.
 tests/rejection/**/*.elm -text
 tests/rejection/messages/**/*.txt -text
+
+# The OpenSpec bundle files are compared byte for byte with their lock digests.
+openspec/schemas/html-design/** text eol=lf

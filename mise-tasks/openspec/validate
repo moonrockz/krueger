@@ -1,3 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Validate all OpenSpec artifacts"
-exec openspec validate --all --strict
+#MISE description="Validate the shared OpenSpec workflow"
+set -euo pipefail
+mise exec -- openspec schema validate html-design
+mise exec -- openspec validate --all --strict

@@ -201,7 +201,7 @@ test "law: a column is one more than the characters before it on its line" {
         }
         if @lawkit.between_characters(text, o) {
           let column = 1 +
-            text.view(start_offset=line_start, end_offset=o).iter().count()
+            text.clamped_view(start=line_start, end=o).iter().count()
           ok = ok && @lawkit.position_of(text, o) == Some({ row, column, })
         }
       }

@@ -34,9 +34,9 @@ fn comment_lines(c : String) -> Array[String] {
     return [text]
   }
   guard text != "{--}" else { return [text] }
-  let body = text.view(start_offset=2, end_offset=text.length() - 2)
+  let body = text.clamped_view(start=2, end=text.length() - 2)
   if body.has_prefix("-") {
-    let b = body.view(start_offset=1).trim_start(chars=" ").trim_end(chars=" ")
+    let b = body.clamped_view(start=1).trim_start(chars=" ").trim_end(chars=" ")
     return ("{--" + b.to_owned() + "-}")
       .split("\n")
       .map(l => l.to_owned())

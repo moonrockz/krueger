@@ -7,7 +7,7 @@ import {
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.11.0",
+  "moonrockz/moonspec@0.12.0/async" @moonspec,
   "moonrockz/expect@0.6.1",
 }
 ----
@@ -21,30 +21,34 @@ import {
 /// payloads, prints a summary, and applies the threshold.
 
 ///|
+#derive(Eq, Debug)
 enum Mode {
   Warn
   Gate
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 struct Options {
   mode : Mode
   threshold : Int32
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 struct ModuleStat {
   name : String
   covered : Int32
   total : Int32
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 enum Verdict {
   Pass
   Warning(String)
   Failure(String)
-} derive(Eq, Debug)
+}
 
 ///|
 let usage : String = "Usage: coverage.mbtx <warn|gate> [threshold]"
@@ -266,10 +270,11 @@ fn total_percent(stats : Array[ModuleStat]) -> Double {
 
 ///|
 /// Result of reading coverage artifacts: printable lines and total percent.
+#derive(Eq, Debug)
 struct Report {
   lines : Array[String]
   total : Double
-} derive(Eq, Debug)
+}
 
 ///|
 /// Build the report from the text of each coverage artifact.

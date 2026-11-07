@@ -90,11 +90,12 @@ fn un_is_pair(text : String, i : Int32) -> Bool {
 
 ///|
 /// A unist point. `column` and `offset` count UTF-16 units.
+#derive(Debug)
 struct UnPoint {
   line : Int32
   column : Int32
   offset : Int32
-} derive(Debug)
+}
 
 ///|
 fn UnPoint::json(self : UnPoint) -> Json {
@@ -171,7 +172,7 @@ fn un_node(text : String, starts : Array[Int32], frame : UnFrame) -> Json {
     object["field"] = Json(field)
   }
   if frame.children.is_empty() {
-    let value = text.view(start_offset=start.offset, end_offset=end.offset)
+    let value = text.clamped_view(start=start.offset, end=end.offset)
     object["value"] = Json(value.to_owned())
   } else {
     object["children"] = Json::array(frame.children)

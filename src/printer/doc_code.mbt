@@ -19,7 +19,7 @@ fn format_documentation(
   guard text.length() >= 5 && text.has_prefix("{-|") && text.has_suffix("-}") else {
     return text
   }
-  let inner = text.view(start_offset=3, end_offset=text.length() - 2).to_owned()
+  let inner = text.clamped_view(start=3, end=text.length() - 2).to_owned()
   let formatted = "{-|" +
     @markdown.format_doc(inner, format_code=code => {
       format_code(code, dialect, fuel, depth)
@@ -368,7 +368,7 @@ fn code_as_expressions(
       if line == "" {
         out.push("")
       } else if line.has_prefix("    ") {
-        out.push(line.view(start_offset=4).to_owned())
+        out.push(line.clamped_view(start=4).to_owned())
       } else {
         return None
       }

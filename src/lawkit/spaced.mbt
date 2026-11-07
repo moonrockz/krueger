@@ -11,7 +11,8 @@
 /// more; CRLF line ends; a tab inside a string literal; an application
 /// with one argument (first and last at once). No `if` in parentheses
 /// after `else` (see `ElmModule`).
-pub(all) struct Spaced(String) derive(Debug)
+#derive(Debug)
+pub(all) struct Spaced(String)
 
 ///|
 /// The module's source text.

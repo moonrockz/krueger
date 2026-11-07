@@ -7,12 +7,13 @@
 ///   `exposing (..)`. A type exposed with `(..)` gives only its name.
 /// - `tokens` are the header's tokens, with their trivia.
 /// - `span` runs from the first token to the end of the last token.
+#derive(Eq, Debug)
 pub(all) struct ModuleHeaderCst {
   module_name : String?
   exposing : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// One import declaration.
@@ -21,12 +22,13 @@ pub(all) struct ModuleHeaderCst {
 /// - `exposing` is `None` when there is no `exposing` clause, and
 ///   `Some([])` for `exposing (..)`. Otherwise it lists the exposed names.
 /// - `tokens` and `span` cover the declaration, alias included.
+#derive(Eq, Debug)
 pub(all) struct ImportCst {
   module_name : String
   exposing : Array[String]?
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// A top-level function or value declaration.
@@ -37,41 +39,45 @@ pub(all) struct ImportCst {
 /// - `tokens` and `span` cover the signature (when there is one) and the
 ///   definition. A doc comment is trivia of the first token; `span` does not
 ///   include it.
+#derive(Eq, Debug)
 pub(all) struct FunctionCst {
   name : String
   args : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// A `type alias` declaration. `type_params` are the type variable names,
 /// in order.
+#derive(Eq, Debug)
 pub(all) struct TypeAliasCst {
   name : String
   type_params : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// A custom type declaration (`type T = A | B`). `type_params` are the type
 /// variable names, in order.
+#derive(Eq, Debug)
 pub(all) struct UnionTypeCst {
   name : String
   type_params : Array[String]
   tokens : Array[@scanner.Token]
   span : @scanner.Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// A top-level declaration in the CST. Ports, infix declarations and
 /// destructurings have no CST form, so they do not show here.
+#derive(Eq, Debug)
 pub(all) enum DeclarationCst {
   Function(FunctionCst)
   TypeAlias(TypeAliasCst)
   UnionType(UnionTypeCst)
-} derive(Eq, Debug)
+}
 
 ///|
 /// The concrete syntax tree of a module: every token, with its trivia, plus
@@ -137,6 +143,7 @@ pub(all) enum DeclarationCst {
 ///   debug_inspect((area.span.start.line, area.span.end.line), content="(9, 10)")
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) struct ModuleCst {
   tokens : Array[@scanner.Token]
   /// The trivia of a text with no tokens (only whitespace and comments).
@@ -146,7 +153,7 @@ pub(all) struct ModuleCst {
   imports : Array[ImportCst]
   declarations : Array[DeclarationCst]
   span : @scanner.Span?
-} derive(Eq, Debug)
+}
 
 ///|
 /// The source text of the module: each token's `trivia_before`, `lexeme`

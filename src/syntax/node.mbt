@@ -27,6 +27,7 @@
 ///   }
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) enum NodeRef {
   File(@ast.File, ArrayView[@parser.AttributeGroup])
   Module(@ast.Node[@ast.Module])
@@ -49,7 +50,7 @@ pub(all) enum NodeRef {
   Name(@ast.Node[String])
   Comment(@ast.Node[String])
   Attribute(@parser.DocAttribute)
-} derive(Eq, Debug)
+}
 
 ///|
 fn[T : Eq] same_value(x : T, y : T) -> Bool {

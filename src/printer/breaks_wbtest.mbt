@@ -140,9 +140,9 @@ test "law: break_within agrees with a scan of the source text" {
           // before tokens i+1 ..< j.
           let mut expected = false
           for k in (i + 1)..<j {
-            let gap = text.view(
-              start_offset=tokens[k - 1].span.end.offset,
-              end_offset=tokens[k].span.start.offset,
+            let gap = text.clamped_view(
+              start=tokens[k - 1].span.end.offset,
+              end=tokens[k].span.start.offset,
             )
             expected = expected || gap.contains("\n") || gap.contains("--")
           }

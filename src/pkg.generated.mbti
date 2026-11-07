@@ -2,6 +2,7 @@
 package "moonrockz/krueger"
 
 import {
+  "moonbitlang/core/json",
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
   "moonrockz/krueger/dialect",
@@ -18,11 +19,11 @@ pub fn[V : @syntax.Visitor] accept(@syntax.NodeRef, V) -> Unit
 
 pub fn diagnostic_description(String) -> String?
 
-pub fn encode_attributes(Array[@parser.AttributeGroup]) -> Json
+pub fn encode_attributes(Array[@parser.AttributeGroup]) -> @json.Json
 
-pub fn encode_attributes_with(Array[@parser.AttributeGroup], exact_ints~ : Bool) -> Json
+pub fn encode_attributes_with(Array[@parser.AttributeGroup], exact_ints~ : Bool) -> @json.Json
 
-pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> Json
+pub fn encode_diagnostics(Array[@scanner.Diagnostic]) -> @json.Json
 
 pub fn[A] fold(@syntax.NodeRef, A, (A, @syntax.NodeRef) -> (A, @syntax.Control), leave? : (A, @syntax.NodeRef) -> A) -> A
 
@@ -56,7 +57,7 @@ pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int32, dia
 
 pub fn[S : @syntax.EventSource, H : @syntax.Handler] push_events(S, H) -> Unit
 
-pub fn render_elm_json(Array[@scanner.Diagnostic], @scanner.SourceText, String) -> Json
+pub fn render_elm_json(Array[@scanner.Diagnostic], @scanner.SourceText, String) -> @json.Json
 
 pub fn render_plain(@scanner.Diagnostic, @scanner.SourceText, String) -> String
 

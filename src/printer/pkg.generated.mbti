@@ -28,27 +28,32 @@ pub fn print_pattern(@ast.Node[@ast.Pattern], width? : Int32, dialect? : @dialec
 pub fn print_type_annotation(@ast.Node[@ast.TypeAnnotation], width? : Int32, dialect? : @dialect.Dialect) -> String raise PrintError
 
 // Errors
+#derive(@debug.Debug)
 pub suberror FormatError {
   ParseFailed(Array[@scanner.Diagnostic])
   Unprintable(PrintError)
-} derive(@debug.Debug)
+}
 
+#derive(@debug.Debug)
 pub suberror PrintError {
   PrintError(path~ : @syntax.NodePath, problem~ : PrintProblem)
-} derive(@debug.Debug)
+}
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum Layout {
   ElmFormat
   Width(Int32)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum NameKind {
   Lower
   Upper
   Operator
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum PrintProblem {
   InvalidName(NameKind, String)
   EmptyModuleName
@@ -69,7 +74,7 @@ pub(all) enum PrintProblem {
   InvalidDocumentation
   LetDocumentation
   UnplacedComment(@ast.Range)
-} derive(Eq, @debug.Debug)
+}
 
 // Type aliases
 

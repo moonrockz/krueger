@@ -160,7 +160,7 @@ test "law: the text at a node's range starts with its first token and ends with 
         if tokens.is_empty() {
           return true
         }
-        let s = text.view(start_offset=a, end_offset=b)
+        let s = text.clamped_view(start=a, end=b)
         // A declaration with doc attributes starts at its first attribute
         // (a port's doc comment is not part of its elm-syntax range).
         let starts_at_attribute = cat == "declaration" &&

@@ -252,9 +252,12 @@ test "law: deep nesting cut short is reported, never overflowed" {
     (input : (@lawkit.Nesting, UInt32)) => {
       let (n, cut) = input
       let full = n.text()
+      // A raw UTF-16 cut: it can split a surrogate pair, which
+      // `clamped_view` would move. The modulo keeps it in bounds.
       let text = full
-        .view(
-          end_offset=(cut % (full.length() + 1).reinterpret_as_uint()).reinterpret_as_int(),
+        .unsafe_view(
+          start=0,
+          end=(cut % (full.length() + 1).reinterpret_as_uint()).reinterpret_as_int(),
         )
         .to_owned()
       parse_text(text).diagnostics.iter().all(d => span_in_bounds(text, d.span))
@@ -347,10 +350,7 @@ test "law: an overflow warning in an attribute points at its literal" {
       .filter(w => w.code == "KR-PARSE-009")
       .all(w => {
         span_in_bounds(text, w.span) &&
-        text.view(
-          start_offset=w.span.start.offset,
-          end_offset=w.span.end.offset,
-        ) ==
+        text.clamped_view(start=w.span.start.offset, end=w.span.end.offset) ==
         @lawkit.overflow_literal()
       })
     },

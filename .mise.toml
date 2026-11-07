@@ -7,10 +7,25 @@ lefthook = "2.1.1"
 # Match the compiler and core version used by GitHub Actions. Local commands must
 # not fall back to a newer global MoonBit installation.
 [tools."http:moonbit"]
-version = "0.10.18+6c83a7f62"
+version = "0.10.20+65efd5b93"
 bin_path = "bin"
 
 [tools."http:moonbit".platforms]
-linux-x64 = { url = "https://cli.moonbitlang.com/binaries/0.10.18%2B6c83a7f62/moonbit-linux-x86_64.tar.gz" }
-macos-arm64 = { url = "https://cli.moonbitlang.com/binaries/0.10.18%2B6c83a7f62/moonbit-darwin-aarch64.tar.gz" }
-windows-x64 = { url = "https://cli.moonbitlang.com/binaries/0.10.18%2B6c83a7f62/moonbit-windows-x86_64.zip", format = "zip" }
+linux-x64 = { url = "https://cli.moonbitlang.com/binaries/0.10.20%2B65efd5b93/moonbit-linux-x86_64.tar.gz" }
+macos-arm64 = { url = "https://cli.moonbitlang.com/binaries/0.10.20%2B65efd5b93/moonbit-darwin-aarch64.tar.gz" }
+windows-x64 = { url = "https://cli.moonbitlang.com/binaries/0.10.20%2B65efd5b93/moonbit-windows-x86_64.zip", format = "zip" }
+
+# Shared OpenSpec bundle checks (replaces scripts/openspec-ext.mbtx). A released
+# binary, so a MoonBit toolchain change cannot break the openspec commands.
+[tools."github:moonrockz/mission-control"]
+version = "0.1.1"
+version_prefix = "tools-v"
+
+[tools."github:moonrockz/mission-control".platforms]
+linux-x64 = { asset_pattern = "mission-control-tools-linux-x64.tar.gz" }
+linux-arm64 = { asset_pattern = "mission-control-tools-linux-arm64.tar.gz" }
+macos-arm64 = { asset_pattern = "mission-control-tools-darwin-arm64.tar.gz" }
+macos-x64 = { asset_pattern = "mission-control-tools-darwin-x64.tar.gz" }
+windows-x64 = { asset_pattern = "mission-control-tools-windows-x64.zip" }
+# No Windows arm64 build; Windows on Arm runs the x64 build under emulation.
+windows-arm64 = { asset_pattern = "mission-control-tools-windows-x64.zip" }

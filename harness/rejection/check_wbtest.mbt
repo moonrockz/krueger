@@ -18,11 +18,12 @@ let pending_path : String = "../tests/rejection/pending.json"
 
 ///|
 /// A fixture and dialect whose check does not match the oracle yet.
+#derive(Eq, Debug)
 priv struct Pending {
   fixture : String
   dialect : String
   check : String
-} derive(Eq, Debug)
+}
 
 ///|
 fn sha256_hex(text : String) -> String {

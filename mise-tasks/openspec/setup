@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
-#MISE description="Regenerate core OpenSpec agent skills"
-exec mise exec -- moon run -q --target wasm scripts/openspec-ext.mbtx -- setup
+#MISE description="Set up the shared OpenSpec workflow"
+exec mise exec -- mission-control-tools openspec setup

@@ -7,7 +7,8 @@
 /// are its Double's shortest form without being that Double (such as
 /// `1152921504606847000`): JSON text cannot tell it from the Double, and
 /// the decoder reads the Double.
-pub(all) struct IntLiteral(String) derive(Debug)
+#derive(Debug)
+pub(all) struct IntLiteral(String)
 
 ///|
 pub impl @quickcheck.Arbitrary for IntLiteral with fn arbitrary(_, rs) {

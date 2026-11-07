@@ -747,7 +747,14 @@ fn skip_prefix(src : String, start : Int32, end : Int32) -> Int32 {
 
 ///|
 fn slice(src : String, start : Int32, end : Int32) -> String {
-  src.view(start_offset=start, end_offset=end).to_owned()
+  // The offsets are raw UTF-16 offsets, and doc text can hold lone
+  // surrogates. `exact_view` aborts at a trailing surrogate and
+  // `clamped_view` moves a bound that is inside a pair, so neither keeps the
+  // text of every slice. Clamp the bounds and keep the code units.
+  let len = src.length()
+  let lo = if start < 0 { 0 } else if start > len { len } else { start }
+  let hi = if end < lo { lo } else if end > len { len } else { end }
+  src.unsafe_view(start=lo, end=hi).to_owned()
 }
 
 ///|

@@ -24,7 +24,8 @@ fn elm_root(m : ElmModule) -> @syntax.NodeRef raise {
 ///|
 /// What the k-th entered node returns: mostly Continue, sometimes
 /// SkipChildren, rarely Stop.
-struct Policy(Array[@syntax.Control]) derive(Debug)
+#derive(Debug)
+struct Policy(Array[@syntax.Control])
 
 ///|
 impl @quickcheck.Arbitrary for Policy with fn arbitrary(_, rs) {

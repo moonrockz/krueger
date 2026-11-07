@@ -1,6 +1,7 @@
 ///|
 /// Colors of `elm make` reports. `Vivid*` are the bright variants; in the
 /// `--report=json` output they are upper case (`"RED"`), the others lower case.
+#derive(Eq, Debug)
 pub(all) enum Color {
   Red
   Yellow
@@ -18,26 +19,28 @@ pub(all) enum Color {
   VividBlue
   VividBlack
   VividWhite
-} derive(Eq, Debug)
+}
 
 ///|
 /// A piece of report text: plain, or styled like `elm make` styles code and
 /// keywords.
+#derive(Eq, Debug)
 pub(all) enum Chunk {
   Plain(String)
   Styled(text~ : String, color~ : Color?, bold~ : Bool, underline~ : Bool)
-} derive(Eq, Debug)
+}
 
 ///|
 /// One block of a report. `Excerpt` shows the source lines of `context` with
 /// markers under `highlight`; renderers read the lines from the source.
+#derive(Eq, Debug)
 pub(all) enum Block {
   Text(Array[Chunk])
   Excerpt(context~ : Span, highlight~ : Span)
   Hint(Array[Chunk])
   Note(Array[Chunk])
   Example(String)
-} derive(Eq, Debug)
+}
 
 ///|
 /// Elm code inside a paragraph, in yellow as `elm make` shows it.

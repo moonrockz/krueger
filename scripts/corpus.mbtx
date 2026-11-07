@@ -9,7 +9,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/string",
   "moonbitlang/core/encoding/hex",
-  "moonrockz/moonspec@0.11.0",
+  "moonrockz/moonspec@0.12.0/async" @moonspec,
   "moonrockz/expect@0.6.1",
 }
 ----
@@ -25,18 +25,20 @@ import {
 let usage : String = "Usage: corpus.mbtx manifest <packages.txt> <manifest.json> | fetch <manifest.json> <corpus-dir>"
 
 ///|
+#derive(Eq, Debug)
 struct Pkg {
   name : String
   version : String
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 struct PackageEntry {
   pkg : Pkg
   zipball : String
   zip_sha1 : String
   files : Array[(String, String)]
-} derive(Eq, Debug)
+}
 
 ///|
 /// Parse `author/name@1.2.3` lines; blank lines and `#` comments are ignored.

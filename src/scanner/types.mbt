@@ -1,11 +1,12 @@
 ///|
 /// How serious a `Diagnostic` is. Only an `Error` makes a file fail to
 /// parse; a `Warning` (for example `KR-PARSE-009`) keeps the result.
+#derive(Eq, Debug)
 pub(all) enum Severity {
   Error
   Warning
   Info
-} derive(Eq, Debug)
+}
 
 ///|
 /// A place in the source, between two characters.
@@ -33,29 +34,32 @@ pub(all) enum Severity {
 ///   debug_inspect((plus.offset, plus.line, plus.column), content="(11, 1, 10)")
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) struct Position {
   offset : Int32
   line : Int32
   column : Int32
-} derive(Eq, Debug)
+}
 
 ///|
 /// The part of the source from `start` to `end`. `end` is the position just
 /// after the last character, so an empty span has `start == end`. See
 /// `Position` for how offsets, lines and columns count.
+#derive(Eq, Debug)
 pub(all) struct Span {
   start : Position
   end : Position
-} derive(Eq, Debug)
+}
 
 ///|
 /// The text of one Elm source file. `module_name` is the optional Elm module
 /// name (for example `Main`). `render_elm_json` writes it as `name`; the
 /// parser does not use it.
+#derive(Eq, Debug)
 pub(all) struct SourceText {
   module_name : String?
   text : String
-} derive(Eq, Debug)
+}
 
 ///|
 /// Make a `SourceText` from `text`, with an optional Elm module name (for
@@ -99,6 +103,7 @@ pub fn SourceText::new(text : String, module_name? : String) -> SourceText {
 ///   debug_inspect((d.span.start.column, d.span.end.column), content="(5, 9)")
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) struct Diagnostic {
   code : String
   severity : Severity
@@ -112,58 +117,64 @@ pub(all) struct Diagnostic {
   /// Data about the cause, for tools that map krueger's diagnostics to
   /// their own codes. `None` for most diagnostics.
   detail : Detail?
-} derive(Eq, Debug)
+}
 
 ///|
 /// Data about the cause of a diagnostic, for tools that map krueger's
 /// diagnostics to their own codes.
+#derive(Eq, Debug)
 pub(all) enum Detail {
   /// The parser ran out of fuel (`KR-PARSE-010`). `fuel` is the budget the
   /// caller gave; `walk` is the walk that spent the last of it.
   OutOfFuel(fuel~ : Int32, walk~ : Walk)
-} derive(Eq, Debug)
+}
 
 ///|
 /// A parser walk that spends fuel.
+#derive(Eq, Debug)
 pub(all) enum Walk {
   /// The nesting of expressions, types and patterns.
   Nesting
   /// A right-recursive chain: `::`, `->` and a right-associative operator.
   Chain
-} derive(Eq, Debug)
+}
 
 ///|
 /// The kind of a comment: `Line` is `-- ...`, `Block` is `{- ... -}` and
 /// `Doc` is `{-| ... -}`.
+#derive(Eq, Debug)
 pub(all) enum CommentKind {
   Line
   Block
   Doc
-} derive(Eq, Debug)
+}
 
 ///|
 /// A comment in the source. `text` is the comment exactly as written,
 /// delimiters included (`-- note`, `{- note -}`). A line comment does not
 /// include its line break.
+#derive(Eq, Debug)
 pub(all) struct Comment {
   kind : CommentKind
   text : String
   span : Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// Source text that is not a token: a run of spaces (or a lone `\r`), one
 /// line break (`\n` or `\r\n`) or a comment. Each case keeps its exact
 /// text, so trivia and tokens together give the source back (see `Token`).
+#derive(Eq, Debug)
 pub(all) enum Trivia {
   Whitespace(String, Span)
   Newline(String, Span)
   Comment(Comment)
-} derive(Eq, Debug)
+}
 
 ///|
 /// Reserved words of Elm 0.19.1 as elm-syntax 7.3.9 treats them. `alias`,
 /// `infix` and `effect` are not reserved; they are identifiers.
+#derive(Eq, Debug)
 pub(all) enum KeywordKind {
   Module
   Exposing
@@ -181,11 +192,12 @@ pub(all) enum KeywordKind {
   Where
   /// An extra reserved word from the dialect.
   Custom(String)
-} derive(Eq, Debug)
+}
 
 ///|
 /// The kind of a significant token. Keywords come from the dialect, so a
 /// dialect with extra reserved words gives `Keyword(Custom(...))`.
+#derive(Eq, Debug)
 pub(all) enum TokenKind {
   Keyword(KeywordKind)
   /// A lowercase or uppercase name; the first character tells which.
@@ -216,7 +228,7 @@ pub(all) enum TokenKind {
   Underscore
   /// One of the 24 infix operators elm-syntax allows.
   Operator(String)
-} derive(Eq, Debug)
+}
 
 ///|
 /// The token kind of the keyword `kind`.
@@ -361,28 +373,31 @@ pub fn TokenKind::of_kw() -> TokenKind {
 ///   )
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) struct Token {
   kind : TokenKind
   lexeme : String
   span : Span
   trivia_before : Array[Trivia]
   trivia_after : Array[Trivia]
-} derive(Eq, Debug)
+}
 
 ///|
 /// The result of a scan: the significant tokens in source order, each with
 /// its trivia.
+#derive(Eq, Debug)
 pub(all) struct TokenStream {
   tokens : Array[Token]
   /// The trivia of a text that has no tokens (only whitespace and comments).
   /// Empty otherwise: when there is a token, all trivia attaches to tokens.
   /// The parser's CST does not keep it.
   trivia : Array[Trivia]
-} derive(Eq, Debug)
+}
 
 ///|
 /// All the problems that a scan found, in source order. A scan that finds
 /// a problem gives no tokens.
+#derive(Eq, Debug)
 pub(all) struct ScanErrorList {
   diagnostics : Array[Diagnostic]
-} derive(Eq, Debug)
+}

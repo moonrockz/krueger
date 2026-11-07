@@ -92,7 +92,7 @@ fn tiles(text : String, ts : @scanner.TokenStream) -> Bool {
       span.start.offset == at &&
       span.end.offset == at + piece.length() &&
       span.end.offset <= text.length() &&
-      text.view(start_offset=at, end_offset=span.end.offset) == piece &&
+      text.clamped_view(start=at, end=span.end.offset) == piece &&
       agrees(text, span.start) &&
       agrees(text, span.end)
     at = span.end.offset

@@ -1,5 +1,6 @@
 ///|
 /// The kind of name that a `PrintProblem::InvalidName` is about.
+#derive(Eq, Debug)
 pub(all) enum NameKind {
   /// A value, variable, field or type variable: `x`, `map`.
   Lower
@@ -7,10 +8,11 @@ pub(all) enum NameKind {
   Upper
   /// An operator symbol: `|>`.
   Operator
-} derive(Eq, Debug)
+}
 
 ///|
 /// Why an AST cannot print as valid Elm.
+#derive(Eq, Debug)
 pub(all) enum PrintProblem {
   /// A name that the scanner does not accept, a reserved word, or an
   /// operator symbol that is not in the dialect's operator table (Elm 0.19
@@ -55,15 +57,16 @@ pub(all) enum PrintProblem {
   LetDocumentation
   /// A regular comment at this range that the formatter did not print.
   UnplacedComment(@ast.Range)
-} derive(Eq, Debug)
+}
 
 ///|
 /// An AST that cannot print as valid Elm. `path` leads from the node given
 /// to the printer to the bad node, with elm-syntax JSON field names (see
 /// `NodePath`); for `print_file` it starts at the file.
+#derive(Debug)
 pub suberror PrintError {
   PrintError(path~ : @syntax.NodePath, problem~ : PrintProblem)
-} derive(Debug)
+}
 
 ///|
 /// Settings for one print call.

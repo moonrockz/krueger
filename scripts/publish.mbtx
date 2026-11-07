@@ -5,7 +5,7 @@ import {
   "moonbitlang/async@0.22.7/process",
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
-  "moonrockz/moonspec@0.11.0",
+  "moonrockz/moonspec@0.12.0/async" @moonspec,
   "moonrockz/expect@0.6.1",
 }
 ----
@@ -25,12 +25,12 @@ fn mod_version(moon_mod : String) -> String? {
   for line in moon_mod.split("\n") {
     let line = line.trim()
     guard line.has_prefix("version") else { continue }
-    let rest = line.view(start_offset=7).trim_start()
+    let rest = line.clamped_view(start=7).trim_start()
     guard rest.has_prefix("=") else { continue }
-    let value = rest.view(start_offset=1).trim()
+    let value = rest.clamped_view(start=1).trim()
     if value.length() >= 2 && value.has_prefix("\"") && value.has_suffix("\"") {
       return Some(
-        value.view(start_offset=1, end_offset=value.length() - 1).to_owned(),
+        value.clamped_view(start=1, end=value.length() - 1).to_owned(),
       )
     }
   }
@@ -56,11 +56,12 @@ fn check_ref(
 
 ///|
 /// What a `moon publish` run means.
+#derive(Eq, Debug)
 enum Outcome {
   Published
   AlreadyPublished
   Failed
-} derive(Eq, Debug)
+}
 
 ///|
 fn classify(exit_code : Int32, output : String) -> Outcome {
