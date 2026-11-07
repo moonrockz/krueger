@@ -198,8 +198,8 @@ fn exponent_float_text(x : Double) -> String {
   if digits == "0" {
     return "0.0e0"
   }
-  let rest = digits.view(start_offset=1).to_owned()
-  digits.view(end_offset=1).to_owned() +
+  let rest = digits.clamped_view(start=1).to_owned()
+  digits.clamped_view(end=1).to_owned() +
   "." +
   (if rest.is_empty() { "0" } else { rest }) +
   "e" +
@@ -216,12 +216,12 @@ fn decimal_float_text(x : Double) -> String {
     return "0." + "0".repeat(-e) + digits
   }
   let whole = if digits.length() >= e {
-    digits.view(end_offset=e).to_owned()
+    digits.clamped_view(end=e).to_owned()
   } else {
     digits + "0".repeat(e - digits.length())
   }
   let fraction = if digits.length() > e {
-    digits.view(start_offset=e).to_owned()
+    digits.clamped_view(start=e).to_owned()
   } else {
     "0"
   }
@@ -247,7 +247,7 @@ fn without_leading_zeros(digits : StringView) -> String {
   while first + 1 < digits.length() && digits.get_char(first) == Some('0') {
     first += 1
   }
-  digits.view(start_offset=first).to_owned()
+  digits.clamped_view(start=first).to_owned()
 }
 
 ///|
@@ -279,8 +279,8 @@ fn Ctx::integer_text(self : Ctx, r : @ast.Range, n : Int64) -> String {
 fn Ctx::hex_literal_text(self : Ctx, r : @ast.Range, n : Int64) -> String {
   match self.literal_lexeme(r) {
     Some(l) if (l.has_prefix("0x") || l.has_prefix("0X")) &&
-      all_digits(l.view(start_offset=2), hex=true) =>
-      hex_padded(without_leading_zeros(l.view(start_offset=2)).to_upper())
+      all_digits(l.clamped_view(start=2), hex=true) =>
+      hex_padded(without_leading_zeros(l.clamped_view(start=2)).to_upper())
     _ => hex_text(n)
   }
 }

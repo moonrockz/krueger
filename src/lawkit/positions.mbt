@@ -25,7 +25,7 @@ fn lines(text : String) -> Array[StringView] {
   let last = parts.length() - 1
   parts.mapi((i, line) => {
     if i < last && line.has_suffix("\r") {
-      line.view(end_offset=line.length() - 1)
+      line.clamped_view(end=line.length() - 1)
     } else {
       line
     }
@@ -174,7 +174,8 @@ pub fn offset_of(text : String, p : @ast.Location) -> Int32? {
 /// produced on purpose: no range, one range, equal ranges (a copy of an
 /// earlier non-empty range), adjacent ranges (starting at an earlier range's
 /// end), empty ranges, ranges over two rows.
-pub(all) struct Ranges(Array[@ast.Range]) derive(Debug)
+#derive(Debug)
+pub(all) struct Ranges(Array[@ast.Range])
 
 ///|
 pub impl @quickcheck.Arbitrary for Ranges with fn arbitrary(size, rs) {

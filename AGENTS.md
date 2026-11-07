@@ -972,6 +972,10 @@ All operations use **file-based mise tasks** in `mise-tasks/`. Do not add inline
 | `bench`             | Measure the benchmarks (`--target t[,t...]`; all targets by default) |
 | `bench:compare`     | Compare the last measurement with a run from the `benchmarks` branch |
 | `test`              | Run all tests (unit + bdd + e2e + scripts + rejection + docs + bench) |
+| `openspec:check`    | Check the shared OpenSpec bundle (`mission-control-tools openspec check --bundle`) |
+| `openspec:setup`    | Regenerate the core OpenSpec agent skills (`mission-control-tools openspec setup`) |
+| `openspec:validate` | Validate the `html-design` schema and all OpenSpec artifacts |
+| `openspec:verify`   | Run `openspec:check`, then `openspec:validate` |
 | `release:prepare`   | Open the release pull request (version bump and changelog section) |
 | `release:version`   | Compute next version from conventional commits |
 | `release:plan`      | Decide whether a Release workflow run releases (CI) |
@@ -1350,10 +1354,13 @@ fails, resolve the cause and retry.
 
 Use the shared `html-design` schema for new changes. Read `openspec/README.md`
 and `openspec/config.yaml`; repository-local tracking and approval rules still apply.
-The files under `openspec/schemas/html-design/` and `scripts/openspec-ext.mbtx`
-are managed by Mission Control's openspec-ext bundle. Change the shared source
-and reinstall instead of editing these snapshots. Run `mise run openspec:check`
-and `mise exec -- openspec validate --all --strict` after configuration changes.
+The files under `openspec/schemas/html-design/` are managed by the pinned
+`mission-control-tools` CLI (`.mise.toml`). Change the shared source in Mission
+Control and reinstall (`mise exec -- mission-control-tools openspec install`)
+instead of editing these snapshots. Run `mise run openspec:verify` (the bundle
+check, then `openspec schema validate html-design` and
+`openspec validate --all --strict`) after configuration changes. CI runs
+`mission-control-tools openspec check --bundle` in the `lint` job.
 OpenSpec artifacts are committed project documentation; existing scratch-document
 rules continue to apply to local notes. Existing changes retain their own schema.
 
@@ -1370,7 +1377,7 @@ machine, complete that exact installation before running checks:
 
 ```shell
 curl -fsSL https://cli.moonbitlang.com/install/unix.sh -o /tmp/install-moonbit.sh
-MOON_HOME="$(mise where http:moonbit)" bash /tmp/install-moonbit.sh '0.10.18+6c83a7f62'
+MOON_HOME="$(mise where http:moonbit)" bash /tmp/install-moonbit.sh '0.10.20+65efd5b93'
 ```
 
 Task launchers resolve MoonBit through `mise exec -- moon` so Git hooks and

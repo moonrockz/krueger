@@ -196,7 +196,7 @@ fn ax_tree(text : String, result : @krueger.ParseResult) -> Json? {
       guard stack.pop() is Some(frame) else { return }
       let fields = frame.fields
       if frame.children.is_empty() {
-        let value = text.view(start_offset=frame.start, end_offset=frame.end)
+        let value = text.clamped_view(start=frame.start, end=frame.end)
         fields["value"] = Json::string(value.to_owned())
       }
       fields["children"] = Json::array(frame.children)
@@ -596,9 +596,9 @@ has no `</` and no `<!--`, and parses it back.
 /// The JSON text between the page's head and tail.
 fn ax_embedded_json(html : String) -> String {
   html
-  .view(
-    start_offset=ax_page_head.length(),
-    end_offset=html.length() - ax_page_tail.length(),
+  .clamped_view(
+    start=ax_page_head.length(),
+    end=html.length() - ax_page_tail.length(),
   )
   .to_owned()
 }

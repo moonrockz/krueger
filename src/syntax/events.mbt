@@ -3,6 +3,7 @@
 /// starts. `field` is the node's field in its parent and `path` the steps from
 /// the start node (`None` and the empty path for the start node); `depth` is
 /// `path.depth()`.
+#derive(Eq, Debug)
 pub struct EnterEvent {
   category : String
   kind : String
@@ -10,16 +11,17 @@ pub struct EnterEvent {
   start : @ast.Location
   depth : Int32
   path : NodePath
-} derive(Eq, Debug)
+}
 
 ///|
 /// What a `Leave` event tells: the finished node, with the depth and path of
 /// its `Enter`.
+#derive(Eq, Debug)
 pub struct LeaveEvent {
   node : NodeRef
   depth : Int32
   path : NodePath
-} derive(Eq, Debug)
+}
 
 ///|
 /// An `EnterEvent`; its `depth` is `path.depth()`. Event sources outside this
@@ -43,10 +45,11 @@ pub fn LeaveEvent::new(node~ : NodeRef, path~ : NodePath) -> LeaveEvent {
 
 ///|
 /// A traversal event, in walk order.
+#derive(Eq, Debug)
 pub(all) enum Event {
   Enter(EnterEvent)
   Leave(LeaveEvent)
-} derive(Eq, Debug)
+}
 
 ///|
 /// A pull source of events in walk order. `skip_children` is valid right

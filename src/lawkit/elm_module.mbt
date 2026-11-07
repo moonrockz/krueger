@@ -13,7 +13,8 @@
 /// elm-syntax does (`IntLiteral` reaches them). No GLSL: its elm-syntax range
 /// ends two columns late, which the range laws reject. No `if` in
 /// parentheses after `else`: elm-format 0.8.7 is not idempotent there.
-pub(all) struct ElmModule(String) derive(Debug)
+#derive(Debug)
+pub(all) struct ElmModule(String)
 
 ///|
 fn pick(rs : @splitmix.RandomState, n : Int32) -> Int32 {

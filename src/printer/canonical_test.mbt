@@ -1,6 +1,7 @@
 ///|
 /// Where a node is, for the model (the same positions as the printer, but
 /// decided from this file's own rules).
+#derive(Eq)
 enum MAt {
   MAny
   MOperand
@@ -10,7 +11,7 @@ enum MAt {
   MHead
   MNegated
   MTarget
-} derive(Eq)
+}
 
 ///|
 fn[A, B] each(xs : ArrayView[A], f : (A) -> B) -> ArrayView[B] {

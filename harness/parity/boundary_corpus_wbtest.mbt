@@ -176,7 +176,9 @@ test "boundary laws over the corpus" {
           problems.append(
             prefix_problems(
               "\{key} (prefix \{cut})",
-              text.view(end_offset=cut).to_owned(),
+              // A cut one unit into a token can split a surrogate pair, which
+              // `clamped_view` would move. Every cut is in 0..=length.
+              text.unsafe_view(start=0, end=cut).to_owned(),
             ),
           )
           prefixes = prefixes + 1

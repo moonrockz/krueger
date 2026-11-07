@@ -23,10 +23,11 @@
 /// stay the same after formatting. A paragraph comes between two other
 /// blocks (elm-format reads two lists in a row as one when it formats
 /// its own output).
+#derive(Debug)
 pub(all) struct DocText {
   text : String
   foreign_code : Array[(String, String)] // language, code
-} derive(Debug)
+}
 
 ///|
 fn doc_word(rs : @splitmix.RandomState) -> String {

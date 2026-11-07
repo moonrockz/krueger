@@ -5,7 +5,8 @@
 /// tokens; comments on their own lines. Edge values: a comment right after
 /// the header, on the last line, on an empty line; LF and CRLF line ends
 /// (the base module picks them; a line comment keeps the line end it had).
-pub(all) struct Commented(String) derive(Debug)
+#derive(Debug)
+pub(all) struct Commented(String)
 
 ///|
 /// The module's source text.
@@ -98,7 +99,11 @@ fn line_states(lines : Array[String]) -> (Array[Bool], Array[Bool]) {
 
 ///|
 fn has_at(line : String, i : Int32, s : String) -> Bool {
-  i + s.length() <= line.length() && line.view(start_offset=i).has_prefix(s)
+  // `i` is a raw UTF-16 offset (it can be inside a surrogate pair or at a lone
+  // surrogate), so compare the code units at `i` and do not move it.
+  i >= 0 &&
+  i + s.length() <= line.length() &&
+  line.unsafe_view(start=i, end=line.length()).has_prefix(s)
 }
 
 ///|
@@ -192,10 +197,10 @@ fn block_comment(line : String, rs : @splitmix.RandomState) -> String {
   guard candidates.length() > 0 else { return line }
   let at = candidates[pick(rs, candidates.length())]
   let comment = one(rs, ["{- b\u{A7} -}", "{- {- n\u{A7} -} -}", "{-b\u{A7}-}"])
-  line.view(end_offset=at).to_owned() +
+  line.clamped_view(end=at).to_owned() +
   " " +
   comment +
-  line.view(start_offset=at).to_owned()
+  line.clamped_view(start=at).to_owned()
 }
 
 ///|

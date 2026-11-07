@@ -3,6 +3,7 @@ package "moonrockz/krueger/lawkit"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
   "moonbitlang/core/quickcheck",
   "moonbitlang/core/quickcheck/shrink",
   "moonbitlang/core/quickcheck/splitmix",
@@ -22,7 +23,7 @@ pub fn edge_chars() -> Array[String]
 
 pub fn edge_positions(String, Array[@ast.Range]) -> Array[@ast.Location]
 
-pub fn elm_json_problems(Json) -> Array[(@ast.Range?, String)]?
+pub fn elm_json_problems(@json.Json) -> Array[(@ast.Range?, String)]?
 
 pub fn end_of_text(String) -> @ast.Location
 
@@ -58,16 +59,18 @@ pub fn units(Array[Int32]) -> String
 
 pub fn within(@ast.Range, @ast.Range) -> Bool
 
-pub fn without_ranges(@ast.File) -> Json
+pub fn without_ranges(@ast.File) -> @json.Json
 
 // Errors
 
 // Types and methods
-pub(all) struct Commented(String) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct Commented(String)
 pub fn Commented::text(Self) -> String
 pub impl @quickcheck.Arbitrary for Commented
 pub impl @shrink.Shrink for Commented
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Construct {
   Parens
   List
@@ -84,59 +87,69 @@ pub(all) enum Construct {
   Access
   CtorPattern
   TypeApp
-} derive(Eq, @debug.Debug)
+}
 
-pub(all) struct DocAttributes(String) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct DocAttributes(String)
 pub fn DocAttributes::text(Self) -> String
 pub impl @quickcheck.Arbitrary for DocAttributes
 pub impl @shrink.Shrink for DocAttributes
 
+#derive(@debug.Debug)
 pub(all) struct DocText {
   text : String
   foreign_code : Array[(String, String)]
-} derive(@debug.Debug)
+}
 pub impl @quickcheck.Arbitrary for DocText
 pub impl @shrink.Shrink for DocText
 
-pub(all) struct ElmAst(@ast.File) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct ElmAst(@ast.File)
 pub fn ElmAst::file(Self) -> @ast.File
 pub impl @quickcheck.Arbitrary for ElmAst
 pub impl @shrink.Shrink for ElmAst
 
-pub(all) struct ElmHeader(String) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct ElmHeader(String)
 pub fn ElmHeader::text(Self) -> String
 pub impl @quickcheck.Arbitrary for ElmHeader
 pub impl @shrink.Shrink for ElmHeader
 
-pub(all) struct ElmModule(String) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct ElmModule(String)
 pub fn ElmModule::text(Self) -> String
 pub impl @quickcheck.Arbitrary for ElmModule
 pub impl @shrink.Shrink for ElmModule
 
-pub(all) struct ElmText(Array[String]) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct ElmText(Array[String])
 pub fn ElmText::text(Self) -> String
 pub impl @quickcheck.Arbitrary for ElmText
 pub impl @shrink.Shrink for ElmText
 
-pub(all) struct IntLiteral(String) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct IntLiteral(String)
 pub fn IntLiteral::text(Self) -> String
 pub impl @quickcheck.Arbitrary for IntLiteral
 pub impl @shrink.Shrink for IntLiteral
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Nesting {
   construct : Construct
   depth : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn Nesting::text(Self) -> String
 pub impl @quickcheck.Arbitrary for Nesting
 pub impl @shrink.Shrink for Nesting
 
-pub(all) struct Ranges(Array[@ast.Range]) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct Ranges(Array[@ast.Range])
 pub fn Ranges::ranges(Self) -> Array[@ast.Range]
 pub impl @quickcheck.Arbitrary for Ranges
 pub impl @shrink.Shrink for Ranges
 
-pub(all) struct Spaced(String) derive(@debug.Debug)
+#derive(@debug.Debug)
+pub(all) struct Spaced(String)
 pub fn Spaced::text(Self) -> String
 pub impl @quickcheck.Arbitrary for Spaced
 pub impl @shrink.Shrink for Spaced

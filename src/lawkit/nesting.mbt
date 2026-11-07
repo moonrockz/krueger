@@ -1,5 +1,6 @@
 ///|
 /// A construct that nests: each level adds one more of it.
+#derive(Eq, Debug)
 pub(all) enum Construct {
   Parens
   List
@@ -16,14 +17,15 @@ pub(all) enum Construct {
   Access
   CtorPattern
   TypeApp
-} derive(Eq, Debug)
+}
 
 ///|
 /// A module whose one declaration nests `construct` `depth` levels deep.
+#derive(Eq, Debug)
 pub(all) struct Nesting {
   construct : Construct
   depth : Int32
-} derive(Eq, Debug)
+}
 
 ///|
 /// Every construct.

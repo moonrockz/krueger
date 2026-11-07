@@ -42,21 +42,24 @@ pub fn unterminated_string(Span) -> Diagnostic
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum Block {
   Text(Array[Chunk])
   Excerpt(context~ : Span, highlight~ : Span)
   Hint(Array[Chunk])
   Note(Array[Chunk])
   Example(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Chunk {
   Plain(String)
   Styled(text~ : String, color~ : Color?, bold~ : Bool, underline~ : Bool)
-} derive(Eq, @debug.Debug)
+}
 pub fn Chunk::code(String) -> Self
 pub fn Chunk::keyword(String) -> Self
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Color {
   Red
   Yellow
@@ -74,20 +77,22 @@ pub(all) enum Color {
   VividBlue
   VividBlack
   VividWhite
-} derive(Eq, @debug.Debug)
+}
 pub fn Color::json_name(Self) -> String
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Comment {
   kind : CommentKind
   text : String
   span : Span
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum CommentKind {
   Line
   Block
   Doc
-} derive(Eq, @debug.Debug)
+}
 
 pub struct DefaultScanner {
   dialect : @dialect.Dialect
@@ -96,10 +101,12 @@ pub fn DefaultScanner::new(dialect? : @dialect.Dialect) -> Self
 pub fn DefaultScanner::tokenize(Self, SourceText) -> Result[TokenStream, ScanErrorList]
 pub impl Scanner for DefaultScanner
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Detail {
   OutOfFuel(fuel~ : Int32, walk~ : Walk)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Diagnostic {
   code : String
   severity : Severity
@@ -108,8 +115,9 @@ pub(all) struct Diagnostic {
   title : String
   report : Array[Block]
   detail : Detail?
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum KeywordKind {
   Module
   Exposing
@@ -126,20 +134,23 @@ pub(all) enum KeywordKind {
   Port
   Where
   Custom(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Position {
   offset : Int32
   line : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct RawToken {
   kind : RawTokenKind
   lexeme : String
   span : Span
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum RawTokenKind {
   Significant(TokenKind)
   Whitespace
@@ -147,37 +158,43 @@ pub(all) enum RawTokenKind {
   LineComment
   BlockComment
   DocComment
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ScanErrorList {
   diagnostics : Array[Diagnostic]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Severity {
   Error
   Warning
   Info
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct SourceText {
   module_name : String?
   text : String
-} derive(Eq, @debug.Debug)
+}
 pub fn SourceText::new(String, module_name? : String) -> Self
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Span {
   start : Position
   end : Position
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Token {
   kind : TokenKind
   lexeme : String
   span : Span
   trivia_before : Array[Trivia]
   trivia_after : Array[Trivia]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum TokenKind {
   Keyword(KeywordKind)
   Identifier
@@ -202,7 +219,7 @@ pub(all) enum TokenKind {
   Backslash
   Underscore
   Operator(String)
-} derive(Eq, @debug.Debug)
+}
 pub fn TokenKind::as_kw() -> Self
 pub fn TokenKind::case_kw() -> Self
 pub fn TokenKind::else_kw() -> Self
@@ -219,21 +236,24 @@ pub fn TokenKind::then_kw() -> Self
 pub fn TokenKind::type_kw() -> Self
 pub fn TokenKind::where_kw() -> Self
 
+#derive(Eq, @debug.Debug)
 pub(all) struct TokenStream {
   tokens : Array[Token]
   trivia : Array[Trivia]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Trivia {
   Whitespace(String, Span)
   Newline(String, Span)
   Comment(Comment)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Walk {
   Nesting
   Chain
-} derive(Eq, @debug.Debug)
+}
 
 // Type aliases
 

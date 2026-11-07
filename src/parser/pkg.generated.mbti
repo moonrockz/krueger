@@ -3,6 +3,7 @@ package "moonrockz/krueger/parser"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
   "moonrockz/krueger/ast",
   "moonrockz/krueger/cst",
   "moonrockz/krueger/dialect",
@@ -10,9 +11,9 @@ import {
 }
 
 // Values
-pub fn encode_attributes(Array[AttributeGroup]) -> Json
+pub fn encode_attributes(Array[AttributeGroup]) -> @json.Json
 
-pub fn encode_attributes_with(Array[AttributeGroup], exact_ints~ : Bool) -> Json
+pub fn encode_attributes_with(Array[AttributeGroup], exact_ints~ : Bool) -> @json.Json
 
 pub fn[S : @scanner.Scanner] parse_module(@scanner.SourceText, S, dialect? : @dialect.Dialect, fuel? : Int32) -> ParseResult
 
@@ -21,27 +22,31 @@ pub fn parse_tokens(@scanner.TokenStream, dialect? : @dialect.Dialect, fuel? : I
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct AttributeGroup {
   target : AttributeTarget
   attributes : ArrayView[DocAttribute]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum AttributeTarget {
   Module
   Declaration(name~ : String, range~ : @ast.Range)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum DocAttribute {
   Attribute(name~ : @ast.Node[String], arguments~ : ArrayView[@ast.Node[@ast.Expression]], range~ : @ast.Range)
   Docs(names~ : ArrayView[@ast.Node[String]], range~ : @ast.Range)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ParseResult {
   ast : @ast.File?
   cst : @cst.ModuleCst?
   diagnostics : Array[@scanner.Diagnostic]
   attributes : Array[AttributeGroup]
-} derive(Eq, @debug.Debug)
+}
 
 // Type aliases
 

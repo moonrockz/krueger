@@ -1,5 +1,6 @@
 ///|
 /// The kind of a `RawToken`: a significant token, or one kind of trivia.
+#derive(Eq, Debug)
 pub(all) enum RawTokenKind {
   Significant(TokenKind)
   Whitespace
@@ -7,17 +8,18 @@ pub(all) enum RawTokenKind {
   LineComment
   BlockComment
   DocComment
-} derive(Eq, Debug)
+}
 
 ///|
 /// A lexical unit before trivia is attached: a significant token or one
 /// piece of trivia, with its exact text and its span. `lex_raw` makes them;
 /// `normalize_tokens` turns them into a `TokenStream`.
+#derive(Eq, Debug)
 pub(all) struct RawToken {
   kind : RawTokenKind
   lexeme : String
   span : Span
-} derive(Eq, Debug)
+}
 
 ///|
 /// Position in the source. Columns count code points, as elm-syntax does: the

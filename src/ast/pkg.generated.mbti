@@ -3,112 +3,117 @@ package "moonrockz/krueger/ast"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub fn decode_declaration(Json) -> Declaration raise DecodeError
+pub fn decode_declaration(@json.Json) -> Declaration raise DecodeError
 
-pub fn decode_exposing(Json) -> Exposing raise DecodeError
+pub fn decode_exposing(@json.Json) -> Exposing raise DecodeError
 
-pub fn decode_expression(Json) -> Expression raise DecodeError
+pub fn decode_expression(@json.Json) -> Expression raise DecodeError
 
-pub fn decode_file(Json) -> File raise DecodeError
+pub fn decode_file(@json.Json) -> File raise DecodeError
 
-pub fn decode_function(Json) -> Function raise DecodeError
+pub fn decode_function(@json.Json) -> Function raise DecodeError
 
-pub fn decode_import(Json) -> Import raise DecodeError
+pub fn decode_import(@json.Json) -> Import raise DecodeError
 
-pub fn decode_infix(Json) -> Infix raise DecodeError
+pub fn decode_infix(@json.Json) -> Infix raise DecodeError
 
-pub fn decode_infix_direction(Json) -> InfixDirection raise DecodeError
+pub fn decode_infix_direction(@json.Json) -> InfixDirection raise DecodeError
 
-pub fn decode_module(Json) -> Module raise DecodeError
+pub fn decode_module(@json.Json) -> Module raise DecodeError
 
-pub fn decode_module_name(Json) -> ArrayView[String] raise DecodeError
+pub fn decode_module_name(@json.Json) -> ArrayView[String] raise DecodeError
 
-pub fn[T] decode_node(Json, (Json) -> T raise DecodeError) -> Node[T] raise DecodeError
+pub fn[T] decode_node(@json.Json, (@json.Json) -> T raise DecodeError) -> Node[T] raise DecodeError
 
-pub fn decode_pattern(Json) -> Pattern raise DecodeError
+pub fn decode_pattern(@json.Json) -> Pattern raise DecodeError
 
-pub fn decode_range(Json) -> Range raise DecodeError
+pub fn decode_range(@json.Json) -> Range raise DecodeError
 
-pub fn decode_signature(Json) -> Signature raise DecodeError
+pub fn decode_signature(@json.Json) -> Signature raise DecodeError
 
-pub fn decode_top_level_expose(Json) -> TopLevelExpose raise DecodeError
+pub fn decode_top_level_expose(@json.Json) -> TopLevelExpose raise DecodeError
 
-pub fn decode_type(Json) -> Type raise DecodeError
+pub fn decode_type(@json.Json) -> Type raise DecodeError
 
-pub fn decode_type_alias(Json) -> TypeAlias raise DecodeError
+pub fn decode_type_alias(@json.Json) -> TypeAlias raise DecodeError
 
-pub fn decode_type_annotation(Json) -> TypeAnnotation raise DecodeError
+pub fn decode_type_annotation(@json.Json) -> TypeAnnotation raise DecodeError
 
-pub fn decode_value_constructor(Json) -> ValueConstructor raise DecodeError
+pub fn decode_value_constructor(@json.Json) -> ValueConstructor raise DecodeError
 
-pub fn encode_declaration(Declaration) -> Json
+pub fn encode_declaration(Declaration) -> @json.Json
 
-pub fn encode_declaration_with(Declaration, exact_ints~ : Bool) -> Json
+pub fn encode_declaration_with(Declaration, exact_ints~ : Bool) -> @json.Json
 
-pub fn encode_exposing(Exposing) -> Json
+pub fn encode_exposing(Exposing) -> @json.Json
 
-pub fn encode_expression(Expression) -> Json
+pub fn encode_expression(Expression) -> @json.Json
 
-pub fn encode_expression_with(Expression, exact_ints~ : Bool) -> Json
+pub fn encode_expression_with(Expression, exact_ints~ : Bool) -> @json.Json
 
-pub fn encode_file(File) -> Json
+pub fn encode_file(File) -> @json.Json
 
-pub fn encode_file_with(File, exact_ints~ : Bool) -> Json
+pub fn encode_file_with(File, exact_ints~ : Bool) -> @json.Json
 
-pub fn encode_function(Function) -> Json
+pub fn encode_function(Function) -> @json.Json
 
-pub fn encode_function_with(Function, exact_ints~ : Bool) -> Json
+pub fn encode_function_with(Function, exact_ints~ : Bool) -> @json.Json
 
-pub fn encode_import(Import) -> Json
+pub fn encode_import(Import) -> @json.Json
 
-pub fn encode_infix(Infix) -> Json
+pub fn encode_infix(Infix) -> @json.Json
 
-pub fn encode_infix_direction(InfixDirection) -> Json
+pub fn encode_infix_direction(InfixDirection) -> @json.Json
 
-pub fn encode_module(Module) -> Json
+pub fn encode_module(Module) -> @json.Json
 
-pub fn encode_module_name(ArrayView[String]) -> Json
+pub fn encode_module_name(ArrayView[String]) -> @json.Json
 
-pub fn[T] encode_node(Node[T], (T) -> Json) -> Json
+pub fn[T] encode_node(Node[T], (T) -> @json.Json) -> @json.Json
 
-pub fn encode_pattern(Pattern) -> Json
+pub fn encode_pattern(Pattern) -> @json.Json
 
-pub fn encode_pattern_with(Pattern, exact_ints~ : Bool) -> Json
+pub fn encode_pattern_with(Pattern, exact_ints~ : Bool) -> @json.Json
 
-pub fn encode_range(Range) -> Json
+pub fn encode_range(Range) -> @json.Json
 
-pub fn encode_signature(Signature) -> Json
+pub fn encode_signature(Signature) -> @json.Json
 
-pub fn encode_top_level_expose(TopLevelExpose) -> Json
+pub fn encode_top_level_expose(TopLevelExpose) -> @json.Json
 
-pub fn encode_type(Type) -> Json
+pub fn encode_type(Type) -> @json.Json
 
-pub fn encode_type_alias(TypeAlias) -> Json
+pub fn encode_type_alias(TypeAlias) -> @json.Json
 
-pub fn encode_type_annotation(TypeAnnotation) -> Json
+pub fn encode_type_annotation(TypeAnnotation) -> @json.Json
 
-pub fn encode_value_constructor(ValueConstructor) -> Json
+pub fn encode_value_constructor(ValueConstructor) -> @json.Json
 
 // Errors
+#derive(Eq, @debug.Debug)
 pub(all) suberror DecodeError {
   DecodeError(path~ : String, message~ : String)
-} derive(Eq, @debug.Debug)
+}
 pub impl Show for DecodeError
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct Case {
   pattern : Node[Pattern]
   expression : Node[Expression]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct CaseBlock {
   expression : Node[Expression]
   cases : ArrayView[Case]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Declaration {
   FunctionDeclaration(Function)
   AliasDeclaration(TypeAlias)
@@ -116,30 +121,35 @@ pub(all) enum Declaration {
   PortDeclaration(Signature)
   InfixDeclaration(Infix)
   Destructuring(Node[Pattern], Node[Expression])
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct DefaultModuleData {
   module_name : Node[ArrayView[String]]
   exposing_list : Node[Exposing]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct EffectModuleData {
   module_name : Node[ArrayView[String]]
   exposing_list : Node[Exposing]
   command : Node[String]?
   subscription : Node[String]?
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ExposedType {
   name : String
   open : Range?
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Exposing {
   All(Range)
   Explicit(ArrayView[Node[TopLevelExpose]])
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Expression {
   UnitExpr
   Application(ArrayView[Node[Expression]])
@@ -165,77 +175,90 @@ pub(all) enum Expression {
   RecordAccessFunction(String)
   RecordUpdateExpression(Node[String], ArrayView[Node[RecordSetter]])
   GLSLExpression(String)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct File {
   module_definition : Node[Module]
   imports : ArrayView[Node[Import]]
   declarations : ArrayView[Node[Declaration]]
   comments : ArrayView[Node[String]]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Function {
   documentation : Node[String]?
   signature : Node[Signature]?
   declaration : Node[FunctionImplementation]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct FunctionImplementation {
   name : Node[String]
   arguments : ArrayView[Node[Pattern]]
   expression : Node[Expression]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Import {
   module_name : Node[ArrayView[String]]
   module_alias : Node[ArrayView[String]]?
   exposing_list : Node[Exposing]?
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Infix {
   direction : Node[InfixDirection]
   precedence : Node[Int32]
   operator : Node[String]
   function : Node[String]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum InfixDirection {
   Left
   Right
   Non
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Lambda {
   args : ArrayView[Node[Pattern]]
   expression : Node[Expression]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct LetBlock {
   declarations : ArrayView[Node[LetDeclaration]]
   expression : Node[Expression]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum LetDeclaration {
   LetFunction(Function)
   LetDestructuring(Node[Pattern], Node[Expression])
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Location {
   row : Int32
   column : Int32
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Module {
   NormalModule(DefaultModuleData)
   PortModule(DefaultModuleData)
   EffectModule(EffectModuleData)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Node[T] {
   range : Range
   value : T
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum Pattern {
   AllPattern
   UnitPattern
@@ -252,54 +275,63 @@ pub(all) enum Pattern {
   NamedPattern(QualifiedNameRef, ArrayView[Node[Pattern]])
   AsPattern(Node[Pattern], Node[String])
   ParenthesizedPattern(Node[Pattern])
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct QualifiedNameRef {
   module_name : ArrayView[String]
   name : String
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Range {
   start : Location
   end : Location
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct RecordField {
   name : Node[String]
   type_annotation : Node[TypeAnnotation]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct RecordSetter {
   field : Node[String]
   expression : Node[Expression]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Signature {
   name : Node[String]
   type_annotation : Node[TypeAnnotation]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum TopLevelExpose {
   InfixExpose(String)
   FunctionExpose(String)
   TypeOrAliasExpose(String)
   TypeExpose(ExposedType)
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct Type {
   documentation : Node[String]?
   name : Node[String]
   generics : ArrayView[Node[String]]
   constructors : ArrayView[Node[ValueConstructor]]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct TypeAlias {
   documentation : Node[String]?
   name : Node[String]
   generics : ArrayView[Node[String]]
   type_annotation : Node[TypeAnnotation]
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) enum TypeAnnotation {
   GenericType(String)
   Typed(Node[(ArrayView[String], String)], ArrayView[Node[TypeAnnotation]])
@@ -308,12 +340,13 @@ pub(all) enum TypeAnnotation {
   Record(ArrayView[Node[RecordField]])
   GenericRecord(Node[String], Node[ArrayView[Node[RecordField]]])
   FunctionTypeAnnotation(Node[TypeAnnotation], Node[TypeAnnotation])
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, @debug.Debug)
 pub(all) struct ValueConstructor {
   name : Node[String]
   arguments : ArrayView[Node[TypeAnnotation]]
-} derive(Eq, @debug.Debug)
+}
 
 // Type aliases
 pub type Cases = ArrayView[Case]

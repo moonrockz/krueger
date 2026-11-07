@@ -7,7 +7,7 @@ import {
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.11.0",
+  "moonrockz/moonspec@0.12.0/async" @moonspec,
   "moonrockz/expect@0.6.1",
 }
 ----
@@ -59,6 +59,7 @@ fn parse_targets(values : Array[String]) -> Result[Array[String], String] {
 
 ///|
 /// One case's result on one target (microseconds per call).
+#derive(Eq, Debug)
 struct CaseResult {
   target : String
   suite : String
@@ -74,7 +75,7 @@ struct CaseResult {
   iqr : Double
   runs : Int32
   batch_size : Int32
-} derive(Eq, Debug)
+}
 
 ///|
 fn CaseResult::id(self : CaseResult) -> String {
@@ -82,6 +83,7 @@ fn CaseResult::id(self : CaseResult) -> String {
 }
 
 ///|
+#derive(Eq, Debug)
 struct RunInfo {
   id : String
   url : String
@@ -89,26 +91,28 @@ struct RunInfo {
   git_ref : String
   sha : String
   date : String
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 struct EnvInfo {
   runner_os : String
   cpu : String
   moon_version : String
   toolchain : String
-} derive(Eq, Debug)
+}
 
 ///|
 /// `benchmark-results.json`: one run's results with its environment and
 /// run metadata. A results file in the history is a run file.
+#derive(Eq, Debug)
 struct ResultsFile {
   schema : Int32
   run : RunInfo
   env : EnvInfo
   targets : Array[String]
   results : Array[CaseResult]
-} derive(Eq, Debug)
+}
 
 ///|
 fn text_field(o : Map[String, Json], key : String) -> String raise {
@@ -255,17 +259,17 @@ fn run_file_path(r : ResultsFile) -> String {
     }
   }
   let d = digits.to_string().pad_end(14, '0')
-  let year = d.view(end_offset=4)
-  let month = d.view(start_offset=4, end_offset=6)
-  let day = d.view(start_offset=6, end_offset=8)
-  let time = d.view(start_offset=8, end_offset=14)
+  let year = d.clamped_view(end=4)
+  let month = d.clamped_view(start=4, end=6)
+  let day = d.clamped_view(start=6, end=8)
+  let time = d.clamped_view(start=8, end=14)
   "runs/\{year}/\{month}/\{year}\{month}\{day}T\{time}Z-\{short_sha(r.run.sha)}-\{r.run.id}.json"
 }
 
 ///|
 fn short_sha(sha : String) -> String {
   if sha.length() > 7 {
-    sha.view(end_offset=7).to_owned()
+    sha.clamped_view(end=7).to_owned()
   } else {
     sha
   }
@@ -277,7 +281,7 @@ fn short_sha(sha : String) -> String {
 fn parse_cpu(text : String) -> String {
   for line in text.split("\n") {
     if line.has_prefix("model name") && line.find(":") is Some(i) {
-      return line.view(start_offset=i + 1).trim().to_owned()
+      return line.clamped_view(start=i + 1).trim().to_owned()
     }
   }
   for line in text.split("\n") {
@@ -295,12 +299,13 @@ let default_threshold : Double = 0.10
 ///|
 /// Which run file is the baseline: the latest `main` run, the latest run of
 /// a commit (SHA prefix), a workflow run, or a results file on disk.
+#derive(Eq, Debug)
 enum Against {
   LatestMain
   Commit(String)
   RunId(String)
   File(String)
-} derive(Eq, Debug)
+}
 
 ///|
 fn parse_against(value : String?) -> Against {
@@ -308,7 +313,7 @@ fn parse_against(value : String?) -> Against {
     None | Some("") => LatestMain
     Some(v) =>
       if v.has_prefix("run:") {
-        RunId(v.view(start_offset=4).to_owned())
+        RunId(v.clamped_view(start=4).to_owned())
       } else if v.contains("/") || v.has_suffix(".json") {
         File(v)
       } else {
@@ -382,13 +387,14 @@ fn choose_baseline(
 }
 
 ///|
+#derive(Eq, Debug)
 enum Mark {
   Slower
   Faster
   Same
   New
   Removed
-} derive(Eq, Debug)
+}
 
 ///|
 fn mark_name(m : Mark) -> String {
@@ -433,22 +439,24 @@ fn mark_of(
 
 ///|
 /// One line of the comparison: a case on a target, in one run or both.
+#derive(Eq, Debug)
 struct Row {
   target : String
   id : String
   baseline : CaseResult?
   current : CaseResult?
   mark : Mark
-} derive(Eq, Debug)
+}
 
 ///|
+#derive(Eq, Debug)
 struct Comparison {
   current : ResultsFile
   baseline : (String, ResultsFile)?
   rows : Array[Row]
   not_run : Array[String]
   warnings : Array[String]
-} derive(Eq, Debug)
+}
 
 ///|
 /// Rows per target in the current run's target order; within a target,
@@ -565,7 +573,7 @@ fn format_change(baseline : CaseResult, current : CaseResult) -> String {
 ///|
 fn short_ref(git_ref : String) -> String {
   if git_ref.has_prefix("refs/heads/") {
-    git_ref.view(start_offset=11).to_owned()
+    git_ref.clamped_view(start=11).to_owned()
   } else {
     git_ref
   }
@@ -742,11 +750,12 @@ fn render_html(
 }
 
 ///|
+#derive(Eq, Debug)
 enum Command {
   Run(Array[String])
   Compare(String?, String, Double)
   Record(String)
-} derive(Eq, Debug)
+}
 
 ///|
 /// `run [--target t]...`, `compare [--against a] [--data ref] [--threshold x]`
@@ -1035,7 +1044,7 @@ async fn record_command(dir : String) -> Unit {
   }
   let relative = run_file_path(current)
   let target = "\{dir}/\{relative}"
-  let parent = relative.view(end_offset=relative.rev_find("/").unwrap_or(0))
+  let parent = relative.clamped_view(end=relative.rev_find("/").unwrap_or(0))
   @fs.mkdir("\{dir}/\{parent}", recursive=true, allow_exist=true)
   @fs.write_file(target, results_to_json(current).stringify(indent=2) + "\n")
   if !@fs.exists("\{dir}/README.md") {

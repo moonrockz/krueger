@@ -6,7 +6,7 @@ import {
   "moonbitlang/x@0.5.5/sys",
   "moonbitlang/core/env",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.11.0",
+  "moonrockz/moonspec@0.12.0/async" @moonspec,
   "moonrockz/expect@0.6.1",
 }
 ----
@@ -189,11 +189,12 @@ fn markdown_source(c : Classes, version : String) -> String {
 ///|
 /// The kind of table: the lexer's identifier classes, the printer's
 /// literal table or the Markdown character classes.
+#derive(Eq, Debug)
 enum Kind {
   Names
   Literals
   Markdown
-} derive(Eq, Debug)
+}
 
 ///|
 /// A table that `generate` writes.

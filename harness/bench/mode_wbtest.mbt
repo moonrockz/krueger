@@ -7,10 +7,11 @@
 /// - `run`: measure each case and write `<raw_dir>/<target>.json`; the
 ///   target comes from `KRUEGER_BENCH_TARGET` (`scripts/bench.mbtx` sets
 ///   both).
+#derive(Eq, Debug)
 priv enum Mode {
   Smoke
   Run(String)
-} derive(Eq, Debug)
+}
 
 ///|
 let raw_dir : String = "../_build/reports/bench/raw"

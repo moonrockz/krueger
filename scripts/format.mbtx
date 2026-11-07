@@ -10,7 +10,7 @@ import {
   "moonbitlang/core/encoding/hex",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/string",
-  "moonrockz/moonspec@0.11.0",
+  "moonrockz/moonspec@0.12.0/async" @moonspec,
   "moonrockz/expect@0.6.1",
 }
 ----
@@ -43,7 +43,7 @@ fn test_file_key(prefix : String, entry : String) -> String? {
   guard entry.has_prefix(prefix) && entry.has_suffix(".elm") else {
     return None
   }
-  Some("elm-format/" + entry.view(start_offset=prefix.length()).to_owned())
+  Some("elm-format/" + entry.clamped_view(start=prefix.length()).to_owned())
 }
 
 ///|
@@ -237,7 +237,7 @@ async fn fetched_problems(dir : String, s : Sources) -> Array[String] {
   let problems = []
   for f in s.files {
     let (key, pinned) = f
-    let path = "\{dir}/\{key.view(start_offset="elm-format/".length())}"
+    let path = "\{dir}/\{key.clamped_view(start="elm-format/".length())}"
     let actual = if @fs.exists(path) {
       Some(hex(@crypto.sha256(@fs.read_file(path).binary())))
     } else {
@@ -260,7 +260,7 @@ async fn fetch(sources : String, dir : String) -> Unit {
   let zip = ".dev/out/format/elm-format.zip"
   download(s.url, zip)
   for f in s.files {
-    let rel = f.0.view(start_offset="elm-format/".length())
+    let rel = f.0.clamped_view(start="elm-format/".length())
     let path = "\{dir}/\{rel}"
     ensure_dir(parent_dir(path))
     @fs.write_file(path, entry_bytes(zip, s.prefix + rel.to_owned()))

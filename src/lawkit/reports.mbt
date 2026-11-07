@@ -8,9 +8,9 @@ pub fn excerpt_lines(rendered : String) -> Array[(Int32, String)] {
   for line in rendered.split("\n") {
     let line = line.trim_start()
     guard line.find("|") is Some(bar) && bar > 0 else { continue }
-    let label = line.view(end_offset=bar)
+    let label = line.clamped_view(end=bar)
     let (negative, digits) = if label.has_prefix("-") {
-      (true, label.view(start_offset=1))
+      (true, label.clamped_view(start=1))
     } else {
       (false, label)
     }
@@ -27,7 +27,7 @@ pub fn excerpt_lines(rendered : String) -> Array[(Int32, String)] {
         } else {
           n
         },
-        line.view(start_offset=bar + 1).to_owned(),
+        line.clamped_view(start=bar + 1).to_owned(),
       ),
     )
   }
@@ -43,7 +43,7 @@ pub fn source_lines(text : String) -> Array[String] {
   .split("\n")
   .map(line => {
     if line.has_suffix("\r") {
-      line.view(end_offset=line.length() - 1).to_owned()
+      line.clamped_view(end=line.length() - 1).to_owned()
     } else {
       line.to_owned()
     }

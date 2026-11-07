@@ -12,6 +12,7 @@
 ///   inspect(failed, content="true")
 /// }
 /// ```
+#derive(Debug)
 pub suberror FormatError {
   /// The source has a diagnostic with severity `Error` (the diagnostics
   /// with that severity). Render them with `@report.render_plain` or
@@ -20,7 +21,7 @@ pub suberror FormatError {
   /// The parsed file cannot print: a comment that the printer cannot place
   /// (`UnplacedComment`), or a problem that `print_file` also raises.
   Unprintable(PrintError)
-} derive(Debug)
+}
 
 ///|
 /// Formats Elm source as elm-format 0.8.7 does (`layout=ElmFormat`, the

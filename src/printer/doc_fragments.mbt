@@ -44,14 +44,12 @@ fn prepare_code(
         }) {
         let end = stream.tokens[j - 1].span.end.offset
         let pattern = code
-          .view(start_offset=t.span.start.offset, end_offset=end)
+          .clamped_view(start=t.span.start.offset, end~)
           .to_owned()
         if code_pattern(pattern, dialect) is Some(pattern) {
           let name = stem + "pattern" + i.to_string() + "__"
           out.write_string(
-            code
-            .view(start_offset=copied, end_offset=t.span.start.offset)
-            .to_owned(),
+            code.clamped_view(start=copied, end=t.span.start.offset).to_owned(),
           )
           out.write_string(name)
           copied = end
@@ -76,9 +74,7 @@ fn prepare_code(
         }) {
         let name = stem + (j - i).to_string() + "__"
         out.write_string(
-          code
-          .view(start_offset=copied, end_offset=t.span.start.offset)
-          .to_owned(),
+          code.clamped_view(start=copied, end=t.span.start.offset).to_owned(),
         )
         out.write_string(name)
         copied = close.span.end.offset
@@ -93,9 +89,7 @@ fn prepare_code(
       stream.tokens[i - 1].kind is LBracket &&
       stream.tokens[i - 1].span.end.offset == t.span.start.offset {
       out.write_string(
-        code
-        .view(start_offset=copied, end_offset=t.span.start.offset)
-        .to_owned(),
+        code.clamped_view(start=copied, end=t.span.start.offset).to_owned(),
       )
       out.write_string(" ")
       copied = t.span.start.offset
@@ -106,14 +100,14 @@ fn prepare_code(
       stream.tokens.get(i + 1) is Some(next) &&
       next.span.start.offset == t.span.end.offset {
       out.write_string(
-        code.view(start_offset=copied, end_offset=t.span.end.offset).to_owned(),
+        code.clamped_view(start=copied, end=t.span.end.offset).to_owned(),
       )
       out.write_string(" ")
       copied = t.span.end.offset
     }
     i += 1
   }
-  out.write_string(code.view(start_offset=copied).to_owned())
+  out.write_string(code.clamped_view(start=copied).to_owned())
   (out.to_string(), replacements)
 }
 
@@ -161,11 +155,11 @@ fn complete_annotations(
       continue
     }
     let end = tokens[next - 1].span.end.offset
-    out.write_string(code.view(start_offset=copied, end_offset=end).to_owned())
+    out.write_string(code.clamped_view(start=copied, end~).to_owned())
     out.write_string("\n" + t.lexeme + " = " + marker + "\n")
     copied = end
   }
-  out.write_string(code.view(start_offset=copied).to_owned())
+  out.write_string(code.clamped_view(start=copied).to_owned())
   (out.to_string(), marker)
 }
 
@@ -232,16 +226,14 @@ fn prepare_infix_functions(
       count += 1
       symbol = "<" + "?".repeat(count) + ">"
     }
-    out.write_string(
-      code.view(start_offset=copied, end_offset=start - 1).to_owned(),
-    )
+    out.write_string(code.clamped_view(start=copied, end=start - 1).to_owned())
     out.write_string(symbol)
     copied = end + 1
     symbols.push(symbol)
     operators.push({ symbol, precedence: 9, direction: Left, })
     restored.push((symbol, "`" + token.lexeme + "`"))
   }
-  out.write_string(code.view(start_offset=copied).to_owned())
+  out.write_string(code.clamped_view(start=copied).to_owned())
   (
     out.to_string(),
     { ..dialect, operators, operator_symbols: symbols, },

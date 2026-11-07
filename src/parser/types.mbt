@@ -20,6 +20,7 @@
 ///   inspect(result.attributes.length(), content="0")
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) struct ParseResult {
   /// The elm-syntax 7.3.9 AST. It is `None` when the module header is
   /// missing or malformed (`KR-PARSE-001`, `KR-PARSE-006`) or when the
@@ -36,15 +37,16 @@ pub(all) struct ParseResult {
   /// Attributes from doc comments (see `DocAttribute`), in source order. It
   /// is empty when the dialect turns attributes off.
   attributes : Array[AttributeGroup]
-} derive(Eq, Debug)
+}
 
 ///|
 /// What a group of doc-comment attributes belongs to: the module (its
 /// documentation comment) or one top-level declaration, by name and range.
+#derive(Eq, Debug)
 pub(all) enum AttributeTarget {
   Module
   Declaration(name~ : String, range~ : @ast.Range)
-} derive(Eq, Debug)
+}
 
 ///|
 /// One attribute line in a doc comment: `@name value...`, or the built-in
@@ -100,6 +102,7 @@ pub(all) enum AttributeTarget {
 ///   )
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) enum DocAttribute {
   Attribute(
     name~ : @ast.Node[String],
@@ -107,12 +110,13 @@ pub(all) enum DocAttribute {
     range~ : @ast.Range
   )
   Docs(names~ : ArrayView[@ast.Node[String]], range~ : @ast.Range)
-} derive(Eq, Debug)
+}
 
 ///|
 /// The attributes of the module or of one declaration, in source order. Only
 /// a target with at least one attribute has a group.
+#derive(Eq, Debug)
 pub(all) struct AttributeGroup {
   target : AttributeTarget
   attributes : ArrayView[DocAttribute]
-} derive(Eq, Debug)
+}

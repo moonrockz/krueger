@@ -14,10 +14,11 @@ fn has_comment_kind(
 }
 
 ///|
+#derive(Default)
 struct TokenizerWorld {
   mut source : String
   mut result : Result[@krueger.TokenStream, @krueger.ScanErrorList]?
-} derive(Default)
+}
 
 ///|
 impl @moonspec.World for TokenizerWorld with fn configure(self, setup) {

@@ -15,10 +15,11 @@ pub fn standard_operators() -> Array[OperatorDef]
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum AttributeSyntax {
   Off
   DocComment
-} derive(Eq, @debug.Debug)
+}
 
 pub(all) struct Dialect {
   name : String
@@ -35,12 +36,14 @@ pub fn Dialect::has(Self, Rule) -> Bool
 pub fn Dialect::operator(Self, String) -> OperatorDef?
 pub fn Dialect::validate(Self) -> Array[String]
 
+#derive(Eq, @debug.Debug)
 pub(all) struct OperatorDef {
   symbol : String
   precedence : Int32
   direction : @ast.InfixDirection
-} derive(Eq, @debug.Debug)
+}
 
+#derive(Eq, Hash, @debug.Debug)
 pub(all) enum Rule {
   LeadingZero
   EmptyHex
@@ -59,7 +62,7 @@ pub(all) enum Rule {
   InfixDeclaration
   DuplicateEffectKey
   PortInNormalModule
-} derive(Eq, Hash, @debug.Debug)
+}
 pub fn Rule::name(Self) -> String
 
 // Type aliases

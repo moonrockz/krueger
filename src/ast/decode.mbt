@@ -5,9 +5,10 @@
 ///|
 /// Error raised on malformed input. `path` is a JSONPath-like location
 /// (`$` is the value given to the public decoder).
+#derive(Eq, Debug)
 pub(all) suberror DecodeError {
   DecodeError(path~ : String, message~ : String)
-} derive(Eq, Debug)
+}
 
 ///|
 /// Shows the error as its JSON path, then `: `, then the message (see the

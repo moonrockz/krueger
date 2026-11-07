@@ -5,7 +5,7 @@ fn markers_in_order(text : String, count : Int32) -> Bool {
   let mut from = 0
   for i in 0..<count {
     let marker = "{- c\{i} -}"
-    match text.view(start_offset=from).find(marker) {
+    match text.clamped_view(start=from).find(marker) {
       Some(at) => from = from + at + marker.length()
       None => return false
     }

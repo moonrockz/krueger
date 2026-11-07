@@ -82,10 +82,11 @@ fn SourceFacts::from_tokens(tokens : Array[@scanner.Token]) -> SourceFacts {
 ///   )
 /// }
 /// ```
+#derive(Eq, Debug)
 pub(all) enum Layout {
   ElmFormat
   Width(Int32)
-} derive(Eq, Debug)
+}
 
 ///|
 fn Layout::render_width(self : Layout) -> Int32 {

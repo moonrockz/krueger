@@ -17,6 +17,7 @@
 ///   inspect(@dialect.Rule::LeadingZero.name(), content="leading-zero")
 /// }
 /// ```
+#derive(Eq, Hash, Debug)
 pub(all) enum Rule {
   LeadingZero
   EmptyHex
@@ -35,7 +36,7 @@ pub(all) enum Rule {
   InfixDeclaration
   DuplicateEffectKey
   PortInNormalModule
-} derive(Eq, Hash, Debug)
+}
 
 ///|
 /// Kebab-case name, shown in diagnostics as `[rule: <name>]`.
@@ -63,18 +64,20 @@ pub fn Rule::name(self : Rule) -> String {
 
 ///|
 /// An infix operator: its symbol, precedence (1 to 9) and direction.
+#derive(Eq, Debug)
 pub(all) struct OperatorDef {
   symbol : String
   precedence : Int32
   direction : @ast.InfixDirection
-} derive(Eq, Debug)
+}
 
 ///|
 /// Whether attributes in doc comments are parsed.
+#derive(Eq, Debug)
 pub(all) enum AttributeSyntax {
   Off
   DocComment
-} derive(Eq, Debug)
+}
 
 ///|
 /// A variant of Elm: which rejection rules run, and the extension data (operator

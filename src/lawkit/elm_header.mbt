@@ -9,7 +9,8 @@
 /// that is not exposed; no imports; the same module imported more than
 /// once; an alias equal to the module name; `(..)` and a list for the same
 /// module.
-pub(all) struct ElmHeader(String) derive(Debug)
+#derive(Debug)
+pub(all) struct ElmHeader(String)
 
 ///|
 /// The module's source text.

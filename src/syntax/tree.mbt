@@ -46,13 +46,14 @@ fn Entry::path(self : Entry) -> NodePath {
 ///|
 /// The index key of a node: its case and its range. Two different nodes
 /// with the same key are told apart by structural equality.
+#derive(Eq, Hash)
 priv struct Key {
   case_ : Int32
   start_row : Int32
   start_column : Int32
   end_row : Int32
   end_column : Int32
-} derive(Eq, Hash)
+}
 
 ///|
 fn key_of(n : NodeRef) -> Key {

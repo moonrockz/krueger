@@ -179,7 +179,7 @@ fn read_format_pending() -> Array[String] raise {
 ///|
 fn clip(line : String) -> String {
   if line.length() > 100 {
-    line.view(end_offset=100).to_owned() + "..."
+    line.clamped_view(end=100).to_owned() + "..."
   } else {
     line
   }

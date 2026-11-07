@@ -8,7 +8,8 @@
 /// whitespace and comments; and a module whose value is an edge character
 /// inside a literal or comment form. It shrinks by dropping a piece or
 /// halving the longest one.
-pub(all) struct ElmText(Array[String]) derive(Debug)
+#derive(Debug)
+pub(all) struct ElmText(Array[String])
 
 ///|
 /// A string of these UTF-16 code units (a literal cannot hold a lone

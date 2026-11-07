@@ -10,7 +10,8 @@
 /// characters and surrogate pairs; nested constructor, `::` and `as`
 /// patterns; nested function types and type applications. All names are
 /// valid, so the printer never raises. Depth is bounded by `size`.
-pub(all) struct ElmAst(@ast.File) derive(Debug)
+#derive(Debug)
+pub(all) struct ElmAst(@ast.File)
 
 ///|
 /// The file of the generated value.

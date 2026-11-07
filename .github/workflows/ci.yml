@@ -7,7 +7,7 @@ on:
 
 env:
   # Pinned MoonBit toolchain (moon/moonc/core). Bump deliberately; see AGENTS.md.
-  MOONBIT_VERSION: "0.10.18+6c83a7f62"
+  MOONBIT_VERSION: "0.10.20+65efd5b93"
 
 jobs:
   lint:
@@ -36,6 +36,9 @@ jobs:
 
       - name: Check code (a warning fails)
         run: mise run lint:check
+
+      - name: Check the shared OpenSpec bundle
+        run: mission-control-tools openspec check --bundle
 
   unit-tests:
     runs-on: ubuntu-latest

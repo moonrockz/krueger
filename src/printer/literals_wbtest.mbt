@@ -72,7 +72,8 @@ test "the smallest Int64 has no positive literal" {
 
 ///|
 /// A string of up to `size` pieces of `@lawkit.literal_edge_chars()`.
-struct LiteralValue(String) derive(Debug)
+#derive(Debug)
+struct LiteralValue(String)
 
 ///|
 impl @quickcheck.Arbitrary for LiteralValue with fn arbitrary(size, rs) {
@@ -165,7 +166,8 @@ test "every pair of literal edge characters reads back from both quotes" {
 
 ///|
 /// A finite Double that is not negative: an edge value or random bits.
-struct PlainDouble(Double) derive(Debug)
+#derive(Debug)
+struct PlainDouble(Double)
 
 ///|
 impl @quickcheck.Arbitrary for PlainDouble with fn arbitrary(_, rs) {

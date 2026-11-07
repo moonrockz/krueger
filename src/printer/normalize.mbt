@@ -387,7 +387,7 @@ fn fence_start(text : String) -> String? {
     guard c == mark else { break }
     n += 1
   }
-  Some(text.view(end_offset=n).to_owned())
+  Some(text.clamped_view(end=n).to_owned())
 }
 
 ///|
@@ -401,7 +401,7 @@ fn starts_nested(text : String) -> Bool {
     return true
   }
   if text.has_prefix("-") || text.has_prefix("*") || text.has_prefix("+") {
-    return after_marker(text.view(start_offset=1))
+    return after_marker(text.clamped_view(start=1))
   }
   let mut digits = 0
   for c in text {
@@ -409,9 +409,9 @@ fn starts_nested(text : String) -> Bool {
     digits += 1
   }
   guard digits > 0 && digits < 10 else { return false }
-  let rest = text.view(start_offset=digits)
+  let rest = text.clamped_view(start=digits)
   (rest.has_prefix(".") || rest.has_prefix(")")) &&
-  after_marker(rest.view(start_offset=1))
+  after_marker(rest.clamped_view(start=1))
 }
 
 ///|
@@ -423,7 +423,7 @@ fn is_header_or_rule(text : String) -> Bool {
     hashes += 1
   }
   if hashes > 0 && hashes <= 6 {
-    let rest = text.view(start_offset=hashes)
+    let rest = text.clamped_view(start=hashes)
     if rest.is_empty() || rest.has_prefix(" ") {
       return true
     }
@@ -464,7 +464,7 @@ fn docs_lines(doc : String) -> Array[Array[String]] {
   let body = if doc.has_prefix("{-|") &&
     doc.has_suffix("-}") &&
     doc.length() >= 5 {
-    doc.view(start_offset=3, end_offset=doc.length() - 2).to_owned()
+    doc.clamped_view(start=3, end=doc.length() - 2).to_owned()
   } else {
     doc
   }
@@ -477,12 +477,12 @@ fn docs_lines(doc : String) -> Array[Array[String]] {
   for raw in body.split("\n") {
     let line = raw.to_owned()
     let line = if line.has_suffix("\r") {
-      line.view(end_offset=line.length() - 1).to_owned()
+      line.clamped_view(end=line.length() - 1).to_owned()
     } else {
       line
     }
     let indent = indentation(line)
-    let text = line.view(start_offset=indent).to_owned().trim_end().to_owned()
+    let text = line.clamped_view(start=indent).to_owned().trim_end().to_owned()
     if block is Fenced(fence) {
       // Cheapskate closes a fence with any line that starts with it, also
       // with text after it (CommonMark allows only spaces).
@@ -525,7 +525,7 @@ fn docs_lines(doc : String) -> Array[Array[String]] {
       }
     }
     let names = if text.has_prefix("@docs") {
-      Some(text.view(start_offset=5).to_owned())
+      Some(text.clamped_view(start=5).to_owned())
     } else if in_docs {
       Some(text)
     } else {
@@ -558,7 +558,7 @@ fn docs_key(name : String) -> String {
   if chars.length() is (3 | 4) &&
     chars[0] == '(' &&
     chars[chars.length() - 1] == ')' {
-    name.view(start_offset=1, end_offset=name.length() - 1).to_owned()
+    name.clamped_view(start=1, end=name.length() - 1).to_owned()
   } else {
     name
   }

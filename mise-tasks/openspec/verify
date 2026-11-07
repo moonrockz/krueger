@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Verify the shared OpenSpec workflow"
+set -euo pipefail
+mise run openspec:check
+mise run openspec:validate
